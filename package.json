@@ -1,0 +1,16 @@
+{
+  "name": "integrity",
+  "version": "1.0.0",
+  "description": "Back and front end of Integrity",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

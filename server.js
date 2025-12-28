@@ -30,6 +30,10 @@ app.use((req, res, next) => {
   if (!req.session.user) {
     req.session.user = { email: "dev@example.com", name: "Dev User" };
   }
+  // Disable caching for dev
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   next();
 });
 

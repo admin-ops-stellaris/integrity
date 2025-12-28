@@ -44,6 +44,7 @@
       document.getElementById('profileContent').style.display = 'none';
       document.getElementById('formDivider').style.display = 'none';
       document.getElementById('formTitle').innerText = "Contact";
+      document.getElementById('formSubtitle').innerText = '';
       document.getElementById('editBtn').style.visibility = 'hidden';
       document.getElementById('refreshBtn').style.display = 'none'; 
       document.getElementById('auditSection').style.display = 'none';
@@ -91,6 +92,7 @@
        warnBox.style.display = 'none';
     }
 
+    document.getElementById('formSubtitle').innerText = formatSubtitle(f);
     renderHistory(f);
     loadOpportunities(f);
     renderSpouseSection(f); 
@@ -474,6 +476,7 @@
     toggleProfileView(true); document.getElementById('contactForm').reset();
     document.getElementById('recordId').value = ""; enableEditMode();
     document.getElementById('formTitle').innerText = "New Contact";
+    document.getElementById('formSubtitle').innerText = '';
     document.getElementById('submitBtn').innerText = "Save Contact";
     document.getElementById('editBtn').style.visibility = 'hidden';
     document.getElementById('oppList').innerHTML = '<li style="color:#CCC; font-size:12px; font-style:italic;">No opportunities linked.</li>';
@@ -528,12 +531,18 @@
     list.innerHTML = '';
     records.forEach(record => {
       const f = record.fields; const item = document.createElement('li'); item.className = 'contact-item';
-      item.innerHTML = `<span class="contact-name">${formatName(f)}</span><span class="contact-subtitle">${formatSubtitle(f)}</span>`;
+      item.innerHTML = `<span class="contact-name">${formatName(f)}</span><div class="contact-details-row">${formatDetailsRow(f)}</div>`;
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
   }
   function formatName(f) {
     return `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
+  }
+  function formatDetailsRow(f) {
+    const parts = [];
+    if (f.EmailAddress1) parts.push(`<span>${f.EmailAddress1}</span>`);
+    if (f.Mobile) parts.push(`<span>${f.Mobile}</span>`);
+    return parts.join('');
   }
   function formatSubtitle(f) {
     const preferredName = f.PreferredName || f.FirstName || '';

@@ -2,185 +2,102 @@ import express from "express";
 import cookieSession from "cookie-session";
 import path from "path";
 import { fileURLToPath } from "url";
-import { Issuer, generators } from "openid-client";
+import * as data from "./data.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const ALLOWED_GOOGLE_DOMAIN = process.env.ALLOWED_GOOGLE_DOMAIN;
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const SESSION_SECRET = process.env.SESSION_SECRET;
-
-// Fail fast if any required env var is missing
-for (const [k, v] of Object.entries({
-  ALLOWED_GOOGLE_DOMAIN,
-  GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET,
-  SESSION_SECRET,
-})) {
-  if (!v) throw new Error(`Missing ${k}`);
-}
-
-const CALLBACK_PATH = "/auth/google/callback";
+const SESSION_SECRET = process.env.SESSION_SECRET || "dev-secret";
 const app = express();
 
-/**
- * CRITICAL on Fly (and most cloud hosting):
- * This tells Express to trust X-Forwarded-* headers set by the reverse proxy.
- * Without this, Express may think requests are http (not https),
- * which can break secure cookies used by OAuth flows.
- */
 app.set("trust proxy", 1);
-
 app.use(express.json());
 
-/**
- * Session cookie settings suitable for OAuth:
- * - sameSite: "lax" allows the cookie to be sent on the top-level redirect back from Google
- * - secure: true ensures cookies are only used over HTTPS
- *
- * NOTE: This assumes your app is accessed via HTTPS (Fly dev/prod are HTTPS).
- * If you later test locally over plain http://localhost, secure cookies won’t be stored by the browser.
- */
 app.use(
   cookieSession({
     name: "integrity_session",
     keys: [SESSION_SECRET],
     httpOnly: true,
     sameSite: "lax",
-    secure: true,
-    maxAge: 1000 * 60 * 60 * 10, // 10 hours
+    secure: false,
+    maxAge: 1000 * 60 * 60 * 10,
   })
 );
 
-let clientCache = new Map();
+// Dev mode: inject mock user
+app.use((req, res, next) => {
+  if (!req.session) req.session = {};
+  if (!req.session.user) {
+    req.session.user = { email: "dev@example.com", name: "Dev User" };
+  }
+  next();
+});
 
-function getBaseUrl(req) {
-  // With trust proxy enabled, req.protocol respects X-Forwarded-Proto.
-  // We still prefer forwarded host if present.
-  const host = req.headers["x-forwarded-host"] || req.get("host");
-  return `${req.protocol}://${host}`;
-}
+// === API ENDPOINTS ===
 
-async function getClient(baseUrl) {
-  if (clientCache.has(baseUrl)) return clientCache.get(baseUrl);
+app.post("/api/getEffectiveUserEmail", (req, res) => {
+  res.json(req.session?.user?.email || "unknown@example.com");
+});
 
-  const googleIssuer = await Issuer.discover("https://accounts.google.com");
-  const client = new googleIssuer.Client({
-    client_id: GOOGLE_CLIENT_ID,
-    client_secret: GOOGLE_CLIENT_SECRET,
-    redirect_uris: [`${baseUrl}${CALLBACK_PATH}`],
-    response_types: ["code"],
-  });
+app.post("/api/getRecentContacts", (req, res) => {
+  res.json(data.getRecentContacts());
+});
 
-  clientCache.set(baseUrl, client);
-  return client;
-}
+app.post("/api/searchContacts", (req, res) => {
+  const query = req.body.args?.[0] || "";
+  res.json(data.searchContacts(query));
+});
 
-// ---- Auth routes ----
-app.get("/auth/google", async (req, res, next) => {
-  try {
-    const baseUrl = getBaseUrl(req);
-    const client = await getClient(baseUrl);
+app.post("/api/getContactById", (req, res) => {
+  const id = req.body.args?.[0];
+  res.json(data.getContactById(id));
+});
 
-    const state = generators.state();
-    const nonce = generators.nonce();
+app.post("/api/updateRecord", (req, res) => {
+  const [table, id, field, value] = req.body.args || [];
+  if (table === "Contacts") {
+    data.updateContact(id, field, value);
+  }
+  res.json({ success: true });
+});
 
-    // Store OAuth "handshake" data in the session cookie
-    req.session.oauth = { state, nonce, baseUrl };
-
-    const authUrl = client.authorizationUrl({
-      scope: "openid email profile",
-      state,
-      nonce,
-      hd: ALLOWED_GOOGLE_DOMAIN, // hint only; not enforced by Google
-      prompt: "select_account",
-    });
-
-    res.redirect(authUrl);
-  } catch (e) {
-    next(e);
+app.post("/api/createRecord", (req, res) => {
+  const [table, fields] = req.body.args || [];
+  if (table === "Contacts") {
+    const contact = data.createContact(fields);
+    res.json(contact);
+  } else {
+    res.json({ success: false });
   }
 });
 
-app.get(CALLBACK_PATH, async (req, res, next) => {
-  try {
-    const oauth = req.session?.oauth;
-
-    // If the session cookie was not preserved through the redirect flow,
-    // this will be missing.
-    if (!oauth?.state || !oauth?.nonce || !oauth?.baseUrl) {
-      return res.status(400).send("Missing auth session. Try again.");
-    }
-
-    const client = await getClient(oauth.baseUrl);
-    const params = client.callbackParams(req);
-
-    const tokenSet = await client.callback(
-      `${oauth.baseUrl}${CALLBACK_PATH}`,
-      params,
-      { state: oauth.state, nonce: oauth.nonce }
-    );
-
-    const claims = tokenSet.claims();
-
-    // Enforce Workspace domain
-    if (claims.hd !== ALLOWED_GOOGLE_DOMAIN) {
-      req.session = null;
-      return res.status(403).send("Unauthorized domain.");
-    }
-
-    req.session.user = {
-      email: claims.email,
-      name: claims.name,
-      picture: claims.picture,
-      hd: claims.hd,
-    };
-
-    delete req.session.oauth;
-    res.redirect("/");
-  } catch (e) {
-    next(e);
-  }
+app.post("/api/setSpouseStatus", (req, res) => {
+  const [contactId, spouseId, action] = req.body.args || [];
+  data.setSpouse(contactId, spouseId, action);
+  res.json({ success: true });
 });
 
-app.get("/logout", (req, res) => {
-  req.session = null;
-  res.redirect("/auth/google");
+app.post("/api/getLinkedOpportunities", (req, res) => {
+  const ids = req.body.args?.[0] || [];
+  res.json(data.getOpportunitiesById(ids));
 });
 
-function requireAuth(req, res, next) {
-  if (req.session?.user?.email) return next();
-  return res.redirect("/auth/google");
-}
-
-// ---- Gate everything ----
-app.use(requireAuth);
-
-// API health (after auth)
-app.get("/api/health", (req, res) => {
-  res.json({
-    ok: true,
-    app: "Integrity",
-    user: req.session?.user?.email || null,
-    ts: new Date().toISOString(),
-  });
-});
-
-// After auth, serve static files
+// Static files
 app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 // SPA fallback
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Error handler (helps debugging OAuth failures)
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).send("Server error.");
+  console.error("Error:", err);
+  res.status(500).json({ error: err.message });
 });
 
-const port = Number(process.env.PORT) || 3000;
-app.listen(port, () => console.log(`Server listening on ${port}`));
+const port = Number(process.env.PORT) || 5000;
+app.listen(port, "0.0.0.0", () => console.log(`Server listening on ${port}`));

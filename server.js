@@ -203,7 +203,8 @@ app.post("/api/getContactById", async (req, res) => {
 app.post("/api/updateRecord", async (req, res) => {
   try {
     const [table, id, field, value] = req.body.args || [];
-    await airtable.updateRecordInTable(table, id, field, value);
+    const userEmail = req.session?.user?.email || null;
+    await airtable.updateRecordInTable(table, id, field, value, userEmail);
     res.json({ success: true });
   } catch (err) {
     console.error("updateRecord error:", err);
@@ -214,8 +215,9 @@ app.post("/api/updateRecord", async (req, res) => {
 app.post("/api/createRecord", async (req, res) => {
   try {
     const [table, fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
     if (table === "Contacts") {
-      const contact = await airtable.createContact(fields);
+      const contact = await airtable.createContact(fields, userEmail);
       res.json(contact);
     } else {
       res.json({ success: false });
@@ -252,6 +254,7 @@ app.post("/api/processForm", async (req, res) => {
   try {
     const formData = req.body.args?.[0] || {};
     const recordId = formData.recordId;
+    const userEmail = req.session?.user?.email || null;
     
     const fields = {
       FirstName: formData.firstName || "",
@@ -266,12 +269,12 @@ app.post("/api/processForm", async (req, res) => {
     if (recordId) {
       for (const [field, value] of Object.entries(fields)) {
         if (value !== undefined) {
-          await airtable.updateContact(recordId, field, value);
+          await airtable.updateContact(recordId, field, value, userEmail);
         }
       }
       res.json("Contact updated successfully");
     } else {
-      await airtable.createContact(fields);
+      await airtable.createContact(fields, userEmail);
       res.json("Contact created successfully");
     }
   } catch (err) {

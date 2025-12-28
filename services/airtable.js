@@ -78,12 +78,14 @@ export async function searchContacts(query) {
   }
 }
 
-export async function updateContact(id, field, value) {
+export async function updateContact(id, field, value, userEmail = null) {
   if (!base) return null;
   try {
-    const record = await base("Contacts").update(id, {
-      [field]: value
-    });
+    const updateFields = { [field]: value };
+    if (userEmail) {
+      updateFields["Last Site User Email"] = userEmail;
+    }
+    const record = await base("Contacts").update(id, updateFields);
     return formatRecord(record);
   } catch (err) {
     console.error("updateContact error:", err.message);
@@ -91,10 +93,15 @@ export async function updateContact(id, field, value) {
   }
 }
 
-export async function createContact(fields) {
+export async function createContact(fields, userEmail = null) {
   if (!base) return null;
   try {
-    const record = await base("Contacts").create(fields);
+    const createFields = { ...fields };
+    if (userEmail) {
+      createFields["Creating Site User Email"] = userEmail;
+      createFields["Last Site User Email"] = userEmail;
+    }
+    const record = await base("Contacts").create(createFields);
     return formatRecord(record);
   } catch (err) {
     console.error("createContact error:", err.message);
@@ -151,12 +158,14 @@ export async function updateOpportunity(id, field, value) {
   }
 }
 
-export async function updateRecordInTable(tableName, id, field, value) {
+export async function updateRecordInTable(tableName, id, field, value, userEmail = null) {
   if (!base) return null;
   try {
-    const record = await base(tableName).update(id, {
-      [field]: value
-    });
+    const updateFields = { [field]: value };
+    if (userEmail && tableName === "Contacts") {
+      updateFields["Last Site User Email"] = userEmail;
+    }
+    const record = await base(tableName).update(id, updateFields);
     return formatRecord(record);
   } catch (err) {
     console.error(`updateRecordInTable(${tableName}) error:`, err.message);

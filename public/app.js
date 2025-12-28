@@ -19,13 +19,6 @@
        const display = email ? email : "Unknown";
        document.getElementById('debugUser').innerText = display;
        document.getElementById('userEmail').innerText = email || "Not signed in";
-       const avatar = document.getElementById('userAvatar');
-       if (email && email.includes('@')) {
-          const initials = email.split('@')[0].slice(0, 2).toUpperCase();
-          avatar.innerText = initials;
-       } else {
-          avatar.innerText = "?";
-       }
        if (!email) alert("Warning: The system cannot detect your email address.");
     }).getEffectiveUserEmail();
   }

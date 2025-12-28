@@ -22,11 +22,23 @@ export async function getContactById(id) {
   if (!base) return null;
   try {
     const record = await base("Contacts").find(id);
-    return formatRecord(record);
+    const formatted = formatRecord(record);
+    console.log("Contact fields available:", Object.keys(formatted.fields));
+    return formatted;
   } catch (err) {
     console.error("getContactById error:", err.message);
     return null;
   }
+}
+
+function parseModifiedDate(modifiedText) {
+  if (!modifiedText) return new Date(0);
+  const match = modifiedText.match(/(\d{2}):(\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
+  if (match) {
+    const [, hours, mins, day, month, year] = match;
+    return new Date(year, month - 1, day, hours, mins);
+  }
+  return new Date(0);
 }
 
 export async function getRecentContacts() {
@@ -34,11 +46,16 @@ export async function getRecentContacts() {
   try {
     const records = await base("Contacts")
       .select({
-        maxRecords: 50,
-        sort: [{ field: "Modified", direction: "desc" }]
+        maxRecords: 100
       })
       .all();
-    return records.map(formatRecord);
+    const formatted = records.map(formatRecord);
+    formatted.sort((a, b) => {
+      const dateA = parseModifiedDate(a.fields.Modified);
+      const dateB = parseModifiedDate(b.fields.Modified);
+      return dateB - dateA;
+    });
+    return formatted.slice(0, 50);
   } catch (err) {
     console.error("getRecentContacts error:", err.message);
     return [];

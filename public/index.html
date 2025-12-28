@@ -56,13 +56,13 @@
             <div class="profile-top">
               <div class="profile-top-left">
                 <div class="row">
-                  <div class="field-group"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
-                  <div class="field-group"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
-                  <div class="field-group"><label>Last Name</label><input type="text" name="lastName" id="lastName" class="locked" readonly required></div>
+                  <div class="field-group" style="flex:0.8;"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
+                  <div class="field-group" style="flex:0.6;"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
+                  <div class="field-group" style="flex:0.8;"><label>Last Name</label><input type="text" name="lastName" id="lastName" class="locked" readonly required></div>
+                  <div class="field-group" style="flex:0.6;"><label>Preferred</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
+                  <div class="field-group" style="flex:0.7;"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
                 </div>
                 <div class="row">
-                   <div class="field-group"><label>Preferred Name</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
-                   <div class="field-group"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
                    <div class="field-group"><label>Email</label><input type="email" name="email1" id="email1" class="locked" readonly></div>
                 </div>
               </div>
@@ -102,8 +102,7 @@
       <div class="column list-section">
         <h2>Directory</h2>
         <input type="text" id="searchInput" placeholder="Search..." onkeyup="handleSearch(event)">
-        <div id="listLabel" class="list-label">Recently Modified</div>
-        <div id="searchStatus" style="font-size:11px; color:#666; height:15px; margin-bottom:5px; text-align:right;"></div>
+                <div id="searchStatus" style="font-size:11px; color:#666; height:15px; margin-bottom:5px; text-align:right;"></div>
         <div id="loading">Loading directory...</div>
         <ul id="contactList"></ul>
       </div>

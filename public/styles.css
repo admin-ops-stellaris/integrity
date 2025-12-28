@@ -28,9 +28,7 @@
   .hide-link:hover { color: var(--color-trail); border-color: var(--color-trail); }
 
   /* FORM */
-  .profile-top { width: 100%; display: flex; gap: 30px; border-bottom: 2px solid var(--color-border); padding-bottom: 20px; margin-bottom: 0; }
-  .profile-top-left { flex: 1.5; } 
-  .profile-top-right { flex: 1; display: flex; flex-direction: column; } 
+  .profile-top { width: 100%; display: flex; flex-direction: column; gap: 10px; border-bottom: 2px solid var(--color-border); padding-bottom: 20px; margin-bottom: 0; } 
   .save-row { width: 100%; display: none; justify-content: center; align-items: center; margin-top: 15px; margin-bottom: 25px; }
   .profile-bottom { display: flex; gap: 40px; flex: 1; min-height: 0; }
   .profile-bottom-left { flex: 1; display: flex; flex-direction: column; }

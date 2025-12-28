@@ -31,8 +31,8 @@
   .profile-top { width: 100%; display: flex; flex-direction: column; gap: 10px; border-bottom: 2px solid var(--color-border); padding-bottom: 20px; margin-bottom: 0; } 
   .save-row { width: 100%; display: none; justify-content: center; align-items: center; margin-top: 15px; margin-bottom: 25px; }
   .profile-bottom { display: flex; gap: 40px; flex: 1; min-height: 0; }
-  .profile-bottom-left { flex: 0 0 40%; display: flex; flex-direction: column; }
-  .profile-bottom-right { flex: 0 0 60%; border-left: 1px dashed var(--color-border); padding-left: 40px; display: flex; flex-direction: column; }
+  .profile-bottom-left { flex: 2; display: flex; flex-direction: column; }
+  .profile-bottom-right { flex: 3; border-left: 1px dashed var(--color-border); padding-left: 40px; display: flex; flex-direction: column; }
   .row { display: flex; gap: 15px; }
   .field-group { flex: 1; }
   label { font-size: 9px; font-weight: 500; color: #AAA; display: block; margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }

@@ -12,6 +12,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
+// Fail fast if any required env var is missing
 for (const [k, v] of Object.entries({
   ALLOWED_GOOGLE_DOMAIN,
   GOOGLE_CLIENT_ID,
@@ -24,24 +25,42 @@ for (const [k, v] of Object.entries({
 const CALLBACK_PATH = "/auth/google/callback";
 const app = express();
 
+/**
+ * CRITICAL on Fly (and most cloud hosting):
+ * This tells Express to trust X-Forwarded-* headers set by the reverse proxy.
+ * Without this, Express may think requests are http (not https),
+ * which can break secure cookies used by OAuth flows.
+ */
+app.set("trust proxy", 1);
+
 app.use(express.json());
+
+/**
+ * Session cookie settings suitable for OAuth:
+ * - sameSite: "lax" allows the cookie to be sent on the top-level redirect back from Google
+ * - secure: true ensures cookies are only used over HTTPS
+ *
+ * NOTE: This assumes your app is accessed via HTTPS (Fly dev/prod are HTTPS).
+ * If you later test locally over plain http://localhost, secure cookies won’t be stored by the browser.
+ */
 app.use(
   cookieSession({
     name: "integrity_session",
     keys: [SESSION_SECRET],
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     maxAge: 1000 * 60 * 60 * 10, // 10 hours
-  }),
+  })
 );
 
 let clientCache = new Map();
 
 function getBaseUrl(req) {
-  const proto = req.headers["x-forwarded-proto"] || req.protocol;
+  // With trust proxy enabled, req.protocol respects X-Forwarded-Proto.
+  // We still prefer forwarded host if present.
   const host = req.headers["x-forwarded-host"] || req.get("host");
-  return `${proto}://${host}`;
+  return `${req.protocol}://${host}`;
 }
 
 async function getClient(baseUrl) {
@@ -67,13 +86,15 @@ app.get("/auth/google", async (req, res, next) => {
 
     const state = generators.state();
     const nonce = generators.nonce();
+
+    // Store OAuth "handshake" data in the session cookie
     req.session.oauth = { state, nonce, baseUrl };
 
     const authUrl = client.authorizationUrl({
       scope: "openid email profile",
       state,
       nonce,
-      hd: ALLOWED_GOOGLE_DOMAIN, // hint only
+      hd: ALLOWED_GOOGLE_DOMAIN, // hint only; not enforced by Google
       prompt: "select_account",
     });
 
@@ -86,6 +107,9 @@ app.get("/auth/google", async (req, res, next) => {
 app.get(CALLBACK_PATH, async (req, res, next) => {
   try {
     const oauth = req.session?.oauth;
+
+    // If the session cookie was not preserved through the redirect flow,
+    // this will be missing.
     if (!oauth?.state || !oauth?.nonce || !oauth?.baseUrl) {
       return res.status(400).send("Missing auth session. Try again.");
     }
@@ -96,7 +120,7 @@ app.get(CALLBACK_PATH, async (req, res, next) => {
     const tokenSet = await client.callback(
       `${oauth.baseUrl}${CALLBACK_PATH}`,
       params,
-      { state: oauth.state, nonce: oauth.nonce },
+      { state: oauth.state, nonce: oauth.nonce }
     );
 
     const claims = tokenSet.claims();
@@ -113,8 +137,8 @@ app.get(CALLBACK_PATH, async (req, res, next) => {
       picture: claims.picture,
       hd: claims.hd,
     };
-    delete req.session.oauth;
 
+    delete req.session.oauth;
     res.redirect("/");
   } catch (e) {
     next(e);
@@ -131,23 +155,31 @@ function requireAuth(req, res, next) {
   return res.redirect("/auth/google");
 }
 
-// ---- Option A: gate everything ----
+// ---- Gate everything ----
 app.use(requireAuth);
 
-// After auth, serve static files
+// API health (after auth)
 app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
     app: "Integrity",
     user: req.session?.user?.email || null,
-    ts: new Date().toISOString()
+    ts: new Date().toISOString(),
   });
 });
+
+// After auth, serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
 // SPA fallback
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Error handler (helps debugging OAuth failures)
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).send("Server error.");
 });
 
 const port = Number(process.env.PORT) || 3000;

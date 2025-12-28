@@ -514,12 +514,17 @@
 
     google.script.run.withSuccessHandler(function(records) {
          clearTimeout(loadingTimer); document.getElementById('loading').style.display = 'none';
-         if (!records || records.length === 0) { list.innerHTML = '<li style="padding:20px; color:#999; text-align:center; font-size:13px;">No contacts found</li>'; return; }
+         if (!records || records.length === 0) { 
+           list.innerHTML = '<li style="padding:20px; color:#999; text-align:center; font-size:13px;">No contacts found</li>'; 
+           return; 
+         }
          renderList(records);
       }).getRecentContacts();
   }
   function renderList(records) {
-    const list = document.getElementById('contactList'); document.getElementById('loading').style.display = 'none'; list.innerHTML = '';
+    const list = document.getElementById('contactList'); 
+    document.getElementById('loading').style.display = 'none'; 
+    list.innerHTML = '';
     records.forEach(record => {
       const f = record.fields; const item = document.createElement('li'); item.className = 'contact-item';
       item.innerHTML = `<span class="contact-name">${formatName(f)}</span><span class="contact-detail">${formatDetails(f)}</span>`;

@@ -1,4 +1,9 @@
-  :root { --font-heading: 'Libre Baskerville', serif; --font-body: 'Lato', sans-serif; --color-trail: #2C2622; --color-midnight: #19414C; --color-star: #BB9934; --color-cedar: #7B8B64; --color-salt: #F2F0E9; --color-sky: #D0DFE6; --color-white: #FFFFFF; --color-border: #D1D1D1; --shadow-soft: 0 4px 20px rgba(0,0,0,0.15); }
+  @font-face { font-family: 'Libre Baskerville'; src: url('fonts/LibreBaskerville-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Libre Baskerville'; src: url('fonts/LibreBaskerville-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Libre Baskerville'; src: url('fonts/LibreBaskerville-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Geist'; src: url('fonts/Geist-VariableFont_wght.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
+
+:root { --font-heading: 'Libre Baskerville', serif; --font-body: 'Geist', sans-serif; --color-trail: #2C2622; --color-midnight: #19414C; --color-star: #BB9934; --color-cedar: #7B8B64; --color-salt: #F2F0E9; --color-sky: #D0DFE6; --color-white: #FFFFFF; --color-border: #D1D1D1; --shadow-soft: 0 4px 20px rgba(0,0,0,0.15); }
   body { font-family: var(--font-body); margin: 0; padding: 0; height: 100vh; color: var(--color-trail); background-color: var(--color-trail); background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/01%20-%20Boranup%20Karri%20Forest%20original.jpg"); background-size: cover; background-position: center; background-attachment: fixed; display: flex; flex-direction: column; overflow: hidden; }
 
   /* LAYOUT */

@@ -11,9 +11,10 @@ Integrity is a Stellaris Finance Broking contact management system (CRM). Origin
 ├── data.js                # Legacy mock data store (not used in production)
 ├── public/                # Static frontend files
 │   ├── index.html         # Main HTML page
-│   ├── styles.css         # Stylesheet
+│   ├── styles.css         # Stylesheet (with custom font definitions)
 │   ├── app.js             # Frontend JavaScript (CRM logic)
-│   └── gas-shim.js        # Google Apps Script compatibility layer
+│   ├── gas-shim.js        # Google Apps Script compatibility layer
+│   └── fonts/             # Custom fonts (Geist, Libre Baskerville)
 ├── Dockerfile             # Docker configuration for Fly.io deployment
 ├── fly.toml               # Fly.io deployment configuration
 ├── package.json           # Node.js dependencies
@@ -74,6 +75,8 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- December 28, 2025: Added custom fonts (Geist for body, Libre Baskerville for headings)
+- December 28, 2025: Fixed sorting to use "Modified On" field (proper datetime, not text formula)
 - December 28, 2025: Added Opportunity edit support (updateOpportunity for linked records)
 - December 28, 2025: Auto-detect Replit environment (AUTH_DISABLED automatic in Replit, OAuth enforced on Fly.io)
 - December 28, 2025: Added Airtable integration replacing mock data with real database

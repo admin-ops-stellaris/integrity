@@ -45,15 +45,12 @@ export async function getRecentContacts() {
   if (!base) return [];
   try {
     const records = await base("Contacts")
-      .select({ maxRecords: 100 })
+      .select({
+        maxRecords: 50,
+        sort: [{ field: "Modified On", direction: "desc" }]
+      })
       .all();
-    const formatted = records.map(formatRecord);
-    formatted.sort((a, b) => {
-      const dateA = parseModifiedDate(a.fields.Modified);
-      const dateB = parseModifiedDate(b.fields.Modified);
-      return dateB - dateA;
-    });
-    return formatted.slice(0, 50);
+    return records.map(formatRecord);
   } catch (err) {
     console.error("getRecentContacts error:", err.message);
     return [];

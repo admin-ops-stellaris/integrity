@@ -35,7 +35,9 @@ Integrity is a Stellaris Finance Broking contact management system (CRM). Origin
 - `AIRTABLE_BASE_ID` - Airtable Base ID
 
 ### Development Mode
-- `AUTH_DISABLED=true` - Bypasses Google OAuth for local development (uses mock user)
+- Authentication is automatically disabled in Replit (detected via REPL_ID environment variable)
+- To force OAuth in Replit: set `AUTH_DISABLED=false`
+- On Fly.io (production): OAuth is automatically enabled since REPL_ID is not present
 
 ## Authentication
 - Google OAuth 2.0 with domain restriction (only allows users from ALLOWED_GOOGLE_DOMAIN)
@@ -72,6 +74,8 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- December 28, 2025: Added Opportunity edit support (updateOpportunity for linked records)
+- December 28, 2025: Auto-detect Replit environment (AUTH_DISABLED automatic in Replit, OAuth enforced on Fly.io)
 - December 28, 2025: Added Airtable integration replacing mock data with real database
 - December 28, 2025: Restored Google OAuth with dev-mode bypass option
 - December 28, 2025: Updated Dockerfile and fly.toml to use port 5000

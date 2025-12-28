@@ -12,7 +12,8 @@ const ALLOWED_GOOGLE_DOMAIN = process.env.ALLOWED_GOOGLE_DOMAIN;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-secret";
-const AUTH_DISABLED = process.env.AUTH_DISABLED === "true";
+const IS_REPLIT = !!process.env.REPL_ID;
+const AUTH_DISABLED = process.env.AUTH_DISABLED === "true" || (IS_REPLIT && process.env.AUTH_DISABLED !== "false");
 
 if (!AUTH_DISABLED) {
   for (const [k, v] of Object.entries({
@@ -204,6 +205,8 @@ app.post("/api/updateRecord", async (req, res) => {
     const [table, id, field, value] = req.body.args || [];
     if (table === "Contacts") {
       await airtable.updateContact(id, field, value);
+    } else if (table === "Opportunities") {
+      await airtable.updateOpportunity(id, field, value);
     }
     res.json({ success: true });
   } catch (err) {

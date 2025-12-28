@@ -75,6 +75,9 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- December 28, 2025: Added user email tracking - logged-in user's email automatically populates Creating/Last Site User Email fields in Airtable
+- December 28, 2025: Modernized header banner with dark gradient (trail to midnight), slimmer profile, gold title
+- December 28, 2025: Reorganized contact form - Mobile moved to share row with Email
 - December 28, 2025: Added custom fonts (Geist for body, Libre Baskerville for headings)
 - December 28, 2025: Fixed sorting to use "Modified On" field (proper datetime, not text formula)
 - December 28, 2025: Added Opportunity edit support (updateOpportunity for linked records)

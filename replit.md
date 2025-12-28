@@ -12,6 +12,8 @@ Integrity is a Stellaris Finance Broking contact management system (CRM). Origin
 │   ├── styles.css     # Stylesheet
 │   ├── app.js         # Frontend JavaScript (CRM logic)
 │   └── gas-shim.js    # Google Apps Script compatibility layer
+├── Dockerfile         # Docker configuration for Fly.io deployment
+├── fly.toml           # Fly.io deployment configuration
 ├── package.json       # Node.js dependencies
 └── README.md          # Project description
 ```
@@ -38,6 +40,7 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Cache-busting query strings are used on script tags to ensure fresh JavaScript loads
 
 ## Recent Changes
+- December 28, 2025: Updated Dockerfile and fly.toml to use port 5000 (was 3000) to prevent Replit auto-adding conflicting port mappings
 - December 28, 2025: Fixed race condition in gas-shim.js causing Directory to not load contacts
 - December 28, 2025: Added cache-busting to script tags for reliable updates
 - December 28, 2025: Fixed port configuration for Replit webview compatibility

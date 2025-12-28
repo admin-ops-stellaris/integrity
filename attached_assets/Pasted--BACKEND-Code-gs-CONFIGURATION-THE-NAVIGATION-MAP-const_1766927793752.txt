@@ -1,0 +1,286 @@
+// --- BACKEND (Code.gs) ---
+
+// *** CONFIGURATION: THE NAVIGATION MAP ***
+const SCHEMA = {
+  
+  'Opportunities': {
+    fields: [
+      { key: 'Opportunity Name', label: 'Opportunity Name' },
+      { key: 'Primary Applicant', nameKey: 'Primary Applicant Name', table: 'Contacts', label: 'Primary Applicant' },
+      { key: 'Applicants', nameKey: 'Applicants Name', table: 'Contacts', label: 'Applicants' },
+      { key: 'Guarantors', nameKey: 'Guarantors Name', table: 'Contacts', label: 'Guarantors' },
+      { key: 'Loan Applications', nameKey: 'Loan Applications Name', table: 'Loan Applications', label: 'Loan Applications' },
+      { key: 'Tasks', nameKey: 'Tasks Name', table: 'Tasks', label: 'Tasks' },
+      { key: 'Description', label: 'Description', type: 'long-text' },
+      { key: 'CustomerIdName', label: 'Customer ID Name' }
+    ]
+  },
+
+  'Loan Applications': {
+    fields: [
+      { key: 'Name', label: 'Application Name' },
+      { key: 'Status', label: 'Status' },
+      { key: 'Lender', nameKey: 'Lender Name', table: 'Lenders', label: 'Lender' },
+      { key: 'Opportunity', nameKey: 'Opportunity Name', table: 'Opportunities', label: 'Linked Opportunity' }
+    ]
+  },
+  
+  'Tasks': {
+    fields: [
+      { key: 'Name', label: 'Task Name' },
+      { key: 'Status', label: 'Status' },
+      { key: 'Due Date', label: 'Due Date' },
+      { key: 'Opportunity', nameKey: 'Opportunity Name', table: 'Opportunities', label: 'Linked Opportunity' }
+    ]
+  },
+
+  'Contacts': {
+    fields: [
+      { key: 'FirstName', label: 'First Name' },
+      { key: 'LastName', label: 'Last Name' },
+      { key: 'Mobile', label: 'Mobile' },
+      { key: 'EmailAddress1', label: 'Email' }
+    ]
+  },
+  
+  'Lenders': {
+    fields: [
+      { key: 'Name', label: 'Lender Name' },
+      { key: 'BDM Name', label: 'BDM' },
+      { key: 'Phone', label: 'Phone' }
+    ]
+  }
+};
+
+function doGet() {
+  // CHANGED: createTemplateFromFile + .evaluate() is required for <?!= ?> tags to work
+  return HtmlService.createTemplateFromFile('index')
+      .evaluate()
+      .setTitle("Integrity - Stellaris FB")
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function getAirtableConfig() {
+  const props = PropertiesService.getScriptProperties();
+  return {
+    key: props.getProperty('AIRTABLE_API_KEY'),
+    base: props.getProperty('AIRTABLE_BASE_ID'),
+    contactsTable: 'Contacts',
+    oppsTable: 'Opportunities',
+    usersTable: 'Users',
+    spouseHistoryTable: 'Spouse History'
+  };
+}
+
+// --- HELPER: MAP EMAIL -> NAME ---
+function getUserNameMap(config) {
+  const url = `https://api.airtable.com/v0/${config.base}/${config.usersTable}?fields%5B%5D=Name&fields%5B%5D=Email`;
+  const options = { method: 'GET', headers: { 'Authorization': `Bearer ${config.key}` } };
+  try {
+    const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
+    const map = {};
+    if (response.records) {
+      response.records.forEach(r => {
+        const email = r.fields.Email;
+        const name = r.fields.Name; 
+        if (email && name) map[email.toLowerCase()] = name;
+      });
+    }
+    return map;
+  } catch (e) { return {}; }
+}
+
+// 1. SEARCH
+function searchContacts(userQuery) {
+  const config = getAirtableConfig();
+  if (!userQuery || userQuery.trim().length === 0) return [];
+  const cleanQuery = userQuery.toLowerCase().trim();
+  const searchTerms = cleanQuery.split(/\s+/); 
+  const formulaParts = searchTerms.map(term => `FIND('${term}', {SEARCH_INDEX})`);
+  const finalFormula = `AND(${formulaParts.join(',')})`;
+  const url = `https://api.airtable.com/v0/${config.base}/${config.contactsTable}?filterByFormula=${encodeURIComponent(finalFormula)}`;
+  const options = { method: 'GET', headers: { 'Authorization': `Bearer ${config.key}` } };
+  try {
+    const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
+    return response.records;
+  } catch(e) { return []; }
+}
+
+// 2. READ RECENT
+function getRecentContacts() {
+  const config = getAirtableConfig();
+  const url = `https://api.airtable.com/v0/${config.base}/${config.contactsTable}?pageSize=20&sort[0][field]=Modified%20On&sort[0][direction]=desc`;
+  const options = { method: 'GET', headers: { 'Authorization': `Bearer ${config.key}` } };
+  try {
+    const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
+    return response.records;
+  } catch(e) { return []; }
+}
+
+// 3. GET SINGLE CONTACT BY ID
+function getContactById(recordId) {
+  const config = getAirtableConfig();
+  const url = `https://api.airtable.com/v0/${config.base}/${config.contactsTable}/${recordId}`;
+  const options = { method: 'GET', headers: { 'Authorization': `Bearer ${config.key}` } };
+  try {
+    const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
+    return response; 
+  } catch(e) { throw new Error("Could not fetch contact: " + e.message); }
+}
+
+// 4. GET OPPORTUNITY LIST
+function getLinkedOpportunities(oppIds) {
+  const config = getAirtableConfig();
+  if (!oppIds || !Array.isArray(oppIds) || oppIds.length === 0) return [];
+  const formulaParts = oppIds.map(id => `RECORD_ID()='${id}'`);
+  const formula = `OR(${formulaParts.join(',')})`;
+  const url = `https://api.airtable.com/v0/${config.base}/${config.oppsTable}?filterByFormula=${encodeURIComponent(formula)}&fields%5B%5D=Opportunity%20Name&fields%5B%5D=Created%20On`;
+  const options = { method: 'GET', headers: { 'Authorization': `Bearer ${config.key}` } };
+  try {
+    const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
+    return response.records; 
+  } catch (e) { return []; }
+}
+
+// 5. GET GENERIC RECORD DETAIL (Panel View)
+function getRecordDetail(tableName, recordId) {
+  const config = getAirtableConfig();
+  if (!SCHEMA[tableName]) return { title: "Unknown Record", data: [{ label: "Error", value: `Table '${tableName}' not configured.` }] };
+  
+  const schemaDef = SCHEMA[tableName];
+  const url = `https://api.airtable.com/v0/${config.base}/${tableName}/${recordId}`;
+  const options = { method: 'GET', headers: { 'Authorization': `Bearer ${config.key}` } };
+  
+  try {
+    const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
+    const rawFields = response.fields;
+    const processedData = [];
+
+    schemaDef.fields.forEach(fieldDef => {
+      const val = rawFields[fieldDef.key];
+      // IMPORTANT: Pass the 'key' (Airtable Field Name) back to frontend so we can edit it later
+      if (fieldDef.table && fieldDef.nameKey) {
+        const ids = Array.isArray(val) ? val : [];
+        const names = rawFields[fieldDef.nameKey] || []; 
+        const links = ids.map((id, index) => {
+          let name = "Unknown";
+          if (Array.isArray(names)) name = names[index] || "Unknown";
+          else if (index === 0) name = names; 
+          return { id: id, name: name, table: fieldDef.table };
+        });
+        processedData.push({ key: fieldDef.key, label: fieldDef.label, value: links, type: 'link' });
+      } else {
+        processedData.push({ key: fieldDef.key, label: fieldDef.label, value: val, type: fieldDef.type || 'text' });
+      }
+    });
+
+    return { 
+      title: rawFields[schemaDef.fields[0].key] || "Details", 
+      data: processedData 
+    };
+  } catch (e) { throw new Error("Could not load record: " + e.message); }
+}
+
+// 6. GENERIC UPDATE RECORD
+function updateRecord(tableName, recordId, fieldKey, newValue) {
+  const config = getAirtableConfig();
+  if (!SCHEMA[tableName]) throw new Error("Table not allowed.");
+
+  const payload = { "fields": { [fieldKey]: newValue } };
+  const url = `https://api.airtable.com/v0/${config.base}/${tableName}/${recordId}`;
+  
+  const options = {
+    "method": "PATCH",
+    "headers": { "Authorization": `Bearer ${config.key}`, "Content-Type": "application/json" },
+    "payload": JSON.stringify(payload)
+  };
+
+  try {
+    UrlFetchApp.fetch(url, options);
+    return newValue;
+  } catch(e) { throw new Error("Update failed: " + e.message); }
+}
+
+// 7. SET SPOUSE STATUS
+function setSpouseStatus(contact1Id, contact2Id, statusType) {
+  const config = getAirtableConfig();
+  const payload = {
+    "fields": {
+      "Contact 1": [contact1Id],
+      "Contact 2": [contact2Id],
+      "Connected or Disconnected": statusType
+    }
+  };
+  const url = `https://api.airtable.com/v0/${config.base}/${config.spouseHistoryTable}`;
+  const options = { "method": "POST", "headers": { "Authorization": `Bearer ${config.key}`, "Content-Type": "application/json" }, "payload": JSON.stringify(payload) };
+  try {
+    UrlFetchApp.fetch(url, options);
+    return "History record created.";
+  } catch(e) { throw new Error("Failed to update spouse history: " + e.message); }
+}
+
+// 8. CREATE or UPDATE CONTACT
+function processForm(formObject) {
+  const config = getAirtableConfig();
+  const activeUserEmail = Session.getActiveUser().getEmail();
+  const userMap = getUserNameMap(config);
+  const activeUserName = userMap[activeUserEmail.toLowerCase()] || activeUserEmail; 
+
+  if (!formObject.recordId) {
+    const fName = formObject.firstName || "";
+    const mName = formObject.middleName || "";
+    const lName = formObject.lastName || "";
+    const email = formObject.email1 || "";
+
+    if (email) {
+      const duplicateFormula = `AND(LOWER({FirstName})='${fName.toLowerCase()}',LOWER({MiddleName})='${mName.toLowerCase()}',LOWER({LastName})='${lName.toLowerCase()}',{EmailAddress1}='${email}')`;
+      const checkUrl = `https://api.airtable.com/v0/${config.base}/${config.contactsTable}?filterByFormula=${encodeURIComponent(duplicateFormula)}`;
+      const checkOptions = { method: 'GET', headers: { 'Authorization': `Bearer ${config.key}` } };
+      try {
+        const checkRes = JSON.parse(UrlFetchApp.fetch(checkUrl, checkOptions).getContentText());
+        if (checkRes.records.length > 0) throw new Error("Duplicate: A contact with this exact Name and Email already exists.");
+      } catch (e) { if (e.message.includes("Duplicate")) throw e; }
+    }
+  }
+
+  const fields = {
+    "FirstName": formObject.firstName,
+    "MiddleName": formObject.middleName,
+    "LastName": formObject.lastName,
+    "PreferredName": formObject.preferredName,
+    "Mobile": formObject.mobilePhone, 
+    "EmailAddress1": formObject.email1, 
+    "Description": formObject.description,
+    "Last Site User Email": activeUserEmail,
+    "Last Site User Name": activeUserName 
+  };
+
+  if (!formObject.recordId) {
+    fields["Creating Site User Email"] = activeUserEmail;
+    fields["Creating Site User Name"] = activeUserName;
+  }
+
+  const payload = { "fields": fields };
+  let url, method;
+  if (formObject.recordId) {
+    url = `https://api.airtable.com/v0/${config.base}/${config.contactsTable}/${formObject.recordId}`;
+    method = 'PATCH';
+  } else {
+    url = `https://api.airtable.com/v0/${config.base}/${config.contactsTable}`;
+    method = 'POST';
+  }
+
+  const options = { "method": method, "headers": { "Authorization": `Bearer ${config.key}`, "Content-Type": "application/json" }, "payload": JSON.stringify(payload) };
+  try {
+    UrlFetchApp.fetch(url, options);
+    return formObject.recordId ? "Contact updated!" : "Contact created!";
+  } catch(e) { throw new Error(e.message); }
+}
+
+function getEffectiveUserEmail() { return Session.getActiveUser().getEmail(); }
+
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename)
+      .getContent();
+}

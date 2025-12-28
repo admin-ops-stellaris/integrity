@@ -203,11 +203,7 @@ app.post("/api/getContactById", async (req, res) => {
 app.post("/api/updateRecord", async (req, res) => {
   try {
     const [table, id, field, value] = req.body.args || [];
-    if (table === "Contacts") {
-      await airtable.updateContact(id, field, value);
-    } else if (table === "Opportunities") {
-      await airtable.updateOpportunity(id, field, value);
-    }
+    await airtable.updateRecordInTable(table, id, field, value);
     res.json({ success: true });
   } catch (err) {
     console.error("updateRecord error:", err);
@@ -284,61 +280,89 @@ app.post("/api/processForm", async (req, res) => {
   }
 });
 
+const SCHEMA = {
+  'Opportunities': {
+    fields: [
+      { key: 'Opportunity Name', label: 'Opportunity Name' },
+      { key: 'Primary Applicant', nameKey: 'Primary Applicant Name', table: 'Contacts', label: 'Primary Applicant' },
+      { key: 'Applicants', nameKey: 'Applicants Name', table: 'Contacts', label: 'Applicants' },
+      { key: 'Guarantors', nameKey: 'Guarantors Name', table: 'Contacts', label: 'Guarantors' },
+      { key: 'Loan Applications', nameKey: 'Loan Applications Name', table: 'Loan Applications', label: 'Loan Applications' },
+      { key: 'Tasks', nameKey: 'Tasks Name', table: 'Tasks', label: 'Tasks' },
+      { key: 'Description', label: 'Description', type: 'long-text' },
+      { key: 'CustomerIdName', label: 'Customer ID Name' }
+    ]
+  },
+  'Loan Applications': {
+    fields: [
+      { key: 'Name', label: 'Application Name' },
+      { key: 'Status', label: 'Status' },
+      { key: 'Lender', nameKey: 'Lender Name', table: 'Lenders', label: 'Lender' },
+      { key: 'Opportunity', nameKey: 'Opportunity Name', table: 'Opportunities', label: 'Linked Opportunity' }
+    ]
+  },
+  'Tasks': {
+    fields: [
+      { key: 'Name', label: 'Task Name' },
+      { key: 'Status', label: 'Status' },
+      { key: 'Due Date', label: 'Due Date' },
+      { key: 'Opportunity', nameKey: 'Opportunity Name', table: 'Opportunities', label: 'Linked Opportunity' }
+    ]
+  },
+  'Contacts': {
+    fields: [
+      { key: 'FirstName', label: 'First Name' },
+      { key: 'LastName', label: 'Last Name' },
+      { key: 'Mobile', label: 'Mobile' },
+      { key: 'EmailAddress1', label: 'Email' }
+    ]
+  },
+  'Lenders': {
+    fields: [
+      { key: 'Name', label: 'Lender Name' },
+      { key: 'BDM Name', label: 'BDM' },
+      { key: 'Phone', label: 'Phone' }
+    ]
+  }
+};
+
 app.post("/api/getRecordDetail", async (req, res) => {
   try {
-    const [table, id] = req.body.args || [];
+    const [tableName, id] = req.body.args || [];
     
-    if (table === "Opportunities") {
-      const opp = await airtable.getOpportunityById(id);
-      if (!opp) return res.json({ data: [], title: "Not Found" });
-      
-      const f = opp.fields;
-      const data = [];
-      
-      data.push({ key: "Opportunity Name", label: "Opportunity Name", value: f["Opportunity Name"] || "", type: "text" });
-      
-      const formatLinkedContacts = async (ids, names) => {
-        if (!ids || ids.length === 0) return [];
-        const nameArr = names || [];
-        return ids.map((id, i) => ({ id, name: nameArr[i] || "Unknown", table: "Contacts" }));
-      };
-      
-      data.push({ 
-        key: "Primary Applicant", 
-        label: "Primary Applicant", 
-        value: await formatLinkedContacts(f["Primary Applicant"], f["Primary Applicant Name"]),
-        type: "link"
-      });
-      data.push({ 
-        key: "Applicants", 
-        label: "Applicants", 
-        value: await formatLinkedContacts(f["Applicants"], f["Applicants Name"]),
-        type: "link"
-      });
-      data.push({ 
-        key: "Guarantors", 
-        label: "Guarantors", 
-        value: await formatLinkedContacts(f["Guarantors"], f["Guarantors Name"]),
-        type: "link"
-      });
-      
-      res.json({ title: f["Opportunity Name"] || "Opportunity", data });
-    } else if (table === "Contacts") {
-      const contact = await airtable.getContactById(id);
-      if (!contact) return res.json({ data: [], title: "Not Found" });
-      
-      const f = contact.fields;
-      const fullName = [f.FirstName, f.MiddleName, f.LastName].filter(Boolean).join(" ");
-      const data = [
-        { key: "Name", label: "Name", value: fullName, type: "text" },
-        { key: "Email", label: "Email", value: f.EmailAddress1 || "", type: "text" },
-        { key: "Mobile", label: "Mobile", value: f.Mobile || "", type: "text" }
-      ];
-      
-      res.json({ title: f.PreferredName || f.FirstName || "Contact", data });
-    } else {
-      res.json({ data: [], title: "Unknown" });
+    if (!SCHEMA[tableName]) {
+      return res.json({ title: "Unknown Record", data: [{ label: "Error", value: `Table '${tableName}' not configured.` }] });
     }
+    
+    const schemaDef = SCHEMA[tableName];
+    const record = await airtable.getRecordFromTable(tableName, id);
+    if (!record) return res.json({ data: [], title: "Not Found" });
+    
+    const rawFields = record.fields;
+    const processedData = [];
+    
+    schemaDef.fields.forEach(fieldDef => {
+      const val = rawFields[fieldDef.key];
+      
+      if (fieldDef.table && fieldDef.nameKey) {
+        const ids = Array.isArray(val) ? val : [];
+        const names = rawFields[fieldDef.nameKey] || [];
+        const links = ids.map((recId, index) => {
+          let name = "Unknown";
+          if (Array.isArray(names)) name = names[index] || "Unknown";
+          else if (index === 0) name = names;
+          return { id: recId, name: name, table: fieldDef.table };
+        });
+        processedData.push({ key: fieldDef.key, label: fieldDef.label, value: links, type: 'link' });
+      } else {
+        processedData.push({ key: fieldDef.key, label: fieldDef.label, value: val, type: fieldDef.type || 'text' });
+      }
+    });
+    
+    res.json({ 
+      title: rawFields[schemaDef.fields[0].key] || "Details", 
+      data: processedData 
+    });
   } catch (err) {
     console.error("getRecordDetail error:", err);
     res.status(500).json({ error: err.message });

@@ -45,9 +45,7 @@ export async function getRecentContacts() {
   if (!base) return [];
   try {
     const records = await base("Contacts")
-      .select({
-        maxRecords: 100
-      })
+      .select({ maxRecords: 100 })
       .all();
     const formatted = records.map(formatRecord);
     formatted.sort((a, b) => {
@@ -118,6 +116,17 @@ export async function getOpportunityById(id) {
   }
 }
 
+export async function getRecordFromTable(tableName, id) {
+  if (!base) return null;
+  try {
+    const record = await base(tableName).find(id);
+    return formatRecord(record);
+  } catch (err) {
+    console.error(`getRecordFromTable(${tableName}) error:`, err.message);
+    return null;
+  }
+}
+
 export async function getOpportunitiesById(ids) {
   if (!base || !ids || ids.length === 0) return [];
   try {
@@ -141,6 +150,19 @@ export async function updateOpportunity(id, field, value) {
     return formatRecord(record);
   } catch (err) {
     console.error("updateOpportunity error:", err.message);
+    return null;
+  }
+}
+
+export async function updateRecordInTable(tableName, id, field, value) {
+  if (!base) return null;
+  try {
+    const record = await base(tableName).update(id, {
+      [field]: value
+    });
+    return formatRecord(record);
+  } catch (err) {
+    console.error(`updateRecordInTable(${tableName}) error:`, err.message);
     return null;
   }
 }

@@ -1,21 +1,23 @@
 # Integrity
 
 ## Overview
-Integrity is a Stellaris Finance Broking contact management system (CRM). Originally built for Google Apps Script, it has been adapted to run in Node.js/Express with an in-memory data store.
+Integrity is a Stellaris Finance Broking contact management system (CRM). Originally built for Google Apps Script, it has been adapted to run in Node.js/Express with Airtable as the backend database.
 
 ## Project Structure
 ```
-├── server.js          # Express server (main entry point)
-├── data.js            # In-memory contact data store with mock contacts
-├── public/            # Static frontend files
-│   ├── index.html     # Main HTML page
-│   ├── styles.css     # Stylesheet
-│   ├── app.js         # Frontend JavaScript (CRM logic)
-│   └── gas-shim.js    # Google Apps Script compatibility layer
-├── Dockerfile         # Docker configuration for Fly.io deployment
-├── fly.toml           # Fly.io deployment configuration
-├── package.json       # Node.js dependencies
-└── README.md          # Project description
+├── server.js              # Express server with Google OAuth and API endpoints
+├── services/
+│   └── airtable.js        # Airtable API integration layer
+├── data.js                # Legacy mock data store (not used in production)
+├── public/                # Static frontend files
+│   ├── index.html         # Main HTML page
+│   ├── styles.css         # Stylesheet
+│   ├── app.js             # Frontend JavaScript (CRM logic)
+│   └── gas-shim.js        # Google Apps Script compatibility layer
+├── Dockerfile             # Docker configuration for Fly.io deployment
+├── fly.toml               # Fly.io deployment configuration
+├── package.json           # Node.js dependencies
+└── README.md              # Project description
 ```
 
 ## Running the Application
@@ -23,9 +25,27 @@ Integrity is a Stellaris Finance Broking contact management system (CRM). Origin
 - Start command: `npm start`
 - Server binds to 0.0.0.0:5000 for Replit compatibility
 
+## Environment Variables
+### Required for Production
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `ALLOWED_GOOGLE_DOMAIN` - Google Workspace domain for access control
+- `SESSION_SECRET` - Secret for cookie session encryption
+- `AIRTABLE_API_KEY` - Airtable Personal Access Token
+- `AIRTABLE_BASE_ID` - Airtable Base ID
+
+### Development Mode
+- `AUTH_DISABLED=true` - Bypasses Google OAuth for local development (uses mock user)
+
+## Authentication
+- Google OAuth 2.0 with domain restriction (only allows users from ALLOWED_GOOGLE_DOMAIN)
+- Uses openid-client library for OAuth flow
+- Session stored in encrypted cookies (cookie-session)
+- Dev mode bypass available with AUTH_DISABLED=true
+
 ## API Endpoints
 All API endpoints use POST method with JSON body `{ args: [...] }`:
-- `POST /api/getRecentContacts` - Get list of recent contacts
+- `POST /api/getRecentContacts` - Get list of recent contacts from Airtable
 - `POST /api/searchContacts` - Search contacts by name
 - `POST /api/getContactById` - Get contact details by ID
 - `POST /api/updateRecord` - Update a contact field
@@ -33,15 +53,33 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - `POST /api/setSpouseStatus` - Link/unlink spouse relationships
 - `POST /api/getLinkedOpportunities` - Get opportunities linked to a contact
 - `POST /api/getEffectiveUserEmail` - Get current user email
+- `GET /api/health` - Health check endpoint
+
+## Airtable Integration
+- Uses official Airtable SDK
+- Tables: Contacts, Opportunities
+- All CRUD operations go through services/airtable.js
+- Graceful error handling with console logging
 
 ## Technical Notes
 - The `gas-shim.js` provides Google Apps Script compatibility, converting `google.script.run` calls to fetch API requests
 - The shim captures handlers per-call to prevent race conditions with concurrent API calls
-- Cache-busting query strings are used on script tags to ensure fresh JavaScript loads
+- Cache-control headers prevent caching issues in Replit's iframe preview
+
+## Deployment
+- **Development**: Replit with AUTH_DISABLED=true
+- **Production**: Fly.io with full OAuth enabled
+- Port 5000 used consistently across all environments
 
 ## Recent Changes
-- December 28, 2025: Updated Dockerfile and fly.toml to use port 5000 (was 3000) to prevent Replit auto-adding conflicting port mappings
+- December 28, 2025: Added Airtable integration replacing mock data with real database
+- December 28, 2025: Restored Google OAuth with dev-mode bypass option
+- December 28, 2025: Updated Dockerfile and fly.toml to use port 5000
 - December 28, 2025: Fixed race condition in gas-shim.js causing Directory to not load contacts
-- December 28, 2025: Added cache-busting to script tags for reliable updates
 - December 28, 2025: Fixed port configuration for Replit webview compatibility
 - December 27, 2025: Initial project setup with Express server and static frontend
+
+## User Preferences
+- Professional, production-ready setup with GitHub and Fly.io deployment
+- Security is important - Google Workspace OAuth for team access control
+- Future plans: Mercury CRM integration, WYSIWYG email editor, Slack integration, requirements tracking

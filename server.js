@@ -169,9 +169,7 @@ app.post("/api/getEffectiveUserEmail", (req, res) => {
 
 app.post("/api/getRecentContacts", async (req, res) => {
   try {
-    console.log("API: getRecentContacts called");
     const contacts = await airtable.getRecentContacts();
-    console.log("API: getRecentContacts returning", contacts.length, "contacts");
     res.json(contacts);
   } catch (err) {
     console.error("getRecentContacts error:", err);

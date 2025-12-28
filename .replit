@@ -43,4 +43,3 @@ run = ["node", "server.js"]
 AIRTABLE_BASE_ID = "app4J9eLjTyfk09eM"
 
 [userenv.development]
-AUTH_DISABLED = "true"

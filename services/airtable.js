@@ -67,16 +67,14 @@ export async function searchContacts(query) {
   if (!query || query.trim() === "") return getRecentContacts();
   
   try {
-    const q = query.toLowerCase();
+    const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+    const searchConditions = terms.map(term => `SEARCH("${term}", {SEARCH_INDEX})`);
+    const formula = terms.length === 1 
+      ? searchConditions[0]
+      : `AND(${searchConditions.join(", ")})`;
+    
     const records = await base("Contacts")
-      .select({
-        filterByFormula: `OR(
-          SEARCH("${q}", LOWER({FirstName})),
-          SEARCH("${q}", LOWER({LastName})),
-          SEARCH("${q}", LOWER({PreferredName})),
-          SEARCH("${q}", LOWER({EmailAddress1}))
-        )`
-      })
+      .select({ filterByFormula: formula })
       .all();
     return records.map(formatRecord);
   } catch (err) {
@@ -109,12 +107,23 @@ export async function createContact(fields) {
   }
 }
 
+export async function getOpportunityById(id) {
+  if (!base) return null;
+  try {
+    const record = await base("Opportunities").find(id);
+    return formatRecord(record);
+  } catch (err) {
+    console.error("getOpportunityById error:", err.message);
+    return null;
+  }
+}
+
 export async function getOpportunitiesById(ids) {
   if (!base || !ids || ids.length === 0) return [];
   try {
-    const filterFormula = `OR(${ids.map(id => `RECORD_ID()="${id}"`).join(",")})`;
+    const formula = `OR(${ids.map(id => `RECORD_ID()="${id}"`).join(",")})`;
     const records = await base("Opportunities")
-      .select({ filterByFormula })
+      .select({ filterByFormula: formula })
       .all();
     return records.map(formatRecord);
   } catch (err) {

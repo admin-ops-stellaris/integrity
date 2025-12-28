@@ -252,6 +252,99 @@ app.post("/api/getLinkedOpportunities", async (req, res) => {
   }
 });
 
+app.post("/api/processForm", async (req, res) => {
+  try {
+    const formData = req.body.args?.[0] || {};
+    const recordId = formData.recordId;
+    
+    const fields = {
+      FirstName: formData.firstName || "",
+      MiddleName: formData.middleName || "",
+      LastName: formData.lastName || "",
+      PreferredName: formData.preferredName || "",
+      Mobile: formData.mobilePhone || "",
+      EmailAddress1: formData.email1 || "",
+      Description: formData.description || ""
+    };
+    
+    if (recordId) {
+      for (const [field, value] of Object.entries(fields)) {
+        if (value !== undefined) {
+          await airtable.updateContact(recordId, field, value);
+        }
+      }
+      res.json("Contact updated successfully");
+    } else {
+      await airtable.createContact(fields);
+      res.json("Contact created successfully");
+    }
+  } catch (err) {
+    console.error("processForm error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getRecordDetail", async (req, res) => {
+  try {
+    const [table, id] = req.body.args || [];
+    
+    if (table === "Opportunities") {
+      const opp = await airtable.getOpportunityById(id);
+      if (!opp) return res.json({ data: [], title: "Not Found" });
+      
+      const f = opp.fields;
+      const data = [];
+      
+      data.push({ key: "Opportunity Name", label: "Opportunity Name", value: f["Opportunity Name"] || "", type: "text" });
+      
+      const formatLinkedContacts = async (ids, names) => {
+        if (!ids || ids.length === 0) return [];
+        const nameArr = names || [];
+        return ids.map((id, i) => ({ id, name: nameArr[i] || "Unknown", table: "Contacts" }));
+      };
+      
+      data.push({ 
+        key: "Primary Applicant", 
+        label: "Primary Applicant", 
+        value: await formatLinkedContacts(f["Primary Applicant"], f["Primary Applicant Name"]),
+        type: "link"
+      });
+      data.push({ 
+        key: "Applicants", 
+        label: "Applicants", 
+        value: await formatLinkedContacts(f["Applicants"], f["Applicants Name"]),
+        type: "link"
+      });
+      data.push({ 
+        key: "Guarantors", 
+        label: "Guarantors", 
+        value: await formatLinkedContacts(f["Guarantors"], f["Guarantors Name"]),
+        type: "link"
+      });
+      
+      res.json({ title: f["Opportunity Name"] || "Opportunity", data });
+    } else if (table === "Contacts") {
+      const contact = await airtable.getContactById(id);
+      if (!contact) return res.json({ data: [], title: "Not Found" });
+      
+      const f = contact.fields;
+      const fullName = [f.FirstName, f.MiddleName, f.LastName].filter(Boolean).join(" ");
+      const data = [
+        { key: "Name", label: "Name", value: fullName, type: "text" },
+        { key: "Email", label: "Email", value: f.EmailAddress1 || "", type: "text" },
+        { key: "Mobile", label: "Mobile", value: f.Mobile || "", type: "text" }
+      ];
+      
+      res.json({ title: f.PreferredName || f.FirstName || "Contact", data });
+    } else {
+      res.json({ data: [], title: "Unknown" });
+    }
+  } catch (err) {
+    console.error("getRecordDetail error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {

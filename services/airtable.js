@@ -34,7 +34,8 @@ export async function getRecentContacts() {
   try {
     const records = await base("Contacts")
       .select({
-        maxRecords: 50
+        maxRecords: 50,
+        sort: [{ field: "Modified", direction: "desc" }]
       })
       .all();
     return records.map(formatRecord);

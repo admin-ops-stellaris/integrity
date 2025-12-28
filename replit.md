@@ -76,7 +76,9 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 
 ## Recent Changes
 - December 28, 2025: Full user tracking - looks up user name from Users table by email, populates Creating/Last Site User Name + Email fields
-- December 28, 2025: Split header design - salt panel with full-color logo, midnight main section with gold INTEGRITY title
+- December 28, 2025: Header redesign - full salt background, midnight text for INTEGRITY and email, larger logo (48px height)
+- December 28, 2025: Lightened text throughout - reduced font weights, smaller headings, contact names now 13px regular weight
+- December 28, 2025: Directory contact format changed - name on first line, "Prefers X · in database for Y" on second line in italics
 - December 28, 2025: Reorganized contact form - Mobile moved to share row with Email
 - December 28, 2025: Added custom fonts (Geist for body, Libre Baskerville for headings)
 - December 28, 2025: Fixed sorting to use "Modified On" field (proper datetime, not text formula)

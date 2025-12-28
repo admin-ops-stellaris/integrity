@@ -528,15 +528,37 @@
     list.innerHTML = '';
     records.forEach(record => {
       const f = record.fields; const item = document.createElement('li'); item.className = 'contact-item';
-      item.innerHTML = `<span class="contact-name">${formatName(f)}</span><span class="contact-detail">${formatDetails(f)}</span>`;
+      item.innerHTML = `<span class="contact-name">${formatName(f)}</span><span class="contact-subtitle">${formatSubtitle(f)}</span>`;
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
   }
   function formatName(f) {
-    let n = `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
-    if (f.PreferredName) n += ` (${f.PreferredName})`; return n;
+    return `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
   }
-  function formatDetails(f) { return [f.EmailAddress1, f.Mobile].filter(Boolean).join(" • "); }
+  function formatSubtitle(f) {
+    const preferredName = f.PreferredName || f.FirstName || '';
+    const tenure = calculateTenure(f.Created);
+    if (!preferredName && !tenure) return '';
+    const parts = [];
+    if (preferredName) parts.push(`Prefers ${preferredName}`);
+    if (tenure) parts.push(`in database for ${tenure}`);
+    return parts.join(' · ');
+  }
+  function calculateTenure(createdStr) {
+    if (!createdStr) return null;
+    const dateMatch = createdStr.match(/(\d{2}):(\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
+    if (!dateMatch) return null;
+    const day = parseInt(dateMatch[3], 10);
+    const month = parseInt(dateMatch[4], 10) - 1;
+    const year = parseInt(dateMatch[5], 10);
+    const createdDate = new Date(year, month, day);
+    const diffMs = new Date() - createdDate;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays > 730) return `${Math.floor(diffDays / 365)}+ years`;
+    if (diffDays > 60) return `${Math.floor(diffDays / 30)}+ months`;
+    if (diffDays >= 1) return diffDays === 1 ? "1 day" : `${diffDays} days`;
+    return "today";
+  }
 
   // --- CORRECTED HISTORY DATE LOGIC ---
   function renderHistory(f) {

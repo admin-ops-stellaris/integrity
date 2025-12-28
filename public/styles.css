@@ -7,11 +7,13 @@
   body { font-family: var(--font-body); margin: 0; padding: 0; height: 100vh; color: var(--color-trail); background-color: var(--color-trail); background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/01%20-%20Boranup%20Karri%20Forest%20original.jpg"); background-size: cover; background-position: center; background-attachment: fixed; display: flex; flex-direction: column; overflow: hidden; }
 
   /* LAYOUT */
-  .app-header { background: linear-gradient(135deg, rgba(44, 38, 34, 0.97) 0%, rgba(25, 65, 76, 0.95) 100%); padding: 0 40px; display: flex; align-items: center; justify-content: space-between; z-index: 10; height: 64px; position: relative; border-bottom: 1px solid rgba(187, 153, 52, 0.3); }
-  .logo-container { height: 36px; display: flex; align-items: center; }
-  .logo-container img { height: 100%; width: auto; display: block; filter: brightness(0) invert(1); opacity: 0.9; } 
-  .header-title { font-family: var(--font-heading); font-size: 22px; color: var(--color-star); letter-spacing: 6px; font-weight: 400; text-transform: uppercase; position: absolute; left: 50%; transform: translateX(-50%); }
-  .user-indicator { display: flex; align-items: center; gap: 12px; }
+  .app-header { display: flex; align-items: stretch; z-index: 10; height: 64px; position: relative; }
+  .header-logo-section { background-color: var(--color-salt); padding: 0 30px; display: flex; align-items: center; }
+  .header-main-section { background-color: var(--color-midnight); flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+  .logo-container { height: 40px; display: flex; align-items: center; }
+  .logo-container img { height: 100%; width: auto; display: block; } 
+  .header-title { font-family: var(--font-heading); font-size: 20px; color: var(--color-star); letter-spacing: 6px; font-weight: 400; text-transform: uppercase; }
+  .user-indicator { position: absolute; right: 30px; display: flex; align-items: center; gap: 12px; }
   .user-star { display: none; }
   .user-email { font-size: 13px; color: rgba(242, 240, 233, 0.8); font-weight: 400; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .container { display: flex; gap: 20px; padding: 20px 30px; max-width: 95%; margin: 0 auto; width: 100%; box-sizing: border-box; flex: 1; overflow: hidden; position: relative; }

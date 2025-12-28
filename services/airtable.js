@@ -18,6 +18,41 @@ function formatRecord(record) {
   };
 }
 
+const userProfileCache = new Map();
+
+export async function getUserProfileByEmail(email) {
+  if (!base || !email) return null;
+  
+  const cacheKey = email.toLowerCase();
+  if (userProfileCache.has(cacheKey)) {
+    return userProfileCache.get(cacheKey);
+  }
+  
+  try {
+    const records = await base("Users")
+      .select({
+        filterByFormula: `LOWER({Email}) = "${cacheKey}"`,
+        maxRecords: 1
+      })
+      .all();
+    
+    if (records.length > 0) {
+      const profile = {
+        name: records[0].fields["Name"] || null,
+        email: email
+      };
+      userProfileCache.set(cacheKey, profile);
+      return profile;
+    }
+    
+    console.warn(`User not found in Users table for email: ${email}`);
+    return { name: null, email: email };
+  } catch (err) {
+    console.error("getUserProfileByEmail error:", err.message);
+    return { name: null, email: email };
+  }
+}
+
 export async function getContactById(id) {
   if (!base) return null;
   try {
@@ -78,12 +113,13 @@ export async function searchContacts(query) {
   }
 }
 
-export async function updateContact(id, field, value, userEmail = null) {
+export async function updateContact(id, field, value, userContext = null) {
   if (!base) return null;
   try {
     const updateFields = { [field]: value };
-    if (userEmail) {
-      updateFields["Last Site User Email"] = userEmail;
+    if (userContext) {
+      if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
+      if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
     }
     const record = await base("Contacts").update(id, updateFields);
     return formatRecord(record);
@@ -93,13 +129,19 @@ export async function updateContact(id, field, value, userEmail = null) {
   }
 }
 
-export async function createContact(fields, userEmail = null) {
+export async function createContact(fields, userContext = null) {
   if (!base) return null;
   try {
     const createFields = { ...fields };
-    if (userEmail) {
-      createFields["Creating Site User Email"] = userEmail;
-      createFields["Last Site User Email"] = userEmail;
+    if (userContext) {
+      if (userContext.name) {
+        createFields["Creating Site User Name"] = userContext.name;
+        createFields["Last Site User Name"] = userContext.name;
+      }
+      if (userContext.email) {
+        createFields["Creating Site User Email"] = userContext.email;
+        createFields["Last Site User Email"] = userContext.email;
+      }
     }
     const record = await base("Contacts").create(createFields);
     return formatRecord(record);
@@ -158,12 +200,13 @@ export async function updateOpportunity(id, field, value) {
   }
 }
 
-export async function updateRecordInTable(tableName, id, field, value, userEmail = null) {
+export async function updateRecordInTable(tableName, id, field, value, userContext = null) {
   if (!base) return null;
   try {
     const updateFields = { [field]: value };
-    if (userEmail && tableName === "Contacts") {
-      updateFields["Last Site User Email"] = userEmail;
+    if (userContext && tableName === "Contacts") {
+      if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
+      if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
     }
     const record = await base(tableName).update(id, updateFields);
     return formatRecord(record);

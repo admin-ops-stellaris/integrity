@@ -27,9 +27,7 @@
     const fName = document.getElementById('firstName').value || "";
     const mName = document.getElementById('middleName').value || "";
     const lName = document.getElementById('lastName').value || "";
-    const pName = document.getElementById('preferredName').value || "";
     let fullName = [fName, mName, lName].filter(Boolean).join(" ");
-    if (pName) fullName += ` (${pName})`;
     if (!fullName.trim()) { document.getElementById('formTitle').innerText = "New Contact"; return; }
     document.getElementById('formTitle').innerText = isEditing ? `Editing ${fullName}` : fullName;
   }
@@ -549,8 +547,8 @@
     const tenure = calculateTenure(f.Created);
     if (!preferredName && !tenure) return '';
     const parts = [];
-    if (preferredName) parts.push(`Prefers ${preferredName}`);
-    if (tenure) parts.push(`in database for ${tenure}`);
+    if (preferredName) parts.push(`prefers ${preferredName}`);
+    if (tenure) parts.push(`in our database for ${tenure}`);
     return parts.join(' · ');
   }
   function calculateTenure(createdStr) {
@@ -599,13 +597,8 @@
           durationText = `${diffHoursTotal} ${hStr} and ${mins} minutes`;
        }
     }
-    const nameToUse = f.PreferredName || f.FirstName || 'This client';
-    const line1 = document.createElement('div'); line1.className = 'audit-text';
-    line1.innerText = `${nameToUse} has been a contact in our database for ${durationText}.`;
-    section.appendChild(line1);
-
-    if (f.Created) { const line2 = document.createElement('div'); line2.className = 'audit-modified'; line2.innerText = f.Created; section.appendChild(line2); }
-    if (f.Modified) { const line3 = document.createElement('div'); line3.className = 'audit-modified'; line3.innerText = f.Modified; section.appendChild(line3); }
+    if (f.Created) { const line1 = document.createElement('div'); line1.className = 'audit-modified'; line1.innerText = f.Created; section.appendChild(line1); }
+    if (f.Modified) { const line2 = document.createElement('div'); line2.className = 'audit-modified'; line2.innerText = f.Modified; section.appendChild(line2); }
   }
 
   function loadOpportunities(f) {

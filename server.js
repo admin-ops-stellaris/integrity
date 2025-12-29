@@ -255,9 +255,7 @@ app.post("/api/getLinkedOpportunities", async (req, res) => {
 app.post("/api/createOpportunity", async (req, res) => {
   try {
     const [name, contactId] = req.body.args || [];
-    const userEmail = req.session?.user?.email || null;
-    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
-    const record = await airtable.createOpportunity(name, contactId, userContext);
+    const record = await airtable.createOpportunity(name, contactId);
     res.json(record);
   } catch (err) {
     console.error("createOpportunity error:", err);

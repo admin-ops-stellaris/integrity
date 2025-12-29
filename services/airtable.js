@@ -216,7 +216,7 @@ export async function updateRecordInTable(tableName, id, field, value, userConte
   }
 }
 
-export async function createOpportunity(name, contactId, userContext = null) {
+export async function createOpportunity(name, contactId) {
   if (!base) return null;
   try {
     const fields = {
@@ -224,10 +224,6 @@ export async function createOpportunity(name, contactId, userContext = null) {
       "Primary Applicant": [contactId],
       "Status": "Open"
     };
-    if (userContext) {
-      if (userContext.name) fields["Creating Site User Name"] = userContext.name;
-      if (userContext.email) fields["Creating Site User Email"] = userContext.email;
-    }
     const record = await base("Opportunities").create(fields);
     return formatRecord(record);
   } catch (err) {

@@ -17,6 +17,7 @@
     checkUserIdentity(); 
     initKeyboardShortcuts();
     initDarkMode();
+    initScreensaver();
   };
 
   // --- KEYBOARD SHORTCUTS ---
@@ -68,6 +69,33 @@
     document.body.classList.toggle('dark-mode');
     const isDark = document.body.classList.contains('dark-mode');
     localStorage.setItem('integrity-theme', isDark ? 'dark' : 'light');
+  }
+
+  // --- SCREENSAVER ---
+  let screensaverTimer = null;
+  const SCREENSAVER_DELAY = 10000; // 10 seconds for testing (change to 120000 for 2 mins)
+  
+  function initScreensaver() {
+    const overlay = document.getElementById('screensaverOverlay');
+    
+    function resetScreensaverTimer() {
+      if (overlay.classList.contains('active')) {
+        overlay.classList.remove('active');
+      }
+      clearTimeout(screensaverTimer);
+      screensaverTimer = setTimeout(() => {
+        overlay.classList.add('active');
+      }, SCREENSAVER_DELAY);
+    }
+    
+    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
+      document.addEventListener(event, resetScreensaverTimer, { passive: true });
+    });
+    
+    overlay.addEventListener('click', resetScreensaverTimer);
+    overlay.addEventListener('mousemove', resetScreensaverTimer);
+    
+    resetScreensaverTimer();
   }
 
   // --- QUICK ADD OPPORTUNITY ---

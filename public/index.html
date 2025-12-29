@@ -165,8 +165,8 @@
             </div>
             <div id="composerSpouseSection" class="composer-spouse-option" style="display:none;">
               <label class="composer-checkbox-label">
-                <input type="checkbox" id="composerAddSpouse">
-                <span id="composerSpouseLabel">Also add <strong id="composerSpouseName"></strong> as Applicant</span>
+                <input type="checkbox" id="composerAddSpouse" onchange="updateComposerSpouseLabel()">
+                <span id="composerSpouseLabel"><span id="composerSpouseLabelPrefix">Also add </span><strong id="composerSpouseName"></strong><span id="composerSpouseLabelSuffix"> as Applicant?</span></span>
               </label>
             </div>
           </div>

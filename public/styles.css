@@ -104,7 +104,7 @@
   .back-btn:hover { color: var(--color-trail); text-decoration: underline; transform: none; }
 
   /* OPPORTUNITY COMPOSER */
-  .composer-panel { width: 480px; right: -530px; }
+  .composer-panel { width: 550px; right: -600px; }
   .composer-panel.open { right: 0; }
   .composer-header { background: var(--color-trail); padding: 24px 28px; display: flex; justify-content: space-between; align-items: flex-start; }
   .composer-header .close-panel { color: rgba(255,255,255,0.7); }

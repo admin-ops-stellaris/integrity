@@ -117,6 +117,8 @@
     if (spouseName && spouseId) {
       document.getElementById('composerSpouseName').innerText = spouseName;
       document.getElementById('composerAddSpouse').checked = false;
+      document.getElementById('composerSpouseLabelPrefix').innerText = 'Also add ';
+      document.getElementById('composerSpouseLabelSuffix').innerText = ' as Applicant?';
       spouseSection.style.display = 'block';
     } else {
       spouseSection.style.display = 'none';
@@ -131,6 +133,19 @@
   
   function closeOppComposer() {
     document.getElementById('oppComposer').classList.remove('open');
+  }
+  
+  function updateComposerSpouseLabel() {
+    const checkbox = document.getElementById('composerAddSpouse');
+    const prefix = document.getElementById('composerSpouseLabelPrefix');
+    const suffix = document.getElementById('composerSpouseLabelSuffix');
+    if (checkbox.checked) {
+      prefix.innerText = 'Adding ';
+      suffix.innerText = ' as Applicant';
+    } else {
+      prefix.innerText = 'Also add ';
+      suffix.innerText = ' as Applicant?';
+    }
   }
   
   function submitFromComposer() {

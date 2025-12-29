@@ -307,9 +307,11 @@ export async function deleteContact(contactId) {
       connections.push(spouseName ? `Spouse (${spouseName})` : "a Spouse");
     }
     
-    const opportunities = contact.fields["Opportunities"];
-    if (opportunities && opportunities.length > 0) {
-      connections.push(`${opportunities.length} Opportunit${opportunities.length === 1 ? 'y' : 'ies'}`);
+    const oppPrimary = contact.fields["Opportunities - Primary Applicant"];
+    const oppApplicant = contact.fields["Opportunities - Applicant"];
+    const totalOpps = (oppPrimary?.length || 0) + (oppApplicant?.length || 0);
+    if (totalOpps > 0) {
+      connections.push(`${totalOpps} Opportunit${totalOpps === 1 ? 'y' : 'ies'}`);
     }
     
     if (connections.length > 0) {

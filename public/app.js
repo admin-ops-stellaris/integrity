@@ -76,24 +76,19 @@
   const SCREENSAVER_DELAY = 10000; // 10 seconds for testing (change to 120000 for 2 mins)
   
   function initScreensaver() {
-    const overlay = document.getElementById('screensaverOverlay');
-    
     function resetScreensaverTimer() {
-      if (overlay.classList.contains('active')) {
-        overlay.classList.remove('active');
+      if (document.body.classList.contains('screensaver-active')) {
+        document.body.classList.remove('screensaver-active');
       }
       clearTimeout(screensaverTimer);
       screensaverTimer = setTimeout(() => {
-        overlay.classList.add('active');
+        document.body.classList.add('screensaver-active');
       }, SCREENSAVER_DELAY);
     }
     
     ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
       document.addEventListener(event, resetScreensaverTimer, { passive: true });
     });
-    
-    overlay.addEventListener('click', resetScreensaverTimer);
-    overlay.addEventListener('mousemove', resetScreensaverTimer);
     
     resetScreensaverTimer();
   }
@@ -178,14 +173,20 @@
     
     google.script.run.withSuccessHandler(function(res) {
       if (res && res.id) {
+        const finishUp = () => {
+          google.script.run.withSuccessHandler(function(updatedContact) {
+            if (updatedContact) {
+              currentContactRecord = updatedContact;
+              loadOpportunities(updatedContact.fields);
+            }
+            setTimeout(() => loadPanelRecord('Opportunities', res.id), 300);
+          }).getContactById(currentContactRecord.id);
+        };
+        
         if (addSpouse) {
-          google.script.run.withSuccessHandler(function() {
-            loadOpportunities(currentContactRecord.fields);
-            setTimeout(() => loadPanelRecord('Opportunities', res.id), 500);
-          }).updateOpportunity(res.id, 'Applicants', [spouseId]);
+          google.script.run.withSuccessHandler(finishUp).updateOpportunity(res.id, 'Applicants', [spouseId]);
         } else {
-          loadOpportunities(currentContactRecord.fields);
-          setTimeout(() => loadPanelRecord('Opportunities', res.id), 500);
+          finishUp();
         }
       }
     }).createOpportunity(oppName, currentContactRecord.id);

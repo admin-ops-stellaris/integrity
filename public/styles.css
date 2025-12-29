@@ -241,8 +241,6 @@
   body.dark-mode .shortcut-row span { color: #AAA; }
 
   /* SCREENSAVER */
-  .screensaver-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: transparent; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 2s ease-in-out; }
-  .screensaver-overlay.active { opacity: 1; pointer-events: auto; cursor: none; }
-  .screensaver-overlay .fade-element { position: absolute; background: var(--color-trail); transition: opacity 2s ease-in-out; }
-  .screensaver-overlay .fade-header { top: 0; left: 0; right: 0; height: 72px; }
-  .screensaver-overlay .fade-content { top: 92px; left: 30px; right: 30px; bottom: 20px; border-radius: 4px; }
+  .app-header, .container { transition: opacity 2s ease-in-out; }
+  body.screensaver-active .app-header, body.screensaver-active .container { opacity: 0; pointer-events: none; }
+  body.screensaver-active { cursor: none; }

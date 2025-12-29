@@ -75,6 +75,8 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- December 29, 2025: Added UX enhancements - keyboard shortcuts (/ for search, N for new, E for edit, Esc to close), status color coding for opportunities (Won=green/cedar, Lost=gray, Open=sky), confetti celebration when opportunity marked Won, quick-add opportunity button, avatar initials with colored circles in directory, dark mode toggle with localStorage persistence
+- December 29, 2025: Added createOpportunity API endpoint and Airtable function
 - December 28, 2025: Full user tracking - looks up user name from Users table by email, populates Creating/Last Site User Name + Email fields
 - December 28, 2025: Header redesign - full salt background, midnight text for INTEGRITY and email, larger logo (48px height)
 - December 28, 2025: Lightened text throughout - reduced font weights, smaller headings, contact names now 13px regular weight

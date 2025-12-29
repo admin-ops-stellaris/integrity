@@ -73,7 +73,7 @@
 
   // --- SCREENSAVER ---
   let screensaverTimer = null;
-  const SCREENSAVER_DELAY = 10000; // 10 seconds for testing (change to 120000 for 2 mins)
+  const SCREENSAVER_DELAY = 120000; // 2 minutes
   
   function initScreensaver() {
     function resetScreensaverTimer() {

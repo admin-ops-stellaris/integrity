@@ -104,7 +104,7 @@
   .back-btn:hover { color: var(--color-trail); text-decoration: underline; transform: none; }
 
   /* OPPORTUNITY COMPOSER */
-  .composer-panel { width: 550px; right: -600px; }
+  .composer-panel { position: fixed; top: 65px; bottom: 0; width: 550px; right: -600px; z-index: 200; }
   .composer-panel.open { right: 0; }
   .composer-header { background: var(--color-trail); padding: 24px 28px; display: flex; justify-content: space-between; align-items: flex-start; }
   .composer-header .close-panel { color: rgba(255,255,255,0.7); }
@@ -125,7 +125,7 @@
   .applicant-role { font-size: 10px; text-transform: uppercase; color: var(--color-star); font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }
   .applicant-name { font-size: 14px; color: var(--color-midnight); font-weight: 500; }
   .composer-spouse-option { background: #F8F8F8; padding: 14px 16px; border-radius: 8px; }
-  .composer-checkbox-label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 13px; color: #444; }
+  .composer-checkbox-label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 13px; color: #444; text-transform: none; }
   .composer-checkbox-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--color-star); }
   .composer-footer { padding: 20px 28px; background: var(--color-salt); border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; }
   .composer-btn-cancel { background: transparent; border: 1px solid #CCC; color: #666; padding: 12px 20px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }

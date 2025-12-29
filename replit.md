@@ -75,6 +75,11 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- December 29, 2025: New opportunity modal - replaces native prompt with in-app modal, default name uses today's date (DD/MM/YYYY), option to add spouse as Applicant if contact has spouse linked
+- December 29, 2025: Hover tooltips on contacts - shows "Modified X ago by Name" on hover over each contact in directory
+- December 29, 2025: Aligned opportunity status badges - WON/LOST/OPEN labels now align vertically (fixed-width role column)
+- December 29, 2025: Star toggle for dark mode - star image with half-dark/half-light overlay effect
+- December 29, 2025: Logo swap in dark mode - shows reversed logo when dark mode active
 - December 29, 2025: Added UX enhancements - keyboard shortcuts (/ for search, N for new, E for edit, Esc to close), status color coding for opportunities (Won=green/cedar, Lost=gray, Open=sky), confetti celebration when opportunity marked Won, quick-add opportunity button, avatar initials with colored circles in directory, dark mode toggle with localStorage persistence
 - December 29, 2025: Added createOpportunity API endpoint and Airtable function
 - December 28, 2025: Full user tracking - looks up user name from Users table by email, populates Creating/Last Site User Name + Email fields

@@ -30,6 +30,8 @@
         closeSpouseModal();
         closeNewOppModal();
         closeShortcutsModal();
+        closeDeleteConfirmModal();
+        closeAlertModal();
         if (document.getElementById('actionRow').style.display === 'flex') disableEditMode();
         return;
       }
@@ -130,6 +132,10 @@
   document.addEventListener('click', function(e) {
     const shortcutsModal = document.getElementById('shortcutsModal');
     if (shortcutsModal && e.target === shortcutsModal) closeShortcutsModal();
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    if (deleteConfirmModal && e.target === deleteConfirmModal) closeDeleteConfirmModal();
+    const alertModal = document.getElementById('alertModal');
+    if (alertModal && e.target === alertModal) closeAlertModal();
   });
   
   function submitNewOpportunity() {
@@ -304,25 +310,61 @@
     const f = currentContactRecord.fields;
     const name = formatName(f);
     
-    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
-      return;
-    }
+    document.getElementById('deleteConfirmMessage').innerText = `Are you sure you want to delete "${name}"? This action cannot be undone.`;
+    document.getElementById('deleteConfirmModal').style.display = 'flex';
+  }
+  
+  function closeDeleteConfirmModal() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+  }
+  
+  function executeDeleteContact() {
+    closeDeleteConfirmModal();
+    if (!currentContactRecord) return;
+    const f = currentContactRecord.fields;
+    const name = formatName(f);
     
     google.script.run
       .withSuccessHandler(function(result) {
         if (result.success) {
-          alert(`"${name}" has been deleted.`);
+          showAlert('Success', `"${name}" has been deleted.`, 'success');
           currentContactRecord = null;
           toggleProfileView(false);
           loadContacts();
         } else {
-          alert(result.error || 'Failed to delete contact.');
+          showAlert('Cannot Delete', result.error || 'Failed to delete contact.', 'error');
         }
       })
       .withFailureHandler(function(err) {
-        alert('Error: ' + err.message);
+        showAlert('Error', err.message, 'error');
       })
       .deleteContact(currentContactRecord.id);
+  }
+  
+  function showAlert(title, message, type) {
+    const modal = document.getElementById('alertModal');
+    const sidebar = document.getElementById('alertModalSidebar');
+    const icon = document.getElementById('alertModalIcon');
+    
+    document.getElementById('alertModalTitle').innerText = title;
+    document.getElementById('alertModalMessage').innerText = message;
+    
+    if (type === 'success') {
+      sidebar.style.background = 'var(--color-cedar)';
+      icon.innerText = '✓';
+    } else if (type === 'error') {
+      sidebar.style.background = '#A00';
+      icon.innerText = '✕';
+    } else {
+      sidebar.style.background = 'var(--color-star)';
+      icon.innerText = 'ℹ';
+    }
+    
+    modal.style.display = 'flex';
+  }
+  
+  function closeAlertModal() {
+    document.getElementById('alertModal').style.display = 'none';
   }
 
   // --- SPOUSE LOGIC ---

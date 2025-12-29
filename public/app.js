@@ -28,6 +28,7 @@
       if (e.key === 'Escape') {
         closeOppPanel();
         closeSpouseModal();
+        closeNewOppModal();
         if (document.getElementById('actionRow').style.display === 'flex') disableEditMode();
         return;
       }
@@ -63,13 +64,61 @@
   // --- QUICK ADD OPPORTUNITY ---
   function quickAddOpportunity() {
     if (!currentContactRecord) { alert('Please select a contact first.'); return; }
-    const contactName = formatName(currentContactRecord.fields);
-    const oppName = prompt('Enter opportunity name:', `${contactName} - New Opportunity`);
-    if (!oppName) return;
+    const f = currentContactRecord.fields;
+    const contactName = formatName(f);
+    const today = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const defaultName = `${contactName} - ${today}`;
+    
+    const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
+    const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
+    
+    openNewOppModal(defaultName, contactName, spouseName, spouseId);
+  }
+  
+  function openNewOppModal(defaultName, contactName, spouseName, spouseId) {
+    const modal = document.getElementById('newOppModal');
+    document.getElementById('newOppName').value = defaultName;
+    document.getElementById('newOppContactName').innerText = contactName;
+    
+    const spouseSection = document.getElementById('newOppSpouseSection');
+    if (spouseName && spouseId) {
+      document.getElementById('newOppSpouseName').innerText = spouseName;
+      document.getElementById('addSpouseAsApplicant').checked = false;
+      spouseSection.style.display = 'block';
+    } else {
+      spouseSection.style.display = 'none';
+    }
+    
+    modal.style.display = 'flex';
+    document.getElementById('newOppName').focus();
+    document.getElementById('newOppName').select();
+  }
+  
+  function closeNewOppModal() {
+    document.getElementById('newOppModal').style.display = 'none';
+  }
+  
+  function submitNewOpportunity() {
+    const oppName = document.getElementById('newOppName').value.trim();
+    if (!oppName) { alert('Please enter an opportunity name.'); return; }
+    
+    const f = currentContactRecord.fields;
+    const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
+    const addSpouse = document.getElementById('addSpouseAsApplicant')?.checked && spouseId;
+    
+    closeNewOppModal();
+    
     google.script.run.withSuccessHandler(function(res) {
       if (res && res.id) {
-        loadOpportunities(currentContactRecord.fields);
-        setTimeout(() => loadPanelRecord('Opportunities', res.id), 500);
+        if (addSpouse) {
+          google.script.run.withSuccessHandler(function() {
+            loadOpportunities(currentContactRecord.fields);
+            setTimeout(() => loadPanelRecord('Opportunities', res.id), 500);
+          }).updateOpportunity(res.id, 'Applicants', [spouseId]);
+        } else {
+          loadOpportunities(currentContactRecord.fields);
+          setTimeout(() => loadPanelRecord('Opportunities', res.id), 500);
+        }
       }
     }).createOpportunity(oppName, currentContactRecord.id);
   }
@@ -629,7 +678,9 @@
       const fullName = formatName(f);
       const initials = getInitials(f.FirstName, f.LastName);
       const avatarColor = getAvatarColor(fullName);
+      const modifiedTooltip = formatModifiedTooltip(f);
       item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>`;
+      if (modifiedTooltip) item.title = modifiedTooltip;
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
   }
@@ -641,6 +692,32 @@
     if (f.EmailAddress1) parts.push(`<span>${f.EmailAddress1}</span>`);
     if (f.Mobile) parts.push(`<span>${f.Mobile}</span>`);
     return parts.join('');
+  }
+  function formatModifiedTooltip(f) {
+    const modifiedOn = f['Modified On'];
+    const modifiedBy = f['Last Site User Name'];
+    if (!modifiedOn) return null;
+    
+    const dateMatch = modifiedOn.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!dateMatch) return null;
+    
+    const modDate = new Date(dateMatch[1], dateMatch[2] - 1, dateMatch[3], dateMatch[4], dateMatch[5]);
+    const now = new Date();
+    const diffMs = now - modDate;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    let timeAgo;
+    if (diffMins < 1) timeAgo = 'just now';
+    else if (diffMins < 60) timeAgo = `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    else if (diffHours < 24) timeAgo = `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
+    else if (diffDays === 1) timeAgo = 'yesterday';
+    else if (diffDays < 7) timeAgo = `${diffDays} days ago`;
+    else timeAgo = modDate.toLocaleDateString('en-AU');
+    
+    if (modifiedBy) return `Modified ${timeAgo} by ${modifiedBy}`;
+    return `Modified ${timeAgo}`;
   }
   function formatSubtitle(f) {
     const preferredName = f.PreferredName || f.FirstName || '';
@@ -733,7 +810,7 @@
          const status = fields['Status'] || '';
          const statusClass = status === 'Won' ? 'status-won' : status === 'Lost' ? 'status-lost' : '';
          const li = document.createElement('li'); li.className = `opp-item ${statusClass}`;
-         li.innerHTML = `<span class="opp-title">${name}</span><span class="opp-status-badge ${statusClass}">${status}</span><span class="opp-role">${role}</span>`;
+         li.innerHTML = `<span class="opp-title">${name}</span><span class="opp-role-wrapper"><span class="opp-role">${role}</span><span class="opp-status-badge ${statusClass}">${status}</span></span>`;
          li.onclick = function() { panelHistory = []; loadPanelRecord('Opportunities', opp.id); }; oppList.appendChild(li);
      });
   }

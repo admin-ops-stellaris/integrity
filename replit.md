@@ -55,6 +55,7 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - `POST /api/createRecord` - Create a new contact
 - `POST /api/setSpouseStatus` - Link/unlink spouse relationships
 - `POST /api/getLinkedOpportunities` - Get opportunities linked to a contact
+- `POST /api/deleteContact` - Delete a contact (only if not connected to spouse or opportunities)
 - `POST /api/getEffectiveUserEmail` - Get current user email
 - `GET /api/health` - Health check endpoint
 

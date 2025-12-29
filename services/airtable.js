@@ -296,3 +296,37 @@ export async function setSpouse(contactId, spouseId, action) {
     return null;
   }
 }
+
+export async function deleteContact(contactId) {
+  if (!base) return { success: false, error: "Database not configured" };
+  try {
+    const contact = await base("Contacts").find(contactId);
+    if (!contact) return { success: false, error: "Contact not found" };
+    
+    const connections = [];
+    
+    const spouse = contact.fields["Spouse"];
+    if (spouse && spouse.length > 0) {
+      const spouseName = contact.fields["Spouse Name"] && contact.fields["Spouse Name"][0];
+      connections.push(spouseName ? `Spouse (${spouseName})` : "a Spouse");
+    }
+    
+    const opportunities = contact.fields["Opportunities"];
+    if (opportunities && opportunities.length > 0) {
+      connections.push(`${opportunities.length} Opportunit${opportunities.length === 1 ? 'y' : 'ies'}`);
+    }
+    
+    if (connections.length > 0) {
+      return { 
+        success: false, 
+        error: `This Contact is currently connected to ${connections.join(" and ")}. If you're sure this Contact should be deleted, please first remove all connections.`
+      };
+    }
+    
+    await base("Contacts").destroy(contactId);
+    return { success: true };
+  } catch (err) {
+    console.error("deleteContact error:", err.message);
+    return { success: false, error: err.message };
+  }
+}

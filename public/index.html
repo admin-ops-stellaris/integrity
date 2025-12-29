@@ -59,7 +59,7 @@
             <input type="hidden" name="recordId" id="recordId">
             <div class="profile-top">
               <div class="fields-header">
-                <span id="editBtn" class="edit-icon" onclick="enableEditMode()" title="Edit Contact">✎ Edit</span>
+                <span id="editBtn" class="edit-icon" onclick="enableEditMode()" title="Edit Contact"><span class="edit-pencil">✎</span> Edit</span>
               </div>
               <div class="row" style="margin-bottom:10px;">
                 <div class="field-group" style="flex:1;"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
@@ -90,6 +90,9 @@
                  </div>
                  <div id="futurePlaceholder" style="color:#CCC; text-align:center; font-size:12px; font-style:italic; padding:20px; border: 2px dashed #E0E0E0; border-radius:10px; margin-bottom:20px;">
                    Other Connections<br>Coming Soon
+                 </div>
+                 <div id="deleteSection" style="margin-top:auto; padding-top:20px; border-top:1px dashed #E0E0E0;">
+                   <button type="button" class="btn-delete" onclick="confirmDeleteContact()">Delete Contact</button>
                  </div>
               </div>
               <div class="profile-bottom-right">

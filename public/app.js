@@ -299,6 +299,32 @@
      }).getContactById(id);
   }
 
+  function confirmDeleteContact() {
+    if (!currentContactRecord) return;
+    const f = currentContactRecord.fields;
+    const name = formatName(f);
+    
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          alert(`"${name}" has been deleted.`);
+          currentContactRecord = null;
+          toggleProfileView(false);
+          loadContacts();
+        } else {
+          alert(result.error || 'Failed to delete contact.');
+        }
+      })
+      .withFailureHandler(function(err) {
+        alert('Error: ' + err.message);
+      })
+      .deleteContact(currentContactRecord.id);
+  }
+
   // --- SPOUSE LOGIC ---
   function renderSpouseSection(f) {
      const statusEl = document.getElementById('spouseStatusText');

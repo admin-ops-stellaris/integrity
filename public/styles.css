@@ -141,9 +141,11 @@
   .input-error { font-size: 11px; color: #A00; margin-top: 4px; font-weight: 700; font-style: italic; }
 
   /* MODAL */
-  #spouseModal, #newOppModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
-  .modal { display: flex; align-items: center; justify-content: center; }
-  .modal-content { background-color: #fefefe; margin: 10% auto; padding: 0; border: none; width: 550px; height: 350px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.25); font-family: var(--font-body); overflow: hidden; display: flex; flex-direction: row; }
+  .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(3px); align-items: center; justify-content: center; opacity: 0; transition: opacity 0.25s ease-in-out; }
+  .modal.visible { display: flex; }
+  .modal.showing { opacity: 1; }
+  .modal-content { background-color: #fefefe; margin: 10% auto; padding: 0; border: none; width: 550px; height: 350px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.25); font-family: var(--font-body); overflow: hidden; display: flex; flex-direction: row; transform: scale(0.95); transition: transform 0.25s ease-in-out; }
+  .modal.showing .modal-content { transform: scale(1); }
   .modal-sidebar { width: 100px; background: var(--color-trail); display: flex; align-items: center; justify-content: center; flex-direction: column; }
   .modal-sidebar img { width: 48px; height: auto; opacity: 0.9; }
   .modal-body { flex: 1; padding: 30px; display: flex; flex-direction: column; position: relative; }

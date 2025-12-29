@@ -263,6 +263,17 @@ app.post("/api/createOpportunity", async (req, res) => {
   }
 });
 
+app.post("/api/updateOpportunity", async (req, res) => {
+  try {
+    const [id, field, value] = req.body.args || [];
+    const record = await airtable.updateOpportunity(id, field, value);
+    res.json(record);
+  } catch (err) {
+    console.error("updateOpportunity error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/deleteContact", async (req, res) => {
   try {
     const [contactId] = req.body.args || [];

@@ -122,13 +122,15 @@
       spouseSection.style.display = 'none';
     }
     
-    modal.style.display = 'flex';
-    document.getElementById('newOppName').focus();
-    document.getElementById('newOppName').select();
+    openModal('newOppModal');
+    setTimeout(() => {
+      document.getElementById('newOppName').focus();
+      document.getElementById('newOppName').select();
+    }, 50);
   }
   
   function closeNewOppModal() {
-    document.getElementById('newOppModal').style.display = 'none';
+    closeModal('newOppModal');
   }
   
   function updateSpouseCheckboxLabel() {
@@ -145,11 +147,11 @@
   }
   
   function showShortcutsHelp() {
-    document.getElementById('shortcutsModal').style.display = 'flex';
+    openModal('shortcutsModal');
   }
   
   function closeShortcutsModal() {
-    document.getElementById('shortcutsModal').style.display = 'none';
+    closeModal('shortcutsModal');
   }
   
   document.addEventListener('click', function(e) {
@@ -340,34 +342,55 @@
     const name = formatName(f);
     
     document.getElementById('deleteConfirmMessage').innerText = `Are you sure you want to delete "${name}"? This action cannot be undone.`;
-    document.getElementById('deleteConfirmModal').style.display = 'flex';
+    openModal('deleteConfirmModal');
   }
   
   function closeDeleteConfirmModal() {
-    document.getElementById('deleteConfirmModal').style.display = 'none';
+    closeModal('deleteConfirmModal');
   }
   
   function executeDeleteContact() {
-    closeDeleteConfirmModal();
     if (!currentContactRecord) return;
     const f = currentContactRecord.fields;
     const name = formatName(f);
+    const contactId = currentContactRecord.id;
     
-    google.script.run
-      .withSuccessHandler(function(result) {
-        if (result.success) {
-          showAlert('Success', `"${name}" has been deleted.`, 'success');
-          currentContactRecord = null;
-          toggleProfileView(false);
-          loadContacts();
-        } else {
-          showAlert('Cannot Delete', result.error || 'Failed to delete contact.', 'error');
-        }
-      })
-      .withFailureHandler(function(err) {
-        showAlert('Error', err.message, 'error');
-      })
-      .deleteContact(currentContactRecord.id);
+    closeModal('deleteConfirmModal', function() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showAlert('Success', `"${name}" has been deleted.`, 'success');
+            currentContactRecord = null;
+            toggleProfileView(false);
+            loadContacts();
+          } else {
+            showAlert('Cannot Delete', result.error || 'Failed to delete contact.', 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          showAlert('Error', err.message, 'error');
+        })
+        .deleteContact(contactId);
+    });
+  }
+  
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.classList.add('visible');
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        modal.classList.add('showing');
+      });
+    });
+  }
+  
+  function closeModal(modalId, callback) {
+    const modal = document.getElementById(modalId);
+    modal.classList.remove('showing');
+    setTimeout(() => {
+      modal.classList.remove('visible');
+      if (callback) callback();
+    }, 250);
   }
   
   function showAlert(title, message, type) {
@@ -389,11 +412,11 @@
       icon.innerText = 'ℹ';
     }
     
-    modal.style.display = 'flex';
+    openModal('alertModal');
   }
   
   function closeAlertModal() {
-    document.getElementById('alertModal').style.display = 'none';
+    closeModal('alertModal');
   }
 
   // --- SPOUSE LOGIC ---
@@ -647,7 +670,7 @@
      const f = currentContactRecord.fields;
      const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
      const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
-     document.getElementById('spouseModal').style.display = 'block';
+     openModal('spouseModal');
      document.getElementById('connectForm').style.display = 'none';
      document.getElementById('confirmConnectForm').style.display = 'none';
      document.getElementById('disconnectForm').style.display = 'none';
@@ -663,7 +686,7 @@
         loadRecentContactsForModal();
      }
   }
-  function closeSpouseModal() { document.getElementById('spouseModal').style.display = 'none'; }
+  function closeSpouseModal() { closeModal('spouseModal'); }
   function backToSearch() {
      document.getElementById('confirmConnectForm').style.display = 'none';
      document.getElementById('connectForm').style.display = 'flex';

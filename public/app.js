@@ -91,6 +91,7 @@
     if (spouseName && spouseId) {
       document.getElementById('newOppSpouseName').innerText = spouseName;
       document.getElementById('addSpouseAsApplicant').checked = false;
+      updateSpouseCheckboxLabel();
       spouseSection.style.display = 'block';
     } else {
       spouseSection.style.display = 'none';
@@ -103,6 +104,17 @@
   
   function closeNewOppModal() {
     document.getElementById('newOppModal').style.display = 'none';
+  }
+  
+  function updateSpouseCheckboxLabel() {
+    const checkbox = document.getElementById('addSpouseAsApplicant');
+    const spouseName = document.getElementById('newOppSpouseName').innerText;
+    const labelSpan = document.getElementById('spouseCheckboxLabel');
+    if (checkbox.checked) {
+      labelSpan.innerHTML = `Adding <strong>${spouseName}</strong> as Applicant`;
+    } else {
+      labelSpan.innerHTML = `Also add <strong>${spouseName}</strong> as Applicant?`;
+    }
   }
   
   function showShortcutsHelp() {
@@ -214,6 +226,8 @@
     const inputs = document.querySelectorAll('#contactForm input, #contactForm textarea');
     inputs.forEach(input => { input.classList.remove('locked'); input.readOnly = false; });
     document.getElementById('actionRow').style.display = 'flex';
+    document.getElementById('cancelBtn').style.display = 'inline-block';
+    document.getElementById('editBtn').style.visibility = 'hidden';
     updateHeaderTitle(true); 
   }
 
@@ -225,10 +239,15 @@
     updateHeaderTitle(false); 
   }
   
-  function cancelNewClient() {
-    document.getElementById('contactForm').reset();
+  function cancelEditMode() {
+    const recordId = document.getElementById('recordId').value;
     document.getElementById('cancelBtn').style.display = 'none';
-    toggleProfileView(false);
+    if (recordId && currentContactRecord) {
+      selectContact(currentContactRecord);
+    } else {
+      document.getElementById('contactForm').reset();
+      toggleProfileView(false);
+    }
     disableEditMode();
   }
 

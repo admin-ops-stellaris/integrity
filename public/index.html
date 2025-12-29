@@ -20,7 +20,7 @@
       <div class="header-title">INTEGRITY</div>
       <div class="user-indicator">
         <button class="shortcuts-help" onclick="showShortcutsHelp()" title="Keyboard shortcuts">?</button>
-        <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode"><img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/WEB_Stellaris_Star%20Graphic.png" class="star-toggle"><span class="star-toggle-overlay"></span></button>
+        <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode"><img src="star-toggle.png" class="star-toggle"></button>
         <span class="user-email" id="userEmail">Loading...</span>
       </div>
     </div>
@@ -32,10 +32,9 @@
           <div style="display:flex; flex-direction:column; gap:2px;">
             <div style="display:flex; align-items:center; gap:12px;">
               <h2 id="formTitle">Contact</h2>
-              <span id="editBtn" class="edit-icon" onclick="enableEditMode()" title="Edit Contact">✎</span>
+              <span id="formSubtitle" class="form-subtitle"></span>
               <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
             </div>
-            <div id="formSubtitle" class="form-subtitle"></div>
           </div>
           <button type="button" class="new-btn" onclick="resetForm()">+ New Client</button>
         </div>
@@ -59,6 +58,9 @@
           <form id="contactForm" onsubmit="handleFormSubmit(this)" style="display:flex; flex-direction:column; flex:1;">
             <input type="hidden" name="recordId" id="recordId">
             <div class="profile-top">
+              <div class="fields-header">
+                <span id="editBtn" class="edit-icon" onclick="enableEditMode()" title="Edit Contact">✎ Edit</span>
+              </div>
               <div class="row" style="margin-bottom:10px;">
                 <div class="field-group" style="flex:1;"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
                 <div class="field-group" style="flex:1;"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
@@ -72,7 +74,7 @@
               </div>
             </div>
             <div id="actionRow" class="save-row">
-               <button type="button" id="cancelBtn" class="btn-cancel" onclick="cancelNewClient()" style="display:none;">Cancel</button>
+               <button type="button" id="cancelBtn" class="btn-cancel" onclick="cancelEditMode()" style="display:none;">Cancel</button>
                <button type="submit" id="submitBtn" style="width:auto; min-width:200px;">Update Contact</button>
             </div>
             <div id="status" style="text-align:center; margin-bottom:15px; min-height:18px;"></div>
@@ -176,8 +178,8 @@
             <p style="font-size:12px; color:#888; margin-bottom:15px;"><span id="newOppContactName"></span> will be the Primary Applicant.</p>
             <div id="newOppSpouseSection" style="display:none; background:#f8f8f8; padding:12px; border-radius:6px; margin-bottom:15px;">
               <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:#444;">
-                <input type="checkbox" id="addSpouseAsApplicant" style="width:16px; height:16px;">
-                <span>Also add <strong id="newOppSpouseName"></strong> as an Applicant</span>
+                <input type="checkbox" id="addSpouseAsApplicant" style="width:16px; height:16px;" onchange="updateSpouseCheckboxLabel()">
+                <span id="spouseCheckboxLabel">Also add <strong id="newOppSpouseName"></strong> as Applicant?</span>
               </label>
             </div>
             <div style="display:flex; gap:10px; justify-content:flex-end;">

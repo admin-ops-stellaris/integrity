@@ -75,6 +75,13 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- December 29, 2025: Edit pencil relocated - now at top-right of editable fields section instead of next to contact name
+- December 29, 2025: Cancel button for edit mode - appears when editing existing contact, reverts to last saved state
+- December 29, 2025: Dark mode button contrast - Update Contact button now has proper text visibility in dark mode
+- December 29, 2025: Subtitle moved inline - "prefers X · in database for Y" now appears next to contact name, not below
+- December 29, 2025: Directory time column padding - added right padding and larger hover area for easier tooltip access
+- December 29, 2025: Dynamic spouse checkbox label - shows "Also add X as Applicant?" unchecked, "Adding X as Applicant" checked
+- December 29, 2025: Custom star toggle image - using user-provided PNG with dark/light split design
 - December 29, 2025: Keyboard shortcuts help - "?" button in header opens modal listing all shortcuts, also press "?" key
 - December 29, 2025: Directory time column - compact "2m", "3h", "5d" column on right side of contacts, hover for full details
 - December 29, 2025: Opportunity status badges on left - [WON] Primary Applicant format with aligned fixed-width badge slot

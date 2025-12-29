@@ -108,12 +108,14 @@
   
   function updateSpouseCheckboxLabel() {
     const checkbox = document.getElementById('addSpouseAsApplicant');
-    const spouseName = document.getElementById('newOppSpouseName').innerText;
-    const labelSpan = document.getElementById('spouseCheckboxLabel');
+    const prefix = document.getElementById('spouseCheckboxPrefix');
+    const suffix = document.getElementById('spouseCheckboxSuffix');
     if (checkbox.checked) {
-      labelSpan.innerHTML = `Adding <strong>${spouseName}</strong> as Applicant`;
+      prefix.innerText = 'Adding ';
+      suffix.innerText = ' as Applicant';
     } else {
-      labelSpan.innerHTML = `Also add <strong>${spouseName}</strong> as Applicant?`;
+      prefix.innerText = 'Also add ';
+      suffix.innerText = ' as Applicant?';
     }
   }
   

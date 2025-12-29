@@ -49,7 +49,7 @@
 
   .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
   .fields-header { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-  .edit-icon { cursor: pointer; color: #888; font-size: 12px; transition: color 0.2s; visibility: hidden; }
+  .edit-icon { cursor: pointer; color: #888; font-size: 12px; transition: color 0.2s; visibility: hidden; transform: scaleX(-1); }
   .edit-icon:hover { color: var(--color-star); }
   .refresh-icon { cursor: pointer; color: #BBB; font-size: 18px; transition: color 0.2s; margin-left: 8px; margin-top: -2px; display: none; }
   .refresh-icon:hover { color: var(--color-trail); }
@@ -162,7 +162,7 @@
   .contact-item { display: flex; align-items: center; gap: 12px; position: relative; cursor: pointer; }
   .contact-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFF; font-size: 12px; font-weight: 600; flex-shrink: 0; letter-spacing: 0.5px; }
   .contact-info { flex: 1; min-width: 0; }
-  .contact-modified { font-size: 10px; color: #AAA; white-space: nowrap; flex-shrink: 0; cursor: help; padding: 8px 12px 8px 8px; margin: -8px -12px -8px -8px; }
+  .contact-modified { font-size: 10px; color: #AAA; white-space: nowrap; flex-shrink: 0; cursor: help; padding: 8px; margin-right: 8px; }
   body.dark-mode .contact-modified { color: #666; }
 
   /* STATUS COLORS */

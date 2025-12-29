@@ -32,7 +32,7 @@
 
   /* FORM */
   .profile-top { width: 100%; display: flex; flex-direction: column; gap: 10px; border-bottom: 2px solid var(--color-border); padding-bottom: 20px; margin-bottom: 0; } 
-  .save-row { width: 100%; display: none; justify-content: center; align-items: center; margin-top: 15px; margin-bottom: 25px; }
+  .save-row { width: 100%; display: none; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; margin-bottom: 25px; }
   .profile-bottom { display: flex; gap: 20px; flex: 1; min-height: 0; }
   .profile-bottom-left { flex: 2; display: flex; flex-direction: column; }
   .profile-bottom-right { flex: 3; border-left: 1px dashed var(--color-border); padding-left: 20px; display: flex; flex-direction: column; }
@@ -67,9 +67,8 @@
   .opp-item { background: #FFF; padding: 10px; margin-bottom: 6px; border-radius: 4px; border: 1px solid #E0E0E0; font-size: 13px; cursor: pointer; transition: background 0.2s; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .opp-item:hover { background: #F9F9F9; border-color: var(--color-star); }
   .opp-title { font-weight: 400; color: var(--color-trail); flex: 1; min-width: 0; word-wrap: break-word; overflow-wrap: break-word; }
-  .opp-role { color: var(--color-star); font-size: 10px; text-transform: uppercase; font-weight: 500; white-space: nowrap; }
-  .opp-left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  .opp-status-slot { width: 36px; text-align: center; }
+  .opp-role { color: var(--color-star); font-size: 10px; text-transform: uppercase; font-weight: 500; white-space: nowrap; width: 95px; text-align: right; }
+  .opp-role-wrapper { display: flex; align-items: center; flex-shrink: 0; gap: 8px; }
   .sort-icon { cursor: pointer; color: #BBB; font-size: 14px; margin-left: 8px; vertical-align: middle; display: none; }
   .sort-icon:hover { color: var(--color-trail); }
 
@@ -176,7 +175,7 @@
   /* THEME TOGGLE */
   .theme-toggle { background: transparent; border: 1px solid var(--color-border); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; padding: 0; margin: 0; margin-right: 10px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; overflow: hidden; position: relative; }
   .theme-toggle:hover { background: var(--color-sky); transform: none; }
-  .star-toggle { width: 18px; height: 18px; object-fit: contain; position: relative; z-index: 1; }
+  .star-toggle { width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 1; padding: 4px; box-sizing: border-box; }
   .star-toggle-overlay { position: absolute; left: 0; top: 0; width: 50%; height: 100%; background: rgba(0,0,0,0.5); pointer-events: none; z-index: 2; }
   body.dark-mode .star-toggle-overlay { left: 50%; background: rgba(255,255,255,0.35); }
 
@@ -223,6 +222,7 @@
   body.dark-mode .new-btn:hover { background: #333; }
   body.dark-mode #newOppSpouseSection { background: #333; }
   body.dark-mode #newOppSpouseSection label { color: #CCC; }
+  #newOppSpouseSection label { text-transform: none; }
 
   /* SHORTCUTS HELP */
   .shortcuts-help { background: transparent; border: 1px solid var(--color-border); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; padding: 0; margin: 0; margin-right: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #888; transition: all 0.2s; }

@@ -221,10 +221,19 @@
     const inputs = document.querySelectorAll('#contactForm input, #contactForm textarea');
     inputs.forEach(input => { input.classList.add('locked'); input.readOnly = true; });
     document.getElementById('actionRow').style.display = 'none';
+    document.getElementById('cancelBtn').style.display = 'none';
     updateHeaderTitle(false); 
+  }
+  
+  function cancelNewClient() {
+    document.getElementById('contactForm').reset();
+    document.getElementById('cancelBtn').style.display = 'none';
+    toggleProfileView(false);
+    disableEditMode();
   }
 
   function selectContact(record) {
+    document.getElementById('cancelBtn').style.display = 'none';
     toggleProfileView(true);
     currentContactRecord = record; 
     const f = record.fields;
@@ -642,6 +651,7 @@
     document.getElementById('formTitle').innerText = "New Contact";
     document.getElementById('formSubtitle').innerText = '';
     document.getElementById('submitBtn').innerText = "Save Contact";
+    document.getElementById('cancelBtn').style.display = 'inline-block';
     document.getElementById('editBtn').style.visibility = 'hidden';
     document.getElementById('oppList').innerHTML = '<li style="color:#CCC; font-size:12px; font-style:italic;">No opportunities linked.</li>';
     document.getElementById('auditSection').style.display = 'none';
@@ -851,7 +861,7 @@
          const statusClass = status === 'Won' ? 'status-won' : status === 'Lost' ? 'status-lost' : '';
          const li = document.createElement('li'); li.className = `opp-item ${statusClass}`;
          const statusBadge = status ? `<span class="opp-status-badge ${statusClass}">${status}</span>` : '';
-         li.innerHTML = `<span class="opp-left"><span class="opp-status-slot">${statusBadge}</span><span class="opp-role">${role}</span></span><span class="opp-title">${name}</span>`;
+         li.innerHTML = `<span class="opp-title">${name}</span><span class="opp-role-wrapper">${statusBadge}<span class="opp-role">${role}</span></span>`;
          li.onclick = function() { panelHistory = []; loadPanelRecord('Opportunities', opp.id); }; oppList.appendChild(li);
      });
   }

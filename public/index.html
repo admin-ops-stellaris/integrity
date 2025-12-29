@@ -19,7 +19,8 @@
       </div>
       <div class="header-title">INTEGRITY</div>
       <div class="user-indicator">
-        <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode"><img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:64,h:64,m?v=3" class="star-toggle"><span class="star-toggle-overlay"></span></button>
+        <button class="shortcuts-help" onclick="showShortcutsHelp()" title="Keyboard shortcuts">?</button>
+        <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode"><img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/WEB_Stellaris_Star%20Graphic.png" class="star-toggle"><span class="star-toggle-overlay"></span></button>
         <span class="user-email" id="userEmail">Loading...</span>
       </div>
     </div>
@@ -181,6 +182,27 @@
             <div style="display:flex; gap:10px; justify-content:flex-end;">
               <button type="button" class="btn-cancel" onclick="closeNewOppModal()">Cancel</button>
               <button type="button" class="btn-confirm" onclick="submitNewOpportunity()">Create Opportunity</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="shortcutsModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:320px;">
+          <div class="modal-sidebar">
+            <img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:64,h:64,m?v=3">
+          </div>
+          <div class="modal-body">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Keyboard Shortcuts</h3>
+            <div class="shortcuts-list">
+              <div class="shortcut-row"><kbd>/</kbd><span>Focus search</span></div>
+              <div class="shortcut-row"><kbd>N</kbd><span>New client</span></div>
+              <div class="shortcut-row"><kbd>E</kbd><span>Edit contact</span></div>
+              <div class="shortcut-row"><kbd>Esc</kbd><span>Close panel/modal</span></div>
+              <div class="shortcut-row"><kbd>?</kbd><span>Show this help</span></div>
+            </div>
+            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+              <button type="button" class="btn-cancel" onclick="closeShortcutsModal()">Close</button>
             </div>
           </div>
         </div>

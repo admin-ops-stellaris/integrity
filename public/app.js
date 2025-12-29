@@ -29,11 +29,18 @@
         closeOppPanel();
         closeSpouseModal();
         closeNewOppModal();
+        closeShortcutsModal();
         if (document.getElementById('actionRow').style.display === 'flex') disableEditMode();
         return;
       }
       
       if (isTyping) return;
+      
+      if (e.key === '?') {
+        e.preventDefault();
+        showShortcutsHelp();
+        return;
+      }
       
       if (e.key === '/') {
         e.preventDefault();
@@ -97,6 +104,19 @@
   function closeNewOppModal() {
     document.getElementById('newOppModal').style.display = 'none';
   }
+  
+  function showShortcutsHelp() {
+    document.getElementById('shortcutsModal').style.display = 'flex';
+  }
+  
+  function closeShortcutsModal() {
+    document.getElementById('shortcutsModal').style.display = 'none';
+  }
+  
+  document.addEventListener('click', function(e) {
+    const shortcutsModal = document.getElementById('shortcutsModal');
+    if (shortcutsModal && e.target === shortcutsModal) closeShortcutsModal();
+  });
   
   function submitNewOpportunity() {
     const oppName = document.getElementById('newOppName').value.trim();
@@ -679,8 +699,8 @@
       const initials = getInitials(f.FirstName, f.LastName);
       const avatarColor = getAvatarColor(fullName);
       const modifiedTooltip = formatModifiedTooltip(f);
-      item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>`;
-      if (modifiedTooltip) item.title = modifiedTooltip;
+      const modifiedShort = formatModifiedShort(f);
+      item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>${modifiedShort ? `<span class="contact-modified" title="${modifiedTooltip || ''}">${modifiedShort}</span>` : ''}`;
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
   }
@@ -718,6 +738,26 @@
     
     if (modifiedBy) return `Modified ${timeAgo} by ${modifiedBy}`;
     return `Modified ${timeAgo}`;
+  }
+  function formatModifiedShort(f) {
+    const modifiedOn = f['Modified On'];
+    if (!modifiedOn) return null;
+    
+    const dateMatch = modifiedOn.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!dateMatch) return null;
+    
+    const modDate = new Date(dateMatch[1], dateMatch[2] - 1, dateMatch[3], dateMatch[4], dateMatch[5]);
+    const now = new Date();
+    const diffMs = now - modDate;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return modDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
   }
   function formatSubtitle(f) {
     const preferredName = f.PreferredName || f.FirstName || '';
@@ -810,7 +850,8 @@
          const status = fields['Status'] || '';
          const statusClass = status === 'Won' ? 'status-won' : status === 'Lost' ? 'status-lost' : '';
          const li = document.createElement('li'); li.className = `opp-item ${statusClass}`;
-         li.innerHTML = `<span class="opp-title">${name}</span><span class="opp-role-wrapper"><span class="opp-role">${role}</span><span class="opp-status-badge ${statusClass}">${status}</span></span>`;
+         const statusBadge = status ? `<span class="opp-status-badge ${statusClass}">${status}</span>` : '';
+         li.innerHTML = `<span class="opp-left"><span class="opp-status-slot">${statusBadge}</span><span class="opp-role">${role}</span></span><span class="opp-title">${name}</span>`;
          li.onclick = function() { panelHistory = []; loadPanelRecord('Opportunities', opp.id); }; oppList.appendChild(li);
      });
   }

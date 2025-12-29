@@ -12,7 +12,98 @@
   let currentPanelData = {}; 
   let pendingRemovals = {}; 
 
-  window.onload = function() { loadContacts(); checkUserIdentity(); };
+  window.onload = function() { 
+    loadContacts(); 
+    checkUserIdentity(); 
+    initKeyboardShortcuts();
+    initDarkMode();
+  };
+
+  // --- KEYBOARD SHORTCUTS ---
+  function initKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+      const activeEl = document.activeElement;
+      const isTyping = activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable;
+      
+      if (e.key === 'Escape') {
+        closeOppPanel();
+        closeSpouseModal();
+        if (document.getElementById('actionRow').style.display === 'flex') disableEditMode();
+        return;
+      }
+      
+      if (isTyping) return;
+      
+      if (e.key === '/') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+      } else if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        resetForm();
+      } else if (e.key === 'e' || e.key === 'E') {
+        if (currentContactRecord && document.getElementById('editBtn').style.visibility !== 'hidden') {
+          e.preventDefault();
+          enableEditMode();
+        }
+      }
+    });
+  }
+
+  // --- DARK MODE ---
+  function initDarkMode() {
+    const savedTheme = localStorage.getItem('integrity-theme');
+    if (savedTheme === 'dark') document.body.classList.add('dark-mode');
+  }
+  function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('integrity-theme', isDark ? 'dark' : 'light');
+  }
+
+  // --- QUICK ADD OPPORTUNITY ---
+  function quickAddOpportunity() {
+    if (!currentContactRecord) { alert('Please select a contact first.'); return; }
+    const contactName = formatName(currentContactRecord.fields);
+    const oppName = prompt('Enter opportunity name:', `${contactName} - New Opportunity`);
+    if (!oppName) return;
+    google.script.run.withSuccessHandler(function(res) {
+      if (res && res.id) {
+        loadOpportunities(currentContactRecord.fields);
+        setTimeout(() => loadPanelRecord('Opportunities', res.id), 500);
+      }
+    }).createOpportunity(oppName, currentContactRecord.id);
+  }
+
+  // --- CELEBRATION ---
+  function triggerWonCelebration() {
+    const container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+    const colors = ['#BB9934', '#7B8B64', '#19414C', '#D0DFE6', '#F2F0E9'];
+    for (let i = 0; i < 50; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = Math.random() * 100 + '%';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = Math.random() * 0.5 + 's';
+      confetti.style.animationDuration = (Math.random() * 1 + 1.5) + 's';
+      container.appendChild(confetti);
+    }
+    setTimeout(() => container.remove(), 3000);
+  }
+
+  // --- AVATAR HELPERS ---
+  function getInitials(firstName, lastName) {
+    const f = (firstName || '').charAt(0).toUpperCase();
+    const l = (lastName || '').charAt(0).toUpperCase();
+    return f + l || '?';
+  }
+  function getAvatarColor(name) {
+    const colors = ['#19414C', '#7B8B64', '#BB9934', '#2C2622', '#6B5B4F'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  }
 
   function checkUserIdentity() {
     google.script.run.withSuccessHandler(function(email) {
@@ -189,6 +280,12 @@
         if(fieldKey === 'Opportunity Name') {
            document.getElementById('panelTitle').innerText = val;
            if(currentContactRecord) { loadOpportunities(currentContactRecord.fields); }
+        }
+        if(fieldKey === 'Status' && val === 'Won') {
+           triggerWonCelebration();
+        }
+        if(fieldKey === 'Status' && currentContactRecord) {
+           loadOpportunities(currentContactRecord.fields);
         }
      }).updateRecord(table, id, fieldKey, val);
   }
@@ -529,7 +626,10 @@
     list.innerHTML = '';
     records.forEach(record => {
       const f = record.fields; const item = document.createElement('li'); item.className = 'contact-item';
-      item.innerHTML = `<span class="contact-name">${formatName(f)}</span><div class="contact-details-row">${formatDetailsRow(f)}</div>`;
+      const fullName = formatName(f);
+      const initials = getInitials(f.FirstName, f.LastName);
+      const avatarColor = getAvatarColor(fullName);
+      item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>`;
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
   }
@@ -630,8 +730,10 @@
      });
      sorted.forEach(opp => {
          const fields = opp.fields; const name = fields['Opportunity Name'] || "Unnamed Opportunity"; const role = opp._role;
-         const li = document.createElement('li'); li.className = 'opp-item';
-         li.innerHTML = `<span class="opp-title">${name}</span> <span class="opp-role">${role}</span>`;
+         const status = fields['Status'] || '';
+         const statusClass = status === 'Won' ? 'status-won' : status === 'Lost' ? 'status-lost' : '';
+         const li = document.createElement('li'); li.className = `opp-item ${statusClass}`;
+         li.innerHTML = `<span class="opp-title">${name}</span><span class="opp-status-badge ${statusClass}">${status}</span><span class="opp-role">${role}</span>`;
          li.onclick = function() { panelHistory = []; loadPanelRecord('Opportunities', opp.id); }; oppList.appendChild(li);
      });
   }

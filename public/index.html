@@ -18,6 +18,7 @@
       </div>
       <div class="header-title">INTEGRITY</div>
       <div class="user-indicator">
+        <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">◐</button>
         <span class="user-email" id="userEmail">Loading...</span>
       </div>
     </div>
@@ -87,7 +88,10 @@
                  </div>
               </div>
               <div class="profile-bottom-right">
-                <h2 style="font-size:15px; margin-bottom:10px;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
+                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New</button>
+                </div>
                 <div id="oppLoading" style="display:none;">Loading...</div>
                 <ul id="oppList" class="opp-list"></ul>
               </div>

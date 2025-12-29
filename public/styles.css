@@ -151,3 +151,61 @@
   .pulse-dot:nth-child(1) { animation-delay: -0.32s; }
   .pulse-dot:nth-child(2) { animation-delay: -0.16s; }
   @keyframes pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+  /* AVATAR INITIALS */
+  .contact-item { display: flex; align-items: center; gap: 12px; }
+  .contact-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFF; font-size: 12px; font-weight: 600; flex-shrink: 0; letter-spacing: 0.5px; }
+  .contact-info { flex: 1; min-width: 0; }
+
+  /* STATUS COLORS */
+  .opp-item.status-won { border-left: 3px solid var(--color-cedar); background: rgba(123, 139, 100, 0.05); }
+  .opp-item.status-lost { border-left: 3px solid #999; opacity: 0.6; }
+  .opp-status-badge { font-size: 9px; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; font-weight: 600; margin-left: 8px; flex-shrink: 0; }
+  .opp-status-badge.status-won { background: var(--color-cedar); color: #FFF; }
+  .opp-status-badge.status-lost { background: #999; color: #FFF; }
+  .opp-status-badge:not(.status-won):not(.status-lost) { background: var(--color-sky); color: var(--color-midnight); }
+
+  /* THEME TOGGLE */
+  .theme-toggle { background: transparent; border: 1px solid var(--color-border); color: var(--color-midnight); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; padding: 0; margin: 0; margin-right: 10px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .theme-toggle:hover { background: var(--color-sky); transform: none; }
+
+  /* QUICK ADD BUTTON */
+  .quick-add-btn { background: transparent; border: 1px solid var(--color-star); color: var(--color-star); font-size: 10px; padding: 4px 10px; border-radius: 15px; cursor: pointer; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; width: auto; transition: all 0.2s; }
+  .quick-add-btn:hover { background: var(--color-star); color: #FFF; transform: none; }
+
+  /* CONFETTI CELEBRATION */
+  .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; }
+  .confetti { position: absolute; width: 10px; height: 10px; top: -10px; opacity: 0; animation: confetti-fall linear forwards; }
+  @keyframes confetti-fall { 
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; } 
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } 
+  }
+
+  /* DARK MODE */
+  body.dark-mode { --color-salt: #1a1a1a; --color-trail: #E8E6E1; --color-border: #444; --color-white: #2a2a2a; }
+  body.dark-mode .app-header { background-color: #1a1a1a; border-bottom: 1px solid #333; }
+  body.dark-mode .header-title { color: var(--color-star); }
+  body.dark-mode .user-email { color: #AAA; }
+  body.dark-mode .column { background: #242424; }
+  body.dark-mode .list-section { background: rgba(30, 30, 30, 0.95); }
+  body.dark-mode input, body.dark-mode textarea, body.dark-mode select { background: #333; border-color: #555; color: #E8E6E1; }
+  body.dark-mode input.locked, body.dark-mode textarea.locked { background: transparent; border-bottom-color: #555; color: #E8E6E1; }
+  body.dark-mode .opp-item { background: #333; border-color: #444; }
+  body.dark-mode .opp-item:hover { background: #3a3a3a; }
+  body.dark-mode .data-link { background: #333; border-color: #444; color: #E8E6E1; }
+  body.dark-mode .data-link:hover { background: #3a3a3a; }
+  body.dark-mode .slide-panel { background: #242424; border-color: #444; }
+  body.dark-mode .detail-value { border-color: #444; color: #E8E6E1; }
+  body.dark-mode .modal-content { background: #2a2a2a; }
+  body.dark-mode .modal-body { color: #E8E6E1; }
+  body.dark-mode .search-dropdown, body.dark-mode .link-results { background: #333; border-color: #444; }
+  body.dark-mode .search-option:hover, body.dark-mode .link-result-item:hover { background: #444; }
+  body.dark-mode .edit-wrapper { background: #333; }
+  body.dark-mode #emptyState { border-color: #444; color: #888; }
+  body.dark-mode .theme-toggle { border-color: #555; color: #AAA; }
+  body.dark-mode .theme-toggle:hover { background: #444; }
+  body.dark-mode .contact-item { border-color: #444; }
+  body.dark-mode .contact-item:hover { background: #333; border-color: var(--color-star); }
+  body.dark-mode h2, body.dark-mode label { color: #AAA; }
+  body.dark-mode .new-btn { border-color: #555; color: #CCC; }
+  body.dark-mode .new-btn:hover { background: #333; }

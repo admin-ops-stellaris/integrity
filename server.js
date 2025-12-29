@@ -252,6 +252,19 @@ app.post("/api/getLinkedOpportunities", async (req, res) => {
   }
 });
 
+app.post("/api/createOpportunity", async (req, res) => {
+  try {
+    const [name, contactId] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const record = await airtable.createOpportunity(name, contactId, userContext);
+    res.json(record);
+  } catch (err) {
+    console.error("createOpportunity error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/processForm", async (req, res) => {
   try {
     const formData = req.body.args?.[0] || {};

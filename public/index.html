@@ -128,6 +128,55 @@
         </div>
       </div>
 
+      <div id="oppComposer" class="slide-panel composer-panel">
+        <div class="composer-header">
+          <div class="composer-header-left">
+            <h2 style="margin:0; font-size:18px; color:var(--color-midnight);">New Opportunity</h2>
+            <p id="composerContactInfo" class="composer-contact-info"></p>
+          </div>
+          <button class="close-panel" onclick="closeOppComposer()">✕</button>
+        </div>
+        <div class="composer-body">
+          <div class="composer-section">
+            <div class="composer-section-title">Opportunity Details</div>
+            <div class="composer-field">
+              <label>Opportunity Name</label>
+              <input type="text" id="composerOppName" placeholder="Enter opportunity name...">
+            </div>
+            <div class="composer-field">
+              <label>Opportunity Type</label>
+              <select id="composerOppType">
+                <option value="Home Loans" selected>Home Loans</option>
+                <option value="Commercial Loans">Commercial Loans</option>
+                <option value="Deposit Bonds">Deposit Bonds</option>
+                <option value="Insurance (General)">Insurance (General)</option>
+                <option value="Insurance (Life)">Insurance (Life)</option>
+                <option value="Personal Loans">Personal Loans</option>
+                <option value="Asset Finance">Asset Finance</option>
+                <option value="Tax Depreciation Schedule">Tax Depreciation Schedule</option>
+              </select>
+            </div>
+          </div>
+          <div class="composer-section">
+            <div class="composer-section-title">Applicants</div>
+            <div class="composer-applicant-card primary">
+              <div class="applicant-role">Primary Applicant</div>
+              <div id="composerPrimaryName" class="applicant-name"></div>
+            </div>
+            <div id="composerSpouseSection" class="composer-spouse-option" style="display:none;">
+              <label class="composer-checkbox-label">
+                <input type="checkbox" id="composerAddSpouse">
+                <span id="composerSpouseLabel">Also add <strong id="composerSpouseName"></strong> as Applicant</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="composer-footer">
+          <button type="button" class="composer-btn-cancel" onclick="closeOppComposer()">Cancel</button>
+          <button type="button" class="composer-btn-create" onclick="submitFromComposer()">Create Opportunity</button>
+        </div>
+      </div>
+
       <div id="spouseModal" class="modal">
         <div class="modal-content">
           <div class="modal-sidebar">
@@ -165,41 +214,6 @@
                </div>
             </div>
 
-          </div>
-        </div>
-      </div>
-
-      <div id="newOppModal" class="modal">
-        <div class="modal-content" style="max-width:420px; max-height:90vh; overflow-y:auto;">
-          <div class="modal-sidebar">
-            <img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:64,h:64,m?v=3">
-          </div>
-          <div class="modal-body">
-            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">New Opportunity</h3>
-            <p style="font-size:13px; color:#666; margin-bottom:5px;">Opportunity Name:</p>
-            <input type="text" id="newOppName" style="width:100%; margin-bottom:15px;" onkeydown="if(event.key==='Enter'){event.preventDefault();submitNewOpportunity();}">
-            <p style="font-size:13px; color:#666; margin-bottom:5px;">Opportunity Type:</p>
-            <select id="newOppType" style="width:100%; margin-bottom:15px; padding:8px; border:1px solid #DDD; border-radius:4px;">
-              <option value="Home Loans" selected>Home Loans</option>
-              <option value="Commercial Loans">Commercial Loans</option>
-              <option value="Deposit Bonds">Deposit Bonds</option>
-              <option value="Insurance (General)">Insurance (General)</option>
-              <option value="Insurance (Life)">Insurance (Life)</option>
-              <option value="Personal Loans">Personal Loans</option>
-              <option value="Asset Finance">Asset Finance</option>
-              <option value="Tax Depreciation Schedule">Tax Depreciation Schedule</option>
-            </select>
-            <p style="font-size:12px; color:#888; margin-bottom:15px;"><span id="newOppContactName"></span> will be the Primary Applicant.</p>
-            <div id="newOppSpouseSection" style="display:none; background:#f8f8f8; padding:12px; border-radius:6px; margin-bottom:15px;">
-              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; color:#444;">
-                <input type="checkbox" id="addSpouseAsApplicant" style="width:16px; height:16px;" onchange="updateSpouseCheckboxLabel()">
-                <span id="spouseCheckboxLabel"><span id="spouseCheckboxPrefix">Also add </span><strong id="newOppSpouseName"></strong><span id="spouseCheckboxSuffix"> as Applicant?</span></span>
-              </label>
-            </div>
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-              <button type="button" class="btn-cancel" onclick="closeNewOppModal()">Cancel</button>
-              <button type="button" class="btn-confirm" onclick="submitNewOpportunity()">Create Opportunity</button>
-            </div>
           </div>
         </div>
       </div>

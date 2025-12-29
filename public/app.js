@@ -93,86 +93,56 @@
     resetScreensaverTimer();
   }
 
-  // --- QUICK ADD OPPORTUNITY ---
+  // --- QUICK ADD OPPORTUNITY (COMPOSER) ---
   function quickAddOpportunity() {
     if (!currentContactRecord) { alert('Please select a contact first.'); return; }
+    openOppComposer();
+  }
+  
+  function openOppComposer() {
     const f = currentContactRecord.fields;
     const contactName = formatName(f);
     const today = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const defaultName = `${contactName} - ${today}`;
     
+    document.getElementById('composerOppName').value = defaultName;
+    document.getElementById('composerOppType').value = 'Home Loans';
+    document.getElementById('composerContactInfo').innerText = `Creating for ${contactName}`;
+    document.getElementById('composerPrimaryName').innerText = contactName;
+    
     const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
     const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
     
-    openNewOppModal(defaultName, contactName, spouseName, spouseId);
-  }
-  
-  function openNewOppModal(defaultName, contactName, spouseName, spouseId) {
-    const modal = document.getElementById('newOppModal');
-    document.getElementById('newOppName').value = defaultName;
-    document.getElementById('newOppContactName').innerText = contactName;
-    
-    const spouseSection = document.getElementById('newOppSpouseSection');
+    const spouseSection = document.getElementById('composerSpouseSection');
     if (spouseName && spouseId) {
-      document.getElementById('newOppSpouseName').innerText = spouseName;
-      document.getElementById('addSpouseAsApplicant').checked = false;
-      updateSpouseCheckboxLabel();
+      document.getElementById('composerSpouseName').innerText = spouseName;
+      document.getElementById('composerAddSpouse').checked = false;
       spouseSection.style.display = 'block';
     } else {
       spouseSection.style.display = 'none';
     }
     
-    openModal('newOppModal');
+    document.getElementById('oppComposer').classList.add('open');
     setTimeout(() => {
-      document.getElementById('newOppName').focus();
-      document.getElementById('newOppName').select();
-    }, 50);
+      document.getElementById('composerOppName').focus();
+      document.getElementById('composerOppName').select();
+    }, 100);
   }
   
-  function closeNewOppModal() {
-    closeModal('newOppModal');
+  function closeOppComposer() {
+    document.getElementById('oppComposer').classList.remove('open');
   }
   
-  function updateSpouseCheckboxLabel() {
-    const checkbox = document.getElementById('addSpouseAsApplicant');
-    const prefix = document.getElementById('spouseCheckboxPrefix');
-    const suffix = document.getElementById('spouseCheckboxSuffix');
-    if (checkbox.checked) {
-      prefix.innerText = 'Adding ';
-      suffix.innerText = ' as Applicant';
-    } else {
-      prefix.innerText = 'Also add ';
-      suffix.innerText = ' as Applicant?';
-    }
-  }
-  
-  function showShortcutsHelp() {
-    openModal('shortcutsModal');
-  }
-  
-  function closeShortcutsModal() {
-    closeModal('shortcutsModal');
-  }
-  
-  document.addEventListener('click', function(e) {
-    const shortcutsModal = document.getElementById('shortcutsModal');
-    if (shortcutsModal && e.target === shortcutsModal) closeShortcutsModal();
-    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
-    if (deleteConfirmModal && e.target === deleteConfirmModal) closeDeleteConfirmModal();
-    const alertModal = document.getElementById('alertModal');
-    if (alertModal && e.target === alertModal) closeAlertModal();
-  });
-  
-  function submitNewOpportunity() {
-    const oppName = document.getElementById('newOppName').value.trim();
+  function submitFromComposer() {
+    const oppName = document.getElementById('composerOppName').value.trim();
     if (!oppName) { alert('Please enter an opportunity name.'); return; }
     
-    const oppType = document.getElementById('newOppType').value;
+    const oppType = document.getElementById('composerOppType').value;
     const f = currentContactRecord.fields;
     const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
-    const addSpouse = document.getElementById('addSpouseAsApplicant')?.checked && spouseId;
+    const addSpouse = document.getElementById('composerAddSpouse')?.checked && spouseId;
     
-    closeNewOppModal();
+    closeOppComposer();
     
     google.script.run.withSuccessHandler(function(res) {
       if (res && res.id) {
@@ -194,7 +164,24 @@
       }
     }).createOpportunity(oppName, currentContactRecord.id, oppType);
   }
-
+  
+  function showShortcutsHelp() {
+    openModal('shortcutsModal');
+  }
+  
+  function closeShortcutsModal() {
+    closeModal('shortcutsModal');
+  }
+  
+  document.addEventListener('click', function(e) {
+    const shortcutsModal = document.getElementById('shortcutsModal');
+    if (shortcutsModal && e.target === shortcutsModal) closeShortcutsModal();
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    if (deleteConfirmModal && e.target === deleteConfirmModal) closeDeleteConfirmModal();
+    const alertModal = document.getElementById('alertModal');
+    if (alertModal && e.target === alertModal) closeAlertModal();
+  });
+  
   // --- CELEBRATION ---
   function triggerWonCelebration() {
     const container = document.createElement('div');

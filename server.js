@@ -324,7 +324,7 @@ const SCHEMA = {
     fields: [
       { key: 'Opportunity Name', label: 'Opportunity Name' },
       { key: 'Status', label: 'Status', type: 'select', options: ['Won', 'Open', 'Lost'] },
-      { key: 'Opportunity Type', label: 'Opportunity Type', type: 'select', options: ['Home Loans', 'Asset Finance', 'Business Loans', 'Personal Loans', 'Commercial', 'SMSF'] },
+      { key: 'Opportunity Type', label: 'Opportunity Type', type: 'select', options: ['Home Loans', 'Commercial Loans', 'Deposit Bonds', 'Insurance (General)', 'Insurance (Life)', 'Personal Loans', 'Asset Finance', 'Tax Depreciation Schedule'] },
       { key: 'Primary Applicant', nameKey: 'Primary Applicant Name', table: 'Contacts', label: 'Primary Applicant' },
       { key: 'Applicants', nameKey: 'Applicants Name', table: 'Contacts', label: 'Applicants' },
       { key: 'Guarantors', nameKey: 'Guarantors Name', table: 'Contacts', label: 'Guarantors' },

@@ -254,8 +254,8 @@ app.post("/api/getLinkedOpportunities", async (req, res) => {
 
 app.post("/api/createOpportunity", async (req, res) => {
   try {
-    const [name, contactId] = req.body.args || [];
-    const record = await airtable.createOpportunity(name, contactId);
+    const [name, contactId, opportunityType] = req.body.args || [];
+    const record = await airtable.createOpportunity(name, contactId, opportunityType || "Home Loans");
     res.json(record);
   } catch (err) {
     console.error("createOpportunity error:", err);
@@ -324,6 +324,7 @@ const SCHEMA = {
     fields: [
       { key: 'Opportunity Name', label: 'Opportunity Name' },
       { key: 'Status', label: 'Status', type: 'select', options: ['Won', 'Open', 'Lost'] },
+      { key: 'Opportunity Type', label: 'Opportunity Type', type: 'select', options: ['Home Loans', 'Asset Finance', 'Business Loans', 'Personal Loans', 'Commercial', 'SMSF'] },
       { key: 'Primary Applicant', nameKey: 'Primary Applicant Name', table: 'Contacts', label: 'Primary Applicant' },
       { key: 'Applicants', nameKey: 'Applicants Name', table: 'Contacts', label: 'Applicants' },
       { key: 'Guarantors', nameKey: 'Guarantors Name', table: 'Contacts', label: 'Guarantors' },

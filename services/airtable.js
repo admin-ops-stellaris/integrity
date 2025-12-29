@@ -216,13 +216,14 @@ export async function updateRecordInTable(tableName, id, field, value, userConte
   }
 }
 
-export async function createOpportunity(name, contactId) {
+export async function createOpportunity(name, contactId, opportunityType = "Home Loans") {
   if (!base) return null;
   try {
     const fields = {
       "Opportunity Name": name,
       "Primary Applicant": [contactId],
-      "Status": "Open"
+      "Status": "Open",
+      "Opportunity Type": opportunityType
     };
     const record = await base("Opportunities").create(fields);
     return formatRecord(record);

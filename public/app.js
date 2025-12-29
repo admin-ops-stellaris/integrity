@@ -167,6 +167,7 @@
     const oppName = document.getElementById('newOppName').value.trim();
     if (!oppName) { alert('Please enter an opportunity name.'); return; }
     
+    const oppType = document.getElementById('newOppType').value;
     const f = currentContactRecord.fields;
     const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
     const addSpouse = document.getElementById('addSpouseAsApplicant')?.checked && spouseId;
@@ -191,7 +192,7 @@
           finishUp();
         }
       }
-    }).createOpportunity(oppName, currentContactRecord.id);
+    }).createOpportunity(oppName, currentContactRecord.id, oppType);
   }
 
   // --- CELEBRATION ---
@@ -999,10 +1000,12 @@
      sorted.forEach(opp => {
          const fields = opp.fields; const name = fields['Opportunity Name'] || "Unnamed Opportunity"; const role = opp._role;
          const status = fields['Status'] || '';
+         const oppType = fields['Opportunity Type'] || '';
          const statusClass = status === 'Won' ? 'status-won' : status === 'Lost' ? 'status-lost' : '';
          const li = document.createElement('li'); li.className = `opp-item ${statusClass}`;
          const statusBadge = status ? `<span class="opp-status-badge ${statusClass}">${status}</span>` : '';
-         li.innerHTML = `<span class="opp-title">${name}</span><span class="opp-role-wrapper">${statusBadge}<span class="opp-role">${role}</span></span>`;
+         const typeLabel = oppType ? `<span class="opp-type">${oppType}</span>` : '';
+         li.innerHTML = `<span class="opp-title">${name}${typeLabel}</span><span class="opp-role-wrapper">${statusBadge}<span class="opp-role">${role}</span></span>`;
          li.onclick = function() { panelHistory = []; loadPanelRecord('Opportunities', opp.id); }; oppList.appendChild(li);
      });
   }

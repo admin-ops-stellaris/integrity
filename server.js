@@ -290,6 +290,7 @@ const SCHEMA = {
   'Opportunities': {
     fields: [
       { key: 'Opportunity Name', label: 'Opportunity Name' },
+      { key: 'Status', label: 'Status', type: 'select', options: ['Won', 'Open', 'Lost'] },
       { key: 'Primary Applicant', nameKey: 'Primary Applicant Name', table: 'Contacts', label: 'Primary Applicant' },
       { key: 'Applicants', nameKey: 'Applicants Name', table: 'Contacts', label: 'Applicants' },
       { key: 'Guarantors', nameKey: 'Guarantors Name', table: 'Contacts', label: 'Guarantors' },
@@ -361,7 +362,9 @@ app.post("/api/getRecordDetail", async (req, res) => {
         });
         processedData.push({ key: fieldDef.key, label: fieldDef.label, value: links, type: 'link' });
       } else {
-        processedData.push({ key: fieldDef.key, label: fieldDef.label, value: val, type: fieldDef.type || 'text' });
+        const dataItem = { key: fieldDef.key, label: fieldDef.label, value: val, type: fieldDef.type || 'text' };
+        if (fieldDef.options) dataItem.options = fieldDef.options;
+        processedData.push(dataItem);
       }
     });
     

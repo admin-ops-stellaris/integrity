@@ -665,6 +665,13 @@
             html += `<div class="detail-group"><div class="detail-label">${item.label}</div><div id="view_${item.key}"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${item.value}</span><span class="edit-field-icon" onclick="toggleFieldEdit('${item.key}')">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
             return;
          }
+         if (item.type === 'select') {
+            const currentVal = item.value || '';
+            const options = item.options || [];
+            let optionsHtml = options.map(opt => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('');
+            html += `<div class="detail-group"><div class="detail-label">${item.label}</div><div id="view_${item.key}"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${currentVal || '<span style="color:#CCC; font-style:italic;">Not set</span>'}</span><span class="edit-field-icon" onclick="toggleFieldEdit('${item.key}')">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><select id="input_${item.key}" class="edit-input">${optionsHtml}</select><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+            return;
+         }
          if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {
             let linkHtml = '';
             if (item.value.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';

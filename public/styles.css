@@ -31,14 +31,15 @@
   .hide-link:hover { color: var(--color-trail); border-color: var(--color-trail); }
 
   /* FORM */
-  .profile-top { width: 100%; display: flex; flex-direction: column; gap: 10px; border-bottom: 2px solid var(--color-border); padding-bottom: 20px; margin-bottom: 0; } 
+  .profile-top { width: 100%; display: flex; flex-direction: column; gap: 4px; border-bottom: 2px solid var(--color-border); padding-bottom: 15px; margin-bottom: 0; } 
   .save-row { width: 100%; display: none; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; margin-bottom: 25px; }
   .profile-bottom { display: flex; gap: 20px; flex: 1; min-height: 0; }
   .profile-bottom-left { flex: 2; display: flex; flex-direction: column; }
   .profile-bottom-right { flex: 3; border-left: 1px dashed var(--color-border); padding-left: 20px; display: flex; flex-direction: column; }
   .row { display: flex; gap: 15px; }
   .field-group { flex: 1; }
-  label { font-size: 9px; font-weight: 500; color: #AAA; display: block; margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  label { font-size: 9px; font-weight: 500; color: #AAA; display: block; margin-top: 8px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .profile-top > .row:first-of-type label { margin-top: 0; }
   input, textarea { width: 100%; padding: 8px; border: 1px solid #CCC; border-radius: 2px; box-sizing: border-box; font-size: 13px; font-family: var(--font-body); background: #FFF; color: var(--color-trail); transition: all 0.2s; }
   input:focus, textarea:focus { outline: none; border-color: var(--color-trail); }
   textarea { height: 100px; resize: vertical; }
@@ -47,8 +48,8 @@
   textarea.locked { pointer-events: auto; resize: vertical; cursor: ns-resize; }
   input.locked:focus, textarea.locked:focus { outline: none; }
 
-  .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
-  .fields-header { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px; }
+  .fields-header { display: flex; justify-content: flex-end; margin-bottom: 2px; }
   .edit-icon { cursor: pointer; color: #888; font-size: 12px; transition: color 0.2s; visibility: hidden; }
   .edit-pencil { display: inline-block; transform: scaleX(-1); }
   .edit-icon:hover { color: var(--color-star); }
@@ -76,7 +77,7 @@
   .sort-icon:hover { color: var(--color-trail); }
 
   /* AUDIT & DIRECTORY */
-  #auditSection { display: none; margin-bottom: 10px; margin-top: 5px; background-color: transparent; color: #666; font-size: 13px; }
+  #auditSection { display: none; margin-bottom: 4px; margin-top: 2px; background-color: transparent; color: #666; font-size: 13px; }
   .audit-text { font-style: italic; color: #555; }
   .audit-modified { font-size: 10px; color: #999; margin-top: 2px; }
   #searchInput { padding: 8px; border: 1px solid var(--color-border); margin-bottom: 5px; border-radius: 30px; padding-left: 15px; font-size: 13px; margin-top: 0; }

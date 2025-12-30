@@ -12,11 +12,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Set Auth secrets (prod)
+        run: |
+          flyctl secrets set \
+            GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID_PROD }}" \
+            GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET_PROD }}" \
+            SESSION_SECRET="${{ secrets.SESSION_SECRET_PROD }}" \
+            ALLOWED_GOOGLE_DOMAIN="${{ secrets.ALLOWED_GOOGLE_DOMAIN_PROD }}" \
+            --app integrity-prod
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
       - name: Set Airtable secrets (prod)
         run: |
           flyctl secrets set \
             AIRTABLE_BASE_ID="${{ secrets.AIRTABLE_BASE_ID_PROD }}" \
-             AIRTABLE_API_KEY="${{ secrets.AIRTABLE_API_KEY_PROD }}" \
+            AIRTABLE_API_KEY="${{ secrets.AIRTABLE_API_KEY_PROD }}" \
             --app integrity-prod
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

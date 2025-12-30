@@ -1048,6 +1048,12 @@
             html += `<div class="detail-group"><div class="detail-label">${item.label}</div><div id="view_${item.key}"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${currentVal || '<span style="color:#CCC; font-style:italic;">Not set</span>'}</span><span class="edit-field-icon" onclick="toggleFieldEdit('${item.key}')">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><select id="input_${item.key}" class="edit-input">${optionsHtml}</select><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
             return;
          }
+         if (item.type === 'readonly') {
+            const displayVal = item.value || '';
+            if (!displayVal) return;
+            html += `<div class="detail-group"><div class="detail-label">${item.label}</div><div class="detail-value readonly-field" title="Not currently editable - categories under renovation">${displayVal}</div></div>`;
+            return;
+         }
          if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {
             let linkHtml = '';
             if (item.value.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';

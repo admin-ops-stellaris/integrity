@@ -12,6 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Set Airtable secrets (prod)
+        run: |
+          flyctl secrets set \
+            AIRTABLE_BASE_ID="${{ secrets.AIRTABLE_BASE_ID_PROD }}" \
+             AIRTABLE_API_KEY="${{ secrets.AIRTABLE_API_KEY_PROD }}" \
+            --app integrity-prod
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       - name: Deploy to Fly (prod)
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

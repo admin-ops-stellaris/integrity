@@ -48,8 +48,8 @@
   textarea.locked { pointer-events: auto; resize: vertical; cursor: ns-resize; }
   input.locked:focus, textarea.locked:focus { outline: none; }
 
-  .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
-  .fields-header { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px; }
+  .fields-header { display: flex; justify-content: flex-end; margin-bottom: 2px; }
   .edit-icon { cursor: pointer; color: #888; font-size: 12px; transition: color 0.2s; visibility: hidden; }
   .edit-pencil { display: inline-block; transform: scaleX(-1); }
   .edit-icon:hover { color: var(--color-star); }

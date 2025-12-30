@@ -70,6 +70,34 @@ web_modules/
 .env.*
 !.env.example
 
+# Local secrets / credentials
+.git-credentials
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Replit local config (just in case)
+.replit
+replit.nix
+
+# Mac / Windows noise
+.DS_Store
+Thumbs.db
+
+# Local dumps / exports
+*.csv
+*.tsv
+*.xlsx
+*.jsonl
+*.ndjson
+
+# Airtable/CRM exports (common patterns)
+exports/
+backups/
+tmp/
+temp/
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

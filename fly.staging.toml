@@ -1,5 +1,4 @@
 app = "integrity-staging"
-
 primary_region = "syd"
 
 [http_service]

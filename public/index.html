@@ -1,17 +1,281 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Integrity</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="container">
-    <h1>Integrity</h1>
-    <p>Welcome to Integrity - your application is running successfully.</p>
-    <div id="status"></div>
-  </div>
-  <script src="app.js"></script>
-</body>
+<html>
+  <head>
+    <base target="_top">
+    <title>Integrity - Stellaris FB</title>
+    <link rel="icon" href="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:64,h:64,m?v=3" type="image/png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="app-header">
+      <div class="logo-container">
+        <img class="logo-light" src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/WEB_Stellaris_Primary%20Logo_Horizontal_Full%20Col.png/:/rs=w:400,h:130,cg:true,m/cr=w:400,h:130/qt=q:95" alt="Stellaris">
+        <img class="logo-dark" src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/WEB_Stellaris_Primary%20Logo_Horizontal_Reversed.png/:/rs=w:309,h:100,cg:true,m/cr=w:309,h:100/qt=q:26" alt="Stellaris">
+      </div>
+      <div class="header-title">INTEGRITY</div>
+      <div class="user-indicator">
+        <button class="shortcuts-help" onclick="showShortcutsHelp()" title="Keyboard shortcuts">?</button>
+        <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">◐</button>
+        <span class="user-email" id="userEmail">Loading...</span>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="column form-section">
+        <div class="header-row">
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <h2 id="formTitle">Contact</h2>
+              <span id="formSubtitle" class="form-subtitle"></span>
+              <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
+            </div>
+          </div>
+          <button type="button" class="new-btn" onclick="resetForm()">+ New Client</button>
+        </div>
+
+        <div id="duplicateWarningBox">
+           <div style="display:flex; align-items:center;">
+             <span class="warning-icon">⚠️</span> <span id="duplicateWarningText"></span>
+           </div>
+           <a class="hide-link" onclick="document.getElementById('duplicateWarningBox').style.display='none';">Hide</a>
+        </div>
+
+        <div id="auditSection"></div>
+        <div id="formDivider" style="border-bottom:1px solid var(--color-border); margin-bottom:15px; display:none;"></div>
+
+        <div id="emptyState">
+           <img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:128,h:128,m" style="height:64px; width:64px; margin-bottom:15px; opacity:0.8;">
+           Search for a contact or click '+ New Client' to begin.
+        </div>
+
+        <div id="profileContent" style="display:none; flex:1; flex-direction:column;">
+          <form id="contactForm" onsubmit="handleFormSubmit(this)" style="display:flex; flex-direction:column; flex:1;">
+            <input type="hidden" name="recordId" id="recordId">
+            <div class="profile-top">
+              <div class="fields-header">
+                <span id="editBtn" class="edit-icon" onclick="enableEditMode()" title="Edit Contact"><span class="edit-pencil">✎</span> Edit</span>
+              </div>
+              <div class="row" style="margin-bottom:10px;">
+                <div class="field-group" style="flex:1;"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
+                <div class="field-group" style="flex:1;"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
+                <div class="field-group" style="flex:1;"><label>Last Name</label><input type="text" name="lastName" id="lastName" class="locked" readonly required></div>
+                <div class="field-group" style="flex:2;"><label>Email</label><input type="email" name="email1" id="email1" class="locked" readonly></div>
+              </div>
+              <div class="row">
+                <div class="field-group" style="flex:1;"><label>Preferred</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
+                <div class="field-group" style="flex:1;"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
+                <div class="field-group" style="flex:3;"><label>Notes</label><textarea name="description" id="description" class="locked" readonly style="height:60px; resize:vertical;"></textarea></div>
+              </div>
+            </div>
+            <div id="actionRow" class="save-row">
+               <button type="button" id="cancelBtn" class="btn-cancel" onclick="cancelEditMode()" style="display:none;">Cancel</button>
+               <button type="submit" id="submitBtn" style="width:auto; min-width:200px;">Update Contact</button>
+            </div>
+            <div id="status" style="text-align:center; margin-bottom:15px; min-height:18px;"></div>
+
+            <div class="profile-bottom">
+              <div class="profile-bottom-left">
+                 <div id="spouseSection" style="margin-bottom:20px;">
+                   <div class="spouse-header">
+                      <span id="spouseStatusText">Single</span>
+                      <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()">Edit</span>
+                   </div>
+                   <ul id="spouseHistoryList" class="spouse-history-list"></ul>
+                 </div>
+                 <div id="futurePlaceholder" style="color:#CCC; text-align:center; font-size:12px; font-style:italic; padding:20px; border: 2px dashed #E0E0E0; border-radius:10px; margin-bottom:20px;">
+                   Other Connections<br>Coming Soon
+                 </div>
+                 <div id="deleteSection" style="margin-top:auto; padding-top:20px; border-top:1px dashed #E0E0E0;">
+                   <button type="button" class="btn-delete" onclick="confirmDeleteContact()">Delete Contact</button>
+                 </div>
+              </div>
+              <div class="profile-bottom-right">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
+                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New</button>
+                </div>
+                <div id="oppLoading" style="display:none;">Loading...</div>
+                <ul id="oppList" class="opp-list"></ul>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="column list-section">
+        <input type="text" id="searchInput" placeholder="Search Contacts..." onkeyup="handleSearch(event)">
+        <div id="searchStatus" style="font-size:11px; color:#666; height:14px; margin-bottom:2px; text-align:right;"></div>
+        <div id="loading">Loading directory...</div>
+        <ul id="contactList"></ul>
+      </div>
+
+      <div id="oppDetailPanel" class="slide-panel">
+        <div class="panel-header">
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <button id="panelBackBtn" class="back-btn" onclick="popHistory()">← Back</button>
+            <h2 id="panelTitle" style="margin:0; border:none; font-size:16px;">Details</h2>
+          </div>
+          <button class="close-panel" onclick="closeOppPanel()">✕</button>
+        </div>
+        <div id="panelContent" class="panel-content">
+          <div style="text-align:center; color:#999; margin-top:50px;">Loading...</div>
+        </div>
+      </div>
+
+      <div id="oppComposer" class="slide-panel composer-panel">
+        <div class="composer-header">
+          <div class="composer-header-left">
+            <h2 style="margin:0; font-size:18px; color:var(--color-midnight);">New Opportunity</h2>
+            <p id="composerContactInfo" class="composer-contact-info"></p>
+          </div>
+          <button class="close-panel" onclick="closeOppComposer()">✕</button>
+        </div>
+        <div class="composer-body">
+          <div class="composer-section">
+            <div class="composer-section-title">Opportunity Details</div>
+            <div class="composer-field">
+              <label>Opportunity Name</label>
+              <input type="text" id="composerOppName" placeholder="Enter opportunity name...">
+            </div>
+            <div class="composer-field">
+              <label>Opportunity Type</label>
+              <select id="composerOppType">
+                <option value="Home Loans" selected>Home Loans</option>
+                <option value="Commercial Loans">Commercial Loans</option>
+                <option value="Deposit Bonds">Deposit Bonds</option>
+                <option value="Insurance (General)">Insurance (General)</option>
+                <option value="Insurance (Life)">Insurance (Life)</option>
+                <option value="Personal Loans">Personal Loans</option>
+                <option value="Asset Finance">Asset Finance</option>
+                <option value="Tax Depreciation Schedule">Tax Depreciation Schedule</option>
+              </select>
+            </div>
+          </div>
+          <div class="composer-section">
+            <div class="composer-section-title">Applicants</div>
+            <div class="composer-applicant-card primary">
+              <div class="applicant-role">Primary Applicant</div>
+              <div id="composerPrimaryName" class="applicant-name"></div>
+            </div>
+            <div id="composerSpouseSection" class="composer-spouse-option" style="display:none;">
+              <label class="composer-checkbox-label">
+                <input type="checkbox" id="composerAddSpouse" onchange="updateComposerSpouseLabel()">
+                <span id="composerSpouseLabel"><span id="composerSpouseLabelPrefix">Also add </span><strong id="composerSpouseName"></strong><span id="composerSpouseLabelSuffix"> as Applicant?</span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="composer-footer">
+          <button type="button" class="composer-btn-cancel" onclick="closeOppComposer()">Cancel</button>
+          <button type="button" class="composer-btn-create" onclick="submitFromComposer()">Create Opportunity</button>
+        </div>
+      </div>
+
+      <div id="spouseModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-sidebar">
+             <img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:64,h:64,m?v=3">
+          </div>
+          <div class="modal-body">
+
+            <div id="connectForm" style="display:none; flex:1; display:flex; flex-direction:column;">
+               <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Connect Spouse</h3>
+               <p style="font-size:13px; margin-bottom:10px; color:#666;">Search for the contact to connect:</p>
+               <input type="text" id="spouseSearchInput" placeholder="Start typing name..." onkeyup="handleSpouseSearch(event)" onfocus="loadRecentContactsForModal()">
+               <div id="spouseSearchResults" class="search-dropdown"></div>
+               <div style="margin-top:auto; display:flex; gap:10px; justify-content:flex-end;">
+                  <button type="button" class="btn-cancel" onclick="closeSpouseModal()">Cancel</button>
+               </div>
+            </div>
+
+            <div id="confirmConnectForm" style="display:none; flex:1; flex-direction:column;">
+               <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Confirm Connection</h3>
+               <p style="font-size:13px; color:#666; margin-bottom:20px;">Are you sure you want to set <strong id="targetSpouseName" style="color:var(--color-trail);"></strong> as the spouse?</p>
+               <input type="hidden" id="targetSpouseId">
+               <div style="margin-top:auto; display:flex; gap:10px; justify-content:flex-end;">
+                  <button type="button" class="btn-cancel" onclick="backToSearch()">Back</button>
+                  <button type="button" class="btn-confirm" onclick="executeSpouseChange('connect')">Confirm</button>
+               </div>
+            </div>
+
+            <div id="disconnectForm" style="display:none; flex:1; flex-direction:column;">
+               <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Disconnect Spouse</h3>
+               <p style="font-size:13px; color:#666; margin-bottom:20px;">Are you sure you want to disconnect <strong id="currentSpouseName" style="color:var(--color-trail);"></strong>?</p>
+               <input type="hidden" id="currentSpouseId">
+               <div style="margin-top:auto; display:flex; gap:10px; justify-content:flex-end;">
+                  <button type="button" class="btn-cancel" onclick="closeSpouseModal()">Cancel</button>
+                  <button type="button" class="btn-danger" onclick="executeSpouseChange('disconnect')">Disconnect</button>
+               </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div id="deleteConfirmModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+          <div class="modal-sidebar" style="background:#A00;">
+            <span style="font-size:28px;">⚠</span>
+          </div>
+          <div class="modal-body">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Delete Contact</h3>
+            <p id="deleteConfirmMessage" style="font-size:13px; color:#666; margin-bottom:20px;"></p>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+              <button type="button" class="btn-cancel" onclick="closeDeleteConfirmModal()">Cancel</button>
+              <button type="button" class="btn-danger" onclick="executeDeleteContact()">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="alertModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+          <div class="modal-sidebar" id="alertModalSidebar">
+            <span id="alertModalIcon" style="font-size:28px;">ℹ</span>
+          </div>
+          <div class="modal-body">
+            <h3 id="alertModalTitle" style="margin-top:0; margin-bottom:15px; font-size:16px;">Notice</h3>
+            <p id="alertModalMessage" style="font-size:13px; color:#666; margin-bottom:20px;"></p>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+              <button type="button" class="btn-cancel" onclick="closeAlertModal()">OK</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="shortcutsModal" class="modal">
+        <div class="modal-content" style="max-width:320px;">
+          <div class="modal-sidebar">
+            <img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:64,h:64,m?v=3">
+          </div>
+          <div class="modal-body">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Keyboard Shortcuts</h3>
+            <div class="shortcuts-list">
+              <div class="shortcut-row"><kbd>/</kbd><span>Focus search</span></div>
+              <div class="shortcut-row"><kbd>N</kbd><span>New client</span></div>
+              <div class="shortcut-row"><kbd>E</kbd><span>Edit contact</span></div>
+              <div class="shortcut-row"><kbd>Esc</kbd><span>Close panel/modal</span></div>
+              <div class="shortcut-row"><kbd>?</kbd><span>Show this help</span></div>
+            </div>
+            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+              <button type="button" class="btn-cancel" onclick="closeShortcutsModal()">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="position:fixed; bottom:5px; right:10px; font-size:10px; color:#AAA; z-index:1000; font-family:sans-serif;">
+       User: <span id="debugUser">Loading...</span> | v4.0 (Modular)
+    </div>
+
+    <script src="/gas-shim.js?v=4"></script>
+    <script src="/app.js?v=4"></script>
+  </body>
 </html>

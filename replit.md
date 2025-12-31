@@ -61,9 +61,15 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 
 ## Airtable Integration
 - Uses official Airtable SDK
-- Tables: Contacts, Opportunities
+- Tables: Contacts, Opportunities, Spouse History, Spouse History Log, Users
 - All CRUD operations go through services/airtable.js
 - Graceful error handling with console logging
+
+### Spouse Connection Workflow
+- Spouse connections/disconnections are managed via Airtable automations
+- Web app creates a record in "Spouse History" table with Contact 1, Contact 2, and action
+- Airtable automations then: update Spouse fields on both contacts, create Spouse History Log entries
+- "Spouse History Text" is a lookup field on Contacts that reflects the history automatically
 
 ## Technical Notes
 - The `gas-shim.js` provides Google Apps Script compatibility, converting `google.script.run` calls to fetch API requests
@@ -76,6 +82,10 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- December 31, 2025: Spouse connection refactored - now creates Spouse History records instead of direct Contact updates, letting Airtable automations manage the workflow
+- December 31, 2025: Spouse history display - sorts chronologically by timestamp (including time), displays as "DD/MM/YYYY: connected as spouse to Name"
+- December 31, 2025: Lead Source fields - added Lead Source Major and Lead Source Minor as read-only fields in opportunity details
+- December 31, 2025: Spacing improvements - reduced gaps between client name, audit info, and form fields for tighter layout
 - December 29, 2025: Edit pencil relocated - now at top-right of editable fields section instead of next to contact name
 - December 29, 2025: Cancel button for edit mode - appears when editing existing contact, reverts to last saved state
 - December 29, 2025: Dark mode button contrast - Update Contact button now has proper text visibility in dark mode

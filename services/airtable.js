@@ -236,55 +236,22 @@ export async function createOpportunity(name, contactId, opportunityType = "Home
 export async function setSpouse(contactId, spouseId, action) {
   if (!base) return null;
   try {
-    const contact = await base("Contacts").find(contactId);
-    const spouse = await base("Contacts").find(spouseId);
-    
-    if (!contact || !spouse) return null;
-
-    const timestamp = new Date().toISOString().split('T')[0];
-    const historyEntry = `${timestamp}: ${action}`;
-
-    if (action.includes("connected")) {
-      const contactHistory = contact.fields["Spouse History Text"] || [];
-      const spouseHistory = spouse.fields["Spouse History Text"] || [];
-      
-      await base("Contacts").update([
-        {
-          id: contactId,
-          fields: {
-            Spouse: [spouseId],
-            "Spouse History Text": [...contactHistory, historyEntry]
-          }
-        },
-        {
-          id: spouseId,
-          fields: {
-            Spouse: [contactId],
-            "Spouse History Text": [...spouseHistory, historyEntry]
-          }
-        }
-      ]);
-    } else if (action.includes("disconnected")) {
-      const contactHistory = contact.fields["Spouse History Text"] || [];
-      const spouseHistory = spouse.fields["Spouse History Text"] || [];
-      
-      await base("Contacts").update([
-        {
-          id: contactId,
-          fields: {
-            Spouse: [],
-            "Spouse History Text": [...contactHistory, historyEntry]
-          }
-        },
-        {
-          id: spouseId,
-          fields: {
-            Spouse: [],
-            "Spouse History Text": [...spouseHistory, historyEntry]
-          }
-        }
-      ]);
+    if (!contactId || !spouseId) {
+      console.error("setSpouse: Missing contactId or spouseId");
+      return null;
     }
+
+    const actionValue = action.includes("disconnected") 
+      ? "disconnected as spouse from" 
+      : "connected as spouse to";
+
+    await base("Spouse History").create({
+      "Contact 1": [contactId],
+      "Contact 2": [spouseId],
+      "Connected or Disconnected": actionValue
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     const updated = await base("Contacts").find(contactId);
     return formatRecord(updated);

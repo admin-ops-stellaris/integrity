@@ -445,17 +445,19 @@
      const rawLogs = f['Spouse History Text']; 
 
      if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
-        const sortedLogs = rawLogs.sort((a, b) => b.localeCompare(a));
+        const parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
+        parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
+        
         const showLimit = 3;
-        const initialSet = sortedLogs.slice(0, showLimit);
-        initialSet.forEach(logString => { renderHistoryItem(logString, historyList); });
-        if (sortedLogs.length > showLimit) {
-           const remaining = sortedLogs.slice(showLimit);
+        const initialSet = parsedLogs.slice(0, showLimit);
+        initialSet.forEach(entry => { renderHistoryItem(entry, historyList); });
+        if (parsedLogs.length > showLimit) {
+           const remaining = parsedLogs.slice(showLimit);
            const expandLink = document.createElement('div');
            expandLink.className = 'expand-link';
            expandLink.innerText = `Show ${remaining.length} older records...`;
            expandLink.onclick = function() {
-              remaining.forEach(logString => { renderHistoryItem(logString, historyList); });
+              remaining.forEach(entry => { renderHistoryItem(entry, historyList); });
               expandLink.style.display = 'none'; 
            };
            historyList.appendChild(expandLink);
@@ -464,18 +466,25 @@
         historyList.innerHTML = '<li class="spouse-history-item" style="border:none;">No history recorded.</li>';
      }
   }
+  
+  function parseSpouseHistoryEntry(logString) {
+     const match = logString.match(/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?:\s*(.+)\s+was\s+(connected as spouse to|disconnected as spouse from)\s+(.+)$/);
+     if (!match) return null;
+     const [, day, month, yearShort, hours, mins, secs, , action, spouseName] = match;
+     const year = parseInt(yearShort) + 2000;
+     const h = hours ? parseInt(hours) : 0;
+     const m = mins ? parseInt(mins) : 0;
+     const s = secs ? parseInt(secs) : 0;
+     const timestamp = new Date(year, parseInt(month) - 1, parseInt(day), h, m, s);
+     const displayDate = `${day}/${month}/${year}`;
+     const displayText = `${action} ${spouseName}`;
+     return { timestamp, displayDate, displayText };
+  }
 
-  function renderHistoryItem(logString, container) {
-     const parts = logString.split(': ');
-     if(parts.length < 2) return; 
-     const datePartISO = parts[0]; 
-     const textPart = parts.slice(1).join(': '); 
-     let displayDate = datePartISO;
-     const dateMatch = datePartISO.match(/^(\d{4})-(\d{2})-(\d{2})/);
-     if(dateMatch) { displayDate = `${dateMatch[3]}/${dateMatch[2]}/${dateMatch[1]}`; }
+  function renderHistoryItem(entry, container) {
      const li = document.createElement('li');
      li.className = 'spouse-history-item';
-     li.innerText = `${displayDate}: ${textPart}`;
+     li.innerText = `${entry.displayDate}: ${entry.displayText}`;
      const expandLink = container.querySelector('.expand-link');
      if(expandLink) { container.insertBefore(li, expandLink); } else { container.appendChild(li); }
   }

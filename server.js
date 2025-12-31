@@ -397,7 +397,7 @@ const SCHEMA = {
       { key: 'mc_IsReferral', label: 'Is Referral', type: 'long-text' },
       { key: 'mc_ReferralNotes', label: 'Referral Notes', type: 'long-text' },
       { key: 'mc_SentReferral', label: 'Sent Referral', type: 'long-text' },
-      { key: 'mc_referralsenton', label: 'Referral Sent On', type: 'long-text' },
+      { key: 'mc_referralsenton', label: 'Referral Sent On', type: 'date' },
       { key: 'mc_referralstatus', label: 'Referral Status', type: 'long-text' },
       { key: 'mc_franchiseleadsourceid', label: 'Franchise Lead Source ID', type: 'long-text' },
       { key: 'mc_FinancialAdviserId', label: 'Financial Adviser ID', type: 'long-text' },

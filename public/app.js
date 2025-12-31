@@ -520,10 +520,16 @@
      const input = document.getElementById('input_' + fieldKey);
      const isoVal = input.value;
      let displayVal = '';
+     let saveVal = '';
      if (isoVal) {
         const parts = isoVal.split('-');
-        if (parts.length === 3) displayVal = `${parts[2]}/${parts[1]}/${parts[0]}`;
-        else displayVal = isoVal;
+        if (parts.length === 3) {
+           displayVal = `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
+           saveVal = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        } else {
+           displayVal = isoVal;
+           saveVal = isoVal;
+        }
      }
      const btn = document.getElementById('btn_save_' + fieldKey);
      const originalText = btn.innerText;
@@ -532,7 +538,7 @@
         document.getElementById('display_' + fieldKey).innerText = displayVal || 'Not set';
         cancelFieldEdit(fieldKey);
         btn.innerText = originalText; btn.disabled = false;
-     }).updateRecord(table, id, fieldKey, displayVal);
+     }).updateRecord(table, id, fieldKey, saveVal);
   }
 
   // --- LINKED RECORD EDITOR (TAGS) ---
@@ -1134,12 +1140,23 @@
          }
          if (item.type === 'date') {
             const rawVal = item.value || '';
-            let displayVal = rawVal || '<span style="color:#CCC; font-style:italic;">Not set</span>';
+            let displayVal = '<span style="color:#CCC; font-style:italic;">Not set</span>';
             let inputVal = '';
             if (rawVal) {
               const parts = rawVal.split('/');
-              if (parts.length === 3) inputVal = `${parts[2]}-${parts[1]}-${parts[0]}`;
-              else inputVal = rawVal;
+              if (parts.length === 3) {
+                inputVal = `${parts[2].length === 2 ? '20' + parts[2] : parts[2]}-${parts[1]}-${parts[0]}`;
+                displayVal = `${parts[0]}/${parts[1]}/${parts[2].slice(-2)}`;
+              } else if (rawVal.includes('-')) {
+                const isoParts = rawVal.split('-');
+                if (isoParts.length === 3) {
+                  inputVal = rawVal;
+                  displayVal = `${isoParts[2]}/${isoParts[1]}/${isoParts[0].slice(-2)}`;
+                }
+              } else {
+                displayVal = rawVal;
+                inputVal = rawVal;
+              }
             }
             html += `<div class="detail-group"><div class="detail-label">${item.label}</div><div id="view_${item.key}"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon" onclick="toggleFieldEdit('${item.key}')">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="date" id="input_${item.key}" value="${inputVal}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveDateField('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
             return;

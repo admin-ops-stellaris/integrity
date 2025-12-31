@@ -736,7 +736,7 @@
   }
   function renderSearchResultItem(r, container) {
      const name = formatName(r.fields);
-     const details = formatDetails(r.fields); 
+     const details = formatDetailsRow(r.fields); 
      const div = document.createElement('div');
      div.className = 'search-option';
      div.innerHTML = `<span style="font-weight:700; display:block;">${name}</span><span style="font-size:11px; color:#666;">${details}</span>`;

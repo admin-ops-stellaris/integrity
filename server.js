@@ -145,7 +145,7 @@ function requireAuth(req, res, next) {
   if (AUTH_DISABLED) {
     if (!req.session) req.session = {};
     if (!req.session.user) {
-      req.session.user = { email: "dev@example.com", name: "Dev User" };
+      req.session.user = { email: "admin.ops@stellaris.loans", name: "Dev User" };
     }
     return next();
   }

@@ -198,11 +198,33 @@ app.post("/api/getContactById", async (req, res) => {
   }
 });
 
+const LINK_FIELDS = {
+  'Opportunities': {
+    'Primary Applicant': 'Contacts',
+    'Applicants': 'Contacts',
+    'Guarantors': 'Contacts'
+  }
+};
+
 app.post("/api/updateRecord", async (req, res) => {
   try {
     const [table, id, field, value] = req.body.args || [];
     const userEmail = req.session?.user?.email || null;
     const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    
+    const linkConfig = LINK_FIELDS[table]?.[field];
+    if (linkConfig && userContext && Array.isArray(value)) {
+      const currentRecord = await airtable.getRecordFromTable(table, id);
+      const currentIds = currentRecord?.fields?.[field] || [];
+      const newIds = value;
+      const addedIds = newIds.filter(x => !currentIds.includes(x));
+      const removedIds = currentIds.filter(x => !newIds.includes(x));
+      const changedIds = [...new Set([...addedIds, ...removedIds])];
+      for (const contactId of changedIds) {
+        await airtable.markRecordModified(linkConfig, contactId, userContext);
+      }
+    }
+    
     await airtable.updateRecordInTable(table, id, field, value, userContext);
     res.json({ success: true });
   } catch (err) {
@@ -253,7 +275,12 @@ app.post("/api/getLinkedOpportunities", async (req, res) => {
 app.post("/api/createOpportunity", async (req, res) => {
   try {
     const [name, contactId, opportunityType] = req.body.args || [];
-    const record = await airtable.createOpportunity(name, contactId, opportunityType || "Home Loans");
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const record = await airtable.createOpportunity(name, contactId, opportunityType || "Home Loans", userContext);
+    if (userContext && contactId) {
+      await airtable.markRecordModified("Contacts", contactId, userContext);
+    }
     res.json(record);
   } catch (err) {
     console.error("createOpportunity error:", err);
@@ -264,7 +291,9 @@ app.post("/api/createOpportunity", async (req, res) => {
 app.post("/api/updateOpportunity", async (req, res) => {
   try {
     const [id, field, value] = req.body.args || [];
-    const record = await airtable.updateOpportunity(id, field, value);
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const record = await airtable.updateOpportunity(id, field, value, userContext);
     res.json(record);
   } catch (err) {
     console.error("updateOpportunity error:", err);
@@ -319,6 +348,7 @@ app.post("/api/processForm", async (req, res) => {
 
 const SCHEMA = {
   'Opportunities': {
+    auditFields: ['Created', 'Modified', 'Last Site User Name'],
     fields: [
       { key: 'Opportunity Name', label: 'Opportunity Name' },
       { key: 'Status', label: 'Status', type: 'select', options: ['Won', 'Open', 'Lost'] },
@@ -402,9 +432,17 @@ app.post("/api/getRecordDetail", async (req, res) => {
       }
     });
     
+    const auditInfo = {};
+    if (schemaDef.auditFields) {
+      schemaDef.auditFields.forEach(key => {
+        auditInfo[key] = rawFields[key] || null;
+      });
+    }
+    
     res.json({ 
       title: rawFields[schemaDef.fields[0].key] || "Details", 
-      data: processedData 
+      data: processedData,
+      audit: auditInfo
     });
   } catch (err) {
     console.error("getRecordDetail error:", err);

@@ -942,6 +942,36 @@
     if (diffDays >= 1) return diffDays === 1 ? "1 day" : `${diffDays} days`;
     return "today";
   }
+  function formatAuditDate(dateStr) {
+    if (!dateStr) return null;
+    let date = null;
+    const localMatch = dateStr.match(/(\d{2}):(\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
+    if (localMatch) {
+      const day = parseInt(localMatch[3], 10);
+      const month = parseInt(localMatch[4], 10) - 1;
+      const year = parseInt(localMatch[5], 10);
+      const hours = parseInt(localMatch[1], 10);
+      const mins = parseInt(localMatch[2], 10);
+      date = new Date(year, month, day, hours, mins);
+    } else {
+      const isoMatch = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      if (isoMatch) {
+        date = new Date(dateStr);
+      }
+    }
+    if (!date || isNaN(date.getTime())) return dateStr;
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString('en-AU');
+  }
 
   // --- CORRECTED HISTORY DATE LOGIC ---
   function renderHistory(f) {
@@ -1050,6 +1080,23 @@
       panelHistory.push({ table: table, id: id, title: response.title });
       updateBackButton(); titleEl.innerText = response.title;
       let html = '';
+      
+      if (response.audit && (response.audit.Created || response.audit.Modified)) {
+        const created = response.audit.Created ? formatAuditDate(response.audit.Created) : null;
+        const modified = response.audit.Modified ? formatAuditDate(response.audit.Modified) : null;
+        const modifiedBy = response.audit['Last Site User Name'] || null;
+        let auditParts = [];
+        if (created) auditParts.push(`Created ${created}`);
+        if (modified) {
+          let modStr = `Modified ${modified}`;
+          if (modifiedBy) modStr += ` by ${modifiedBy}`;
+          auditParts.push(modStr);
+        }
+        if (auditParts.length > 0) {
+          html += `<div class="panel-audit-section">${auditParts.join(' · ')}</div>`;
+        }
+      }
+      
       response.data.forEach(item => {
          if (item.key === 'Opportunity Name') {
             const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");

@@ -187,12 +187,15 @@ export async function getOpportunitiesById(ids) {
   }
 }
 
-export async function updateOpportunity(id, field, value) {
+export async function updateOpportunity(id, field, value, userContext = null) {
   if (!base) return null;
   try {
-    const record = await base("Opportunities").update(id, {
-      [field]: value
-    });
+    const updateFields = { [field]: value };
+    if (userContext) {
+      if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
+      if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
+    }
+    const record = await base("Opportunities").update(id, updateFields);
     return formatRecord(record);
   } catch (err) {
     console.error("updateOpportunity error:", err.message);
@@ -200,11 +203,13 @@ export async function updateOpportunity(id, field, value) {
   }
 }
 
+const TRACKED_TABLES = ["Contacts", "Opportunities"];
+
 export async function updateRecordInTable(tableName, id, field, value, userContext = null) {
   if (!base) return null;
   try {
     const updateFields = { [field]: value };
-    if (userContext && tableName === "Contacts") {
+    if (userContext && TRACKED_TABLES.includes(tableName)) {
       if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
       if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
     }
@@ -216,7 +221,22 @@ export async function updateRecordInTable(tableName, id, field, value, userConte
   }
 }
 
-export async function createOpportunity(name, contactId, opportunityType = "Home Loans") {
+export async function markRecordModified(tableName, id, userContext) {
+  if (!base || !userContext || !TRACKED_TABLES.includes(tableName)) return null;
+  try {
+    const updateFields = {};
+    if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
+    if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
+    if (Object.keys(updateFields).length === 0) return null;
+    const record = await base(tableName).update(id, updateFields);
+    return formatRecord(record);
+  } catch (err) {
+    console.error(`markRecordModified(${tableName}) error:`, err.message);
+    return null;
+  }
+}
+
+export async function createOpportunity(name, contactId, opportunityType = "Home Loans", userContext = null) {
   if (!base) return null;
   try {
     const fields = {
@@ -225,6 +245,16 @@ export async function createOpportunity(name, contactId, opportunityType = "Home
       "Status": "Open",
       "Opportunity Type": opportunityType
     };
+    if (userContext) {
+      if (userContext.name) {
+        fields["Creating Site User Name"] = userContext.name;
+        fields["Last Site User Name"] = userContext.name;
+      }
+      if (userContext.email) {
+        fields["Creating Site User Email"] = userContext.email;
+        fields["Last Site User Email"] = userContext.email;
+      }
+    }
     const record = await base("Opportunities").create(fields);
     return formatRecord(record);
   } catch (err) {

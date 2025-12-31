@@ -82,6 +82,11 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- December 31, 2025: Opportunity user tracking - Creating/Last Site User Name/Email fields now tracked for Opportunities (same as Contacts)
+- December 31, 2025: Bi-directional link tracking - when Applicants are linked/unlinked from Opportunities, both the Opportunity and affected Contacts are marked as modified
+- December 31, 2025: Opportunity audit display - slide-in panel now shows Created/Modified info at top (same format as Contact audit section)
+- December 31, 2025: Development mode email - changed from dev@example.com to admin.ops@stellaris.loans for proper user tracking in Replit preview
+- December 31, 2025: Fixed contact update bug - form data now properly serialized so updates work correctly (was creating new contacts instead)
 - December 31, 2025: Spouse connection refactored - now creates Spouse History records instead of direct Contact updates, letting Airtable automations manage the workflow
 - December 31, 2025: Spouse history display - sorts chronologically by timestamp (including time), displays as "DD/MM/YYYY: connected as spouse to Name"
 - December 31, 2025: Lead Source fields - added Lead Source Major and Lead Source Minor as read-only fields in opportunity details

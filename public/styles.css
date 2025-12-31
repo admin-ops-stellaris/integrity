@@ -80,6 +80,7 @@
   #auditSection { display: none; margin-bottom: 4px; margin-top: 2px; background-color: transparent; color: #666; font-size: 13px; }
   .audit-text { font-style: italic; color: #555; }
   .audit-modified { font-size: 10px; color: #999; margin-top: 2px; }
+  .panel-audit-section { font-size: 11px; color: #999; font-style: italic; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--color-border); }
   #searchInput { padding: 8px; border: 1px solid var(--color-border); margin-bottom: 5px; border-radius: 30px; padding-left: 15px; font-size: 13px; margin-top: 0; }
   #contactList { list-style: none; padding: 0; margin-top: 5px; overflow-y: auto; flex: 1; }
   .contact-item { padding: 10px 0; border-bottom: 1px solid #EEE; cursor: pointer; transition: padding 0.2s; }

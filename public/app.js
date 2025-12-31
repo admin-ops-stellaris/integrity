@@ -443,14 +443,9 @@
 
      historyList.innerHTML = '';
      const rawLogs = f['Spouse History Text']; 
-     console.log('Spouse History Text raw:', rawLogs);
 
      if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
-        const parsedLogs = rawLogs.map(entry => {
-           const parsed = parseSpouseHistoryEntry(entry);
-           if (!parsed) console.log('Failed to parse:', entry);
-           return parsed;
-        }).filter(Boolean);
+        const parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
         parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
         
         const showLimit = 3;
@@ -473,14 +468,10 @@
   }
   
   function parseSpouseHistoryEntry(logString) {
-     const match = logString.match(/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?:\s*(.+)\s+was\s+(connected as spouse to|disconnected as spouse from)\s+(.+)$/);
+     const match = logString.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2}):\s*(connected as spouse to|disconnected as spouse from)\s+(.+)$/);
      if (!match) return null;
-     const [, day, month, yearShort, hours, mins, secs, , action, spouseName] = match;
-     const year = parseInt(yearShort) + 2000;
-     const h = hours ? parseInt(hours) : 0;
-     const m = mins ? parseInt(mins) : 0;
-     const s = secs ? parseInt(secs) : 0;
-     const timestamp = new Date(year, parseInt(month) - 1, parseInt(day), h, m, s);
+     const [, year, month, day, hours, mins, secs, action, spouseName] = match;
+     const timestamp = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(mins), parseInt(secs));
      const displayDate = `${day}/${month}/${year}`;
      const displayText = `${action} ${spouseName}`;
      return { timestamp, displayDate, displayText };

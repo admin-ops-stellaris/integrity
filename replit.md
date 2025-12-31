@@ -82,6 +82,9 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- December 31, 2025: Expanded Opportunity fields - added 25+ new editable fields including loan consultant/processor IDs, amounts, values, dates, referral info, and related IDs
+- December 31, 2025: Long-text field support - textarea editing for multi-line text fields in Opportunity panel
+- December 31, 2025: Date field support - date picker with DD/MM/YYYY display format for Submitted Date
 - December 31, 2025: Opportunity user tracking - Creating/Last Site User Name/Email fields now tracked for Opportunities (same as Contacts)
 - December 31, 2025: Bi-directional link tracking - when Applicants are linked/unlinked from Opportunities, both the Opportunity and affected Contacts are marked as modified
 - December 31, 2025: Opportunity audit display - slide-in panel now shows Created/Modified info at top (same format as Contact audit section)

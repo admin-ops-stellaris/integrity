@@ -516,6 +516,24 @@
         }
      }).updateRecord(table, id, fieldKey, val);
   }
+  function saveDateField(table, id, fieldKey) {
+     const input = document.getElementById('input_' + fieldKey);
+     const isoVal = input.value;
+     let displayVal = '';
+     if (isoVal) {
+        const parts = isoVal.split('-');
+        if (parts.length === 3) displayVal = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        else displayVal = isoVal;
+     }
+     const btn = document.getElementById('btn_save_' + fieldKey);
+     const originalText = btn.innerText;
+     btn.innerText = "Saving..."; btn.disabled = true;
+     google.script.run.withSuccessHandler(function(res) {
+        document.getElementById('display_' + fieldKey).innerText = displayVal || 'Not set';
+        cancelFieldEdit(fieldKey);
+        btn.innerText = originalText; btn.disabled = false;
+     }).updateRecord(table, id, fieldKey, displayVal);
+  }
 
   // --- LINKED RECORD EDITOR (TAGS) ---
   function toggleLinkedEdit(key) {
@@ -1106,6 +1124,24 @@
             const displayVal = item.value || '';
             if (!displayVal) return;
             html += `<div class="detail-group"><div class="detail-label">${item.label}</div><div class="detail-value readonly-field" title="Not currently editable - categories under renovation">${displayVal}</div></div>`;
+            return;
+         }
+         if (item.type === 'long-text') {
+            const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
+            const displayVal = item.value || '<span style="color:#CCC; font-style:italic;">Not set</span>';
+            html += `<div class="detail-group"><div class="detail-label">${item.label}</div><div id="view_${item.key}"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:flex-start;"><span id="display_${item.key}" style="white-space:pre-wrap; flex:1;">${displayVal}</span><span class="edit-field-icon" onclick="toggleFieldEdit('${item.key}')" style="margin-left:8px;">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><textarea id="input_${item.key}" class="edit-input" rows="3" style="resize:vertical;">${safeValue}</textarea><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+            return;
+         }
+         if (item.type === 'date') {
+            const rawVal = item.value || '';
+            let displayVal = rawVal || '<span style="color:#CCC; font-style:italic;">Not set</span>';
+            let inputVal = '';
+            if (rawVal) {
+              const parts = rawVal.split('/');
+              if (parts.length === 3) inputVal = `${parts[2]}-${parts[1]}-${parts[0]}`;
+              else inputVal = rawVal;
+            }
+            html += `<div class="detail-group"><div class="detail-label">${item.label}</div><div id="view_${item.key}"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon" onclick="toggleFieldEdit('${item.key}')">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="date" id="input_${item.key}" value="${inputVal}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveDateField('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
             return;
          }
          if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {

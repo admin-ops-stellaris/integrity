@@ -346,6 +346,23 @@ app.post("/api/processForm", async (req, res) => {
   }
 });
 
+// Format timestamp to "HH:MM DD/MM/YYYY" format matching Contact audit display
+function formatAuditTimestamp(isoString) {
+  if (!isoString) return 'Unknown';
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
+    const hours = String(date.getHours()).padStart(2, '0');
+    const mins = String(date.getMinutes()).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${hours}:${mins} ${day}/${month}/${year}`;
+  } catch (e) {
+    return isoString;
+  }
+}
+
 const SCHEMA = {
   'Opportunities': {
     auditFields: ['Created', 'Modified', 'Last Site User Name'],
@@ -437,6 +454,17 @@ app.post("/api/getRecordDetail", async (req, res) => {
       schemaDef.auditFields.forEach(key => {
         auditInfo[key] = rawFields[key] || null;
       });
+      // Format audit strings to match Contact format: "Created: HH:MM DD/MM/YYYY by Name"
+      if (auditInfo.Created) {
+        const createdBy = rawFields['Creating Site User Name'] || null;
+        const createdDate = formatAuditTimestamp(rawFields['Created On']);
+        auditInfo.Created = `Created: ${createdDate}${createdBy ? ' by ' + createdBy : ''}`;
+      }
+      if (auditInfo.Modified) {
+        const modifiedBy = rawFields['Last Site User Name'] || null;
+        const modifiedDate = formatAuditTimestamp(rawFields['Modified On']);
+        auditInfo.Modified = `Modified: ${modifiedDate}${modifiedBy ? ' by ' + modifiedBy : ''}`;
+      }
     }
     
     res.json({ 

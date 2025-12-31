@@ -107,7 +107,7 @@
   .back-btn:hover { color: var(--color-trail); text-decoration: underline; transform: none; }
 
   /* OPPORTUNITY COMPOSER */
-  .composer-panel { position: fixed; top: 65px; bottom: 0; width: 550px; right: -600px; z-index: 200; }
+  .composer-panel { position: fixed; top: 65px; bottom: 0; width: 550px; right: -600px; z-index: 200; height: calc(100vh - 65px); }
   .composer-panel.open { right: 0; }
   .composer-header { background: var(--color-trail); padding: 24px 28px; display: flex; justify-content: space-between; align-items: flex-start; }
   .composer-header .close-panel { color: rgba(255,255,255,0.7); }

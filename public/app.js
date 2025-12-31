@@ -1082,19 +1082,11 @@
       let html = '';
       
       if (response.audit && (response.audit.Created || response.audit.Modified)) {
-        const created = response.audit.Created ? formatAuditDate(response.audit.Created) : null;
-        const modified = response.audit.Modified ? formatAuditDate(response.audit.Modified) : null;
-        const modifiedBy = response.audit['Last Site User Name'] || null;
-        let auditParts = [];
-        if (created) auditParts.push(`Created ${created}`);
-        if (modified) {
-          let modStr = `Modified ${modified}`;
-          if (modifiedBy) modStr += ` by ${modifiedBy}`;
-          auditParts.push(modStr);
-        }
-        if (auditParts.length > 0) {
-          html += `<div class="panel-audit-section">${auditParts.join(' · ')}</div>`;
-        }
+        let auditHtml = '<div class="panel-audit-section">';
+        if (response.audit.Created) auditHtml += `<div>${response.audit.Created}</div>`;
+        if (response.audit.Modified) auditHtml += `<div>${response.audit.Modified}</div>`;
+        auditHtml += '</div>';
+        html += auditHtml;
       }
       
       response.data.forEach(item => {

@@ -1020,12 +1020,22 @@
     event.preventDefault();
     const btn = document.getElementById('submitBtn'); const status = document.getElementById('status');
     btn.disabled = true; btn.innerText = "Saving...";
+    const formData = {
+      recordId: formObject.recordId.value,
+      firstName: formObject.firstName.value,
+      middleName: formObject.middleName.value,
+      lastName: formObject.lastName.value,
+      preferredName: formObject.preferredName.value,
+      mobilePhone: formObject.mobilePhone.value,
+      email1: formObject.email1.value,
+      description: formObject.description.value
+    };
     google.script.run.withSuccessHandler(function(response) {
          status.innerText = "✅ " + response; status.className = "status-success";
-         loadContacts(); if(!document.getElementById('recordId').value) resetForm();
+         loadContacts(); if(!formData.recordId) resetForm();
          btn.disabled = false; btn.innerText = "Update Contact"; disableEditMode(); 
          setTimeout(() => { status.innerText = ""; status.className = ""; }, 3000);
-      }).withFailureHandler(function(err) { status.innerText = "❌ " + err.message; status.className = "status-error"; btn.disabled = false; btn.innerText = "Try Again"; }).processForm(formObject);
+      }).withFailureHandler(function(err) { status.innerText = "❌ " + err.message; status.className = "status-error"; btn.disabled = false; btn.innerText = "Try Again"; }).processForm(formData);
   }
   function loadPanelRecord(table, id) {
     const panel = document.getElementById('oppDetailPanel'); const content = document.getElementById('panelContent');

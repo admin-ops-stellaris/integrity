@@ -443,9 +443,14 @@
 
      historyList.innerHTML = '';
      const rawLogs = f['Spouse History Text']; 
+     console.log('Spouse History Text raw:', rawLogs);
 
      if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
-        const parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
+        const parsedLogs = rawLogs.map(entry => {
+           const parsed = parseSpouseHistoryEntry(entry);
+           if (!parsed) console.log('Failed to parse:', entry);
+           return parsed;
+        }).filter(Boolean);
         parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
         
         const showLimit = 3;

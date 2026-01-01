@@ -365,7 +365,7 @@ function formatAuditTimestamp(isoString) {
 
 const SCHEMA = {
   'Opportunities': {
-    auditFields: ['Created', 'Modified', 'Last Site User Name'],
+    auditFields: ['Created', 'Modified'],
     fields: [
       { key: 'Opportunity Name', label: 'Opportunity Name' },
       { key: 'Status', label: 'Status', type: 'select', options: ['Won', 'Open', 'Lost'] },
@@ -475,16 +475,13 @@ app.post("/api/getRecordDetail", async (req, res) => {
     
     const auditInfo = {};
     if (schemaDef.auditFields) {
-      schemaDef.auditFields.forEach(key => {
-        auditInfo[key] = rawFields[key] || null;
-      });
-      // Format audit strings to match Contact format: "Created: HH:MM DD/MM/YYYY by Name"
-      if (auditInfo.Created) {
+      // Format audit strings: "Created: HH:MM DD/MM/YYYY by Name"
+      if (schemaDef.auditFields.includes('Created') && rawFields['Created On']) {
         const createdBy = rawFields['Creating Site User Name'] || null;
         const createdDate = formatAuditTimestamp(rawFields['Created On']);
         auditInfo.Created = `Created: ${createdDate}${createdBy ? ' by ' + createdBy : ''}`;
       }
-      if (auditInfo.Modified) {
+      if (schemaDef.auditFields.includes('Modified') && rawFields['Modified On']) {
         const modifiedBy = rawFields['Last Site User Name'] || null;
         const modifiedDate = formatAuditTimestamp(rawFields['Modified On']);
         auditInfo.Modified = `Modified: ${modifiedDate}${modifiedBy ? ' by ' + modifiedBy : ''}`;

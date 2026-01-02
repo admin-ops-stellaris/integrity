@@ -106,6 +106,9 @@
   .taco-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 15px; }
   .taco-grid .detail-group { margin-bottom: 0; margin-left: 0; }
   .taco-grid .detail-group.taco-field { margin-left: 0; }
+  .taco-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 15px; margin-bottom: 12px; }
+  .taco-row .detail-group { margin-bottom: 0; }
+  #tacoFieldsContainer { margin-left: 12px; }
   .panel-header { background: var(--color-salt); padding: 20px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
   .panel-content { padding: 30px; overflow-y: auto; flex: 1; font-family: var(--font-body); }
   .close-panel { cursor: pointer; font-size: 20px; color: #888; background: none; border: none; padding: 0; width: auto; margin: 0; }

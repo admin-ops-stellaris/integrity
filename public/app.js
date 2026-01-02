@@ -823,7 +823,8 @@ Best wishes,
      const originalText = btn.innerText;
      btn.innerText = "Saving..."; btn.disabled = true;
      google.script.run.withSuccessHandler(function(res) {
-        document.getElementById('display_' + fieldKey).innerText = val;
+        const displayEl = document.getElementById('display_' + fieldKey);
+        if (displayEl) displayEl.innerText = val || 'Not set';
         cancelFieldEdit(fieldKey);
         btn.innerText = originalText; btn.disabled = false;
         if(fieldKey === 'Opportunity Name') {
@@ -835,6 +836,17 @@ Best wishes,
         }
         if(fieldKey === 'Status' && currentContactRecord) {
            loadOpportunities(currentContactRecord.fields);
+        }
+        // Toggle conditional Taco fields
+        if(fieldKey === 'Taco: Type of Appointment') {
+           const phoneWrap = document.getElementById('field_wrap_Taco: Appt Phone Number');
+           const videoWrap = document.getElementById('field_wrap_Taco: Appt Meet URL');
+           if (phoneWrap) phoneWrap.style.display = val === 'Phone' ? '' : 'none';
+           if (videoWrap) videoWrap.style.display = val === 'Video' ? '' : 'none';
+        }
+        if(fieldKey === 'Taco: How appt booked') {
+           const otherWrap = document.getElementById('field_wrap_Taco: How Appt Booked Other');
+           if (otherWrap) otherWrap.style.display = val === 'Other' ? '' : 'none';
         }
      }).updateRecord(table, id, fieldKey, val);
   }
@@ -868,6 +880,11 @@ Best wishes,
     if (label) label.innerText = 'Saving...';
     google.script.run.withSuccessHandler(function(res) {
       if (label) label.innerText = isChecked ? 'Yes' : 'No';
+      // Toggle appointment fields visibility
+      if (fieldKey === 'Taco: Converted to Appt') {
+        const section = document.getElementById('apptFieldsSection');
+        if (section) section.style.display = isChecked ? '' : 'none';
+      }
     }).withFailureHandler(function(err) {
       const input = document.getElementById('input_' + fieldKey);
       if (input) input.checked = !isChecked;
@@ -1481,9 +1498,13 @@ Best wishes,
         }
         if (item.type === 'checkbox') {
           const isChecked = item.value === true || item.value === 'true' || item.value === 'Yes';
-          const displayVal = isChecked ? '✓' : '–';
           const checkedAttr = isChecked ? 'checked' : '';
           return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="checkbox-field"><input type="checkbox" id="input_${item.key}" ${checkedAttr} onchange="saveCheckboxField('${tbl}', '${recId}', '${item.key}', this.checked)"><label for="input_${item.key}">${isChecked ? 'Yes' : 'No'}</label></div></div>`;
+        }
+        if (item.type === 'url') {
+          const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
+          const displayVal = item.value ? `<a href="${item.value}" target="_blank" style="color:var(--color-sky);">${item.value}</a>` : '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="url" id="input_${item.key}" value="${safeValue}" class="edit-input" placeholder="https://..."><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
         }
         if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {
           let linkHtml = '';
@@ -1529,13 +1550,77 @@ Best wishes,
         });
         html += '</div>';
         
-        // Taco fields section
+        // Taco fields section with custom layout
         const tacoFields = response.data.filter(item => item.tacoField);
         if (tacoFields.length > 0) {
           html += `<div class="taco-section-header"><img src="https://taco.insightprocessing.com.au/static/images/taco.jpg" alt="Taco"><span>Taco fields</span></div>`;
-          html += '<div class="taco-grid">';
-          tacoFields.forEach(item => { html += renderField(item, table, id); });
+          html += '<div id="tacoFieldsContainer">';
+          
+          // Get current values for conditional logic
+          const convertedToAppt = dataMap['Taco: Converted to Appt']?.value === true || dataMap['Taco: Converted to Appt']?.value === 'true';
+          const typeOfAppt = dataMap['Taco: Type of Appointment']?.value || '';
+          const howBooked = dataMap['Taco: How appt booked']?.value || '';
+          
+          // Row 1: New or Existing Client, Lead Source (3rd empty)
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: New or Existing Client']) html += renderField(dataMap['Taco: New or Existing Client'], table, id);
+          if (dataMap['Taco: Lead Source']) html += renderField(dataMap['Taco: Lead Source'], table, id);
+          html += '<div class="detail-group"></div>'; // empty 3rd column
           html += '</div>';
+          
+          // Row 2: Last thing we did, How can we help, CM notes
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: Last thing we did']) html += renderField(dataMap['Taco: Last thing we did'], table, id);
+          if (dataMap['Taco: How can we help']) html += renderField(dataMap['Taco: How can we help'], table, id);
+          if (dataMap['Taco: CM notes']) html += renderField(dataMap['Taco: CM notes'], table, id);
+          html += '</div>';
+          
+          // Row 3: Broker, Broker Assistant, Client Manager
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: Broker']) html += renderField(dataMap['Taco: Broker'], table, id);
+          if (dataMap['Taco: Broker Assistant']) html += renderField(dataMap['Taco: Broker Assistant'], table, id);
+          if (dataMap['Taco: Client Manager']) html += renderField(dataMap['Taco: Client Manager'], table, id);
+          html += '</div>';
+          
+          // Row 4: Converted to Appt (alone on left)
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: Converted to Appt']) html += renderField(dataMap['Taco: Converted to Appt'], table, id);
+          html += '</div>';
+          
+          // Appointment fields (only if Converted to Appt is checked)
+          html += `<div id="apptFieldsSection" style="${convertedToAppt ? '' : 'display:none;'}">`;
+          
+          // Row 5: Appointment Time, Type of Appointment, How Appt Booked
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: Appointment Time']) html += renderField(dataMap['Taco: Appointment Time'], table, id);
+          if (dataMap['Taco: Type of Appointment']) html += renderField(dataMap['Taco: Type of Appointment'], table, id);
+          if (dataMap['Taco: How appt booked']) html += renderField(dataMap['Taco: How appt booked'], table, id);
+          html += '</div>';
+          
+          // Row 6: Appt Phone Number (if Phone), Appt Meet URL (if Video), How Appt Booked Other (if Other)
+          html += '<div class="taco-row">';
+          const phoneDisplay = typeOfAppt === 'Phone' ? '' : 'display:none;';
+          const videoDisplay = typeOfAppt === 'Video' ? '' : 'display:none;';
+          const otherDisplay = howBooked === 'Other' ? '' : 'display:none;';
+          if (dataMap['Taco: Appt Phone Number']) html += `<div id="field_wrap_Taco: Appt Phone Number" style="${phoneDisplay}">${renderField(dataMap['Taco: Appt Phone Number'], table, id)}</div>`;
+          if (dataMap['Taco: Appt Meet URL']) html += `<div id="field_wrap_Taco: Appt Meet URL" style="${videoDisplay}">${renderField(dataMap['Taco: Appt Meet URL'], table, id)}</div>`;
+          if (dataMap['Taco: How Appt Booked Other']) html += `<div id="field_wrap_Taco: How Appt Booked Other" style="${otherDisplay}">${renderField(dataMap['Taco: How Appt Booked Other'], table, id)}</div>`;
+          html += '</div>';
+          
+          // Row 7: Need Evidence in Advance, Need Appt Reminder
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: Need Evidence in Advance']) html += renderField(dataMap['Taco: Need Evidence in Advance'], table, id);
+          if (dataMap['Taco: Need Appt Reminder']) html += renderField(dataMap['Taco: Need Appt Reminder'], table, id);
+          html += '</div>';
+          
+          // Row 8: Appt Conf Email Sent, Appt Conf Text Sent
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: Appt Conf Email Sent']) html += renderField(dataMap['Taco: Appt Conf Email Sent'], table, id);
+          if (dataMap['Taco: Appt Conf Text Sent']) html += renderField(dataMap['Taco: Appt Conf Text Sent'], table, id);
+          html += '</div>';
+          
+          html += '</div>'; // close apptFieldsSection
+          html += '</div>'; // close tacoFieldsContainer
         }
         
         // Row: Primary Applicant, Applicants, Guarantors, Loan Applications

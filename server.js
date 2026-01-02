@@ -363,6 +363,24 @@ function formatAuditTimestamp(isoString) {
   }
 }
 
+// Taco field mapping: Taco field name -> Airtable field name
+const TACO_FIELD_MAP = {
+  'new_client': { field: 'Taco: New or Existing Client', value: 'New Client' },
+  'existing_client': { field: 'Taco: New or Existing Client', value: 'Existing Client' },
+  'lead_source': 'Taco: Lead Source',
+  'whats_the_last_thing_we_did_for_this_client': 'Taco: Last Thing We Did',
+  'how_can_we_help_this_client': 'Taco: How can we help',
+  'cm_notes_for_broker': 'Taco: CM notes',
+  'broker': 'Taco: Broker',
+  'broker_assistant': 'Taco: Broker Assistant',
+  'client_manager': 'Taco: Client Manager',
+  'appointment_time': 'Taco: Appointment Time',
+  'type_of_appointment': 'Taco: Type of Appointment',
+  'how_was_appoint_booked': 'Taco: How appt booked',
+  'appointment_confirmation_email_sent': { field: 'Taco: Appt Conf Email Sent', type: 'checkbox' },
+  'appointment_confirmation_text_sent': { field: 'Taco: Appt Conf Text Sent', type: 'checkbox' }
+};
+
 const SCHEMA = {
   'Opportunities': {
     auditFields: ['Created', 'Modified'],
@@ -372,6 +390,20 @@ const SCHEMA = {
       { key: 'Opportunity Type', label: 'Opportunity Type', type: 'select', options: ['Home Loans', 'Commercial Loans', 'Deposit Bonds', 'Insurance (General)', 'Insurance (Life)', 'Personal Loans', 'Asset Finance', 'Tax Depreciation Schedule'] },
       { key: 'Lead Source Major', label: 'Lead Source Major', type: 'readonly' },
       { key: 'Lead Source Minor', label: 'Lead Source Minor', type: 'readonly' },
+      // Taco import fields
+      { key: 'Taco: New or Existing Client', label: 'New/Existing Client', type: 'readonly' },
+      { key: 'Taco: Lead Source', label: 'Lead Source (Taco)', type: 'readonly' },
+      { key: 'Taco: Last Thing We Did', label: 'Last Thing We Did', type: 'long-text' },
+      { key: 'Taco: How can we help', label: 'How Can We Help', type: 'long-text' },
+      { key: 'Taco: CM notes', label: 'CM Notes', type: 'long-text' },
+      { key: 'Taco: Broker', label: 'Broker', type: 'readonly' },
+      { key: 'Taco: Broker Assistant', label: 'Broker Assistant', type: 'readonly' },
+      { key: 'Taco: Client Manager', label: 'Client Manager', type: 'readonly' },
+      { key: 'Taco: Appointment Time', label: 'Appointment Time', type: 'readonly' },
+      { key: 'Taco: Type of Appointment', label: 'Type of Appointment', type: 'readonly' },
+      { key: 'Taco: How appt booked', label: 'How Appt Booked', type: 'readonly' },
+      { key: 'Taco: Appt Conf Email Sent', label: 'Appt Conf Email Sent', type: 'readonly' },
+      { key: 'Taco: Appt Conf Text Sent', label: 'Appt Conf Text Sent', type: 'readonly' },
       { key: 'Primary Applicant', nameKey: 'Primary Applicant Name', table: 'Contacts', label: 'Primary Applicant' },
       { key: 'Applicants', nameKey: 'Applicants Name', table: 'Contacts', label: 'Applicants' },
       { key: 'Guarantors', nameKey: 'Guarantors Name', table: 'Contacts', label: 'Guarantors' },

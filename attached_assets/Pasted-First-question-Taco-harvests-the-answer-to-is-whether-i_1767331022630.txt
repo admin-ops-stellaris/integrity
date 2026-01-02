@@ -1,0 +1,23 @@
+First question Taco harvests the answer to is whether it's a New Client or Existing Client. Taco fields names (they're both just checkboxes) are "new_client" and "existing_client" but we'll translate this in Airtable to a single-select dropdown which the choice [New Client, Existing Client]. I have just created that field in Airtable, in Opportunities table, field name "Taco: New or Existing Client".
+
+Then in Taco, if user selects New Client they're asked to select a Lead Source from the following list: [Repeat Client, Client Referral, Business Referral, Agent Referral, Walk In, Internet, Marketing, Head Office]. The Taco field is called "lead_source". I have just created that field in Airtable too (Opportunities table), single-select dropdown, field name "Taco: Lead Source".
+
+If, on the other hand, user in Taco selects Existing Client, then they are asked "What's the last thing we did for this client? and given a text field to write the answer. I don't know what the character limit of that field is, but it appears to be huge if there even is one - I just put 650,000 characters in there and it let me, lol. The Taco field is called "what’s_the_last_thing_we_did_for_this_client". I've just made an Airtable field (Opportunities table) for it (long text) called "Taco: Last thing we did".
+
+The rest of the workflow is the same regardless of whether they selected New Client or Existing Client.
+
+Next question in Taco is "How can we help this client?" with another text field (also huge). The Taco field is called "how_can_we_help_this_client". I've made a corresponding Airtable field in Opportunities table (long text) called "Taco: How can we help".
+
+Next in Taco is "CM notes for broker from initial data entry" with another text field (also huge). The Taco field is called "cm_notes_for_broker". I've made a corresponding Airtable field in Opportunities table (long text) called "Taco: CM notes".
+
+The next three fields are to select who the Broker, Broker Assistant and Client Manager are. Those Taco fields are called "broker", "broker_assistant", "client_manager". I've just made three fields in Airtable (all in Opportunities table, all single line text) called "Taco: Broker", "Taco: Broker Assistant", "Taco: Client Manager".
+
+Then there's an "Appointment Time" field with the date presented in the format, for example, "Thursday 1st January @ 7:30am". The Taco field is called "appointment_time". I've created a corresponding Airtable field in Opportunities table (single line text) called "Taco: Appointment Time".
+
+The next field is "What type of appointment are you booking?" with the choice of Office, Phone, Video. The Taco field is called "type_of_appointment". I've created a corresponding Airtable field in Opportunities table (single select) called "Taco: Type of Appointment".
+
+The next field is "How was the appointment booked?" with the choice of Calendly, Email, Phone, Podium, Other. The Taco field is called "how_was_appoint_booked". I've created a corresponding Airtable field in Opportunities table (single select) called "Taco: How appt booked"
+
+Then Taco has a button called "Send Appointment Confirmation Email" which I intend to replace with a similar button in Integrity. The button opens a template in Taco and the user can then send an email. I intend to replace that with a similar button in Integrity, but let's come back to that. For now please just tell me your thoughts on how we might do that.
+
+Finally, there are two more checkboxes for the user to mark off "Appointment Confirmation Email Sent" and "Appointment Confirmation Text Sent". In Taco those fields are called "appointment_confirmation_email_sent" and "appointment_confirmation_text_sent". I've just created two corresponding fields in Airtable (both Checkbox) called "Taco: Appt Conf Email Sent" and "Taco: Appt Conf Text Sent".

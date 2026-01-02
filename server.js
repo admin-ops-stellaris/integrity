@@ -714,6 +714,53 @@ app.post("/api/updateSetting", async (req, res) => {
   }
 });
 
+// --- APPOINTMENTS API ENDPOINTS ---
+app.post("/api/getAppointmentsForOpportunity", async (req, res) => {
+  try {
+    const [opportunityId] = req.body.args || [];
+    const appointments = await airtable.getAppointmentsForOpportunity(opportunityId);
+    res.json(appointments);
+  } catch (err) {
+    console.error("getAppointmentsForOpportunity error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/createAppointment", async (req, res) => {
+  try {
+    const [opportunityId, fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.createAppointment(opportunityId, fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("createAppointment error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/updateAppointment", async (req, res) => {
+  try {
+    const [appointmentId, field, value] = req.body.args || [];
+    const result = await airtable.updateAppointment(appointmentId, field, value);
+    res.json(result);
+  } catch (err) {
+    console.error("updateAppointment error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/deleteAppointment", async (req, res) => {
+  try {
+    const [appointmentId] = req.body.args || [];
+    const result = await airtable.deleteAppointment(appointmentId);
+    res.json({ success: result });
+  } catch (err) {
+    console.error("deleteAppointment error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- EMAIL SENDING via Gmail API ---
 app.post("/api/sendEmail", async (req, res) => {
   try {

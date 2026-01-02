@@ -531,3 +531,86 @@ export async function updateSetting(key, value, userEmail = null) {
 export function clearSettingsCache() {
   settingsCache.clear();
 }
+
+// --- APPOINTMENTS CRUD ---
+
+export async function getAppointmentsForOpportunity(opportunityId) {
+  if (!base || !opportunityId) return [];
+  
+  try {
+    const records = await base("Appointments")
+      .select({
+        filterByFormula: `FIND("${opportunityId}", ARRAYJOIN({Opportunity}))`,
+        sort: [{ field: "Appointment Time", direction: "asc" }]
+      })
+      .all();
+    
+    return records.map(r => ({
+      id: r.id,
+      appointmentTime: r.fields["Appointment Time"] || null,
+      typeOfAppointment: r.fields["Type of Appointment"] || null,
+      howBooked: r.fields["How Booked"] || null,
+      howBookedOther: r.fields["How Booked Other"] || null,
+      phoneNumber: r.fields["Phone Number"] || null,
+      videoMeetUrl: r.fields["Video Meet URL"] || null,
+      needEvidenceInAdvance: r.fields["Need Evidence in Advance"] || false,
+      needApptReminder: r.fields["Need Appt Reminder"] || false,
+      confEmailSent: r.fields["Conf Email Sent"] || false,
+      confTextSent: r.fields["Conf Text Sent"] || false,
+      appointmentStatus: r.fields["Appointment Status"] || "Scheduled",
+      notes: r.fields["Notes"] || null,
+      createdTime: r.fields["Created Time"] || null
+    }));
+  } catch (err) {
+    console.error("getAppointmentsForOpportunity error:", err.message);
+    return [];
+  }
+}
+
+export async function createAppointment(opportunityId, fields, userContext = null) {
+  if (!base || !opportunityId) return null;
+  
+  try {
+    const createFields = {
+      "Opportunity": [opportunityId],
+      "Appointment Status": "Scheduled",
+      ...fields
+    };
+    
+    if (userContext && userContext.id) {
+      createFields["Created By"] = [userContext.id];
+    }
+    
+    const record = await base("Appointments").create(createFields);
+    return formatRecord(record);
+  } catch (err) {
+    console.error("createAppointment error:", err.message);
+    return null;
+  }
+}
+
+export async function updateAppointment(appointmentId, field, value) {
+  if (!base || !appointmentId) return null;
+  
+  try {
+    const record = await base("Appointments").update(appointmentId, {
+      [field]: value
+    });
+    return formatRecord(record);
+  } catch (err) {
+    console.error("updateAppointment error:", err.message);
+    return null;
+  }
+}
+
+export async function deleteAppointment(appointmentId) {
+  if (!base || !appointmentId) return false;
+  
+  try {
+    await base("Appointments").destroy(appointmentId);
+    return true;
+  } catch (err) {
+    console.error("deleteAppointment error:", err.message);
+    return false;
+  }
+}

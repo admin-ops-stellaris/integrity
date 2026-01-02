@@ -1,0 +1,112 @@
+Delivered-To: tim@stellaris.loans
+Received: by 2002:a05:6500:a96:b0:2e2:374e:1f50 with SMTP id s22csp509055lqa;
+        Wed, 31 Dec 2025 20:21:38 -0800 (PST)
+X-Google-Smtp-Source: AGHT+IGSZFQIRfvqawnn0Le5HVPRldbq9jg/k2vU1aPl7F+k7R8mboiPmjQ9Qa9SFwENlYiAq7p2
+X-Received: by 2002:ac8:5a0d:0:b0:4ee:1301:ebb3 with SMTP id d75a77b69052e-4f4abd80fbbmr594574401cf.54.1767241298111;
+        Wed, 31 Dec 2025 20:21:38 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1767241298; cv=none;
+        d=google.com; s=arc-20240605;
+        b=C8gcecX7KZlI8oFGqGhbPIZ78SKxaWGCzX/zm54P81m+PdpsunepdumzFu9bnKiGXe
+         q+NYXATKpMM/WNjwVjoTbo6/rxrc39BLa5CtcR84m4mUHG05DFpqehcOji/PCyHUSgKy
+         XreTIrCErqHmQWFjDuo5/6OtI//LXrubxxS4AM95eb7qun/rdSrQdTA7Xelk6rgEpRNj
+         J0YdnTLculfoU6Nl7gh4dqKk5YmlG63bWOUzLHuzanVF74ko+j345I5pUmNb5Tct6Wom
+         TMD68RVq+YOSa0PdN+RwfTgfKlwS5b5bXyrHt3MvcYWpDscgA9S63+nLhcSKPZmi635x
+         ENXw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=content-transfer-encoding:feedback-id:mime-version:date:subject:cc
+         :to:from:dkim-signature:message-id;
+        bh=MC1kdEIEHn4A6cw2t0s3ycAxvlC+G+CmfzFBmUs/rww=;
+        fh=Qp67tY4ug1A4gGuVgZbHUO6fL45x73Vnw/w+/YZHu54=;
+        b=MF4GwPjKccui2cytNkkPgI8lfx3r6V069t/p6lkWckKXLn8AWAEGHmT/5oTp9kpF52
+         BcLnL5DzJH8OG+EWZWNDVTjZPbtLZpgTeH7q4u4/U72eJFb8nUDa/Z5m/Trm5hTXGXxL
+         mjnN264poFBN6EUhC5qNUd1QwAJ9+OQYjPOUrioLeqVkO2gikWCc0KUuGT/WdetF0c7w
+         XJbiVNVjZZj1wT93CbXLLqkPkrs/gfN+041vu8pZZ+WE+0fjsMD4W0Mis38zp0rWOwyv
+         7zV+nUwK2hx10nvCz30MVoURZufQ2v/sE0RalBhqNU4tkB4iNHURL+qnM82ROqFKa9LU
+         lQgA==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@stellaris.loans header.s=s398464 header.b=cZN3JYHY;
+       spf=pass (google.com: domain of bounce.d0g8uh9zw8b3k00=29per2oqkfzk=0vjiid1lfjl9zd@em398464.stellaris.loans designates 170.10.69.26 as permitted sender) smtp.mailfrom="bounce.d0g8uh9zw8b3k00=29per2oqkfzk=0vjiid1lfjl9zd@em398464.stellaris.loans";
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=stellaris.loans
+Return-Path: <bounce.d0g8uh9zw8b3k00=29per2oqkfzk=0vjiid1lfjl9zd@em398464.stellaris.loans>
+Received: from o1i282.smtp2go.com (o1i282.smtp2go.com. [170.10.69.26])
+        by mx.google.com with ESMTPS id 6a1803df08f44-88fd137cbd2si288614466d6.270.2025.12.31.20.21.37
+        for <tim@stellaris.loans>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 31 Dec 2025 20:21:38 -0800 (PST)
+Received-SPF: pass (google.com: domain of bounce.d0g8uh9zw8b3k00=29per2oqkfzk=0vjiid1lfjl9zd@em398464.stellaris.loans designates 170.10.69.26 as permitted sender) client-ip=170.10.69.26;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@stellaris.loans header.s=s398464 header.b=cZN3JYHY;
+       spf=pass (google.com: domain of bounce.d0g8uh9zw8b3k00=29per2oqkfzk=0vjiid1lfjl9zd@em398464.stellaris.loans designates 170.10.69.26 as permitted sender) smtp.mailfrom="bounce.d0g8uh9zw8b3k00=29per2oqkfzk=0vjiid1lfjl9zd@em398464.stellaris.loans";
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=stellaris.loans
+Message-ID: <6955f652.0c0a0220.2a1afc.40aeSMTPIN_ADDED_BROKEN@mx.google.com>
+X-Google-Original-Message-ID: <fAiadDRY9LBW39QKb5Ci>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=stellaris.loans;
+ i=@stellaris.loans; q=dns/txt; s=s398464; t=1767241295; h=from :
+ subject : to : message-id : date;
+ bh=MC1kdEIEHn4A6cw2t0s3ycAxvlC+G+CmfzFBmUs/rww=;
+ b=cZN3JYHYGuubsdaoa6Zi67ANlkYvJPG9xEhxTakvaRSzNXPIT71SVaGOj7StVtbj2TOi6
+ vEaUOkXZMkP63bTywl0Z0qSRZ4AeIBM0KOpJUSXWjV6byZ1++8ge9b3NtqAjtDYxedDfpF+
+ 008JTJTMOb26sYBf7/PnKsZTgHMQ7MjJOXE1xaRdctYHHwDDvy/DTE2u9fgxSz3pqavm1n5
+ goYsUqapZBDL5+r3j3+EEtzDcBmGfId+jZA+Eg+9psXnrYSorF1VntS1KE0AVspeXGt+CH2
+ Z7uPjgnB4jpWy/LtTJV8A99hEzRx30qGyOa94+y6DARMqWi6vx/7P57eUBVw==
+Received: from [10.79.237.58] (helo=[127.0.0.1])
+	by smtpcorp.com with esmtpsa (TLS1.2:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_128_GCM:128)
+	(Exim 4.98.1-S2G)
+	(envelope-from <shae@stellaris.loans>)
+	id 1vbABR-4o5NDgrs5xJ-rOdC;
+	Thu, 01 Jan 2026 04:21:29 +0000
+Content-Type: text/html; charset=utf-8
+X-Tacoid: fAiadDRY9LBW39QKb5Ci
+From: Shae Aiello <shae@stellaris.loans>
+To: luke.parker648@gmail.com
+Cc: tim@stellaris.loans
+Subject: Confirmation of Phone Appointment - Monday 05/01/26 at 3:30pm
+Date: Thu, 01 Jan 2026 04:21:27 +0000
+MIME-Version: 1.0
+X-Report-Abuse: Please forward a copy of this message, including all headers, to <abuse-report@smtp2go.com>
+Feedback-ID: 398464m:398464aGIIwBt:398464syhM2ak-n4
+X-smtpcorp-track: 06vKsNyztypN.AvHv_39pjac4.RJIn9gFMmeG
+Content-Transfer-Encoding: quoted-printable
+
+Hi=20Luke,<div><br></div><div>I=E2=80=99m=20writing=20to=20confirm=20your=
+=20phone=20appointment=20with=20our=20Mortgage=20Broker=20Tim=20Kerin=20on=
+=20Monday=2005/01/26=20at=203:30pm=20(Perth=20time)=20(4=20days=20from=20to=
+day).=20Tim=20will=20call=20you=20on=200410=20747=20672.</div><div><br></di=
+v><div><div>Click&nbsp;<a=20href=3D"https://stellaris.loans/our-team">here<=
+/a>&nbsp;to=20meet=20Tim=20and=20the=20rest=20of=20the=20Team=20at=20Stella=
+ris=20Finance=20Broking.=20We=20will=20be=20supporting=20you=20each=20step=
+=20of=20the=20way!</div><div><br></div><div>You=20will=20soon=20receive=20i=
+nvitations=20to=20share=20your=20information=20with=20us=20via=20Frollo's=
+=20Open=20Banking=20and=20Connective's=20Client=20Centre.=20These=20two=20s=
+ystems=20streamline=20the=20collection=20of=20your=20key=20financial=20and=
+=20personal=20data,=20including=20your=20contact=20details,=20employment=20=
+history,=20savings=20and=20liabilities,=20to=20give=20us=20a=20complete=20p=
+icture=20of=20your=20situation.</div></div><div><div><br></div><div>Do=20no=
+t=20hesitate=20to=20contact=20our=20team=20on=200488=20839=20212=20if=20you=
+=20have=20any=20questions.&nbsp;&nbsp;</div></div><div><br></div><div><div>=
+We=20look=20forward=20to=20working=20with=20you!<br></div></div><div><br></=
+div><div><div>Best=20wishes,</div><div>Shae</div></div><br><div=20style=3D"=
+color:=20rgb(34,=2034,=2034);=20font-family:=20Arial,=20Helvetica,=20sans-s=
+erif;=20font-size:=20small;=20letter-spacing:=20normal;"><div>------</div><=
+div><b>Shae=20Aiello</b></div><div><b>Chief=20Amazement=20Officer</b></div>=
+<div><b>Stellaris=20Finance=20Broking</b></div><div><br></div><div>Phone:=
+=200488=20839=20212</div><div>Office:=20Suite=2018=20/=2056=20Creaney=20Dri=
+ve,=20Kingsley=20WA=206026</div><div>Website:&nbsp;<a=20href=3D"http://www.=
+stellaris.loans/"=20target=3D"_blank"=20style=3D"color:=20rgb(17,=2085,=202=
+04);">www.stellaris.loans</a></div><div>Book=20an=20Appointment=20with=20Ti=
+m:&nbsp;<a=20href=3D"http://calendly.com/tim-kerin"=20target=3D"_blank"=20s=
+tyle=3D"color:=20rgb(17,=2085,=20204);">calendly.com/tim-kerin</a></div></d=
+iv><div=20style=3D"color:=20rgb(34,=2034,=2034);=20font-family:=20Arial,=20=
+Helvetica,=20sans-serif;=20font-size:=20small;=20letter-spacing:=20normal;"=
+><br></div><img=20src=3D"https://ci3.googleusercontent.com/meips/ADKq_NYkg5=
+ksJyoeRn-CHbTR3nnunHzILXxZKPi8ko7uvtZJxu9Zm-CvBmvl1TbMva0WVX9aSfiePau6TW2li=
+dhgHISSJlUDUU-fpaU28AfyVxuVDKbe7EZrqGUgoqTJk-aZrpBdGtmughGjj0c-9R3fVIqOsI-w=
+6oMx8CzFNwO769liuK99zwN0vaiK1EBdDGaW708vA0jx2p5t8g_3aRsvgDDEvNJuUON8-rw44gu=
+yZaXbGwki=3Ds0-d-e1-ft#https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-=
+9b9c-a55121f8611b/WEB_Stellaris_Email%20Signature_Midnight.png/:/rs=3Dw:309=
+,h:100,cg:true,m/cr=3Dw:309,h:100"=20style=3D"color:=20rgb(34,=2034,=2034);=
+=20font-family:=20Arial,=20Helvetica,=20sans-serif;=20font-size:=20small;=
+=20letter-spacing:=20normal;">
+<div=20style=3D"visibility:hidden;"><img=20alt=3D""=20src=3D"https://link.s=
+tellaris.loans/open/06vKsNyztypN.AvHv_39pjac4.RJIn9gFMmeG/1.gif"=20/></div>

@@ -883,7 +883,9 @@ Best wishes,
       // Toggle appointment fields visibility
       if (fieldKey === 'Taco: Converted to Appt') {
         const section = document.getElementById('apptFieldsSection');
+        const notice = document.getElementById('apptCollapsedNotice');
         if (section) section.style.display = isChecked ? '' : 'none';
+        if (notice) notice.style.display = isChecked ? '' : 'none';
       }
     }).withFailureHandler(function(err) {
       const input = document.getElementById('input_' + fieldKey);
@@ -891,6 +893,15 @@ Best wishes,
       if (label) label.innerText = !isChecked ? 'Yes' : 'No';
       console.error('Failed to save checkbox:', err);
     }).updateRecord(table, id, fieldKey, isChecked);
+  }
+
+  function togglePastApptFields() {
+    const section = document.getElementById('apptFieldsSection');
+    const notice = document.getElementById('apptCollapsedNotice');
+    if (!section || !notice) return;
+    const isHidden = section.style.display === 'none';
+    section.style.display = isHidden ? '' : 'none';
+    notice.classList.toggle('expanded', isHidden);
   }
 
   // --- LINKED RECORD EDITOR (TAGS) ---
@@ -1554,12 +1565,30 @@ Best wishes,
         const tacoFields = response.data.filter(item => item.tacoField);
         if (tacoFields.length > 0) {
           html += `<div class="taco-section-header"><img src="https://taco.insightprocessing.com.au/static/images/taco.jpg" alt="Taco"><span>Taco fields</span></div>`;
-          html += '<div id="tacoFieldsContainer">';
+          html += '<div class="taco-section-box"><div id="tacoFieldsContainer">';
           
           // Get current values for conditional logic
           const convertedToAppt = dataMap['Taco: Converted to Appt']?.value === true || dataMap['Taco: Converted to Appt']?.value === 'true';
           const typeOfAppt = dataMap['Taco: Type of Appointment']?.value || '';
           const howBooked = dataMap['Taco: How appt booked']?.value || '';
+          
+          // Check if appointment is in the past (at least 1 day after)
+          const apptTimeStr = dataMap['Taco: Appointment Time']?.value || '';
+          let apptIsPast = false;
+          if (apptTimeStr && convertedToAppt) {
+            const match = apptTimeStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+            if (match) {
+              const day = parseInt(match[1]);
+              const month = parseInt(match[2]) - 1;
+              let year = parseInt(match[3]);
+              if (year < 100) year += 2000;
+              const apptDate = new Date(year, month, day);
+              apptDate.setHours(23, 59, 59, 999);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              apptIsPast = today > apptDate;
+            }
+          }
           
           // Row 1: New or Existing Client, Lead Source (3rd empty)
           html += '<div class="taco-row">';
@@ -1588,7 +1617,8 @@ Best wishes,
           html += '</div>';
           
           // Appointment fields (only if Converted to Appt is checked)
-          html += `<div id="apptFieldsSection" style="${convertedToAppt ? '' : 'display:none;'}">`;
+          const showApptFields = convertedToAppt && !apptIsPast;
+          html += `<div id="apptFieldsSection" style="${showApptFields ? '' : 'display:none;'}">`;
           
           // Row 5: Appointment Time, Type of Appointment, How Appt Booked
           html += '<div class="taco-row">';
@@ -1620,7 +1650,16 @@ Best wishes,
           html += '</div>';
           
           html += '</div>'; // close apptFieldsSection
-          html += '</div>'; // close tacoFieldsContainer
+          
+          // Show collapsed notice if appointment is past
+          if (convertedToAppt && apptIsPast) {
+            html += `<div id="apptCollapsedNotice" class="appt-collapsed-notice" onclick="togglePastApptFields()">
+              <span class="chevron">▶</span>
+              <span>Appointment details hidden (${apptTimeStr} has passed)</span>
+            </div>`;
+          }
+          
+          html += '</div></div>'; // close tacoFieldsContainer and taco-section-box
         }
         
         // Row: Primary Applicant, Applicants, Guarantors, Loan Applications

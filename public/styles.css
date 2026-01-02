@@ -108,7 +108,15 @@
   .taco-grid .detail-group.taco-field { margin-left: 0; }
   .taco-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 15px; margin-bottom: 12px; }
   .taco-row .detail-group { margin-bottom: 0; }
-  #tacoFieldsContainer { margin-left: 12px; }
+  #tacoFieldsContainer { margin-left: 0; }
+  .taco-section-box { background: rgba(255, 248, 220, 0.5); border: 1px solid rgba(200, 180, 120, 0.3); border-radius: 8px; padding: 16px; margin-top: 8px; }
+  .dark-mode .taco-section-box { background: rgba(60, 55, 40, 0.4); border-color: rgba(120, 100, 60, 0.4); }
+  .appt-collapsed-notice { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(200, 180, 120, 0.15); border-radius: 6px; margin-top: 8px; cursor: pointer; font-size: 12px; color: var(--color-midnight); }
+  .appt-collapsed-notice:hover { background: rgba(200, 180, 120, 0.25); }
+  .dark-mode .appt-collapsed-notice { background: rgba(120, 100, 60, 0.2); color: var(--color-salt); }
+  .dark-mode .appt-collapsed-notice:hover { background: rgba(120, 100, 60, 0.3); }
+  .appt-collapsed-notice .chevron { transition: transform 0.2s; }
+  .appt-collapsed-notice.expanded .chevron { transform: rotate(90deg); }
   .panel-header { background: var(--color-salt); padding: 20px; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; }
   .panel-content { padding: 30px; overflow-y: auto; flex: 1; font-family: var(--font-body); }
   .close-panel { cursor: pointer; font-size: 20px; color: #888; background: none; border: none; padding: 0; width: auto; margin: 0; }
@@ -180,8 +188,7 @@
   .expand-link:hover { color: var(--color-trail); }
 
   /* INLINE EDIT STYLES (STACKED) */
-  .edit-field-icon { color: #CCC; margin-left: 8px; cursor: pointer; font-size: 12px; transform: scaleX(-1); }
-  .edit-field-icon:hover { color: var(--color-star); }
+  .edit-field-icon { display: none; }
   .edit-wrapper { display: flex; flex-direction: column; margin-top: 5px; width: 100%; background: #F9F9F9; padding: 10px; border-radius: 4px; box-sizing: border-box; }
   .edit-input { width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 8px; border: 1px solid #CCC; border-radius: 4px; font-family: var(--font-body); font-size: 14px; }
   .edit-btn-row { display: flex; justify-content: flex-end; gap: 8px; }

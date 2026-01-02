@@ -90,6 +90,9 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- January 2, 2026: Email composer - built-in appointment confirmation email composer with dynamic templates, variable substitution, conditional logic (appointment type, new/repeat client, prep handler), live preview, and Gmail integration
+- January 2, 2026: Delete Opportunity feature - checks for connections (Primary Applicant, Applicants, Guarantors, Loan Applications, Tasks) before allowing deletion
+- January 2, 2026: Fixed Taco field capitalization - corrected field names to match Airtable exactly (Last thing we did, How appt booked, Taco Client Manager)
 - January 2, 2026: Taco import feature - paste Taco data in New Opportunity composer, parses key:value format, shows preview of matched/unmapped fields, stores data in Taco-prefixed Airtable fields
 - December 31, 2025: Expanded Opportunity fields - added 25+ new editable fields including loan consultant/processor IDs, amounts, values, dates, referral info, and related IDs
 - December 31, 2025: Long-text field support - textarea editing for multi-line text fields in Opportunity panel

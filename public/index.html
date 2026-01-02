@@ -300,6 +300,60 @@
           </div>
         </div>
       </div>
+
+      <div id="emailComposer" class="email-composer-modal">
+        <div class="email-composer-content">
+          <div class="email-composer-header">
+            <h2>Appointment Confirmation Email</h2>
+            <button class="close-panel" onclick="closeEmailComposer()">✕</button>
+          </div>
+          <div class="email-composer-body">
+            <div class="email-composer-settings">
+              <div class="email-setting-group">
+                <label>Appointment Type</label>
+                <select id="emailApptType" onchange="updateEmailPreview()">
+                  <option value="Office">Office</option>
+                  <option value="Phone">Phone</option>
+                  <option value="Video">Video</option>
+                </select>
+              </div>
+              <div class="email-setting-group">
+                <label>Client Type</label>
+                <select id="emailClientType" onchange="updateEmailPreview()">
+                  <option value="New">New Client</option>
+                  <option value="Repeat">Repeat Client</option>
+                </select>
+              </div>
+              <div class="email-setting-group">
+                <label>Prep Handler</label>
+                <select id="emailPrepHandler" onchange="updateEmailPreview()">
+                  <option value="Shae">Shae (part-time)</option>
+                  <option value="Team">Team (email Shae)</option>
+                  <option value="OpenBanking">Open Banking (no docs)</option>
+                </select>
+              </div>
+            </div>
+            <div class="email-composer-fields">
+              <div class="email-field-row">
+                <label>To:</label>
+                <input type="text" id="emailTo" readonly>
+              </div>
+              <div class="email-field-row">
+                <label>Subject:</label>
+                <input type="text" id="emailSubject" readonly>
+              </div>
+            </div>
+            <div class="email-preview-container">
+              <div class="email-preview-label">Preview</div>
+              <div id="emailPreviewBody" class="email-preview-body"></div>
+            </div>
+          </div>
+          <div class="email-composer-footer">
+            <button type="button" class="btn-cancel" onclick="closeEmailComposer()">Cancel</button>
+            <button type="button" class="btn-confirm" onclick="openInGmail()">Open in Gmail</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div style="position:fixed; bottom:5px; right:10px; font-size:10px; color:#AAA; z-index:1000; font-family:sans-serif;">

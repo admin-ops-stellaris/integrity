@@ -446,7 +446,7 @@ const TACO_FIELD_MAP = {
   'cm_notes_for_broker': 'Taco: CM notes',
   'broker': 'Taco: Broker',
   'broker_assistant': 'Taco: Broker Assistant',
-  'client_manager': 'Taco: Client Manager',
+  'client_manager': 'Taco Client Manager',
   'converted_to_appointment': { field: 'Taco: Converted to Appt', type: 'checkbox' },
   'appointment_time': 'Taco: Appointment Time',
   'type_of_appointment': 'Taco: Type of Appointment',
@@ -474,7 +474,7 @@ const SCHEMA = {
       { key: 'Taco: CM notes', label: 'Taco: CM notes', type: 'long-text' },
       { key: 'Taco: Broker', label: 'Taco: Broker', type: 'readonly' },
       { key: 'Taco: Broker Assistant', label: 'Taco: Broker Assistant', type: 'readonly' },
-      { key: 'Taco: Client Manager', label: 'Taco: Client Manager', type: 'readonly' },
+      { key: 'Taco Client Manager', label: 'Taco Client Manager', type: 'readonly' },
       { key: 'Taco: Converted to Appt', label: 'Taco: Converted to Appt', type: 'readonly' },
       { key: 'Taco: Appointment Time', label: 'Taco: Appointment Time', type: 'readonly' },
       { key: 'Taco: Type of Appointment', label: 'Taco: Type of Appointment', type: 'readonly' },
@@ -610,6 +610,18 @@ app.post("/api/getRecordDetail", async (req, res) => {
     });
   } catch (err) {
     console.error("getRecordDetail error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getRecordById", async (req, res) => {
+  try {
+    const [tableName, id] = req.body.args || [];
+    const record = await airtable.getRecordFromTable(tableName, id);
+    if (!record) return res.json(null);
+    res.json(record);
+  } catch (err) {
+    console.error("getRecordById error:", err);
     res.status(500).json({ error: err.message });
   }
 });

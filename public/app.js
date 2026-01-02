@@ -519,6 +519,231 @@
     closeModal('alertModal');
   }
 
+  // --- EMAIL COMPOSER ---
+  let currentEmailContext = null;
+  
+  const EMAIL_TEMPLATE = {
+    subject: {
+      Office: 'Confirmation of Appointment - {{appointmentTime}}',
+      Phone: 'Confirmation of Phone Appointment - {{appointmentTime}}',
+      Video: 'Confirmation of Google Meet Appointment - {{appointmentTime}}'
+    },
+    
+    opening: {
+      Office: "I'm writing to confirm your appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today) at our office - Kingsley Professional Centre, 18 / 56 Creaney Drive, Kingsley.",
+      Phone: "I'm writing to confirm your phone appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today). {{brokerFirst}} will call you on {{phoneNumber}}.",
+      Video: "I'm writing to confirm your video call appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today) using Google Meet URL: {{meetUrl}}. If you have any trouble logging in, please call or text our team on 0488 839 212."
+    },
+    
+    meetLine: {
+      New: "Click here to meet {{brokerFirst}} and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!",
+      Repeat: "Click here to get reacquainted with the Team at Stellaris Finance Broking. We will be supporting you each step of the way!"
+    },
+    
+    preparation: {
+      Shae: `In preparation for your appointment, please email me the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and your 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+I work part time – please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information.`,
+      Team: `In preparation for your appointment, please email Shae (shae@stellaris.loans) the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+Please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information.`,
+      OpenBanking: `You will soon receive invitations to share your information with us via Frollo's Open Banking and Connective's Client Centre. These two systems streamline the collection of your key financial and personal data, including your contact details, employment history, savings and liabilities, to give us a complete picture of your situation.{{prefillNote}}`
+    },
+    
+    prefillNote: {
+      New: '',
+      Repeat: ' I have prefilled as much as I can using the information we previously received from you.'
+    },
+    
+    closing: {
+      New: `Do not hesitate to contact our team on 0488 839 212 if you have any questions.
+
+We look forward to working with you!
+
+Best wishes,
+{{sender}}`,
+      Repeat: `Do not hesitate to contact our team on 0488 839 212 if you have any questions.
+
+We look forward to working with you again!
+
+Best wishes,
+{{sender}}`
+    }
+  };
+  
+  function openEmailComposer(opportunityData, contactData) {
+    currentEmailContext = {
+      opportunity: opportunityData,
+      contact: contactData,
+      greeting: contactData.PreferredName || contactData.FirstName || 'there',
+      broker: opportunityData['Taco: Broker'] || 'our Mortgage Broker',
+      brokerFirst: (opportunityData['Taco: Broker'] || '').split(' ')[0] || 'the broker',
+      appointmentTime: opportunityData['Taco: Appointment Time'] || '[appointment time]',
+      phoneNumber: opportunityData['Taco: Appt Phone Number'] || '[phone number]',
+      meetUrl: '[Google Meet URL]',
+      email: contactData.EmailAddress1 || '',
+      sender: 'Shae'
+    };
+    
+    const apptType = opportunityData['Taco: Type of Appointment'] || 'Phone';
+    document.getElementById('emailApptType').value = apptType;
+    
+    const isNew = opportunityData['Taco: New or Existing Client'] === 'New Client';
+    document.getElementById('emailClientType').value = isNew ? 'New' : 'Repeat';
+    
+    document.getElementById('emailPrepHandler').value = 'Shae';
+    
+    document.getElementById('emailTo').value = currentEmailContext.email;
+    
+    const modal = document.getElementById('emailComposer');
+    modal.classList.add('visible');
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        modal.classList.add('showing');
+      });
+    });
+    
+    updateEmailPreview();
+  }
+  
+  function closeEmailComposer() {
+    const modal = document.getElementById('emailComposer');
+    modal.classList.remove('showing');
+    setTimeout(() => {
+      modal.classList.remove('visible');
+      currentEmailContext = null;
+    }, 250);
+  }
+  
+  function updateEmailPreview() {
+    if (!currentEmailContext) return;
+    
+    const apptType = document.getElementById('emailApptType').value;
+    const clientType = document.getElementById('emailClientType').value;
+    const prepHandler = document.getElementById('emailPrepHandler').value;
+    
+    const brokerIntro = clientType === 'New' 
+      ? `our Mortgage Broker ${currentEmailContext.broker}`
+      : currentEmailContext.brokerFirst;
+    
+    const variables = {
+      greeting: currentEmailContext.greeting,
+      broker: currentEmailContext.broker,
+      brokerFirst: currentEmailContext.brokerFirst,
+      brokerIntro: brokerIntro,
+      appointmentTime: currentEmailContext.appointmentTime,
+      daysUntil: calculateDaysUntil(currentEmailContext.appointmentTime),
+      phoneNumber: currentEmailContext.phoneNumber,
+      meetUrl: currentEmailContext.meetUrl,
+      sender: currentEmailContext.sender,
+      prefillNote: EMAIL_TEMPLATE.prefillNote[clientType]
+    };
+    
+    const subject = replaceVariables(EMAIL_TEMPLATE.subject[apptType], variables);
+    document.getElementById('emailSubject').value = subject;
+    
+    let body = `Hi ${variables.greeting},\n\n`;
+    body += replaceVariables(EMAIL_TEMPLATE.opening[apptType], variables) + '\n\n';
+    body += replaceVariables(EMAIL_TEMPLATE.meetLine[clientType], variables) + '\n\n';
+    body += replaceVariables(EMAIL_TEMPLATE.preparation[prepHandler], variables) + '\n\n';
+    body += replaceVariables(EMAIL_TEMPLATE.closing[clientType], variables);
+    
+    document.getElementById('emailPreviewBody').innerText = body;
+  }
+  
+  function replaceVariables(template, variables) {
+    return template.replace(/\{\{(\w+)\}\}/g, (match, key) => variables[key] || match);
+  }
+  
+  function calculateDaysUntil(appointmentTimeStr) {
+    if (!appointmentTimeStr) return '?';
+    
+    const months = {
+      'january': 0, 'jan': 0,
+      'february': 1, 'feb': 1,
+      'march': 2, 'mar': 2,
+      'april': 3, 'apr': 3,
+      'may': 4,
+      'june': 5, 'jun': 5,
+      'july': 6, 'jul': 6,
+      'august': 7, 'aug': 7,
+      'september': 8, 'sep': 8, 'sept': 8,
+      'october': 9, 'oct': 9,
+      'november': 10, 'nov': 10,
+      'december': 11, 'dec': 11
+    };
+    
+    const cleanStr = appointmentTimeStr.toLowerCase().replace(/,/g, '');
+    
+    const dayMatch = cleanStr.match(/(\d{1,2})(st|nd|rd|th)?/);
+    if (!dayMatch) return '?';
+    const day = parseInt(dayMatch[1]);
+    
+    let monthIdx = -1;
+    for (const [name, idx] of Object.entries(months)) {
+      if (cleanStr.includes(name)) {
+        monthIdx = idx;
+        break;
+      }
+    }
+    if (monthIdx === -1) return '?';
+    
+    const now = new Date();
+    let year = now.getFullYear();
+    let apptDate = new Date(year, monthIdx, day);
+    
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const apptDateOnly = new Date(year, monthIdx, day);
+    
+    if (apptDateOnly < today) {
+      apptDate = new Date(year + 1, monthIdx, day);
+    }
+    
+    const diffTime = apptDate - today;
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 ? diffDays : '?';
+  }
+  
+  function openInGmail() {
+    if (!currentEmailContext) return;
+    
+    const to = document.getElementById('emailTo').value;
+    const subject = document.getElementById('emailSubject').value;
+    const body = document.getElementById('emailPreviewBody').innerText;
+    
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    window.open(gmailUrl, '_blank');
+    closeEmailComposer();
+  }
+  
+  function openEmailComposerFromPanel(opportunityId) {
+    google.script.run.withSuccessHandler(function(oppData) {
+      if (!oppData) {
+        showAlert('Error', 'Could not load opportunity data', 'error');
+        return;
+      }
+      const contactFields = currentContactRecord ? currentContactRecord.fields : {};
+      openEmailComposer(oppData.fields || {}, contactFields);
+    }).getRecordById('Opportunities', opportunityId);
+  }
+
   // --- SPOUSE LOGIC ---
   function renderSpouseSection(f) {
      const statusEl = document.getElementById('spouseStatusText');
@@ -655,6 +880,11 @@
      document.getElementById('edit_' + key).style.display = 'none';
      pendingLinkedEdits[key] = [];
      pendingRemovals = {};
+  }
+  
+  function closeLinkedEdit(key) {
+     document.getElementById('view_' + key).style.display = 'block';
+     document.getElementById('edit_' + key).style.display = 'none';
   }
 
   function renderLinkedEditorState(key) {
@@ -1277,7 +1507,10 @@
       });
       if (table === 'Opportunities') {
         const safeName = (response.title || '').replace(/'/g, "\\'");
-        html += `<div style="margin-top:40px; padding-top:20px; border-top:1px solid #EEE;"><button type="button" class="btn-delete" onclick="confirmDeleteOpportunity('${id}', '${safeName}')">Delete Opportunity</button></div>`;
+        html += `<div style="margin-top:30px; padding-top:20px; border-top:1px solid #EEE;">`;
+        html += `<button type="button" class="btn-confirm" style="width:100%; margin-bottom:10px;" onclick="openEmailComposerFromPanel('${id}')">Send Confirmation Email</button>`;
+        html += `<button type="button" class="btn-delete" onclick="confirmDeleteOpportunity('${id}', '${safeName}')">Delete Opportunity</button>`;
+        html += `</div>`;
       }
       content.innerHTML = html;
     }).getRecordDetail(table, id);

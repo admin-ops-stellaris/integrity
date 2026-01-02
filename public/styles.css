@@ -344,6 +344,8 @@
   .email-composer-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid var(--color-border); background: #F5F5F5; }
   .btn-settings { background: transparent; border: 1px solid var(--color-border); color: var(--color-midnight); padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
   .btn-settings:hover { background: var(--color-border); }
+  .settings-cog-small { background: transparent; border: 1px solid rgba(255,255,255,0.3); width: 24px; height: 24px; border-radius: 50%; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: rgba(255,255,255,0.7); transition: all 0.2s; }
+  .settings-cog-small:hover { background: rgba(255,255,255,0.1); color: #FFF; }
   .email-settings-form { display: flex; flex-direction: column; gap: 12px; width: 100%; min-width: 0; }
   .email-settings-form .setting-row { display: flex; flex-direction: column; gap: 4px; width: 100%; min-width: 0; }
   .email-settings-form .setting-row label { font-size: 12px; font-weight: 500; color: var(--color-midnight); }

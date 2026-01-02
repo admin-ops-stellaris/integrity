@@ -306,7 +306,10 @@
         <div class="email-composer-content">
           <div class="email-composer-header">
             <h2>Appointment Confirmation Email</h2>
-            <button class="close-panel" onclick="closeEmailComposer()">✕</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="settings-cog-small" onclick="openEmailSettings()" title="Edit Links & Templates">⚙</button>
+              <button class="close-panel" onclick="closeEmailComposer()">✕</button>
+            </div>
           </div>
           <div class="email-composer-body">
             <div class="email-composer-settings">
@@ -370,7 +373,6 @@
           </div>
           <div class="email-composer-footer">
             <button type="button" class="btn-cancel" onclick="closeEmailComposer()">Cancel</button>
-            <button type="button" class="btn-settings" onclick="openEmailSettings()" title="Edit Links & Templates">⚙</button>
             <button type="button" class="btn-confirm" onclick="sendEmail()" id="emailSendBtn">Send</button>
           </div>
         </div>
@@ -412,11 +414,18 @@
               <div style="border-top:1px solid var(--color-border); margin-top:12px; padding-top:12px;">
                 <div class="setting-row">
                   <label>Your Email Signature</label>
-                  <div id="signaturePreviewContainer" style="background:#FFF; border:1px solid var(--color-border); border-radius:6px; padding:15px; min-height:60px; margin-bottom:8px; overflow:auto;"></div>
-                  <div style="display:flex; gap:8px; justify-content:flex-end;">
-                    <button type="button" onclick="openSignatureGenerator()" style="padding:8px 14px; background:var(--color-star); color:white; border:none; border-radius:4px; cursor:pointer; font-size:11px; font-weight:600; width:auto; margin:0;">Generate New Signature</button>
+                  <div style="background:var(--color-sky); padding:8px 12px; border-radius:4px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:11px; color:#555;">
+                      <span id="sigGenName">Loading...</span> · <span id="sigGenTitle"></span>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                      <button type="button" onclick="regenerateSignature()" style="padding:4px 10px; background:var(--color-star); color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px; font-weight:600; width:auto; margin:0;">Regenerate</button>
+                      <button type="button" onclick="copySignatureForGmail()" style="padding:4px 10px; background:#555; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px; font-weight:500; width:auto; margin:0;">Copy for Gmail</button>
+                      <button type="button" onclick="copySignatureForMercury()" style="padding:4px 10px; background:#555; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px; font-weight:500; width:auto; margin:0;">Copy for Mercury</button>
+                    </div>
                   </div>
-                  <span style="font-size:11px; color:#888; margin-top:6px; display:block;">Your signature is stored in Airtable and syncs across all your devices.</span>
+                  <div id="signaturePreviewContainer" style="background:#FFF; border:1px solid var(--color-border); border-radius:6px; padding:15px; min-height:80px; margin-bottom:8px; overflow:auto;"></div>
+                  <span style="font-size:11px; color:#888; display:block;">Your signature is stored in Airtable and syncs across all your devices.</span>
                   <textarea id="settingSignature" style="display:none;"></textarea>
                 </div>
               </div>
@@ -430,42 +439,7 @@
       </div>
     </div>
 
-    <!-- Signature Generator Modal -->
-    <div id="signatureGeneratorModal" class="modal">
-      <div class="modal-content" style="width:800px !important; height:auto !important; max-height:90vh;">
-        <div class="modal-sidebar" style="background:var(--color-cedar); width:60px; min-width:60px;">
-          <span style="font-size:24px;">✉</span>
-        </div>
-        <div class="modal-body" style="overflow-y:auto; max-height:calc(90vh - 40px); padding:20px; flex:1;">
-          <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Email Signature Generator</h3>
-          <div class="email-settings-form">
-            <div style="background:var(--color-sky); padding:12px; border-radius:6px; margin-bottom:15px;">
-              <div style="font-size:12px; color:#555;">Your Name: <strong id="sigGenName">Loading...</strong></div>
-              <div style="font-size:12px; color:#555; margin-top:4px;">Your Title: <strong id="sigGenTitle">Loading...</strong></div>
-            </div>
-            <div class="setting-row">
-              <label>Signature Preview</label>
-              <div id="sigGenPreview" style="background:#FFF; border:1px solid var(--color-border); border-radius:6px; padding:20px; min-height:300px; overflow:auto;"></div>
-            </div>
-            <div class="setting-row" style="margin-top:15px;">
-              <label>Raw HTML (for Gmail signature settings)</label>
-              <textarea id="sigGenHtml" rows="6" readonly style="width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; font-size:11px; font-family:monospace; resize:vertical; background:#F9F9F9;"></textarea>
-            </div>
-          </div>
-          <div style="margin-top:20px; display:flex; justify-content:space-between; gap:10px; padding-bottom:10px; flex-wrap:wrap;">
-            <div style="display:flex; gap:8px;">
-              <button type="button" onclick="copySignatureForGmail()" style="padding:8px 14px; background:var(--color-star); color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:500;">Copy for Gmail</button>
-              <button type="button" onclick="copySignatureForMercury()" style="padding:8px 14px; background:#555; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:500;">Copy for Mercury</button>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button type="button" class="btn-cancel" onclick="closeSignatureGenerator()">Cancel</button>
-              <button type="button" class="btn-confirm" onclick="useGeneratedSignature()">Use This Signature</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    
     <div style="position:fixed; bottom:5px; right:10px; font-size:10px; color:#AAA; z-index:1000; font-family:sans-serif;">
        User: <span id="debugUser">Loading...</span> | v4.3 (Signature)
     </div>

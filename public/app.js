@@ -586,13 +586,26 @@
     if (incomeInstructions) incomeInstructions.value = EMAIL_LINKS.incomeStatementInstructions || '';
     if (signature) signature.value = userSignature || '';
     
-    // Update signature preview
+    // Update signature preview and set generatedSignatureHtml for copy functions
     if (previewContainer) {
       if (userSignature) {
         previewContainer.innerHTML = userSignature;
+        generatedSignatureHtml = userSignature; // For copy functions
       } else {
-        previewContainer.innerHTML = '<span style="color:#999; font-style:italic;">No signature set. Click "Generate New Signature" to create one.</span>';
+        previewContainer.innerHTML = '<span style="color:#999; font-style:italic;">No signature set. Click "Regenerate" to create one.</span>';
       }
+    }
+    
+    // Load user profile info for signature display
+    if (currentUserProfile) {
+      updateSignatureUserInfo();
+    } else {
+      google.script.run.withSuccessHandler(function(result) {
+        if (result) {
+          currentUserProfile = result;
+          updateSignatureUserInfo();
+        }
+      }).getUserSignature();
     }
     
     openModal('emailSettingsModal');
@@ -676,28 +689,42 @@
   // --- SIGNATURE GENERATOR ---
   let generatedSignatureHtml = '';
   
-  function openSignatureGenerator() {
-    openModal('signatureGeneratorModal');
-    
-    // Load user info
+  function updateSignatureUserInfo() {
+    const nameEl = document.getElementById('sigGenName');
+    const titleEl = document.getElementById('sigGenTitle');
+    if (nameEl && currentUserProfile) {
+      nameEl.innerText = currentUserProfile.name || 'Unknown';
+    }
+    if (titleEl && currentUserProfile) {
+      titleEl.innerText = currentUserProfile.title || '';
+    }
+  }
+  
+  function regenerateSignature() {
+    // Regenerate signature from current user profile
     if (currentUserProfile) {
-      document.getElementById('sigGenName').innerText = currentUserProfile.name || 'Not set';
-      document.getElementById('sigGenTitle').innerText = currentUserProfile.title || 'Not set';
       generateSignaturePreview();
+      // Update the hidden textarea with the new signature
+      const textarea = document.getElementById('settingSignature');
+      if (textarea) {
+        textarea.value = generatedSignatureHtml;
+      }
+      showAlert('Regenerated', 'Signature updated. Click Save to store it.', 'success');
     } else {
       google.script.run.withSuccessHandler(function(result) {
         if (result) {
           currentUserProfile = result;
-          document.getElementById('sigGenName').innerText = result.name || 'Not set';
-          document.getElementById('sigGenTitle').innerText = result.title || 'Not set';
+          updateSignatureUserInfo();
           generateSignaturePreview();
+          // Update the hidden textarea with the new signature
+          const textarea = document.getElementById('settingSignature');
+          if (textarea) {
+            textarea.value = generatedSignatureHtml;
+          }
+          showAlert('Regenerated', 'Signature updated. Click Save to store it.', 'success');
         }
       }).getUserSignature();
     }
-  }
-  
-  function closeSignatureGenerator() {
-    closeModal('signatureGeneratorModal');
   }
   
   function generateSignaturePreview() {
@@ -750,12 +777,19 @@
 </table>`;
     
     generatedSignatureHtml = signatureHtml;
-    document.getElementById('sigGenPreview').innerHTML = signatureHtml;
-    document.getElementById('sigGenHtml').value = signatureHtml;
+    // Update the preview container in Settings modal
+    const previewContainer = document.getElementById('signaturePreviewContainer');
+    if (previewContainer) {
+      previewContainer.innerHTML = signatureHtml;
+    }
   }
   
   async function copySignatureForGmail() {
-    const previewEl = document.getElementById('sigGenPreview');
+    const previewEl = document.getElementById('signaturePreviewContainer');
+    if (!previewEl || !generatedSignatureHtml) {
+      showAlert('No Signature', 'Generate a signature first before copying.', 'error');
+      return;
+    }
     
     try {
       // Try Clipboard API with HTML blob (for rich text)
@@ -787,7 +821,11 @@
   }
   
   async function copySignatureForMercury() {
-    const previewEl = document.getElementById('sigGenPreview');
+    const previewEl = document.getElementById('signaturePreviewContainer');
+    if (!previewEl) {
+      showAlert('No Signature', 'Generate a signature first before copying.', 'error');
+      return;
+    }
     const plainText = previewEl.innerText;
     
     try {
@@ -810,17 +848,19 @@
     }
   }
   
+  // Legacy function for compatibility - now inline in Settings modal
   function useGeneratedSignature() {
-    document.getElementById('settingSignature').value = generatedSignatureHtml;
+    const textarea = document.getElementById('settingSignature');
+    if (textarea) {
+      textarea.value = generatedSignatureHtml;
+    }
     
-    // Also update the preview container if it exists
     const previewContainer = document.getElementById('signaturePreviewContainer');
     if (previewContainer) {
       previewContainer.innerHTML = generatedSignatureHtml;
     }
     
-    closeSignatureGenerator();
-    showAlert('Applied!', 'Signature added to your settings. Click Save to store it in Airtable.', 'success');
+    showAlert('Applied!', 'Signature added. Click Save to store it.', 'success');
   }
   
   const EMAIL_TEMPLATE = {
@@ -1658,12 +1698,12 @@ Best wishes,
     list.innerHTML = ''; loadingDiv.style.display = 'block'; loadingDiv.innerHTML = 'Loading directory...';
     clearTimeout(loadingTimer);
 
-    // --- RESTORED CORRECT MESSAGE ---
+    // Show a simpler retry message if loading takes too long
     loadingTimer = setTimeout(() => { 
        loadingDiv.innerHTML = `
          <div style="margin-top:15px; text-align:center;">
-           <button onclick="loadContacts()" class="wake-btn">Wake up Google!</button>
-           <p class="wake-note">Google isn't constantly awake in the background waiting for us to use this site, so it goes to sleep if we haven't used it for a little while. You might need to hit the button a few times to get it to pay attention. One day we'll make it work differently so that this problem goes away.</p>
+           <p style="color:#666; font-size:13px;">Taking a while to connect...</p>
+           <button onclick="loadContacts()" style="padding:8px 16px; background:var(--color-cedar); color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; margin-top:8px;">Try Again</button>
          </div>
        `; 
     }, 4000);

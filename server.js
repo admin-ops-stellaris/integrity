@@ -310,7 +310,7 @@ app.post("/api/parseTacoData", async (req, res) => {
       }
       
       const key = line.substring(0, colonIndex).trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-      const value = line.substring(colonIndex + 1).trim();
+      let value = line.substring(colonIndex + 1).trim();
       
       if (!key) {
         consecutiveUnknown++;
@@ -318,17 +318,25 @@ app.post("/api/parseTacoData", async (req, res) => {
         continue;
       }
       
+      // Taco returns [field_name] when field has no data - treat as empty
+      if (value.match(/^\[.+\]$/)) {
+        value = '';
+      }
+      
       const mapping = TACO_FIELD_MAP[key];
       if (mapping) {
         consecutiveUnknown = 0;
         if (typeof mapping === 'object' && mapping.type === 'boolean_flag') {
-          const isTruthy = ['true', 'yes', '1', 'checked', 'x'].includes(value.toLowerCase());
-          if (isTruthy) {
+          // For boolean flags like new_client/existing_client:
+          // Only set if there's actual data (not empty after stripping [placeholder])
+          if (value) {
             result.parsed[mapping.field] = mapping.value;
             result.display.push({ tacoField: key, airtableField: mapping.field, value: mapping.value });
           }
+          // If empty (was [field_name] placeholder), skip - no selection made
         } else if (typeof mapping === 'object' && mapping.type === 'checkbox') {
-          const boolVal = ['true', 'yes', '1', 'checked'].includes(value.toLowerCase());
+          // Checkbox fields: empty = unchecked, any value = checked
+          const boolVal = value !== '';
           result.parsed[mapping.field] = boolVal;
           result.display.push({ tacoField: key, airtableField: mapping.field, value: boolVal ? 'Yes' : 'No' });
         } else {

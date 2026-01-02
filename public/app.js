@@ -898,10 +898,14 @@ Best wishes,
   function togglePastApptFields() {
     const section = document.getElementById('apptFieldsSection');
     const notice = document.getElementById('apptCollapsedNotice');
+    const noticeText = document.getElementById('apptNoticeText');
     if (!section || !notice) return;
     const isHidden = section.style.display === 'none';
     section.style.display = isHidden ? '' : 'none';
     notice.classList.toggle('expanded', isHidden);
+    if (noticeText) {
+      noticeText.innerText = isHidden ? 'Hide appointment details' : noticeText.dataset.collapsedText || 'Show appointment details';
+    }
   }
 
   // --- LINKED RECORD EDITOR (TAGS) ---
@@ -1618,6 +1622,16 @@ Best wishes,
           
           // Appointment fields (only if Converted to Appt is checked)
           const showApptFields = convertedToAppt && !apptIsPast;
+          
+          // Show collapsed notice ABOVE appointment fields if appointment is past
+          if (convertedToAppt && apptIsPast) {
+            const collapsedText = `Appointment details hidden (${apptTimeStr} has passed)`;
+            html += `<div id="apptCollapsedNotice" class="appt-collapsed-notice" onclick="togglePastApptFields()">
+              <span class="chevron">▶</span>
+              <span id="apptNoticeText" data-collapsed-text="${collapsedText.replace(/"/g, '&quot;')}">${collapsedText}</span>
+            </div>`;
+          }
+          
           html += `<div id="apptFieldsSection" style="${showApptFields ? '' : 'display:none;'}">`;
           
           // Row 5: Appointment Time, Type of Appointment, How Appt Booked
@@ -1650,14 +1664,6 @@ Best wishes,
           html += '</div>';
           
           html += '</div>'; // close apptFieldsSection
-          
-          // Show collapsed notice if appointment is past
-          if (convertedToAppt && apptIsPast) {
-            html += `<div id="apptCollapsedNotice" class="appt-collapsed-notice" onclick="togglePastApptFields()">
-              <span class="chevron">▶</span>
-              <span>Appointment details hidden (${apptTimeStr} has passed)</span>
-            </div>`;
-          }
           
           html += '</div></div>'; // close tacoFieldsContainer and taco-section-box
         }

@@ -133,6 +133,54 @@
   
   function closeOppComposer() {
     document.getElementById('oppComposer').classList.remove('open');
+    clearTacoImport();
+  }
+  
+  let parsedTacoFields = {};
+  
+  function parseTacoData() {
+    const rawText = document.getElementById('tacoRawInput').value;
+    if (!rawText.trim()) {
+      document.getElementById('tacoPreview').style.display = 'none';
+      parsedTacoFields = {};
+      return;
+    }
+    
+    google.script.run.withSuccessHandler(function(result) {
+      parsedTacoFields = result.parsed || {};
+      const display = result.display || [];
+      const unmapped = result.unmapped || [];
+      
+      let html = '';
+      if (display.length > 0) {
+        display.forEach(item => {
+          const displayValue = item.value.length > 50 ? item.value.substring(0, 50) + '...' : item.value;
+          html += `<div style="margin-bottom:6px; display:flex; gap:8px;"><span style="color:var(--color-cedar);">&#10003;</span><span style="color:#666;">${item.airtableField}:</span> <span style="color:var(--color-midnight);">${displayValue}</span></div>`;
+        });
+      }
+      if (unmapped.length > 0) {
+        html += '<div style="margin-top:10px; padding-top:8px; border-top:1px solid #EEE;"><div style="color:#999; font-size:11px; margin-bottom:6px;">Unrecognized fields:</div>';
+        unmapped.forEach(item => {
+          const displayValue = item.value.length > 40 ? item.value.substring(0, 40) + '...' : item.value;
+          html += `<div style="margin-bottom:4px; color:#999;"><span style="color:#CCC;">?</span> ${item.tacoField}: ${displayValue}</div>`;
+        });
+        html += '</div>';
+      }
+      if (display.length === 0 && unmapped.length === 0) {
+        html = '<div style="color:#999; font-style:italic;">No valid fields found. Use format: field_name: value</div>';
+      }
+      
+      document.getElementById('tacoPreviewContent').innerHTML = html;
+      document.getElementById('tacoPreview').style.display = 'block';
+      document.getElementById('tacoImportArea').style.display = 'none';
+    }).parseTacoData(rawText);
+  }
+  
+  function clearTacoImport() {
+    document.getElementById('tacoRawInput').value = '';
+    document.getElementById('tacoPreview').style.display = 'none';
+    document.getElementById('tacoImportArea').style.display = 'block';
+    parsedTacoFields = {};
   }
   
   function updateComposerSpouseLabel() {
@@ -177,7 +225,7 @@
           finishUp();
         }
       }
-    }).createOpportunity(oppName, currentContactRecord.id, oppType);
+    }).createOpportunity(oppName, currentContactRecord.id, oppType, parsedTacoFields);
   }
   
   function showShortcutsHelp() {

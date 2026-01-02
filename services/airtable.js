@@ -236,14 +236,15 @@ export async function markRecordModified(tableName, id, userContext) {
   }
 }
 
-export async function createOpportunity(name, contactId, opportunityType = "Home Loans", userContext = null) {
+export async function createOpportunity(name, contactId, opportunityType = "Home Loans", userContext = null, additionalFields = {}) {
   if (!base) return null;
   try {
     const fields = {
       "Opportunity Name": name,
       "Primary Applicant": [contactId],
       "Status": "Open",
-      "Opportunity Type": opportunityType
+      "Opportunity Type": opportunityType,
+      ...additionalFields
     };
     if (userContext) {
       if (userContext.name) {

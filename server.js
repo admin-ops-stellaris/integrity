@@ -274,16 +274,60 @@ app.post("/api/getLinkedOpportunities", async (req, res) => {
 
 app.post("/api/createOpportunity", async (req, res) => {
   try {
-    const [name, contactId, opportunityType] = req.body.args || [];
+    const [name, contactId, opportunityType, tacoFields] = req.body.args || [];
     const userEmail = req.session?.user?.email || null;
     const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
-    const record = await airtable.createOpportunity(name, contactId, opportunityType || "Home Loans", userContext);
+    const record = await airtable.createOpportunity(name, contactId, opportunityType || "Home Loans", userContext, tacoFields || {});
     if (userContext && contactId) {
       await airtable.markRecordModified("Contacts", contactId, userContext);
     }
     res.json(record);
   } catch (err) {
     console.error("createOpportunity error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/parseTacoData", async (req, res) => {
+  try {
+    const [rawText] = req.body.args || [];
+    const result = { parsed: {}, display: [], unmapped: [] };
+    
+    if (!rawText || typeof rawText !== 'string') {
+      return res.json(result);
+    }
+    
+    const lines = rawText.split('\n');
+    for (const line of lines) {
+      const colonIndex = line.indexOf(':');
+      if (colonIndex === -1) continue;
+      
+      const key = line.substring(0, colonIndex).trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      const value = line.substring(colonIndex + 1).trim();
+      
+      if (!key || !value) continue;
+      
+      const mapping = TACO_FIELD_MAP[key];
+      if (mapping) {
+        if (typeof mapping === 'object' && mapping.value) {
+          result.parsed[mapping.field] = mapping.value;
+          result.display.push({ tacoField: key, airtableField: mapping.field, value: mapping.value });
+        } else if (typeof mapping === 'object' && mapping.type === 'checkbox') {
+          const boolVal = ['true', 'yes', '1', 'checked'].includes(value.toLowerCase());
+          result.parsed[mapping.field] = boolVal;
+          result.display.push({ tacoField: key, airtableField: mapping.field, value: boolVal ? 'Yes' : 'No' });
+        } else {
+          result.parsed[mapping] = value;
+          result.display.push({ tacoField: key, airtableField: mapping, value: value });
+        }
+      } else {
+        result.unmapped.push({ tacoField: key, value: value });
+      }
+    }
+    
+    res.json(result);
+  } catch (err) {
+    console.error("parseTacoData error:", err);
     res.status(500).json({ error: err.message });
   }
 });

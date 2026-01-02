@@ -568,14 +568,39 @@
   loadEmailLinksFromSettings();
   
   function openEmailSettings() {
-    document.getElementById('settingOfficeMap').value = EMAIL_LINKS.officeMap || '';
-    document.getElementById('settingOurTeam').value = EMAIL_LINKS.ourTeam || '';
-    document.getElementById('settingFactFind').value = EMAIL_LINKS.factFind || '';
-    document.getElementById('settingMyGov').value = EMAIL_LINKS.myGov || '';
-    document.getElementById('settingMyGovVideo').value = EMAIL_LINKS.myGovVideo || '';
-    document.getElementById('settingIncomeInstructions').value = EMAIL_LINKS.incomeStatementInstructions || '';
-    document.getElementById('settingSignature').value = userSignature || '';
+    const officeMap = document.getElementById('settingOfficeMap');
+    const ourTeam = document.getElementById('settingOurTeam');
+    const factFind = document.getElementById('settingFactFind');
+    const myGov = document.getElementById('settingMyGov');
+    const myGovVideo = document.getElementById('settingMyGovVideo');
+    const incomeInstructions = document.getElementById('settingIncomeInstructions');
+    const signature = document.getElementById('settingSignature');
+    const previewContainer = document.getElementById('signaturePreviewContainer');
+    
+    // Populate fields (null-safe)
+    if (officeMap) officeMap.value = EMAIL_LINKS.officeMap || '';
+    if (ourTeam) ourTeam.value = EMAIL_LINKS.ourTeam || '';
+    if (factFind) factFind.value = EMAIL_LINKS.factFind || '';
+    if (myGov) myGov.value = EMAIL_LINKS.myGov || '';
+    if (myGovVideo) myGovVideo.value = EMAIL_LINKS.myGovVideo || '';
+    if (incomeInstructions) incomeInstructions.value = EMAIL_LINKS.incomeStatementInstructions || '';
+    if (signature) signature.value = userSignature || '';
+    
+    // Update signature preview
+    if (previewContainer) {
+      if (userSignature) {
+        previewContainer.innerHTML = userSignature;
+      } else {
+        previewContainer.innerHTML = '<span style="color:#999; font-style:italic;">No signature set. Click "Generate New Signature" to create one.</span>';
+      }
+    }
+    
     openModal('emailSettingsModal');
+  }
+  
+  // Global settings accessible from header cog
+  function openGlobalSettings() {
+    openEmailSettings();
   }
   
   function closeEmailSettings() {
@@ -787,6 +812,13 @@
   
   function useGeneratedSignature() {
     document.getElementById('settingSignature').value = generatedSignatureHtml;
+    
+    // Also update the preview container if it exists
+    const previewContainer = document.getElementById('signaturePreviewContainer');
+    if (previewContainer) {
+      previewContainer.innerHTML = generatedSignatureHtml;
+    }
+    
     closeSignatureGenerator();
     showAlert('Applied!', 'Signature added to your settings. Click Save to store it in Airtable.', 'success');
   }

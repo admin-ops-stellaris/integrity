@@ -390,11 +390,8 @@ export async function deleteOpportunity(opportunityId) {
     
     const connections = [];
     
-    const primaryApplicant = opportunity.fields["Primary Applicant"];
-    if (primaryApplicant && primaryApplicant.length > 0) {
-      const name = opportunity.fields["Primary Applicant Name"]?.[0] || "someone";
-      connections.push(`Primary Applicant (${name})`);
-    }
+    // NOTE: Primary Applicant is allowed - user can delete opportunity with only Primary Applicant connected
+    // All other connections must be removed first
     
     const applicants = opportunity.fields["Applicants"];
     if (applicants && applicants.length > 0) {
@@ -419,7 +416,7 @@ export async function deleteOpportunity(opportunityId) {
     if (connections.length > 0) {
       return { 
         success: false, 
-        error: `This Opportunity is currently connected to ${connections.join(", ")}. If you're sure this Opportunity should be deleted, please first remove all connections.`
+        error: `This Opportunity is currently connected to ${connections.join(", ")}. If you're sure this Opportunity should be deleted, please first remove these connections. (Primary Applicant can remain connected.)`
       };
     }
     

@@ -20,6 +20,7 @@
       <div class="header-title">INTEGRITY</div>
       <div class="user-indicator">
         <button class="shortcuts-help" onclick="showShortcutsHelp()" title="Keyboard shortcuts">?</button>
+        <button class="settings-cog" onclick="openGlobalSettings()" title="Settings">⚙</button>
         <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">◐</button>
         <span class="user-email" id="userEmail">Loading...</span>
       </div>
@@ -381,7 +382,8 @@
             <span style="font-size:24px;">⚙</span>
           </div>
           <div class="modal-body" style="overflow-y:auto; max-height:calc(90vh - 40px); flex:1;">
-            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Email Template Settings</h3>
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Settings</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">These settings are shared with the whole team. Changes you make here will update for everyone.</p>
             <div class="email-settings-form">
               <div class="setting-row">
                 <label>Office Map Link</label>
@@ -410,16 +412,17 @@
               <div style="border-top:1px solid var(--color-border); margin-top:12px; padding-top:12px;">
                 <div class="setting-row">
                   <label>Your Email Signature</label>
-                  <div style="display:flex; gap:8px; align-items:flex-start; width:100%;">
-                    <textarea id="settingSignature" rows="5" placeholder="Your signature (saved to your user profile in Airtable)" style="flex:1; min-width:0; width:100%; padding:8px 10px; border:1px solid var(--color-border); border-radius:4px; font-size:13px; font-family:var(--font-body); resize:vertical;"></textarea>
-                    <button type="button" onclick="openSignatureGenerator()" style="padding:8px 12px; background:var(--color-star); color:white; border:none; border-radius:4px; cursor:pointer; font-size:11px; font-weight:600; white-space:nowrap; flex-shrink:0;">Generate</button>
+                  <div id="signaturePreviewContainer" style="background:#FFF; border:1px solid var(--color-border); border-radius:6px; padding:15px; min-height:60px; margin-bottom:8px; overflow:auto;"></div>
+                  <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button type="button" onclick="openSignatureGenerator()" style="padding:8px 14px; background:var(--color-star); color:white; border:none; border-radius:4px; cursor:pointer; font-size:11px; font-weight:600; width:auto; margin:0;">Generate New Signature</button>
                   </div>
-                  <span style="font-size:11px; color:#888; margin-top:4px;">This signature is stored in Airtable and syncs across all your devices.</span>
+                  <span style="font-size:11px; color:#888; margin-top:6px; display:block;">Your signature is stored in Airtable and syncs across all your devices.</span>
+                  <textarea id="settingSignature" style="display:none;"></textarea>
                 </div>
               </div>
             </div>
             <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; padding-bottom:10px;">
-              <button type="button" class="btn-cancel" onclick="closeEmailSettings()">Cancel</button>
+              <button type="button" class="btn-cancel" onclick="closeEmailSettings()">Close</button>
               <button type="button" class="btn-confirm" onclick="saveEmailSettings()">Save</button>
             </div>
           </div>

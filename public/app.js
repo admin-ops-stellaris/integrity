@@ -791,8 +791,15 @@
       return;
     }
     
+    const gmailInstructions = `Signature has been copied to your clipboard. To update in Gmail:
+
+1. Settings cog (top right of Gmail) then "See all settings"
+2. Scroll down to signature, select "Stellaris Signature"
+3. Click in the field to the right, remove everything from it and then Ctrl-V the new signature.
+4. Scroll to the bottom and click Save Changes and you're done.`;
+    
     try {
-      // Try Clipboard API with HTML blob (for rich text)
+      // Copy rich text (HTML blob) for Gmail paste
       if (navigator.clipboard && navigator.clipboard.write) {
         const htmlBlob = new Blob([generatedSignatureHtml], { type: 'text/html' });
         const textBlob = new Blob([previewEl.innerText], { type: 'text/plain' });
@@ -801,11 +808,17 @@
           'text/plain': textBlob
         });
         await navigator.clipboard.write([clipboardItem]);
-        showAlert('Copied!', 'Signature copied as formatted text. Paste it directly into Gmail signature settings.', 'success');
+        showAlert('Copied for Gmail', gmailInstructions, 'success');
       } else {
-        // Fallback: copy HTML as plain text
-        await navigator.clipboard.writeText(generatedSignatureHtml);
-        showAlert('Copied!', 'HTML copied to clipboard. Paste it into Gmail signature settings.', 'success');
+        // Fallback: select and copy the preview element directly
+        const range = document.createRange();
+        range.selectNodeContents(previewEl);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.execCommand('copy');
+        selection.removeAllRanges();
+        showAlert('Copied for Gmail', gmailInstructions, 'success');
       }
     } catch (err) {
       // Last resort fallback
@@ -816,7 +829,7 @@
       selection.addRange(range);
       document.execCommand('copy');
       selection.removeAllRanges();
-      showAlert('Copied!', 'Signature copied. Paste it into Gmail signature settings.', 'success');
+      showAlert('Copied for Gmail', gmailInstructions, 'success');
     }
   }
   
@@ -826,25 +839,37 @@
       showAlert('No Signature', 'Generate a signature first before copying.', 'error');
       return;
     }
-    const plainText = previewEl.innerText;
+    
+    const mercuryInstructions = `Signature has been copied to your clipboard. To paste in Mercury, log into Mercury then:
+
+1. Admin tile
+2. Email Profiles tab
+3. On the left, select the Profile you want to update the signature for
+4. On the right, Edit Details tab
+5. In the Email Signature pane, click the three dots in the top right (More misc) then < > (Code view)
+6. Delete all that code
+7. Ctrl-V the code you just copied here in Integrity
+8. Click < > (Code View) again to turn it off and make sure the rendered sig looks right, then click the Preview tab to be sure. If it's good, you're done.`;
     
     try {
+      // Copy HTML code for Mercury (they need to paste into code view)
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(plainText);
-        showAlert('Copied!', 'Signature copied for Mercury. Paste it into your Mercury signature settings.', 'success');
+        await navigator.clipboard.writeText(generatedSignatureHtml);
+        showAlert('Copied for Mercury', mercuryInstructions, 'success');
       } else {
         throw new Error('Clipboard API not available');
       }
     } catch (err) {
-      // Fallback
-      const range = document.createRange();
-      range.selectNodeContents(previewEl);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
+      // Fallback: create temp textarea with HTML
+      const textarea = document.createElement('textarea');
+      textarea.value = generatedSignatureHtml;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
       document.execCommand('copy');
-      selection.removeAllRanges();
-      showAlert('Copied!', 'Signature copied. Paste it into Mercury settings.', 'success');
+      document.body.removeChild(textarea);
+      showAlert('Copied for Mercury', mercuryInstructions, 'success');
     }
   }
   
@@ -1394,17 +1419,17 @@ Best wishes,
   }
 
   function cancelLinkedEdit(key) {
+     // Just close the editor - pendingLinkedEdits will be repopulated from currentPanelData on next open
      document.getElementById('view_' + key).style.display = 'block';
      document.getElementById('edit_' + key).style.display = 'none';
-     pendingLinkedEdits[key] = [];
-     pendingRemovals = {};
   }
   
   function closeLinkedEdit(key) {
      document.getElementById('view_' + key).style.display = 'block';
      document.getElementById('edit_' + key).style.display = 'none';
   }
-
+  
+  
   function renderLinkedEditorState(key) {
      const container = document.getElementById('chip_container_' + key);
      container.innerHTML = '';
@@ -1999,7 +2024,7 @@ Best wishes,
           let linkHtml = '';
           if (item.value.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
           else item.value.forEach(link => { linkHtml += `<a class="data-link" onclick="event.stopPropagation(); loadPanelRecord('${link.table}', '${link.id}')">${link.name}</a>`; });
-          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleLinkedEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span>${linkHtml}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><div id="chip_container_${item.key}" class="link-chip-container"></div><input type="text" placeholder="Add contact..." class="link-search-input" onkeyup="handleLinkedSearch(event, '${item.key}')"><div id="error_${item.key}" class="input-error"></div><div id="results_${item.key}" class="link-results"></div><div class="edit-btn-row" style="margin-top:10px;"><button onclick="closeLinkedEdit('${item.key}')" class="btn-cancel-field">Done</button></div></div></div></div>`;
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleLinkedEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span>${linkHtml}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><div id="chip_container_${item.key}" class="link-chip-container"></div><input type="text" placeholder="Add contact..." class="link-search-input" onkeyup="handleLinkedSearch(event, '${item.key}')"><div id="error_${item.key}" class="input-error"></div><div id="results_${item.key}" class="link-results"></div><div class="edit-btn-row" style="margin-top:10px;"><button onclick="cancelLinkedEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveLinkedEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
         }
         if (item.type === 'link') {
           const links = item.value; let linkHtml = '';

@@ -822,7 +822,7 @@
   
   async function copySignatureForMercury() {
     const previewEl = document.getElementById('signaturePreviewContainer');
-    if (!previewEl) {
+    if (!previewEl || !generatedSignatureHtml) {
       showAlert('No Signature', 'Generate a signature first before copying.', 'error');
       return;
     }

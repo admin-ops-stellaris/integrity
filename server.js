@@ -475,24 +475,24 @@ const SCHEMA = {
       { key: 'Status', label: 'Status', type: 'select', options: ['Won', 'Open', 'Lost'] },
       { key: 'Opportunity Type', label: 'Opportunity Type', type: 'select', options: ['Home Loans', 'Commercial Loans', 'Deposit Bonds', 'Insurance (General)', 'Insurance (Life)', 'Personal Loans', 'Asset Finance', 'Tax Depreciation Schedule'] },
       // Taco import fields - in order as specified
-      { key: 'Taco: New or Existing Client', label: 'Taco: New or Existing Client', type: 'readonly' },
-      { key: 'Taco: Lead Source', label: 'Taco: Lead Source', type: 'readonly' },
-      { key: 'Taco: Last thing we did', label: 'Taco: Last thing we did', type: 'long-text' },
-      { key: 'Taco: How can we help', label: 'Taco: How can we help', type: 'long-text' },
-      { key: 'Taco: CM notes', label: 'Taco: CM notes', type: 'long-text' },
-      { key: 'Taco: Broker', label: 'Taco: Broker', type: 'readonly' },
-      { key: 'Taco: Broker Assistant', label: 'Taco: Broker Assistant', type: 'readonly' },
-      { key: 'Taco: Client Manager', label: 'Taco: Client Manager', type: 'readonly' },
-      { key: 'Taco: Converted to Appt', label: 'Taco: Converted to Appt', type: 'readonly' },
-      { key: 'Taco: Appointment Time', label: 'Taco: Appointment Time', type: 'readonly' },
-      { key: 'Taco: Type of Appointment', label: 'Taco: Type of Appointment', type: 'readonly' },
-      { key: 'Taco: Appt Phone Number', label: 'Taco: Appt Phone Number', type: 'readonly' },
-      { key: 'Taco: How appt booked', label: 'Taco: How appt booked', type: 'readonly' },
-      { key: 'Taco: How Appt Booked Other', label: 'Taco: How Appt Booked Other', type: 'readonly' },
-      { key: 'Taco: Need Evidence in Advance', label: 'Taco: Need Evidence in Advance', type: 'readonly' },
-      { key: 'Taco: Need Appt Reminder', label: 'Taco: Need Appt Reminder', type: 'readonly' },
-      { key: 'Taco: Appt Conf Email Sent', label: 'Taco: Appt Conf Email Sent', type: 'readonly' },
-      { key: 'Taco: Appt Conf Text Sent', label: 'Taco: Appt Conf Text Sent', type: 'readonly' },
+      { key: 'Taco: New or Existing Client', label: 'New or Existing Client', tacoField: true },
+      { key: 'Taco: Lead Source', label: 'Lead Source', tacoField: true },
+      { key: 'Taco: Last thing we did', label: 'Last thing we did', type: 'long-text', tacoField: true },
+      { key: 'Taco: How can we help', label: 'How can we help', type: 'long-text', tacoField: true },
+      { key: 'Taco: CM notes', label: 'CM notes', type: 'long-text', tacoField: true },
+      { key: 'Taco: Broker', label: 'Broker', tacoField: true },
+      { key: 'Taco: Broker Assistant', label: 'Broker Assistant', tacoField: true },
+      { key: 'Taco: Client Manager', label: 'Client Manager', tacoField: true },
+      { key: 'Taco: Converted to Appt', label: 'Converted to Appt', tacoField: true },
+      { key: 'Taco: Appointment Time', label: 'Appointment Time', tacoField: true },
+      { key: 'Taco: Type of Appointment', label: 'Type of Appointment', tacoField: true },
+      { key: 'Taco: Appt Phone Number', label: 'Appt Phone Number', tacoField: true },
+      { key: 'Taco: How appt booked', label: 'How appt booked', tacoField: true },
+      { key: 'Taco: How Appt Booked Other', label: 'How Appt Booked Other', tacoField: true },
+      { key: 'Taco: Need Evidence in Advance', label: 'Need Evidence in Advance', tacoField: true },
+      { key: 'Taco: Need Appt Reminder', label: 'Need Appt Reminder', tacoField: true },
+      { key: 'Taco: Appt Conf Email Sent', label: 'Appt Conf Email Sent', tacoField: true },
+      { key: 'Taco: Appt Conf Text Sent', label: 'Appt Conf Text Sent', tacoField: true },
       // Other fields
       { key: 'Lead Source Major', label: 'Lead Source Major', type: 'readonly' },
       { key: 'Lead Source Minor', label: 'Lead Source Minor', type: 'readonly' },
@@ -593,6 +593,7 @@ app.post("/api/getRecordDetail", async (req, res) => {
       } else {
         const dataItem = { key: fieldDef.key, label: fieldDef.label, value: val, type: fieldDef.type || 'text' };
         if (fieldDef.options) dataItem.options = fieldDef.options;
+        if (fieldDef.tacoField) dataItem.tacoField = true;
         processedData.push(dataItem);
       }
     });

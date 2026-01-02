@@ -157,9 +157,9 @@
   .composer-checkbox-label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 13px; color: #444; text-transform: none; }
   .composer-checkbox-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--color-star); }
   .composer-footer { padding: 20px 28px; background: var(--color-salt); border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; }
-  .composer-btn-cancel { background: transparent; border: 1px solid #CCC; color: #666; padding: 12px 20px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .composer-btn-cancel { background: transparent; border: 1px solid #CCC; color: #666; padding: 12px 20px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; width: auto; margin: 0; }
   .composer-btn-cancel:hover { background: #F5F5F5; border-color: #999; color: #333; transform: none; }
-  .composer-btn-create { background: var(--color-star); border: none; color: #FFF; padding: 12px 24px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .composer-btn-create { background: var(--color-star); border: none; color: #FFF; padding: 12px 24px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: auto; margin: 0; }
   .composer-btn-create:hover { background: #A88A2D; transform: none; }
   body.dark-mode .composer-header { background: var(--color-trail); }
   body.dark-mode .composer-section { border-color: #444; }

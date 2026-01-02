@@ -1430,8 +1430,66 @@ Best wishes,
 
       panelHistory.push({ table: table, id: id, title: response.title });
       updateBackButton(); titleEl.innerText = response.title;
+      
+      // Helper to render a single field
+      function renderField(item, tbl, recId) {
+        const tacoClass = item.tacoField ? ' taco-field' : '';
+        if (item.key === 'Opportunity Name') {
+          const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${item.value || ''}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.type === 'select') {
+          const currentVal = item.value || '';
+          const options = item.options || [];
+          let optionsHtml = options.map(opt => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('');
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${currentVal || '<span style="color:#CCC; font-style:italic;">Not set</span>'}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><select id="input_${item.key}" class="edit-input">${optionsHtml}</select><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.type === 'readonly') {
+          const displayVal = item.value || '';
+          if (!displayVal) return '';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value readonly-field">${displayVal}</div></div>`;
+        }
+        if (item.type === 'long-text') {
+          const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
+          const displayVal = item.value || '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:flex-start;"><span id="display_${item.key}" style="white-space:pre-wrap; flex:1;">${displayVal}</span><span class="edit-field-icon" style="margin-left:8px;">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><textarea id="input_${item.key}" class="edit-input" rows="3" style="resize:vertical;">${safeValue}</textarea><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.type === 'date') {
+          const rawVal = item.value || '';
+          let displayVal = '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          let inputVal = '';
+          if (rawVal) {
+            const parts = rawVal.split('/');
+            if (parts.length === 3) { inputVal = `${parts[2].length === 2 ? '20' + parts[2] : parts[2]}-${parts[1]}-${parts[0]}`; displayVal = `${parts[0]}/${parts[1]}/${parts[2].slice(-2)}`; }
+            else if (rawVal.includes('-')) { const isoParts = rawVal.split('-'); if (isoParts.length === 3) { inputVal = rawVal; displayVal = `${isoParts[2]}/${isoParts[1]}/${isoParts[0].slice(-2)}`; } }
+            else { displayVal = rawVal; inputVal = rawVal; }
+          }
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="date" id="input_${item.key}" value="${inputVal}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveDateField('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {
+          let linkHtml = '';
+          if (item.value.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
+          else item.value.forEach(link => { linkHtml += `<a class="data-link" onclick="event.stopPropagation(); loadPanelRecord('${link.table}', '${link.id}')">${link.name}</a>`; });
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleLinkedEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span>${linkHtml}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><div id="chip_container_${item.key}" class="link-chip-container"></div><input type="text" placeholder="Add contact..." class="link-search-input" onkeyup="handleLinkedSearch(event, '${item.key}')"><div id="error_${item.key}" class="input-error"></div><div id="results_${item.key}" class="link-results"></div><div class="edit-btn-row" style="margin-top:10px;"><button onclick="closeLinkedEdit('${item.key}')" class="btn-cancel-field">Done</button></div></div></div></div>`;
+        }
+        if (item.type === 'link') {
+          const links = item.value; let linkHtml = '';
+          if (links.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
+          else { links.forEach(link => { linkHtml += `<a class="data-link" onclick="loadPanelRecord('${link.table}', '${link.id}')">${link.name}</a>`; }); }
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value" style="border:none;">${linkHtml}</div></div>`;
+        }
+        if (item.tacoField) {
+          const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
+          const displayVal = item.value || '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.value === undefined || item.value === null || item.value === "") return '';
+        return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value">${item.value}</div></div>`;
+      }
+      
       let html = '';
       
+      // Audit section
       if (response.audit && (response.audit.Created || response.audit.Modified)) {
         let auditHtml = '<div class="panel-audit-section">';
         if (response.audit.Created) auditHtml += `<div>${response.audit.Created}</div>`;
@@ -1440,91 +1498,63 @@ Best wishes,
         html += auditHtml;
       }
       
-      let tacoHeaderAdded = false;
-      response.data.forEach(item => {
-         // Add Taco section header before first Taco field
-         if (item.tacoField && !tacoHeaderAdded) {
-            html += `<div class="taco-section-header"><img src="https://taco.insightprocessing.com.au/static/images/taco.jpg" alt="Taco"><span>Taco fields</span></div>`;
-            tacoHeaderAdded = true;
-         }
-         const tacoClass = item.tacoField ? ' taco-field' : '';
-         
-         if (item.key === 'Opportunity Name') {
-            const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
-            html += `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${item.value}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
-            return;
-         }
-         if (item.type === 'select') {
-            const currentVal = item.value || '';
-            const options = item.options || [];
-            let optionsHtml = options.map(opt => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('');
-            html += `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${currentVal || '<span style="color:#CCC; font-style:italic;">Not set</span>'}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><select id="input_${item.key}" class="edit-input">${optionsHtml}</select><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
-            return;
-         }
-         if (item.type === 'readonly') {
-            const displayVal = item.value || '';
-            if (!displayVal) return;
-            html += `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value readonly-field" title="Not currently editable - categories under renovation">${displayVal}</div></div>`;
-            return;
-         }
-         if (item.type === 'long-text') {
-            const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
-            const displayVal = item.value || '<span style="color:#CCC; font-style:italic;">Not set</span>';
-            html += `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:flex-start;"><span id="display_${item.key}" style="white-space:pre-wrap; flex:1;">${displayVal}</span><span class="edit-field-icon" style="margin-left:8px;">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><textarea id="input_${item.key}" class="edit-input" rows="3" style="resize:vertical;">${safeValue}</textarea><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
-            return;
-         }
-         if (item.type === 'date') {
-            const rawVal = item.value || '';
-            let displayVal = '<span style="color:#CCC; font-style:italic;">Not set</span>';
-            let inputVal = '';
-            if (rawVal) {
-              const parts = rawVal.split('/');
-              if (parts.length === 3) {
-                inputVal = `${parts[2].length === 2 ? '20' + parts[2] : parts[2]}-${parts[1]}-${parts[0]}`;
-                displayVal = `${parts[0]}/${parts[1]}/${parts[2].slice(-2)}`;
-              } else if (rawVal.includes('-')) {
-                const isoParts = rawVal.split('-');
-                if (isoParts.length === 3) {
-                  inputVal = rawVal;
-                  displayVal = `${isoParts[2]}/${isoParts[1]}/${isoParts[0].slice(-2)}`;
-                }
-              } else {
-                displayVal = rawVal;
-                inputVal = rawVal;
-              }
-            }
-            html += `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="date" id="input_${item.key}" value="${inputVal}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveDateField('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
-            return;
-         }
-         if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {
-            let linkHtml = '';
-            if (item.value.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
-            else item.value.forEach(link => { linkHtml += `<a class="data-link" onclick="event.stopPropagation(); loadPanelRecord('${link.table}', '${link.id}')">${link.name}</a>`; });
-            html += `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleLinkedEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span>${linkHtml}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><div id="chip_container_${item.key}" class="link-chip-container"></div><input type="text" placeholder="Add contact..." class="link-search-input" onkeyup="handleLinkedSearch(event, '${item.key}')"><div id="error_${item.key}" class="input-error"></div><div id="results_${item.key}" class="link-results"></div><div class="edit-btn-row" style="margin-top:10px;"><button onclick="closeLinkedEdit('${item.key}')" class="btn-cancel-field">Done</button></div></div></div></div>`;
-            return;
-         }
-         if (item.type === 'link') {
-            const links = item.value; let linkHtml = '';
-            if (links.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
-            else { links.forEach(link => { linkHtml += `<a class="data-link" onclick="loadPanelRecord('${link.table}', '${link.id}')">${link.name}</a>`; }); }
-            html += `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value" style="border:none;">${linkHtml}</div></div>`;
-         } else if (item.tacoField) {
-            // Taco text fields are editable
-            const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
-            const displayVal = item.value || '<span style="color:#CCC; font-style:italic;">Not set</span>';
-            html += `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${table}', '${id}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
-         } else {
-            let display = item.value; if (display === undefined || display === null || display === "") return;
-            html += `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value">${display}</div></div>`;
-         }
-      });
+      // For Opportunities, use smart layout
       if (table === 'Opportunities') {
+        const dataMap = {};
+        response.data.forEach(item => { dataMap[item.key] = item; });
+        
+        // Row 1: Opportunity Name, Status, Opportunity Type
+        html += '<div class="panel-row panel-row-3">';
+        ['Opportunity Name', 'Status', 'Opportunity Type'].forEach(key => {
+          if (dataMap[key]) html += renderField(dataMap[key], table, id);
+        });
+        html += '</div>';
+        
+        // Taco fields section
+        const tacoFields = response.data.filter(item => item.tacoField);
+        if (tacoFields.length > 0) {
+          html += `<div class="taco-section-header"><img src="https://taco.insightprocessing.com.au/static/images/taco.jpg" alt="Taco"><span>Taco fields</span></div>`;
+          html += '<div class="taco-grid">';
+          tacoFields.forEach(item => { html += renderField(item, table, id); });
+          html += '</div>';
+        }
+        
+        // Row: Primary Applicant, Applicants, Guarantors, Loan Applications
+        const applicantKeys = ['Primary Applicant', 'Applicants', 'Guarantors', 'Loan Applications'];
+        html += '<div class="panel-row panel-row-4" style="margin-top:20px;">';
+        applicantKeys.forEach(key => {
+          if (dataMap[key]) html += renderField(dataMap[key], table, id);
+        });
+        html += '</div>';
+        
+        // Lead Source row
+        if (dataMap['Lead Source Major'] || dataMap['Lead Source Minor']) {
+          html += '<div class="panel-row panel-row-2">';
+          if (dataMap['Lead Source Major']) html += renderField(dataMap['Lead Source Major'], table, id);
+          if (dataMap['Lead Source Minor']) html += renderField(dataMap['Lead Source Minor'], table, id);
+          html += '</div>';
+        }
+        
+        // Remaining fields
+        const usedKeys = new Set(['Opportunity Name', 'Status', 'Opportunity Type', 'Lead Source Major', 'Lead Source Minor', ...applicantKeys]);
+        const remaining = response.data.filter(item => !item.tacoField && !usedKeys.has(item.key));
+        if (remaining.length > 0) {
+          html += '<div style="margin-top:15px; display:grid; grid-template-columns:repeat(3, 1fr); gap:12px 15px;">';
+          remaining.forEach(item => { html += renderField(item, table, id); });
+          html += '</div>';
+        }
+        
+        // Action buttons
         const safeName = (response.title || '').replace(/'/g, "\\'");
         html += `<div style="margin-top:30px; padding-top:20px; border-top:1px solid #EEE;">`;
         html += `<button type="button" class="btn-confirm" style="width:100%; margin-bottom:10px;" onclick="openEmailComposerFromPanel('${id}')">Send Confirmation Email</button>`;
         html += `<button type="button" class="btn-delete" onclick="confirmDeleteOpportunity('${id}', '${safeName}')">Delete Opportunity</button>`;
         html += `</div>`;
+      } else {
+        // Non-Opportunity tables: render sequentially
+        response.data.forEach(item => { html += renderField(item, table, id); });
       }
+      
       content.innerHTML = html;
     }).getRecordDetail(table, id);
   }

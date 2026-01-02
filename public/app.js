@@ -226,7 +226,11 @@
         } else {
           finishUp();
         }
+      } else {
+        showAlert('Error', 'Failed to create opportunity. Check that all Taco field names match Airtable exactly.', 'error');
       }
+    }).withFailureHandler(function(err) {
+      showAlert('Error', err.message || 'Failed to create opportunity', 'error');
     }).createOpportunity(oppName, currentContactRecord.id, oppType, tacoFieldsCopy);
   }
   

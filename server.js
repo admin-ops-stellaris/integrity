@@ -309,9 +309,12 @@ app.post("/api/parseTacoData", async (req, res) => {
       
       const mapping = TACO_FIELD_MAP[key];
       if (mapping) {
-        if (typeof mapping === 'object' && mapping.value) {
-          result.parsed[mapping.field] = mapping.value;
-          result.display.push({ tacoField: key, airtableField: mapping.field, value: mapping.value });
+        if (typeof mapping === 'object' && mapping.type === 'boolean_flag') {
+          const isTruthy = ['true', 'yes', '1', 'checked', 'x'].includes(value.toLowerCase());
+          if (isTruthy) {
+            result.parsed[mapping.field] = mapping.value;
+            result.display.push({ tacoField: key, airtableField: mapping.field, value: mapping.value });
+          }
         } else if (typeof mapping === 'object' && mapping.type === 'checkbox') {
           const boolVal = ['true', 'yes', '1', 'checked'].includes(value.toLowerCase());
           result.parsed[mapping.field] = boolVal;
@@ -409,8 +412,8 @@ function formatAuditTimestamp(isoString) {
 
 // Taco field mapping: Taco field name -> Airtable field name
 const TACO_FIELD_MAP = {
-  'new_client': { field: 'Taco: New or Existing Client', value: 'New Client' },
-  'existing_client': { field: 'Taco: New or Existing Client', value: 'Existing Client' },
+  'new_client': { field: 'Taco: New or Existing Client', type: 'boolean_flag', value: 'New Client' },
+  'existing_client': { field: 'Taco: New or Existing Client', type: 'boolean_flag', value: 'Existing Client' },
   'lead_source': 'Taco: Lead Source',
   'whats_the_last_thing_we_did_for_this_client': 'Taco: Last Thing We Did',
   'how_can_we_help_this_client': 'Taco: How can we help',

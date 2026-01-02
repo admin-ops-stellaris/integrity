@@ -205,9 +205,11 @@
     const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
     const addSpouse = document.getElementById('composerAddSpouse')?.checked && spouseId;
     
-    closeOppComposer();
+    const tacoFieldsCopy = { ...parsedTacoFields };
+    document.getElementById('oppComposer').classList.remove('open');
     
     google.script.run.withSuccessHandler(function(res) {
+      clearTacoImport();
       if (res && res.id) {
         const finishUp = () => {
           google.script.run.withSuccessHandler(function(updatedContact) {
@@ -225,7 +227,7 @@
           finishUp();
         }
       }
-    }).createOpportunity(oppName, currentContactRecord.id, oppType, parsedTacoFields);
+    }).createOpportunity(oppName, currentContactRecord.id, oppType, tacoFieldsCopy);
   }
   
   function showShortcutsHelp() {

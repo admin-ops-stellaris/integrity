@@ -522,6 +522,16 @@
   // --- EMAIL COMPOSER ---
   let currentEmailContext = null;
   
+  // Email template links (editable)
+  const EMAIL_LINKS = {
+    officeMap: 'https://maps.app.goo.gl/qm2ohJP2j1t6GqCt9',
+    ourTeam: 'https://stellaris.loans/our-team',
+    factFind: 'https://drive.google.com/file/d/1_U6kKck5IA3TBtFdJEzyxs_XpvcKvg9s/view?usp=sharing',
+    myGov: 'https://my.gov.au/',
+    myGovVideo: 'https://www.youtube.com/watch?v=bSMs2XO1V7Y',
+    incomeStatementInstructions: 'https://drive.google.com/file/d/1Y8B4zPLb_DTkV2GZnlGztm-HMfA3OWYP/view?usp=sharing'
+  };
+  
   const EMAIL_TEMPLATE = {
     subject: {
       Office: 'Confirmation of Appointment - {{appointmentTime}}',
@@ -530,36 +540,36 @@
     },
     
     opening: {
-      Office: "I'm writing to confirm your appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today) at our office - Kingsley Professional Centre, 18 / 56 Creaney Drive, Kingsley.",
+      Office: "I'm writing to confirm your appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today) at our office - Kingsley Professional Centre, 18 / 56 Creaney Drive, Kingsley ({{officeMapLink}}).",
       Phone: "I'm writing to confirm your phone appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today). {{brokerFirst}} will call you on {{phoneNumber}}.",
       Video: "I'm writing to confirm your video call appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today) using Google Meet URL: {{meetUrl}}. If you have any trouble logging in, please call or text our team on 0488 839 212."
     },
     
     meetLine: {
-      New: "Click here to meet {{brokerFirst}} and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!",
-      Repeat: "Click here to get reacquainted with the Team at Stellaris Finance Broking. We will be supporting you each step of the way!"
+      New: "Click {{ourTeamLink}} to meet {{brokerFirst}} and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!",
+      Repeat: "Click {{ourTeamLink}} to get reacquainted with the Team at Stellaris Finance Broking. We will be supporting you each step of the way!"
     },
     
     preparation: {
       Shae: `In preparation for your appointment, please email me the following information:
 
-Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+{{factFindLink}} (please note you cannot access this file directly, you will need to download it to your device and fill it in)
 - Complete with as much detail as possible
 - Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
 
 Income
-a) PAYG Income – Your latest two consecutive payslips and your 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+a) PAYG Income – Your latest two consecutive payslips and your 2024-25 Income Statement (which can be downloaded from {{myGovLink}}. If you need help creating a myGov account, watch {{myGovVideoLink}}. For instructions on how to download your Income Statement, {{incomeInstructionsLink}})
 b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
 
 I work part time – please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information.`,
       Team: `In preparation for your appointment, please email Shae (shae@stellaris.loans) the following information:
 
-Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+{{factFindLink}} (please note you cannot access this file directly, you will need to download it to your device and fill it in)
 - Complete with as much detail as possible
 - Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
 
 Income
-a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from {{myGovLink}}. If you need help creating a myGov account, watch {{myGovVideoLink}}. For instructions on how to download your Income Statement, {{incomeInstructionsLink}})
 b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
 
 Please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information.`,
@@ -588,6 +598,17 @@ Best wishes,
   };
   
   function openEmailComposer(opportunityData, contactData) {
+    // Collect emails from Primary Applicant and Applicants
+    const emails = [];
+    if (contactData.EmailAddress1) emails.push(contactData.EmailAddress1);
+    
+    // Add emails from Applicants (linked records have email in their data)
+    if (opportunityData._applicantEmails && Array.isArray(opportunityData._applicantEmails)) {
+      opportunityData._applicantEmails.forEach(email => {
+        if (email && !emails.includes(email)) emails.push(email);
+      });
+    }
+    
     currentEmailContext = {
       opportunity: opportunityData,
       contact: contactData,
@@ -596,8 +617,8 @@ Best wishes,
       brokerFirst: (opportunityData['Taco: Broker'] || '').split(' ')[0] || 'the broker',
       appointmentTime: opportunityData['Taco: Appointment Time'] || '[appointment time]',
       phoneNumber: opportunityData['Taco: Appt Phone Number'] || '[phone number]',
-      meetUrl: '[Google Meet URL]',
-      email: contactData.EmailAddress1 || '',
+      meetUrl: opportunityData['Taco: Appt Meet URL'] || '[Google Meet URL]',
+      emails: emails,
       sender: 'Shae'
     };
     
@@ -609,7 +630,7 @@ Best wishes,
     
     document.getElementById('emailPrepHandler').value = 'Shae';
     
-    document.getElementById('emailTo').value = currentEmailContext.email;
+    document.getElementById('emailTo').value = currentEmailContext.emails.join(', ');
     
     const modal = document.getElementById('emailComposer');
     modal.classList.add('visible');
@@ -652,7 +673,13 @@ Best wishes,
       phoneNumber: currentEmailContext.phoneNumber,
       meetUrl: currentEmailContext.meetUrl,
       sender: currentEmailContext.sender,
-      prefillNote: EMAIL_TEMPLATE.prefillNote[clientType]
+      prefillNote: EMAIL_TEMPLATE.prefillNote[clientType],
+      officeMapLink: EMAIL_LINKS.officeMap,
+      ourTeamLink: 'here (' + EMAIL_LINKS.ourTeam + ')',
+      factFindLink: 'Fact Find (' + EMAIL_LINKS.factFind + ')',
+      myGovLink: 'myGov (' + EMAIL_LINKS.myGov + ')',
+      myGovVideoLink: 'this video (' + EMAIL_LINKS.myGovVideo + ')',
+      incomeInstructionsLink: 'click here (' + EMAIL_LINKS.incomeStatementInstructions + ')'
     };
     
     const subject = replaceVariables(EMAIL_TEMPLATE.subject[apptType], variables);
@@ -739,8 +766,43 @@ Best wishes,
         showAlert('Error', 'Could not load opportunity data', 'error');
         return;
       }
+      const fields = oppData.fields || {};
       const contactFields = currentContactRecord ? currentContactRecord.fields : {};
-      openEmailComposer(oppData.fields || {}, contactFields);
+      
+      // Fetch emails from Primary Applicant and Applicants
+      const applicantIds = [];
+      if (fields['Primary Applicant'] && fields['Primary Applicant'].length > 0) {
+        applicantIds.push(...fields['Primary Applicant']);
+      }
+      if (fields['Applicants'] && fields['Applicants'].length > 0) {
+        applicantIds.push(...fields['Applicants']);
+      }
+      
+      if (applicantIds.length > 0) {
+        // Fetch email addresses for all applicants
+        let fetchedCount = 0;
+        const emails = [];
+        applicantIds.forEach(id => {
+          google.script.run.withSuccessHandler(function(contact) {
+            if (contact && contact.fields && contact.fields.EmailAddress1) {
+              emails.push(contact.fields.EmailAddress1);
+            }
+            fetchedCount++;
+            if (fetchedCount === applicantIds.length) {
+              fields._applicantEmails = emails;
+              openEmailComposer(fields, contactFields);
+            }
+          }).withFailureHandler(function() {
+            fetchedCount++;
+            if (fetchedCount === applicantIds.length) {
+              fields._applicantEmails = emails;
+              openEmailComposer(fields, contactFields);
+            }
+          }).getRecordById('Contacts', id);
+        });
+      } else {
+        openEmailComposer(fields, contactFields);
+      }
     }).getRecordById('Opportunities', opportunityId);
   }
 

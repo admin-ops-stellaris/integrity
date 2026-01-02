@@ -319,7 +319,7 @@
   .email-composer-modal.showing { opacity: 1; }
   .email-composer-content { background: var(--color-salt); width: 90%; max-width: 800px; height: 85%; max-height: 700px; border-radius: 8px; box-shadow: 0 4px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; transform: scale(0.95); transition: transform 0.25s ease-in-out; }
   .email-composer-modal.showing .email-composer-content { transform: scale(1); }
-  .email-composer-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--color-midnight); color: #FFF; }
+  .email-composer-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--color-cedar); color: #FFF; }
   .email-composer-header h2 { margin: 0; font-size: 16px; font-weight: 500; }
   .email-composer-header .close-panel { background: transparent; border: none; color: #FFF; font-size: 20px; cursor: pointer; padding: 5px; margin: 0; width: auto; }
   .email-composer-header .close-panel:hover { opacity: 0.7; transform: none; }

@@ -427,6 +427,49 @@
     });
   }
   
+  let currentOppToDelete = null;
+  
+  function confirmDeleteOpportunity(oppId, oppName) {
+    currentOppToDelete = { id: oppId, name: oppName };
+    document.getElementById('deleteOppConfirmMessage').innerText = `Are you sure you want to delete "${oppName}"? This action cannot be undone.`;
+    openModal('deleteOppConfirmModal');
+  }
+  
+  function closeDeleteOppConfirmModal() {
+    closeModal('deleteOppConfirmModal');
+    currentOppToDelete = null;
+  }
+  
+  function executeDeleteOpportunity() {
+    if (!currentOppToDelete) return;
+    const { id, name } = currentOppToDelete;
+    
+    closeModal('deleteOppConfirmModal', function() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showAlert('Success', `"${name}" has been deleted.`, 'success');
+            closeOppPanel();
+            if (currentContactRecord) {
+              google.script.run.withSuccessHandler(function(updatedContact) {
+                if (updatedContact) {
+                  currentContactRecord = updatedContact;
+                  loadOpportunities(updatedContact.fields);
+                }
+              }).getContactById(currentContactRecord.id);
+            }
+          } else {
+            showAlert('Cannot Delete', result.error || 'Failed to delete opportunity.', 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          showAlert('Error', err.message, 'error');
+        })
+        .deleteOpportunity(id);
+    });
+    currentOppToDelete = null;
+  }
+  
   function openModal(modalId) {
     const modal = document.getElementById(modalId);
     modal.classList.add('visible');
@@ -1228,6 +1271,10 @@
             html += `<div class="detail-group"><div class="detail-label">${item.label}</div><div class="detail-value">${display}</div></div>`;
          }
       });
+      if (table === 'Opportunities') {
+        const safeName = (response.title || '').replace(/'/g, "\\'");
+        html += `<div style="margin-top:40px; padding-top:20px; border-top:1px solid #EEE;"><button type="button" class="btn-delete" onclick="confirmDeleteOpportunity('${id}', '${safeName}')">Delete Opportunity</button></div>`;
+      }
       content.innerHTML = html;
     }).getRecordDetail(table, id);
   }

@@ -327,3 +327,52 @@ export async function deleteContact(contactId) {
     return { success: false, error: err.message };
   }
 }
+
+export async function deleteOpportunity(opportunityId) {
+  if (!base) return { success: false, error: "Database not configured" };
+  try {
+    const opportunity = await base("Opportunities").find(opportunityId);
+    if (!opportunity) return { success: false, error: "Opportunity not found" };
+    
+    const connections = [];
+    
+    const primaryApplicant = opportunity.fields["Primary Applicant"];
+    if (primaryApplicant && primaryApplicant.length > 0) {
+      const name = opportunity.fields["Primary Applicant Name"]?.[0] || "someone";
+      connections.push(`Primary Applicant (${name})`);
+    }
+    
+    const applicants = opportunity.fields["Applicants"];
+    if (applicants && applicants.length > 0) {
+      connections.push(`${applicants.length} Applicant${applicants.length === 1 ? '' : 's'}`);
+    }
+    
+    const guarantors = opportunity.fields["Guarantors"];
+    if (guarantors && guarantors.length > 0) {
+      connections.push(`${guarantors.length} Guarantor${guarantors.length === 1 ? '' : 's'}`);
+    }
+    
+    const loanApps = opportunity.fields["Loan Applications"];
+    if (loanApps && loanApps.length > 0) {
+      connections.push(`${loanApps.length} Loan Application${loanApps.length === 1 ? '' : 's'}`);
+    }
+    
+    const tasks = opportunity.fields["Tasks"];
+    if (tasks && tasks.length > 0) {
+      connections.push(`${tasks.length} Task${tasks.length === 1 ? '' : 's'}`);
+    }
+    
+    if (connections.length > 0) {
+      return { 
+        success: false, 
+        error: `This Opportunity is currently connected to ${connections.join(", ")}. If you're sure this Opportunity should be deleted, please first remove all connections.`
+      };
+    }
+    
+    await base("Opportunities").destroy(opportunityId);
+    return { success: true };
+  } catch (err) {
+    console.error("deleteOpportunity error:", err.message);
+    return { success: false, error: err.message };
+  }
+}

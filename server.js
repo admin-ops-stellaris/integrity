@@ -359,6 +359,17 @@ app.post("/api/deleteContact", async (req, res) => {
   }
 });
 
+app.post("/api/deleteOpportunity", async (req, res) => {
+  try {
+    const [opportunityId] = req.body.args || [];
+    const result = await airtable.deleteOpportunity(opportunityId);
+    res.json(result);
+  } catch (err) {
+    console.error("deleteOpportunity error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post("/api/processForm", async (req, res) => {
   try {
     const formData = req.body.args?.[0] || {};

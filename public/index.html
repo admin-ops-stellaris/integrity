@@ -249,6 +249,22 @@
         </div>
       </div>
 
+      <div id="deleteOppConfirmModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+          <div class="modal-sidebar" style="background:#A00;">
+            <span style="font-size:28px;">⚠</span>
+          </div>
+          <div class="modal-body">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Delete Opportunity</h3>
+            <p id="deleteOppConfirmMessage" style="font-size:13px; color:#666; margin-bottom:20px;"></p>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+              <button type="button" class="btn-cancel" onclick="closeDeleteOppConfirmModal()">Cancel</button>
+              <button type="button" class="btn-danger" onclick="executeDeleteOpportunity()">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="alertModal" class="modal">
         <div class="modal-content" style="max-width:400px;">
           <div class="modal-sidebar" id="alertModalSidebar">

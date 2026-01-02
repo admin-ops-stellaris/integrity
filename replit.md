@@ -77,7 +77,7 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Data is parsed from key:value format (one per line) and mapped to Airtable fields
 - TACO_FIELD_MAP in server.js defines the mapping between Taco fields and Airtable fields
 - Parse preview shows matched and unmapped fields before opportunity creation
-- Taco fields stored in Opportunities: New/Existing Client, Lead Source, Last Thing We Did, How Can We Help, CM Notes, Broker, Broker Assistant, Client Manager, Appointment Time, Type of Appointment, How Appt Booked, Appt Conf Email/Text Sent
+- Taco fields stored in Opportunities (in order): New or Existing Client, Lead Source, Last Thing We Did, How can we help, CM notes, Broker, Broker Assistant, Client Manager, Converted to Appt, Appointment Time, Type of Appointment, Appt Phone Number, How Appt Booked, How Appt Booked Other, Need Evidence in Advance, Need Appt Reminder, Appt Conf Email Sent, Appt Conf Text Sent
 
 ## Technical Notes
 - The `gas-shim.js` provides Google Apps Script compatibility, converting `google.script.run` calls to fetch API requests

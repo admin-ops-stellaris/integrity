@@ -2178,6 +2178,15 @@ Best wishes,
           html += '</div></div>'; // close tacoFieldsContainer and taco-section-box
         }
         
+        // Appointments section - linked from Appointments table
+        html += `<div class="appointments-section-box" style="margin-top:15px;">`;
+        html += `<div class="appointments-section-header"><span style="font-weight:600; color:#333;">Appointments</span><button type="button" class="btn-add-appointment" onclick="openAppointmentForm('${id}')">+ Add</button></div>`;
+        html += `<div id="appointmentsContainer" data-opportunity-id="${id}"><div style="color:#888; padding:10px;">Loading appointments...</div></div>`;
+        html += `</div>`;
+        
+        // Load appointments asynchronously
+        setTimeout(() => loadAppointmentsForOpportunity(id), 100);
+        
         // Row: Primary Applicant, Applicants, Guarantors, Loan Applications
         const applicantKeys = ['Primary Applicant', 'Applicants', 'Guarantors', 'Loan Applications'];
         html += '<div class="panel-row panel-row-4" style="margin-top:20px;">';
@@ -2219,3 +2228,180 @@ Best wishes,
   function popHistory() { if (panelHistory.length <= 1) return; panelHistory.pop(); const prev = panelHistory[panelHistory.length - 1]; panelHistory.pop(); loadPanelRecord(prev.table, prev.id); }
   function updateBackButton() { const btn = document.getElementById('panelBackBtn'); if (panelHistory.length > 1) { btn.style.display = 'block'; } else { btn.style.display = 'none'; } }
   function closeOppPanel() { document.getElementById('oppDetailPanel').classList.remove('open'); panelHistory = []; }
+  
+  // --- APPOINTMENTS MANAGEMENT ---
+  let currentAppointmentOpportunityId = null;
+  let editingAppointmentId = null;
+  
+  function loadAppointmentsForOpportunity(opportunityId) {
+    const container = document.getElementById('appointmentsContainer');
+    if (!container) return;
+    
+    google.script.run
+      .withSuccessHandler(function(appointments) {
+        if (!appointments || appointments.length === 0) {
+          container.innerHTML = '<div style="color:#888; padding:10px; font-style:italic;">No appointments scheduled</div>';
+          return;
+        }
+        
+        let html = '';
+        appointments.forEach(appt => {
+          const statusClass = appt.appointmentStatus === 'Completed' ? 'status-completed' : 
+                             appt.appointmentStatus === 'Cancelled' ? 'status-cancelled' : 'status-scheduled';
+          const typeIcon = appt.typeOfAppointment === 'Phone' ? '📞' : 
+                          appt.typeOfAppointment === 'Video' ? '🎥' : '🏢';
+          
+          html += `<div class="appointment-card">`;
+          html += `<div class="appointment-header">`;
+          html += `<span class="appointment-type">${typeIcon} ${appt.typeOfAppointment || 'Appointment'}</span>`;
+          html += `<span class="appointment-status ${statusClass}">${appt.appointmentStatus || 'Scheduled'}</span>`;
+          html += `</div>`;
+          html += `<div class="appointment-time">${appt.appointmentTime || 'Time not set'}</div>`;
+          if (appt.howBooked) {
+            html += `<div class="appointment-detail">Booked via: ${appt.howBooked}${appt.howBooked === 'Other' && appt.howBookedOther ? ' - ' + appt.howBookedOther : ''}</div>`;
+          }
+          if (appt.phoneNumber && appt.typeOfAppointment === 'Phone') {
+            html += `<div class="appointment-detail">Phone: ${appt.phoneNumber}</div>`;
+          }
+          if (appt.videoMeetUrl && appt.typeOfAppointment === 'Video') {
+            html += `<div class="appointment-detail">Meet URL: <a href="https://${appt.videoMeetUrl.replace(/^https?:\/\//, '')}" target="_blank">${appt.videoMeetUrl}</a></div>`;
+          }
+          if (appt.notes) {
+            html += `<div class="appointment-notes">${appt.notes}</div>`;
+          }
+          html += `<div class="appointment-actions">`;
+          html += `<button onclick="editAppointment('${appt.id}', '${opportunityId}')" class="btn-edit-appt">Edit</button>`;
+          html += `<button onclick="deleteAppointment('${appt.id}', '${opportunityId}')" class="btn-delete-appt">Delete</button>`;
+          html += `</div>`;
+          html += `</div>`;
+        });
+        
+        container.innerHTML = html;
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error loading appointments:', err);
+        container.innerHTML = '<div style="color:#C00; padding:10px;">Error loading appointments</div>';
+      })
+      .getAppointmentsForOpportunity(opportunityId);
+  }
+  
+  function openAppointmentForm(opportunityId, appointment = null) {
+    currentAppointmentOpportunityId = opportunityId;
+    editingAppointmentId = appointment ? appointment.id : null;
+    
+    const modal = document.getElementById('appointmentFormModal');
+    const title = document.getElementById('appointmentFormTitle');
+    title.textContent = appointment ? 'Edit Appointment' : 'New Appointment';
+    
+    // Reset form
+    document.getElementById('apptFormTime').value = appointment?.appointmentTime || '';
+    document.getElementById('apptFormType').value = appointment?.typeOfAppointment || 'Phone';
+    document.getElementById('apptFormHowBooked').value = appointment?.howBooked || 'Calendly';
+    document.getElementById('apptFormHowBookedOther').value = appointment?.howBookedOther || '';
+    document.getElementById('apptFormPhone').value = appointment?.phoneNumber || '';
+    document.getElementById('apptFormMeetUrl').value = appointment?.videoMeetUrl || '';
+    document.getElementById('apptFormNeedEvidence').checked = appointment?.needEvidenceInAdvance || false;
+    document.getElementById('apptFormNeedReminder').checked = appointment?.needApptReminder || false;
+    document.getElementById('apptFormNotes').value = appointment?.notes || '';
+    document.getElementById('apptFormStatus').value = appointment?.appointmentStatus || 'Scheduled';
+    
+    updateAppointmentFormVisibility();
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
+  }
+  
+  function updateAppointmentFormVisibility() {
+    const type = document.getElementById('apptFormType').value;
+    const howBooked = document.getElementById('apptFormHowBooked').value;
+    
+    document.getElementById('apptFormPhoneRow').style.display = type === 'Phone' ? 'block' : 'none';
+    document.getElementById('apptFormMeetRow').style.display = type === 'Video' ? 'block' : 'none';
+    document.getElementById('apptFormHowBookedOtherRow').style.display = howBooked === 'Other' ? 'block' : 'none';
+  }
+  
+  function closeAppointmentForm() {
+    const modal = document.getElementById('appointmentFormModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.classList.remove('visible'), 200);
+    currentAppointmentOpportunityId = null;
+    editingAppointmentId = null;
+  }
+  
+  function saveAppointment() {
+    if (!currentAppointmentOpportunityId) return;
+    
+    const fields = {
+      "Appointment Time": document.getElementById('apptFormTime').value,
+      "Type of Appointment": document.getElementById('apptFormType').value,
+      "How Booked": document.getElementById('apptFormHowBooked').value,
+      "How Booked Other": document.getElementById('apptFormHowBookedOther').value,
+      "Phone Number": document.getElementById('apptFormPhone').value,
+      "Video Meet URL": document.getElementById('apptFormMeetUrl').value,
+      "Need Evidence in Advance": document.getElementById('apptFormNeedEvidence').checked,
+      "Need Appt Reminder": document.getElementById('apptFormNeedReminder').checked,
+      "Notes": document.getElementById('apptFormNotes').value,
+      "Appointment Status": document.getElementById('apptFormStatus').value
+    };
+    
+    const saveBtn = document.getElementById('apptFormSaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    
+    const oppId = currentAppointmentOpportunityId;
+    
+    function onSaveComplete() {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+      closeAppointmentForm();
+      loadAppointmentsForOpportunity(oppId);
+    }
+    
+    function onSaveError(err) {
+      console.error('Error saving appointment:', err);
+      alert('Error saving appointment: ' + (err.message || err));
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+    
+    if (editingAppointmentId) {
+      // For updates, we need to update each field sequentially or as a batch
+      // Using a single update with all fields would be cleaner
+      google.script.run
+        .withSuccessHandler(onSaveComplete)
+        .withFailureHandler(onSaveError)
+        .updateAppointmentFields(editingAppointmentId, fields);
+    } else {
+      google.script.run
+        .withSuccessHandler(onSaveComplete)
+        .withFailureHandler(onSaveError)
+        .createAppointment(currentAppointmentOpportunityId, fields);
+    }
+  }
+  
+  function editAppointment(appointmentId, opportunityId) {
+    google.script.run
+      .withSuccessHandler(function(appointments) {
+        const appt = appointments.find(a => a.id === appointmentId);
+        if (appt) {
+          openAppointmentForm(opportunityId, appt);
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error loading appointment for edit:', err);
+      })
+      .getAppointmentsForOpportunity(opportunityId);
+  }
+  
+  function deleteAppointment(appointmentId, opportunityId) {
+    if (!confirm('Are you sure you want to delete this appointment?')) return;
+    
+    google.script.run
+      .withSuccessHandler(function() {
+        loadAppointmentsForOpportunity(opportunityId);
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error deleting appointment:', err);
+        alert('Error deleting appointment: ' + (err.message || err));
+      })
+      .deleteAppointment(appointmentId);
+  }

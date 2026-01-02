@@ -750,6 +750,17 @@ app.post("/api/updateAppointment", async (req, res) => {
   }
 });
 
+app.post("/api/updateAppointmentFields", async (req, res) => {
+  try {
+    const [appointmentId, fields] = req.body.args || [];
+    const result = await airtable.updateAppointmentFields(appointmentId, fields);
+    res.json(result);
+  } catch (err) {
+    console.error("updateAppointmentFields error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/deleteAppointment", async (req, res) => {
   try {
     const [appointmentId] = req.body.args || [];

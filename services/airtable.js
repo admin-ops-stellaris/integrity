@@ -603,6 +603,18 @@ export async function updateAppointment(appointmentId, field, value) {
   }
 }
 
+export async function updateAppointmentFields(appointmentId, fields) {
+  if (!base || !appointmentId) return null;
+  
+  try {
+    const record = await base("Appointments").update(appointmentId, fields);
+    return formatRecord(record);
+  } catch (err) {
+    console.error("updateAppointmentFields error:", err.message);
+    return null;
+  }
+}
+
 export async function deleteAppointment(appointmentId) {
   if (!base || !appointmentId) return false;
   

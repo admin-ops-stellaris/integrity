@@ -19,6 +19,7 @@ Integrity is built on a Node.js/Express backend, serving a static frontend.
 - **Feature Specifications**:
     - **Contact Management**: CRUD operations for contacts, including linking/unlinking spouse relationships and retrieving linked opportunities.
     - **Opportunity Management**: Creation, updating, and deletion of opportunities with extensive fields, user tracking, and audit trails. Integration with Taco data for streamlined opportunity creation.
+    - **Appointment Management**: Dedicated Appointments table linked to Opportunities. Full CRUD operations with fields: Appointment Time, Type (Office/Phone/Video), How Booked (Calendly/Email/Phone/Podium/Other), Phone Number, Video Meet URL, checkboxes for evidence/reminder needs, appointment status, and notes. Appointments section displays in the Opportunity panel with Add/Edit/Delete functionality.
     - **Email Integration**: Sending emails via Gmail API with support for HTML formatting, dynamic templates, and signature generation. Emails appear in the user's Sent folder.
     - **Settings Management**: Team-wide configurations, such as email links and signature templates, are stored in Airtable and accessible via a global settings modal.
 - **System Design Choices**:

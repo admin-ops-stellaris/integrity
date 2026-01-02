@@ -429,11 +429,11 @@
 
     <!-- Signature Generator Modal -->
     <div id="signatureGeneratorModal" class="modal">
-      <div class="modal-content" style="max-width:800px; width:90%; max-height:90vh;">
-        <div class="modal-sidebar" style="background:var(--color-cedar);">
+      <div class="modal-content" style="width:800px !important; height:auto !important; max-height:90vh;">
+        <div class="modal-sidebar" style="background:var(--color-cedar); width:60px; min-width:60px;">
           <span style="font-size:24px;">✉</span>
         </div>
-        <div class="modal-body" style="overflow-y:auto; max-height:calc(90vh - 40px); padding:20px;">
+        <div class="modal-body" style="overflow-y:auto; max-height:calc(90vh - 40px); padding:20px; flex:1;">
           <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Email Signature Generator</h3>
           <div class="email-settings-form">
             <div style="background:var(--color-sky); padding:12px; border-radius:6px; margin-bottom:15px;">
@@ -471,7 +471,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=6"></script>
-    <script src="/app.js?v=6"></script>
+    <script src="/api-bridge.js?v=7"></script>
+    <script src="/app.js?v=7"></script>
   </body>
 </html>

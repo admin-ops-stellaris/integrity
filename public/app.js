@@ -712,24 +712,24 @@ Best wishes,
       meetUrl: currentEmailContext.meetUrl,
       sender: currentEmailContext.sender,
       prefillNote: EMAIL_TEMPLATE.prefillNote[clientType],
-      officeMapLink: EMAIL_LINKS.officeMap,
-      ourTeamLink: 'here (' + EMAIL_LINKS.ourTeam + ')',
-      factFindLink: 'Fact Find (' + EMAIL_LINKS.factFind + ')',
-      myGovLink: 'myGov (' + EMAIL_LINKS.myGov + ')',
-      myGovVideoLink: 'this video (' + EMAIL_LINKS.myGovVideo + ')',
-      incomeInstructionsLink: 'click here (' + EMAIL_LINKS.incomeStatementInstructions + ')'
+      officeMapLink: `<a href="${EMAIL_LINKS.officeMap}" target="_blank" style="color:#0066CC;">Office</a>`,
+      ourTeamLink: `<a href="${EMAIL_LINKS.ourTeam}" target="_blank" style="color:#0066CC;">here</a>`,
+      factFindLink: `<a href="${EMAIL_LINKS.factFind}" target="_blank" style="color:#0066CC;">Fact Find</a>`,
+      myGovLink: `<a href="${EMAIL_LINKS.myGov}" target="_blank" style="color:#0066CC;">myGov</a>`,
+      myGovVideoLink: `<a href="${EMAIL_LINKS.myGovVideo}" target="_blank" style="color:#0066CC;">this video</a>`,
+      incomeInstructionsLink: `<a href="${EMAIL_LINKS.incomeStatementInstructions}" target="_blank" style="color:#0066CC;">click here</a>`
     };
     
     const subject = replaceVariables(EMAIL_TEMPLATE.subject[apptType], variables);
     document.getElementById('emailSubject').value = subject;
     
-    let body = `Hi ${variables.greeting},\n\n`;
-    body += replaceVariables(EMAIL_TEMPLATE.opening[apptType], variables) + '\n\n';
-    body += replaceVariables(EMAIL_TEMPLATE.meetLine[clientType], variables) + '\n\n';
-    body += replaceVariables(EMAIL_TEMPLATE.preparation[prepHandler], variables) + '\n\n';
+    let body = `Hi ${variables.greeting},<br><br>`;
+    body += replaceVariables(EMAIL_TEMPLATE.opening[apptType], variables) + '<br><br>';
+    body += replaceVariables(EMAIL_TEMPLATE.meetLine[clientType], variables) + '<br><br>';
+    body += replaceVariables(EMAIL_TEMPLATE.preparation[prepHandler], variables) + '<br><br>';
     body += replaceVariables(EMAIL_TEMPLATE.closing[clientType], variables);
     
-    document.getElementById('emailPreviewBody').innerText = body;
+    document.getElementById('emailPreviewBody').innerHTML = body;
   }
   
   function replaceVariables(template, variables) {
@@ -790,12 +790,39 @@ Best wishes,
     
     const to = document.getElementById('emailTo').value;
     const subject = document.getElementById('emailSubject').value;
-    const body = document.getElementById('emailPreviewBody').innerText;
+    const previewEl = document.getElementById('emailPreviewBody');
+    
+    // Convert HTML to plain text with URLs preserved
+    const body = convertHtmlToPlainTextWithUrls(previewEl.innerHTML);
     
     const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
     window.open(gmailUrl, '_blank');
     closeEmailComposer();
+  }
+  
+  function convertHtmlToPlainTextWithUrls(html) {
+    // Create a temporary element
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    
+    // Replace <a> tags with "text (url)" format
+    const links = temp.querySelectorAll('a');
+    links.forEach(link => {
+      const text = link.textContent;
+      const href = link.getAttribute('href');
+      const replacement = document.createTextNode(`${text} (${href})`);
+      link.parentNode.replaceChild(replacement, link);
+    });
+    
+    // Replace <br> with newlines
+    let result = temp.innerHTML;
+    result = result.replace(/<br\s*\/?>/gi, '\n');
+    
+    // Remove remaining HTML tags
+    const div = document.createElement('div');
+    div.innerHTML = result;
+    return div.textContent || div.innerText || '';
   }
   
   function openEmailComposerFromPanel(opportunityId) {
@@ -1614,7 +1641,8 @@ Best wishes,
         if (item.type === 'checkbox') {
           const isChecked = item.value === true || item.value === 'true' || item.value === 'Yes';
           const checkedAttr = isChecked ? 'checked' : '';
-          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="checkbox-field"><input type="checkbox" id="input_${item.key}" ${checkedAttr} onchange="saveCheckboxField('${tbl}', '${recId}', '${item.key}', this.checked)"><label for="input_${item.key}">${isChecked ? 'Yes' : 'No'}</label></div></div>`;
+          const noLabel = item.noLabel || 'No';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="checkbox-field"><input type="checkbox" id="input_${item.key}" ${checkedAttr} onchange="saveCheckboxField('${tbl}', '${recId}', '${item.key}', this.checked)"><label for="input_${item.key}">${isChecked ? 'Yes' : noLabel}</label></div></div>`;
         }
         if (item.type === 'url') {
           const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
@@ -1668,8 +1696,9 @@ Best wishes,
         // Taco fields section with custom layout
         const tacoFields = response.data.filter(item => item.tacoField);
         if (tacoFields.length > 0) {
+          html += '<div class="taco-section-box">';
           html += `<div class="taco-section-header"><img src="https://taco.insightprocessing.com.au/static/images/taco.jpg" alt="Taco"><span>Taco fields</span></div>`;
-          html += '<div class="taco-section-box"><div id="tacoFieldsContainer">';
+          html += '<div id="tacoFieldsContainer">';
           
           // Get current values for conditional logic
           const convertedToAppt = dataMap['Taco: Converted to Appt']?.value === true || dataMap['Taco: Converted to Appt']?.value === 'true';
@@ -1754,7 +1783,14 @@ Best wishes,
           // Row 7: Need Evidence in Advance, Need Appt Reminder
           html += '<div class="taco-row">';
           if (dataMap['Taco: Need Evidence in Advance']) html += renderField(dataMap['Taco: Need Evidence in Advance'], table, id);
-          if (dataMap['Taco: Need Appt Reminder']) html += renderField(dataMap['Taco: Need Appt Reminder'], table, id);
+          if (dataMap['Taco: Need Appt Reminder']) {
+            // Custom label if Calendly
+            const reminderField = { ...dataMap['Taco: Need Appt Reminder'] };
+            if (howBooked === 'Calendly') {
+              reminderField.noLabel = 'Not required as Calendly will do it automatically';
+            }
+            html += renderField(reminderField, table, id);
+          }
           html += '</div>';
           
           // Row 8: Appt Conf Email Sent, Appt Conf Text Sent

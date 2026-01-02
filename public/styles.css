@@ -334,7 +334,9 @@
   .email-field-row input { flex: 1; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 13px; background: #F9F9F9; }
   .email-preview-container { flex: 1; display: flex; flex-direction: column; min-height: 200px; }
   .email-preview-label { font-size: 10px; text-transform: uppercase; color: #888; letter-spacing: 0.5px; margin-bottom: 8px; }
-  .email-preview-body { flex: 1; background: #FFF; border: 1px solid var(--color-border); border-radius: 4px; padding: 20px; font-size: 13px; line-height: 1.6; overflow-y: auto; white-space: pre-wrap; }
+  .email-preview-body { flex: 1; background: #FFF; border: 1px solid var(--color-border); border-radius: 4px; padding: 20px; font-size: 13px; line-height: 1.8; overflow-y: auto; }
+  .email-preview-body a { color: #0066CC; text-decoration: underline; }
+  .email-preview-body a:hover { color: #004499; }
   .email-composer-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid var(--color-border); background: #F5F5F5; }
   .btn-settings { background: transparent; border: 1px solid var(--color-border); color: var(--color-midnight); padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
   .btn-settings:hover { background: var(--color-border); }
@@ -351,9 +353,9 @@
   body.dark-mode .email-composer-footer { background: #1a1a1a; border-color: #444; }
 
   /* TACO FIELDS SECTION */
-  .taco-section-header { display: flex; align-items: center; gap: 8px; margin-top: 20px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--color-border); }
+  .taco-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.1); }
   .taco-section-header img { width: 20px; height: 20px; border-radius: 3px; }
-  .taco-section-header span { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .taco-section-header span { font-size: 11px; font-weight: 500; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
   .taco-field { margin-left: 12px; }
-  body.dark-mode .taco-section-header { border-color: #444; }
+  body.dark-mode .taco-section-header { border-color: rgba(255,255,255,0.1); }
   body.dark-mode .taco-section-header span { color: #AAA; }

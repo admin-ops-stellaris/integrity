@@ -345,7 +345,7 @@
             </div>
             <div class="email-preview-container">
               <div class="email-preview-label">Preview</div>
-              <div id="emailPreviewBody" class="email-preview-body"></div>
+              <div id="emailPreviewBody" class="email-preview-body" contenteditable="true"></div>
             </div>
           </div>
           <div class="email-composer-footer">
@@ -357,11 +357,11 @@
       </div>
 
       <div id="emailSettingsModal" class="modal">
-        <div class="modal-content" style="max-width:600px;">
+        <div class="modal-content" style="max-width:500px; max-height:90vh;">
           <div class="modal-sidebar" style="background:var(--color-cedar);">
             <span style="font-size:24px;">⚙</span>
           </div>
-          <div class="modal-body">
+          <div class="modal-body" style="overflow-y:auto; max-height:calc(90vh - 40px);">
             <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Email Template Settings</h3>
             <div class="email-settings-form">
               <div class="setting-row">
@@ -389,7 +389,7 @@
                 <input type="url" id="settingIncomeInstructions" placeholder="https://...">
               </div>
             </div>
-            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; padding-bottom:10px;">
               <button type="button" class="btn-cancel" onclick="closeEmailSettings()">Cancel</button>
               <button type="button" class="btn-confirm" onclick="saveEmailSettings()">Save</button>
             </div>

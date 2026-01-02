@@ -522,8 +522,8 @@
   // --- EMAIL COMPOSER ---
   let currentEmailContext = null;
   
-  // Email template links (editable)
-  const EMAIL_LINKS = {
+  // Email template links (editable, saved to localStorage)
+  const DEFAULT_EMAIL_LINKS = {
     officeMap: 'https://maps.app.goo.gl/qm2ohJP2j1t6GqCt9',
     ourTeam: 'https://stellaris.loans/our-team',
     factFind: 'https://drive.google.com/file/d/1_U6kKck5IA3TBtFdJEzyxs_XpvcKvg9s/view?usp=sharing',
@@ -531,6 +531,44 @@
     myGovVideo: 'https://www.youtube.com/watch?v=bSMs2XO1V7Y',
     incomeStatementInstructions: 'https://drive.google.com/file/d/1Y8B4zPLb_DTkV2GZnlGztm-HMfA3OWYP/view?usp=sharing'
   };
+  
+  function loadEmailLinks() {
+    const saved = localStorage.getItem('emailLinks');
+    if (saved) {
+      try { return { ...DEFAULT_EMAIL_LINKS, ...JSON.parse(saved) }; }
+      catch (e) { return { ...DEFAULT_EMAIL_LINKS }; }
+    }
+    return { ...DEFAULT_EMAIL_LINKS };
+  }
+  
+  let EMAIL_LINKS = loadEmailLinks();
+  
+  function openEmailSettings() {
+    document.getElementById('settingOfficeMap').value = EMAIL_LINKS.officeMap || '';
+    document.getElementById('settingOurTeam').value = EMAIL_LINKS.ourTeam || '';
+    document.getElementById('settingFactFind').value = EMAIL_LINKS.factFind || '';
+    document.getElementById('settingMyGov').value = EMAIL_LINKS.myGov || '';
+    document.getElementById('settingMyGovVideo').value = EMAIL_LINKS.myGovVideo || '';
+    document.getElementById('settingIncomeInstructions').value = EMAIL_LINKS.incomeStatementInstructions || '';
+    openModal('emailSettingsModal');
+  }
+  
+  function closeEmailSettings() {
+    closeModal('emailSettingsModal');
+  }
+  
+  function saveEmailSettings() {
+    EMAIL_LINKS.officeMap = document.getElementById('settingOfficeMap').value;
+    EMAIL_LINKS.ourTeam = document.getElementById('settingOurTeam').value;
+    EMAIL_LINKS.factFind = document.getElementById('settingFactFind').value;
+    EMAIL_LINKS.myGov = document.getElementById('settingMyGov').value;
+    EMAIL_LINKS.myGovVideo = document.getElementById('settingMyGovVideo').value;
+    EMAIL_LINKS.incomeStatementInstructions = document.getElementById('settingIncomeInstructions').value;
+    localStorage.setItem('emailLinks', JSON.stringify(EMAIL_LINKS));
+    closeEmailSettings();
+    updateEmailPreview();
+    showAlert('Saved', 'Email template links updated', 'success');
+  }
   
   const EMAIL_TEMPLATE = {
     subject: {

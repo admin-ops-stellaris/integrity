@@ -350,7 +350,49 @@
           </div>
           <div class="email-composer-footer">
             <button type="button" class="btn-cancel" onclick="closeEmailComposer()">Cancel</button>
+            <button type="button" class="btn-settings" onclick="openEmailSettings()" title="Edit Links & Templates">⚙</button>
             <button type="button" class="btn-confirm" onclick="openInGmail()">Open in Gmail</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="emailSettingsModal" class="modal">
+        <div class="modal-content" style="max-width:600px;">
+          <div class="modal-sidebar" style="background:var(--color-cedar);">
+            <span style="font-size:24px;">⚙</span>
+          </div>
+          <div class="modal-body">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Email Template Settings</h3>
+            <div class="email-settings-form">
+              <div class="setting-row">
+                <label>Office Map Link</label>
+                <input type="url" id="settingOfficeMap" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>Our Team Page</label>
+                <input type="url" id="settingOurTeam" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>Fact Find Document</label>
+                <input type="url" id="settingFactFind" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>myGov Link</label>
+                <input type="url" id="settingMyGov" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>myGov Help Video</label>
+                <input type="url" id="settingMyGovVideo" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>Income Statement Instructions</label>
+                <input type="url" id="settingIncomeInstructions" placeholder="https://...">
+              </div>
+            </div>
+            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+              <button type="button" class="btn-cancel" onclick="closeEmailSettings()">Cancel</button>
+              <button type="button" class="btn-confirm" onclick="saveEmailSettings()">Save</button>
+            </div>
           </div>
         </div>
       </div>

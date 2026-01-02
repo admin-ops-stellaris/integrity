@@ -336,6 +336,14 @@
   .email-preview-label { font-size: 10px; text-transform: uppercase; color: #888; letter-spacing: 0.5px; margin-bottom: 8px; }
   .email-preview-body { flex: 1; background: #FFF; border: 1px solid var(--color-border); border-radius: 4px; padding: 20px; font-size: 13px; line-height: 1.6; overflow-y: auto; white-space: pre-wrap; }
   .email-composer-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid var(--color-border); background: #F5F5F5; }
+  .btn-settings { background: transparent; border: 1px solid var(--color-border); color: var(--color-midnight); padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+  .btn-settings:hover { background: var(--color-border); }
+  .email-settings-form { display: flex; flex-direction: column; gap: 12px; }
+  .email-settings-form .setting-row { display: flex; flex-direction: column; gap: 4px; }
+  .email-settings-form .setting-row label { font-size: 12px; font-weight: 500; color: var(--color-midnight); }
+  .email-settings-form .setting-row input { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 13px; font-family: var(--font-body); }
+  .dark-mode .email-settings-form .setting-row label { color: var(--color-salt); }
+  .dark-mode .email-settings-form .setting-row input { background: #444; border-color: #555; color: #FFF; }
   body.dark-mode .email-composer-content { background: #242424; }
   body.dark-mode .email-setting-group select { background: #333; border-color: #555; color: #E8E6E1; }
   body.dark-mode .email-field-row input { background: #333; border-color: #555; color: #E8E6E1; }

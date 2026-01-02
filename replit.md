@@ -57,6 +57,7 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - `POST /api/getLinkedOpportunities` - Get opportunities linked to a contact
 - `POST /api/deleteContact` - Delete a contact (only if not connected to spouse or opportunities)
 - `POST /api/getEffectiveUserEmail` - Get current user email
+- `POST /api/parseTacoData` - Parse Taco key:value format and map to Airtable fields
 - `GET /api/health` - Health check endpoint
 
 ## Airtable Integration
@@ -71,6 +72,13 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Airtable automations then: update Spouse fields on both contacts, create Spouse History Log entries
 - "Spouse History Text" is a lookup field on Contacts that reflects the history automatically
 
+### Taco Import Integration
+- When creating a new Opportunity, users can paste data from Taco (external system)
+- Data is parsed from key:value format (one per line) and mapped to Airtable fields
+- TACO_FIELD_MAP in server.js defines the mapping between Taco fields and Airtable fields
+- Parse preview shows matched and unmapped fields before opportunity creation
+- Taco fields stored in Opportunities: New/Existing Client, Lead Source, Last Thing We Did, How Can We Help, CM Notes, Broker, Broker Assistant, Client Manager, Appointment Time, Type of Appointment, How Appt Booked, Appt Conf Email/Text Sent
+
 ## Technical Notes
 - The `gas-shim.js` provides Google Apps Script compatibility, converting `google.script.run` calls to fetch API requests
 - The shim captures handlers per-call to prevent race conditions with concurrent API calls
@@ -82,6 +90,7 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- January 2, 2026: Taco import feature - paste Taco data in New Opportunity composer, parses key:value format, shows preview of matched/unmapped fields, stores data in Taco-prefixed Airtable fields
 - December 31, 2025: Expanded Opportunity fields - added 25+ new editable fields including loan consultant/processor IDs, amounts, values, dates, referral info, and related IDs
 - December 31, 2025: Long-text field support - textarea editing for multi-line text fields in Opportunity panel
 - December 31, 2025: Date field support - date picker with DD/MM/YYYY display format for Submitted Date

@@ -2012,8 +2012,7 @@ Best wishes,
         if (item.type === 'checkbox') {
           const isChecked = item.value === true || item.value === 'true' || item.value === 'Yes';
           const checkedAttr = isChecked ? 'checked' : '';
-          const noLabel = item.noLabel || 'No';
-          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="checkbox-field"><input type="checkbox" id="input_${item.key}" ${checkedAttr} onchange="saveCheckboxField('${tbl}', '${recId}', '${item.key}', this.checked)"><label for="input_${item.key}">${isChecked ? 'Yes' : noLabel}</label></div></div>`;
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="checkbox-field"><input type="checkbox" id="input_${item.key}" ${checkedAttr} onchange="saveCheckboxField('${tbl}', '${recId}', '${item.key}', this.checked)"></div></div>`;
         }
         if (item.type === 'url') {
           const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
@@ -2235,10 +2234,16 @@ Best wishes,
   
   function loadAppointmentsForOpportunity(opportunityId) {
     const container = document.getElementById('appointmentsContainer');
-    if (!container) return;
+    if (!container) {
+      console.log('Appointments container not found');
+      return;
+    }
+    
+    console.log('Loading appointments for opportunity:', opportunityId);
     
     google.script.run
       .withSuccessHandler(function(appointments) {
+        console.log('Appointments received:', appointments);
         if (!appointments || appointments.length === 0) {
           container.innerHTML = '<div style="color:#888; padding:10px; font-style:italic;">No appointments scheduled</div>';
           return;
@@ -2256,7 +2261,7 @@ Best wishes,
           html += `<span class="appointment-type">${typeIcon} ${appt.typeOfAppointment || 'Appointment'}</span>`;
           html += `<span class="appointment-status ${statusClass}">${appt.appointmentStatus || 'Scheduled'}</span>`;
           html += `</div>`;
-          html += `<div class="appointment-time">${appt.appointmentTime || 'Time not set'}</div>`;
+          html += `<div class="appointment-time">${formatDatetimeForDisplay(appt.appointmentTime)}</div>`;
           if (appt.howBooked) {
             html += `<div class="appointment-detail">Booked via: ${appt.howBooked}${appt.howBooked === 'Other' && appt.howBookedOther ? ' - ' + appt.howBookedOther : ''}</div>`;
           }
@@ -2280,9 +2285,39 @@ Best wishes,
       })
       .withFailureHandler(function(err) {
         console.error('Error loading appointments:', err);
-        container.innerHTML = '<div style="color:#C00; padding:10px;">Error loading appointments</div>';
+        container.innerHTML = '<div style="color:#C00; padding:10px;">Error loading appointments: ' + (err.message || err) + '</div>';
       })
       .getAppointmentsForOpportunity(opportunityId);
+  }
+  
+  function formatDatetimeForInput(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().slice(0, 16);
+    } catch (e) {
+      return '';
+    }
+  }
+  
+  function formatDatetimeForDisplay(dateStr) {
+    if (!dateStr) return 'Time not set';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleString('en-AU', { 
+        weekday: 'short', 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: '2-digit',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true 
+      });
+    } catch (e) {
+      return dateStr;
+    }
   }
   
   function openAppointmentForm(opportunityId, appointment = null) {
@@ -2293,8 +2328,8 @@ Best wishes,
     const title = document.getElementById('appointmentFormTitle');
     title.textContent = appointment ? 'Edit Appointment' : 'New Appointment';
     
-    // Reset form
-    document.getElementById('apptFormTime').value = appointment?.appointmentTime || '';
+    // Reset form - format datetime for datetime-local input
+    document.getElementById('apptFormTime').value = formatDatetimeForInput(appointment?.appointmentTime);
     document.getElementById('apptFormType').value = appointment?.typeOfAppointment || 'Phone';
     document.getElementById('apptFormHowBooked').value = appointment?.howBooked || 'Calendly';
     document.getElementById('apptFormHowBookedOther').value = appointment?.howBookedOther || '';

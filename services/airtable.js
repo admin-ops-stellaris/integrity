@@ -18,6 +18,24 @@ function formatRecord(record) {
   };
 }
 
+function formatAppointmentRecord(record) {
+  const f = record.fields || {};
+  return {
+    id: record.id,
+    appointmentTime: f["Appointment Time"] || null,
+    typeOfAppointment: f["Type of Appointment"] || null,
+    howBooked: f["How Booked"] || null,
+    howBookedOther: f["How Booked Other"] || null,
+    phoneNumber: f["Phone Number"] || null,
+    videoMeetUrl: f["Video Meet URL"] || null,
+    needEvidenceInAdvance: f["Need Evidence in Advance"] || false,
+    needApptReminder: f["Need Appt Reminder"] || false,
+    notes: f["Notes"] || null,
+    appointmentStatus: f["Appointment Status"] || "Scheduled",
+    opportunityId: Array.isArray(f["Opportunity"]) ? f["Opportunity"][0] : f["Opportunity"]
+  };
+}
+
 const userProfileCache = new Map();
 
 export async function getUserProfileByEmail(email) {

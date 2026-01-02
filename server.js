@@ -297,18 +297,30 @@ app.post("/api/parseTacoData", async (req, res) => {
       return res.json(result);
     }
     
+    const knownKeys = new Set(Object.keys(TACO_FIELD_MAP));
     const lines = rawText.split('\n');
+    let consecutiveUnknown = 0;
+    
     for (const line of lines) {
       const colonIndex = line.indexOf(':');
-      if (colonIndex === -1) continue;
+      if (colonIndex === -1) {
+        consecutiveUnknown++;
+        if (consecutiveUnknown >= 2) break;
+        continue;
+      }
       
       const key = line.substring(0, colonIndex).trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
       const value = line.substring(colonIndex + 1).trim();
       
-      if (!key || !value) continue;
+      if (!key) {
+        consecutiveUnknown++;
+        if (consecutiveUnknown >= 2) break;
+        continue;
+      }
       
       const mapping = TACO_FIELD_MAP[key];
       if (mapping) {
+        consecutiveUnknown = 0;
         if (typeof mapping === 'object' && mapping.type === 'boolean_flag') {
           const isTruthy = ['true', 'yes', '1', 'checked', 'x'].includes(value.toLowerCase());
           if (isTruthy) {
@@ -320,11 +332,14 @@ app.post("/api/parseTacoData", async (req, res) => {
           result.parsed[mapping.field] = boolVal;
           result.display.push({ tacoField: key, airtableField: mapping.field, value: boolVal ? 'Yes' : 'No' });
         } else {
-          result.parsed[mapping] = value;
-          result.display.push({ tacoField: key, airtableField: mapping, value: value });
+          if (value) {
+            result.parsed[mapping] = value;
+            result.display.push({ tacoField: key, airtableField: mapping, value: value });
+          }
         }
       } else {
-        result.unmapped.push({ tacoField: key, value: value });
+        consecutiveUnknown++;
+        if (consecutiveUnknown >= 2) break;
       }
     }
     

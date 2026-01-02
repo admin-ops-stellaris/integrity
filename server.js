@@ -705,7 +705,7 @@ app.post("/api/getAllSettings", async (req, res) => {
 app.post("/api/updateSetting", async (req, res) => {
   try {
     const [key, value] = req.body.args || [];
-    const userEmail = getUserEmail(req);
+    const userEmail = req.session?.user?.email || "admin.ops@stellaris.loans";
     const result = await airtable.updateSetting(key, value, userEmail);
     res.json(result);
   } catch (err) {

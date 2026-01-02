@@ -2170,6 +2170,9 @@ Best wishes,
           if (dataMap['Taco: Appt Conf Text Sent']) html += renderField(dataMap['Taco: Appt Conf Text Sent'], table, id);
           html += '</div>';
           
+          // Send Confirmation Email button - inside Taco section
+          html += `<div style="margin-top:15px;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${id}')">Send Confirmation Email</button></div>`;
+          
           html += '</div>'; // close apptFieldsSection
           
           html += '</div></div>'; // close tacoFieldsContainer and taco-section-box
@@ -2200,11 +2203,10 @@ Best wishes,
           html += '</div>';
         }
         
-        // Action buttons
+        // Delete button only (Send Confirmation moved to Taco section)
         const safeName = (response.title || '').replace(/'/g, "\\'");
         html += `<div style="margin-top:30px; padding-top:20px; border-top:1px solid #EEE;">`;
-        html += `<button type="button" class="btn-confirm" style="width:100%; margin-bottom:10px;" onclick="openEmailComposerFromPanel('${id}')">Send Confirmation Email</button>`;
-        html += `<button type="button" class="btn-delete" onclick="confirmDeleteOpportunity('${id}', '${safeName}')">Delete Opportunity</button>`;
+        html += `<button type="button" class="btn-delete btn-inline" onclick="confirmDeleteOpportunity('${id}', '${safeName}')">Delete Opportunity</button>`;
         html += `</div>`;
       } else {
         // Non-Opportunity tables: render sequentially

@@ -427,3 +427,107 @@ export async function deleteOpportunity(opportunityId) {
     return { success: false, error: err.message };
   }
 }
+
+// --- SETTINGS TABLE ---
+const settingsCache = new Map();
+const SETTINGS_CACHE_TTL = 60000; // 1 minute cache
+
+export async function getSetting(key) {
+  if (!base || !key) return null;
+  
+  const cacheKey = key.toLowerCase();
+  const cached = settingsCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < SETTINGS_CACHE_TTL)) {
+    return cached.value;
+  }
+  
+  try {
+    const records = await base("Settings")
+      .select({
+        filterByFormula: `LOWER({Setting Key}) = "${cacheKey}"`,
+        maxRecords: 1
+      })
+      .all();
+    
+    if (records.length > 0) {
+      const value = records[0].fields["Value"] || null;
+      settingsCache.set(cacheKey, { value, timestamp: Date.now() });
+      return value;
+    }
+    return null;
+  } catch (err) {
+    console.error("getSetting error:", err.message);
+    return null;
+  }
+}
+
+export async function getAllSettings() {
+  if (!base) return {};
+  
+  try {
+    const records = await base("Settings")
+      .select({ maxRecords: 100 })
+      .all();
+    
+    const settings = {};
+    records.forEach(record => {
+      const key = record.fields["Setting Key"];
+      const value = record.fields["Value"];
+      if (key) {
+        settings[key] = value || null;
+        settingsCache.set(key.toLowerCase(), { value, timestamp: Date.now() });
+      }
+    });
+    return settings;
+  } catch (err) {
+    console.error("getAllSettings error:", err.message);
+    return {};
+  }
+}
+
+export async function updateSetting(key, value, userEmail = null) {
+  if (!base || !key) return null;
+  
+  try {
+    const records = await base("Settings")
+      .select({
+        filterByFormula: `LOWER({Setting Key}) = "${key.toLowerCase()}"`,
+        maxRecords: 1
+      })
+      .all();
+    
+    let result;
+    const updateFields = { "Value": value };
+    
+    if (userEmail) {
+      const userRecords = await base("Users")
+        .select({
+          filterByFormula: `LOWER({Email}) = "${userEmail.toLowerCase()}"`,
+          maxRecords: 1
+        })
+        .all();
+      if (userRecords.length > 0) {
+        updateFields["Last Updated By"] = [userRecords[0].id];
+      }
+    }
+    
+    if (records.length > 0) {
+      result = await base("Settings").update(records[0].id, updateFields);
+    } else {
+      result = await base("Settings").create({
+        "Setting Key": key,
+        ...updateFields
+      });
+    }
+    
+    settingsCache.set(key.toLowerCase(), { value, timestamp: Date.now() });
+    return formatRecord(result);
+  } catch (err) {
+    console.error("updateSetting error:", err.message);
+    return null;
+  }
+}
+
+export function clearSettingsCache() {
+  settingsCache.clear();
+}

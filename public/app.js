@@ -526,7 +526,7 @@
   // --- EMAIL COMPOSER ---
   let currentEmailContext = null;
   
-  // Email template links (editable, saved to localStorage)
+  // Email template links (editable, saved to Airtable Settings table for team-wide sync)
   const DEFAULT_EMAIL_LINKS = {
     officeMap: 'https://maps.app.goo.gl/qm2ohJP2j1t6GqCt9',
     ourTeam: 'https://stellaris.loans/our-team',
@@ -536,17 +536,36 @@
     incomeStatementInstructions: 'https://drive.google.com/file/d/1Y8B4zPLb_DTkV2GZnlGztm-HMfA3OWYP/view?usp=sharing'
   };
   
-  function loadEmailLinks() {
-    const saved = localStorage.getItem('emailLinks');
-    if (saved) {
-      try { return { ...DEFAULT_EMAIL_LINKS, ...JSON.parse(saved) }; }
-      catch (e) { return { ...DEFAULT_EMAIL_LINKS }; }
-    }
-    return { ...DEFAULT_EMAIL_LINKS };
+  // Settings key mapping
+  const SETTINGS_KEYS = {
+    officeMap: 'email_link_office_map',
+    ourTeam: 'email_link_our_team',
+    factFind: 'email_link_fact_find',
+    myGov: 'email_link_mygov',
+    myGovVideo: 'email_link_mygov_video',
+    incomeStatementInstructions: 'email_link_income_instructions'
+  };
+  
+  let EMAIL_LINKS = { ...DEFAULT_EMAIL_LINKS };
+  let userSignature = '';
+  let emailSettingsLoaded = false;
+  let emailQuill = null;
+  
+  function loadEmailLinksFromSettings() {
+    google.script.run.withSuccessHandler(function(settings) {
+      if (settings) {
+        Object.keys(SETTINGS_KEYS).forEach(key => {
+          const settingKey = SETTINGS_KEYS[key];
+          if (settings[settingKey]) {
+            EMAIL_LINKS[key] = settings[settingKey];
+          }
+        });
+        emailSettingsLoaded = true;
+      }
+    }).getAllSettings();
   }
   
-  let EMAIL_LINKS = loadEmailLinks();
-  let userSignature = '';
+  loadEmailLinksFromSettings();
   
   function openEmailSettings() {
     document.getElementById('settingOfficeMap').value = EMAIL_LINKS.officeMap || '';
@@ -564,29 +583,54 @@
   }
   
   function saveEmailSettings() {
-    EMAIL_LINKS.officeMap = document.getElementById('settingOfficeMap').value;
-    EMAIL_LINKS.ourTeam = document.getElementById('settingOurTeam').value;
-    EMAIL_LINKS.factFind = document.getElementById('settingFactFind').value;
-    EMAIL_LINKS.myGov = document.getElementById('settingMyGov').value;
-    EMAIL_LINKS.myGovVideo = document.getElementById('settingMyGovVideo').value;
-    EMAIL_LINKS.incomeStatementInstructions = document.getElementById('settingIncomeInstructions').value;
-    localStorage.setItem('emailLinks', JSON.stringify(EMAIL_LINKS));
+    const newLinks = {
+      officeMap: document.getElementById('settingOfficeMap').value,
+      ourTeam: document.getElementById('settingOurTeam').value,
+      factFind: document.getElementById('settingFactFind').value,
+      myGov: document.getElementById('settingMyGov').value,
+      myGovVideo: document.getElementById('settingMyGovVideo').value,
+      incomeStatementInstructions: document.getElementById('settingIncomeInstructions').value
+    };
     
-    const newSignature = document.getElementById('settingSignature').value;
-    if (newSignature !== userSignature) {
+    // Update local copy immediately
+    Object.assign(EMAIL_LINKS, newLinks);
+    
+    // Save each changed setting to Airtable
+    let saveCount = 0;
+    let savedCount = 0;
+    Object.keys(SETTINGS_KEYS).forEach(key => {
+      const settingKey = SETTINGS_KEYS[key];
+      saveCount++;
       google.script.run.withSuccessHandler(function() {
-        userSignature = newSignature;
-        updateEmailPreview();
-        showAlert('Saved', 'Settings and signature updated', 'success');
+        savedCount++;
+        if (savedCount === saveCount) {
+          checkSignatureAndClose();
+        }
       }).withFailureHandler(function(err) {
-        showAlert('Error', 'Failed to save signature: ' + err, 'error');
-      }).updateUserSignature(newSignature);
-    } else {
-      showAlert('Saved', 'Email template links updated', 'success');
-    }
+        savedCount++;
+        console.error('Failed to save setting:', settingKey, err);
+        if (savedCount === saveCount) {
+          checkSignatureAndClose();
+        }
+      }).updateSetting(settingKey, newLinks[key]);
+    });
     
-    closeEmailSettings();
-    updateEmailPreview();
+    function checkSignatureAndClose() {
+      const newSignature = document.getElementById('settingSignature').value;
+      if (newSignature !== userSignature) {
+        google.script.run.withSuccessHandler(function() {
+          userSignature = newSignature;
+          updateEmailPreview();
+          showAlert('Saved', 'Settings and signature updated for the whole team', 'success');
+        }).withFailureHandler(function(err) {
+          showAlert('Error', 'Settings saved, but signature failed: ' + err, 'error');
+        }).updateUserSignature(newSignature);
+      } else {
+        showAlert('Saved', 'Email template links updated for the whole team', 'success');
+      }
+      closeEmailSettings();
+      updateEmailPreview();
+    }
   }
   
   function loadUserSignature() {
@@ -707,6 +751,16 @@ Best wishes,
       });
     });
     
+    // Initialize Quill editor if not already done
+    if (!emailQuill && typeof Quill !== 'undefined') {
+      emailQuill = new Quill('#emailPreviewBody', {
+        modules: {
+          toolbar: '#emailQuillToolbar'
+        },
+        theme: 'snow'
+      });
+    }
+    
     updateEmailPreview();
   }
   
@@ -717,6 +771,34 @@ Best wishes,
       modal.classList.remove('visible');
       currentEmailContext = null;
     }, 250);
+  }
+  
+  function sendEmail() {
+    if (!currentEmailContext) return;
+    
+    const to = document.getElementById('emailTo').value;
+    const subject = document.getElementById('emailSubject').value;
+    // Get HTML content from Quill editor
+    const body = emailQuill ? emailQuill.root.innerHTML : document.getElementById('emailPreviewBody').innerHTML;
+    
+    const sendBtn = document.getElementById('emailSendBtn');
+    sendBtn.innerText = 'Sending...';
+    sendBtn.disabled = true;
+    
+    google.script.run.withSuccessHandler(function(result) {
+      if (result && result.success) {
+        showAlert('Success', 'Email sent successfully!', 'success');
+        closeEmailComposer();
+      } else {
+        showAlert('Error', result?.error || 'Failed to send email. Gmail API integration required.', 'error');
+      }
+      sendBtn.innerText = 'Send';
+      sendBtn.disabled = false;
+    }).withFailureHandler(function(err) {
+      showAlert('Error', 'Failed to send email: ' + (err.message || 'Gmail API integration required.'), 'error');
+      sendBtn.innerText = 'Send';
+      sendBtn.disabled = false;
+    }).sendEmail(to, subject, body);
   }
   
   function updateEmailPreview() {
@@ -762,7 +844,12 @@ Best wishes,
       body += '<br><br>' + userSignature.replace(/\n/g, '<br>');
     }
     
-    document.getElementById('emailPreviewBody').innerHTML = body;
+    // Set content in Quill editor if available, otherwise fallback to innerHTML
+    if (emailQuill) {
+      emailQuill.clipboard.dangerouslyPasteHTML(body);
+    } else {
+      document.getElementById('emailPreviewBody').innerHTML = body;
+    }
   }
   
   function replaceVariables(template, variables) {
@@ -1007,6 +1094,12 @@ Best wishes,
         if(fieldKey === 'Taco: How appt booked') {
            const otherWrap = document.getElementById('field_wrap_Taco: How Appt Booked Other');
            if (otherWrap) otherWrap.style.display = val === 'Other' ? '' : 'none';
+           // Update Appt Reminder label reactively based on Calendly selection
+           const reminderLabel = document.querySelector('label[for="input_Taco: Need Appt Reminder"]');
+           const reminderInput = document.getElementById('input_Taco: Need Appt Reminder');
+           if (reminderLabel && reminderInput && !reminderInput.checked) {
+             reminderLabel.innerText = val === 'Calendly' ? 'Not required as Calendly will do it automatically' : 'No';
+           }
         }
      }).updateRecord(table, id, fieldKey, val);
   }
@@ -1730,7 +1823,7 @@ Best wishes,
         const tacoFields = response.data.filter(item => item.tacoField);
         if (tacoFields.length > 0) {
           html += '<div class="taco-section-box">';
-          html += `<div class="taco-section-header"><img src="https://taco.insightprocessing.com.au/static/images/taco.jpg" alt="Taco"><span>Taco fields</span></div>`;
+          html += `<div class="taco-section-header"><img src="https://taco.insightprocessing.com.au/static/images/taco.jpg" alt="Taco"><span>Fields from Taco Enquiry tab</span></div>`;
           html += '<div id="tacoFieldsContainer">';
           
           // Get current values for conditional logic

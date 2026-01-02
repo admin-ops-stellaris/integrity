@@ -126,7 +126,7 @@
   .detail-value.readonly-field { cursor: help; position: relative; }
   .checkbox-field { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
   .checkbox-field input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-sky); }
-  .checkbox-field label { font-size: 13px; color: var(--color-trail); cursor: pointer; }
+  .checkbox-field label { font-size: 13px; color: var(--color-trail); cursor: pointer; text-transform: none; }
   .data-link { background: #FFF; padding: 8px 12px; margin-right: 8px; margin-bottom: 8px; border-radius: 4px; border: 1px solid #E0E0E0; font-size: 13px; font-weight: 400; color: var(--color-midnight); cursor: pointer; transition: all 0.2s; display: inline-block; text-decoration: none; }
   .data-link:hover { background: #F9F9F9; border-color: var(--color-star); }
   .back-btn { background: none; border: none; color: #666; font-size: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; padding: 0; width: auto; margin: 0; display:none; }
@@ -359,3 +359,21 @@
   .taco-field { margin-left: 12px; }
   body.dark-mode .taco-section-header { border-color: rgba(255,255,255,0.1); }
   body.dark-mode .taco-section-header span { color: #AAA; }
+
+  /* QUILL WYSIWYG EDITOR */
+  #emailQuillContainer { display: flex; flex-direction: column; flex: 1; min-height: 300px; }
+  #emailQuillToolbar { background: #F5F5F5; border: 1px solid var(--color-border); border-bottom: none; border-radius: 4px 4px 0 0; }
+  #emailPreviewBody.ql-container { border-radius: 0 0 4px 4px; font-family: var(--font-body); font-size: 13px; }
+  #emailPreviewBody .ql-editor { line-height: 1.8; padding: 20px; min-height: 200px; }
+  #emailPreviewBody .ql-editor a { color: #0066CC; text-decoration: underline; }
+  #emailPreviewBody .ql-editor a:hover { color: #004499; }
+  .ql-snow .ql-tooltip { z-index: 2000; }
+  body.dark-mode #emailQuillToolbar { background: #333; border-color: #555; }
+  body.dark-mode #emailQuillToolbar .ql-stroke { stroke: #CCC; }
+  body.dark-mode #emailQuillToolbar .ql-fill { fill: #CCC; }
+  body.dark-mode #emailQuillToolbar .ql-picker { color: #CCC; }
+  body.dark-mode #emailQuillToolbar button:hover, body.dark-mode #emailQuillToolbar button.ql-active { background: #444; }
+  body.dark-mode #emailPreviewBody.ql-container { background: #333; border-color: #555; }
+  body.dark-mode #emailPreviewBody .ql-editor { color: #E8E6E1; }
+  body.dark-mode .ql-snow .ql-tooltip { background: #333; border-color: #555; color: #E8E6E1; }
+  body.dark-mode .ql-snow .ql-tooltip input[type=text] { background: #222; border-color: #555; color: #E8E6E1; }

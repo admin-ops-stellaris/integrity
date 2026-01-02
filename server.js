@@ -679,6 +679,56 @@ app.post("/api/getRecordById", async (req, res) => {
   }
 });
 
+// --- SETTINGS API ENDPOINTS ---
+app.post("/api/getSetting", async (req, res) => {
+  try {
+    const [key] = req.body.args || [];
+    const value = await airtable.getSetting(key);
+    res.json(value);
+  } catch (err) {
+    console.error("getSetting error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getAllSettings", async (req, res) => {
+  try {
+    const settings = await airtable.getAllSettings();
+    res.json(settings);
+  } catch (err) {
+    console.error("getAllSettings error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/updateSetting", async (req, res) => {
+  try {
+    const [key, value] = req.body.args || [];
+    const userEmail = getUserEmail(req);
+    const result = await airtable.updateSetting(key, value, userEmail);
+    res.json(result);
+  } catch (err) {
+    console.error("updateSetting error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- EMAIL SENDING (placeholder for Gmail API integration) ---
+app.post("/api/sendEmail", async (req, res) => {
+  try {
+    const [to, subject, body] = req.body.args || [];
+    // TODO: Implement Gmail API integration
+    // For now, return an error indicating that Gmail API is not yet configured
+    res.json({ 
+      success: false, 
+      error: "Gmail API integration not yet configured. Please set up the Gmail connector first." 
+    });
+  } catch (err) {
+    console.error("sendEmail error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {

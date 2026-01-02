@@ -344,14 +344,33 @@
               </div>
             </div>
             <div class="email-preview-container">
-              <div class="email-preview-label">Preview</div>
-              <div id="emailPreviewBody" class="email-preview-body" contenteditable="true"></div>
+              <div class="email-preview-label">Email Body (editable)</div>
+              <div id="emailQuillContainer">
+                <div id="emailQuillToolbar">
+                  <span class="ql-formats">
+                    <button class="ql-bold"></button>
+                    <button class="ql-italic"></button>
+                    <button class="ql-underline"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-link"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-list" value="ordered"></button>
+                    <button class="ql-list" value="bullet"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-clean"></button>
+                  </span>
+                </div>
+                <div id="emailPreviewBody" class="email-preview-body"></div>
+              </div>
             </div>
           </div>
           <div class="email-composer-footer">
             <button type="button" class="btn-cancel" onclick="closeEmailComposer()">Cancel</button>
             <button type="button" class="btn-settings" onclick="openEmailSettings()" title="Edit Links & Templates">⚙</button>
-            <button type="button" class="btn-confirm" onclick="openInGmail()">Open in Gmail</button>
+            <button type="button" class="btn-confirm" onclick="sendEmail()" id="emailSendBtn">Send</button>
           </div>
         </div>
       </div>
@@ -406,10 +425,14 @@
     </div>
 
     <div style="position:fixed; bottom:5px; right:10px; font-size:10px; color:#AAA; z-index:1000; font-family:sans-serif;">
-       User: <span id="debugUser">Loading...</span> | v4.0 (Modular)
+       User: <span id="debugUser">Loading...</span> | v4.1 (Settings Sync)
     </div>
 
-    <script src="/gas-shim.js?v=4"></script>
-    <script src="/app.js?v=4"></script>
+    <!-- Quill WYSIWYG Editor -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+    <script src="/api-bridge.js?v=5"></script>
+    <script src="/app.js?v=5"></script>
   </body>
 </html>

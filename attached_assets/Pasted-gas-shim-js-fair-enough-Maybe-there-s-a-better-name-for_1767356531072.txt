@@ -1,0 +1,11 @@
+gas-shim.js - fair enough. Maybe there's a better name for it now that's more suited to why it's important? Or how does it work? In my head (just because I don't know what I'm talking about), gas-shim.js exists to bridge the gap (somehow?) between all the functions that I had in GAS, and how things need to work here, and so it would be the sort of thing that we eventually rise above, which whatever naturally makes sense instead. Or is that a poor assumption on my part? What's the point of the file, and how would you have done things differently if starting from scratch?
+
+Ok, I've made a Settings table in Airtable as you suggested. It has four fields like you suggested. Setting Key is the primary field, of type single line text. Last Updated (date) is in the format DD/MM/YYYY HH:MM (in 24 hr time).
+
+In the Users table, in the Email Signature field, I have disabled "Rich text formatting" as requested.
+
+Signature Generator: love it, let's go down this path. I have no idea how to put things in the Settings table to work with what you're thinking though, so please be prescriptive and precise in instructing me on what needs to go there for this to work.
+
+Sending Emails Directly: I do want our emailing capability from Integrity to be sophisticated, so it sounds like we're not going to be able to do even half of what we want unless we go down the path of the Gmail API Integration. Can you please tell me what becomes possible if we do that, and what is still impossible? Like, even if we go with Gmail API Integration, is there anything we still wouldn't be able to do, that we'd need to go directly to Gmail for? Is the fact that Airtable has its own Gmail integration at all useful to us here, or is that really a watered down version of the same thing?
+
+Quill: does it cost anything? How might your recommendation change down the track if we want to be able to embed video and/or have attachments to emails / any other such features? Or does the Gmail API Integration do away with the need for any of that, or the need for a WYSIWYG editor at all?

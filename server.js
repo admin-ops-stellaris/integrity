@@ -351,6 +351,25 @@ app.post("/api/parseTacoData", async (req, res) => {
       }
     }
     
+    // Auto-fill logic
+    // If Existing Client and Lead Source is empty, set to "Repeat Client"
+    if (result.parsed['Taco: New or Existing Client'] === 'Existing Client' && !result.parsed['Taco: Lead Source']) {
+      result.parsed['Taco: Lead Source'] = 'Repeat Client';
+      result.display.push({ tacoField: '(auto)', airtableField: 'Taco: Lead Source', value: 'Repeat Client' });
+    }
+    
+    // If Broker Assistant is blank, set to "Stephanie Gooch"
+    if (!result.parsed['Taco: Broker Assistant']) {
+      result.parsed['Taco: Broker Assistant'] = 'Stephanie Gooch';
+      result.display.push({ tacoField: '(auto)', airtableField: 'Taco: Broker Assistant', value: 'Stephanie Gooch' });
+    }
+    
+    // If Client Manager is blank, set to "Stephanie Gooch"
+    if (!result.parsed['Taco: Client Manager']) {
+      result.parsed['Taco: Client Manager'] = 'Stephanie Gooch';
+      result.display.push({ tacoField: '(auto)', airtableField: 'Taco: Client Manager', value: 'Stephanie Gooch' });
+    }
+    
     res.json(result);
   } catch (err) {
     console.error("parseTacoData error:", err);
@@ -475,24 +494,24 @@ const SCHEMA = {
       { key: 'Status', label: 'Status', type: 'select', options: ['Won', 'Open', 'Lost'] },
       { key: 'Opportunity Type', label: 'Opportunity Type', type: 'select', options: ['Home Loans', 'Commercial Loans', 'Deposit Bonds', 'Insurance (General)', 'Insurance (Life)', 'Personal Loans', 'Asset Finance', 'Tax Depreciation Schedule'] },
       // Taco import fields - in order as specified
-      { key: 'Taco: New or Existing Client', label: 'New or Existing Client', tacoField: true },
-      { key: 'Taco: Lead Source', label: 'Lead Source', tacoField: true },
+      { key: 'Taco: New or Existing Client', label: 'New or Existing Client', type: 'select', options: ['', 'New Client', 'Existing Client'], tacoField: true },
+      { key: 'Taco: Lead Source', label: 'Lead Source', type: 'select', options: ['', 'Repeat Client', 'Referral from existing client', 'Referral from referral partner', 'Existing referral partner', 'New referral partner', 'Social media', 'Website', 'Other'], tacoField: true },
       { key: 'Taco: Last thing we did', label: 'Last thing we did', type: 'long-text', tacoField: true },
       { key: 'Taco: How can we help', label: 'How can we help', type: 'long-text', tacoField: true },
       { key: 'Taco: CM notes', label: 'CM notes', type: 'long-text', tacoField: true },
       { key: 'Taco: Broker', label: 'Broker', tacoField: true },
       { key: 'Taco: Broker Assistant', label: 'Broker Assistant', tacoField: true },
       { key: 'Taco: Client Manager', label: 'Client Manager', tacoField: true },
-      { key: 'Taco: Converted to Appt', label: 'Converted to Appt', tacoField: true },
+      { key: 'Taco: Converted to Appt', label: 'Converted to Appt', type: 'checkbox', tacoField: true },
       { key: 'Taco: Appointment Time', label: 'Appointment Time', tacoField: true },
       { key: 'Taco: Type of Appointment', label: 'Type of Appointment', tacoField: true },
       { key: 'Taco: Appt Phone Number', label: 'Appt Phone Number', tacoField: true },
       { key: 'Taco: How appt booked', label: 'How appt booked', tacoField: true },
       { key: 'Taco: How Appt Booked Other', label: 'How Appt Booked Other', tacoField: true },
-      { key: 'Taco: Need Evidence in Advance', label: 'Need Evidence in Advance', tacoField: true },
-      { key: 'Taco: Need Appt Reminder', label: 'Need Appt Reminder', tacoField: true },
-      { key: 'Taco: Appt Conf Email Sent', label: 'Appt Conf Email Sent', tacoField: true },
-      { key: 'Taco: Appt Conf Text Sent', label: 'Appt Conf Text Sent', tacoField: true },
+      { key: 'Taco: Need Evidence in Advance', label: 'Need Evidence in Advance', type: 'checkbox', tacoField: true },
+      { key: 'Taco: Need Appt Reminder', label: 'Need Appt Reminder', type: 'checkbox', tacoField: true },
+      { key: 'Taco: Appt Conf Email Sent', label: 'Appt Conf Email Sent', type: 'checkbox', tacoField: true },
+      { key: 'Taco: Appt Conf Text Sent', label: 'Appt Conf Text Sent', type: 'checkbox', tacoField: true },
       // Other fields
       { key: 'Lead Source Major', label: 'Lead Source Major', type: 'readonly' },
       { key: 'Lead Source Minor', label: 'Lead Source Minor', type: 'readonly' },

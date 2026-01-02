@@ -863,6 +863,19 @@ Best wishes,
      }).updateRecord(table, id, fieldKey, saveVal);
   }
 
+  function saveCheckboxField(table, id, fieldKey, isChecked) {
+    const label = document.querySelector(`label[for="input_${fieldKey}"]`);
+    if (label) label.innerText = 'Saving...';
+    google.script.run.withSuccessHandler(function(res) {
+      if (label) label.innerText = isChecked ? 'Yes' : 'No';
+    }).withFailureHandler(function(err) {
+      const input = document.getElementById('input_' + fieldKey);
+      if (input) input.checked = !isChecked;
+      if (label) label.innerText = !isChecked ? 'Yes' : 'No';
+      console.error('Failed to save checkbox:', err);
+    }).updateRecord(table, id, fieldKey, isChecked);
+  }
+
   // --- LINKED RECORD EDITOR (TAGS) ---
   function toggleLinkedEdit(key) {
      document.getElementById('view_' + key).style.display = 'none';
@@ -1465,6 +1478,12 @@ Best wishes,
             else { displayVal = rawVal; inputVal = rawVal; }
           }
           return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="date" id="input_${item.key}" value="${inputVal}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveDateField('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.type === 'checkbox') {
+          const isChecked = item.value === true || item.value === 'true' || item.value === 'Yes';
+          const displayVal = isChecked ? '✓' : '–';
+          const checkedAttr = isChecked ? 'checked' : '';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="checkbox-field"><input type="checkbox" id="input_${item.key}" ${checkedAttr} onchange="saveCheckboxField('${tbl}', '${recId}', '${item.key}', this.checked)"><label for="input_${item.key}">${isChecked ? 'Yes' : 'No'}</label></div></div>`;
         }
         if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {
           let linkHtml = '';

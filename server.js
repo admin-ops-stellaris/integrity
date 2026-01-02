@@ -163,7 +163,30 @@ app.get("/api/health", (req, res) => {
 });
 
 app.post("/api/getEffectiveUserEmail", (req, res) => {
-  res.json(req.session?.user?.email || "unknown@example.com");
+  res.json(req.session?.user?.email || "admin.ops@stellaris.loans");
+});
+
+app.post("/api/getUserSignature", async (req, res) => {
+  try {
+    const email = req.session?.user?.email || "admin.ops@stellaris.loans";
+    const result = await airtable.getUserSignature(email);
+    res.json(result);
+  } catch (err) {
+    console.error("getUserSignature error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/updateUserSignature", async (req, res) => {
+  try {
+    const email = req.session?.user?.email || "admin.ops@stellaris.loans";
+    const [signature] = req.body.args || [];
+    const result = await airtable.updateUserSignature(email, signature);
+    res.json(result);
+  } catch (err) {
+    console.error("updateUserSignature error:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post("/api/getRecentContacts", async (req, res) => {

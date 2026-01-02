@@ -242,6 +242,10 @@
     closeModal('shortcutsModal');
   }
   
+  function closeNewOppModal() {
+    closeModal('newOppModal');
+  }
+  
   document.addEventListener('click', function(e) {
     const shortcutsModal = document.getElementById('shortcutsModal');
     if (shortcutsModal && e.target === shortcutsModal) closeShortcutsModal();
@@ -542,6 +546,7 @@
   }
   
   let EMAIL_LINKS = loadEmailLinks();
+  let userSignature = '';
   
   function openEmailSettings() {
     document.getElementById('settingOfficeMap').value = EMAIL_LINKS.officeMap || '';
@@ -550,6 +555,7 @@
     document.getElementById('settingMyGov').value = EMAIL_LINKS.myGov || '';
     document.getElementById('settingMyGovVideo').value = EMAIL_LINKS.myGovVideo || '';
     document.getElementById('settingIncomeInstructions').value = EMAIL_LINKS.incomeStatementInstructions || '';
+    document.getElementById('settingSignature').value = userSignature || '';
     openModal('emailSettingsModal');
   }
   
@@ -565,10 +571,33 @@
     EMAIL_LINKS.myGovVideo = document.getElementById('settingMyGovVideo').value;
     EMAIL_LINKS.incomeStatementInstructions = document.getElementById('settingIncomeInstructions').value;
     localStorage.setItem('emailLinks', JSON.stringify(EMAIL_LINKS));
+    
+    const newSignature = document.getElementById('settingSignature').value;
+    if (newSignature !== userSignature) {
+      google.script.run.withSuccessHandler(function() {
+        userSignature = newSignature;
+        updateEmailPreview();
+        showAlert('Saved', 'Settings and signature updated', 'success');
+      }).withFailureHandler(function(err) {
+        showAlert('Error', 'Failed to save signature: ' + err, 'error');
+      }).updateUserSignature(newSignature);
+    } else {
+      showAlert('Saved', 'Email template links updated', 'success');
+    }
+    
     closeEmailSettings();
     updateEmailPreview();
-    showAlert('Saved', 'Email template links updated', 'success');
   }
+  
+  function loadUserSignature() {
+    google.script.run.withSuccessHandler(function(result) {
+      if (result && result.signature) {
+        userSignature = result.signature;
+      }
+    }).getUserSignature();
+  }
+  
+  loadUserSignature();
   
   const EMAIL_TEMPLATE = {
     subject: {
@@ -728,6 +757,10 @@ Best wishes,
     body += replaceVariables(EMAIL_TEMPLATE.meetLine[clientType], variables) + '<br><br>';
     body += replaceVariables(EMAIL_TEMPLATE.preparation[prepHandler], variables) + '<br><br>';
     body += replaceVariables(EMAIL_TEMPLATE.closing[clientType], variables);
+    
+    if (userSignature) {
+      body += '<br><br>' + userSignature.replace(/\n/g, '<br>');
+    }
     
     document.getElementById('emailPreviewBody').innerHTML = body;
   }

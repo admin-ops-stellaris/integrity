@@ -90,8 +90,11 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Port 5000 used consistently across all environments
 
 ## Recent Changes
+- January 2, 2026: User signature storage - signatures stored in Airtable Users table ("Email Signature" field), syncs across all devices, edited via email settings modal
+- January 2, 2026: WYSIWYG email editor - actual clickable HTML links in preview (Office, here, Fact Find, myGov, video, instructions), editable contenteditable preview, converts to plain text with URLs when opening Gmail
+- January 2, 2026: Calendly integration - "Need Appt Reminder" checkbox shows "Not required as Calendly will do it automatically" when How Appt Booked = Calendly
 - January 2, 2026: Email composer enhancements - Cedar header color, auto-populates To field with Primary Applicant + Applicants emails, clickable links for Office (Google Maps), Our Team, Fact Find, myGov, help video, and instructions; settings modal (gear icon) to edit all links, saved to localStorage
-- January 2, 2026: Taco section visual improvements - rounded box with sky blue background, removed edit pencil icons, auto-hide past appointment details with expandable notice
+- January 2, 2026: Taco section visual improvements - Taco Fields heading moved inside blue box, rounded box with sky blue background, removed edit pencil icons, auto-hide past appointment details with expandable notice
 - January 2, 2026: Email composer - built-in appointment confirmation email composer with dynamic templates, variable substitution, conditional logic (appointment type, new/repeat client, prep handler), live preview, and Gmail integration
 - January 2, 2026: Delete Opportunity feature - checks for connections (Primary Applicant, Applicants, Guarantors, Loan Applications, Tasks) before allowing deletion
 - January 2, 2026: Fixed Taco field capitalization - corrected field names to match Airtable exactly (Last thing we did, How appt booked, Taco Client Manager)

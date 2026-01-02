@@ -38,18 +38,69 @@ export async function getUserProfileByEmail(email) {
     
     if (records.length > 0) {
       const profile = {
+        id: records[0].id,
         name: records[0].fields["Name"] || null,
-        email: email
+        email: email,
+        signature: records[0].fields["Email Signature"] || null
       };
       userProfileCache.set(cacheKey, profile);
       return profile;
     }
     
     console.warn(`User not found in Users table for email: ${email}`);
-    return { name: null, email: email };
+    return { name: null, email: email, signature: null };
   } catch (err) {
     console.error("getUserProfileByEmail error:", err.message);
-    return { name: null, email: email };
+    return { name: null, email: email, signature: null };
+  }
+}
+
+export async function getUserSignature(email) {
+  if (!base || !email) return null;
+  
+  try {
+    const records = await base("Users")
+      .select({
+        filterByFormula: `LOWER({Email}) = "${email.toLowerCase()}"`,
+        maxRecords: 1
+      })
+      .all();
+    
+    if (records.length > 0) {
+      return {
+        id: records[0].id,
+        signature: records[0].fields["Email Signature"] || ""
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error("getUserSignature error:", err.message);
+    return null;
+  }
+}
+
+export async function updateUserSignature(email, signature) {
+  if (!base || !email) return null;
+  
+  try {
+    const records = await base("Users")
+      .select({
+        filterByFormula: `LOWER({Email}) = "${email.toLowerCase()}"`,
+        maxRecords: 1
+      })
+      .all();
+    
+    if (records.length > 0) {
+      const updated = await base("Users").update(records[0].id, {
+        "Email Signature": signature
+      });
+      userProfileCache.delete(email.toLowerCase());
+      return formatRecord(updated);
+    }
+    return null;
+  } catch (err) {
+    console.error("updateUserSignature error:", err.message);
+    return null;
   }
 }
 

@@ -681,20 +681,48 @@
     const name = currentUserProfile.name || 'Your Name';
     const title = currentUserProfile.title || 'Your Title';
     
-    // Team-wide signature template - pull from Settings in future
-    const signatureHtml = `
-<div style="font-family: Arial, sans-serif; font-size: 13px; color: #333;">
-  <div style="font-weight: bold; color: #1a5276;">${name}</div>
-  <div style="color: #666; font-size: 12px;">${title}</div>
-  <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
-    <div style="color: #333;">Stellaris Finance Broking</div>
-    <div style="font-size: 11px; color: #666;">18 / 56 Creaney Drive, Kingsley WA 6026</div>
-    <div style="font-size: 11px; color: #666;">Phone: 0488 839 212</div>
-    <div style="font-size: 11px; margin-top: 4px;">
-      <a href="https://stellaris.loans" style="color: #1a5276; text-decoration: none;">stellaris.loans</a>
-    </div>
-  </div>
-</div>`.trim();
+    // Exact team-wide signature template - Mercury/Gmail compatible
+    const signatureHtml = `<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: 10pt; color: #333333;">
+    <tbody>
+        <tr>
+            <td style="padding-bottom: 10px; line-height: 1.5;">
+                Best wishes,<br><br>
+                <strong style="font-size: 11pt;">${name}</strong><br>
+                <strong>${title}</strong><br>
+                <strong>Stellaris Finance Broking</strong>
+            </td>
+        </tr>
+        <tr>
+            <td style="line-height: 1.5;">
+                Phone: 0488 839 212<br>
+                Office: Suite 18 / 56 Creaney Drive, Kingsley WA 6026<br>
+                Website: <a href="https://www.stellaris.loans" target="_blank" style="color: #1155cc; text-decoration: none;">www.stellaris.loans</a><br>
+                Book an Appointment with Tim: <a href="https://calendly.com/tim-kerin" target="_blank" style="color: #1155cc; text-decoration: none;">calendly.com/tim-kerin</a>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding-top: 15px;">
+                <img 
+                    src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/WEB_Stellaris_Email%20Signature_Midnight.png" 
+                    alt="Stellaris Finance Broking Email Signature Graphic" 
+                    width="320" 
+                    height="104" 
+                    style="display: block; border: 0; width: 320px; height: 104px;">
+            </td>
+        </tr>
+        <tr>
+            <td style="padding-top: 20px; font-size: 9pt; font-style: italic; color: #888888; line-height: 1.4;">
+                Credit Representative 379175 is authorised under Australian Credit Licence 389328
+                <br><br>
+                <strong>Confidentiality Notice</strong><br>
+                This email and its attachments are confidential and intended for the recipient only. If you are not the intended recipient, please notify us and delete this message. Unauthorized use, dissemination, or copying is prohibited. The views expressed are those of the sender unless stated otherwise. We do not guarantee that attachments are free from viruses; the user assumes all responsibility for any resulting damage. We value your privacy. Your information may be used to provide financial services and may be shared with third parties as required by law.
+                <br><br>
+                <strong>Important Notice</strong><br>
+                We will never ask you to transfer money or make payments via email. If you receive any such requests, please do not respond and contact us directly before taking any action. Your security is our priority. More information on identifying and protecting yourself from phishing attacks generally can be found on the government's ScamWatch website, www.scamwatch.gov.au.
+            </td>
+        </tr>
+    </tbody>
+</table>`;
     
     generatedSignatureHtml = signatureHtml;
     document.getElementById('sigGenPreview').innerHTML = signatureHtml;

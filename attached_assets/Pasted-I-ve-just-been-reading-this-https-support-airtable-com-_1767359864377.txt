@@ -1,0 +1,56 @@
+I've just been reading this: https://support.airtable.com/docs/managing-api-call-limits-in-airtable
+
+I'm on the Teams plan at the moment, so I'm limited to 100,000 API calls a month. Should we be concerned at all, about approaching this limit, or what might happen if we send more than 5 requests per second or anything like that?
+
+I integrated my gmail account as you requested, and you went and set that up, which means it will likely work nicely here in the Preview pane, but I'm only one of the users. What's going to happen when any of the other users try to send email like this, not from within the Replit preview but from the actual site (integrity-prod.fly.dev) once I push everything to GitHub and then to Fly? What else do I need to do to make it work, if anything? If there's anything to do, I'm going to need to probably get Gemini to step me through it. If so, please write me a prompt that I can give to Gemini so that it knows what the problem is and is able to deliver me a step-by-step solution, treating me like I know basically nothing about this.
+
+
+Regarding the email signature, here is the EXACT HTML that we had previously decided worked perfectly for one of our team, designed to be pasted to Mercury. Can you please go through that and make sure that all signatures everywhere specifically follow this format and style without any variation whatsoever?
+
+
+<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: 10pt; color: #333333;">
+    <tbody>
+        <tr>
+            <td style="padding-bottom: 10px; line-height: 1.5;">
+                Best wishes,<br><br>
+                <strong style="font-size: 11pt;">Shae Aiello</strong><br>
+                <strong>Chief Amazement Officer</strong><br>
+                <strong>Stellaris Finance Broking</strong>
+            </td>
+        </tr>
+        <tr>
+            <td style="line-height: 1.5;">
+                Phone: 0488 839 212<br>
+                Office: Suite 18 / 56 Creaney Drive, Kingsley WA 6026<br>
+                Website: <a href="www.stellaris.loans" target="_blank" style="color: #1155cc; text-decoration: none;">www.stellaris.loans</a><br>
+                Book an Appointment with Tim: <a href="calendly.com/tim-kerin" target="_blank" style="color: #1155cc; text-decoration: none;">calendly.com/tim-kerin</a>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding-top: 15px;">
+                <img 
+                    src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/WEB_Stellaris_Email%20Signature_Midnight.png" 
+                    alt="Stellaris Finance Broking Email Signature Graphic" 
+                    width="320" 
+                    height="104" 
+                    style="display: block; border: 0; width: 320px; height: 104px;">
+            </td>
+        </tr>
+        <tr>
+            <td style="padding-top: 20px; font-size: 9pt; font-style: italic; color: #888888; line-height: 1.4;">
+                Credit Representative 379175 is authorised under Australian Credit Licence 389328
+                <br><br>
+                <strong>Confidentiality Notice</strong><br>
+                This email and its attachments are confidential and intended for the recipient only. If you are not the intended recipient, please notify us and delete this message. Unauthorized use, dissemination, or copying is prohibited. The views expressed are those of the sender unless stated otherwise. We do not guarantee that attachments are free from viruses; the user assumes all responsibility for any resulting damage. We value your privacy. Your information may be used to assist with your credit needs and to send product information. We share data with our credit licensee (Connective Credit Services Pty Ltd ABN 51 143 651 496) and necessary third parties, but we do not sell or rent your data. For access to your information or to view our Privacy Policy, please contact your broker or visit our website. By engaging with us, you consent to the collection and use of your information as described. For more on your privacy rights, visit www.oaic.gov.au.
+                <br><br>
+                <strong>Important Notice</strong><br>
+                We will never ask you to transfer money or make payments via email. If you receive any such requests, please do not respond and contact us directly before taking any action. Your security is our priority. More information on identifying and protecting yourself from phishing attacks generally can be found on the government's ScamWatch website, www.scamwatch.gov.au.
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+
+In the Quill WYSIWYG editor, when I typed some text and then clicked the button to make it a link, the dialog that came up was at least partly too far out to the left to be visible, so I'm not really sure how it works. Can you please put it in a better place?
+
+In the signature generator, the modal is just too small - please make it bigger overall. When I click Generate, I can only see a ridiculously thin field to display the signature (which means I therefore can't see any of it).

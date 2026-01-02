@@ -99,6 +99,9 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - services/gmail.js handles token refresh and email composition
 
 ## Recent Changes
+- January 2, 2026: Signature template updated - exact Mercury/Gmail-compatible HTML with logo, disclaimers, Calendly link
+- January 2, 2026: Signature generator modal enlarged - 800px width, 300px min-height preview for full visibility
+- January 2, 2026: Quill link dialog centered - positioned at center of editor instead of off-screen left
 - January 2, 2026: Gmail API integration - emails sent directly from app appear in user's Gmail Sent folder
 - January 2, 2026: Quill WYSIWYG editor - full rich text editing with bold, italic, underline, links, lists
 - January 2, 2026: Signature generator - pulls Name and Title from Users table, generates HTML signature, copy buttons for Gmail and Mercury

@@ -367,7 +367,7 @@
   #emailPreviewBody .ql-editor { line-height: 1.8; padding: 20px; min-height: 200px; }
   #emailPreviewBody .ql-editor a { color: #0066CC; text-decoration: underline; }
   #emailPreviewBody .ql-editor a:hover { color: #004499; }
-  .ql-snow .ql-tooltip { z-index: 2000; }
+  .ql-snow .ql-tooltip { z-index: 2000; left: 50% !important; transform: translateX(-50%); top: 10px !important; right: auto !important; }
   body.dark-mode #emailQuillToolbar { background: #333; border-color: #555; }
   body.dark-mode #emailQuillToolbar .ql-stroke { stroke: #CCC; }
   body.dark-mode #emailQuillToolbar .ql-fill { fill: #CCC; }

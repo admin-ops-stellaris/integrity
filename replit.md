@@ -7,13 +7,14 @@ Integrity is a Stellaris Finance Broking contact management system (CRM). Origin
 ```
 ├── server.js              # Express server with Google OAuth and API endpoints
 ├── services/
-│   └── airtable.js        # Airtable API integration layer
+│   ├── airtable.js        # Airtable API integration layer
+│   └── gmail.js           # Gmail API integration for sending emails
 ├── data.js                # Legacy mock data store (not used in production)
 ├── public/                # Static frontend files
 │   ├── index.html         # Main HTML page
 │   ├── styles.css         # Stylesheet (with custom font definitions)
 │   ├── app.js             # Frontend JavaScript (CRM logic)
-│   ├── gas-shim.js        # Google Apps Script compatibility layer
+│   ├── api-bridge.js      # API bridge layer (converts google.script.run to fetch)
 │   └── fonts/             # Custom fonts (Geist, Libre Baskerville)
 ├── Dockerfile             # Docker configuration for Fly.io deployment
 ├── fly.toml               # Fly.io deployment configuration
@@ -62,9 +63,10 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 
 ## Airtable Integration
 - Uses official Airtable SDK
-- Tables: Contacts, Opportunities, Spouse History, Spouse History Log, Users
+- Tables: Contacts, Opportunities, Spouse History, Spouse History Log, Users, Settings
 - All CRUD operations go through services/airtable.js
 - Graceful error handling with console logging
+- Settings table stores team-wide configuration (email links, signature templates)
 
 ### Spouse Connection Workflow
 - Spouse connections/disconnections are managed via Airtable automations
@@ -80,16 +82,30 @@ All API endpoints use POST method with JSON body `{ args: [...] }`:
 - Taco fields stored in Opportunities (in order): New or Existing Client, Lead Source, Last Thing We Did, How can we help, CM notes, Broker, Broker Assistant, Client Manager, Converted to Appt, Appointment Time, Type of Appointment, Appt Phone Number, How Appt Booked, How Appt Booked Other, Need Evidence in Advance, Need Appt Reminder, Appt Conf Email Sent, Appt Conf Text Sent
 
 ## Technical Notes
-- The `gas-shim.js` provides Google Apps Script compatibility, converting `google.script.run` calls to fetch API requests
-- The shim captures handlers per-call to prevent race conditions with concurrent API calls
+- The `api-bridge.js` (formerly gas-shim.js) provides Google Apps Script compatibility, converting `google.script.run` calls to fetch API requests
+- The bridge captures handlers per-call to prevent race conditions with concurrent API calls
 - Cache-control headers prevent caching issues in Replit's iframe preview
+- Quill.js WYSIWYG editor is used for rich text email composition
 
 ## Deployment
 - **Development**: Replit with AUTH_DISABLED=true
 - **Production**: Fly.io with full OAuth enabled
 - Port 5000 used consistently across all environments
 
+## Gmail API Integration
+- Uses Replit Gmail connector for OAuth token management
+- Emails sent via Gmail API appear in user's Sent folder
+- HTML emails with rich formatting supported
+- services/gmail.js handles token refresh and email composition
+
 ## Recent Changes
+- January 2, 2026: Gmail API integration - emails sent directly from app appear in user's Gmail Sent folder
+- January 2, 2026: Quill WYSIWYG editor - full rich text editing with bold, italic, underline, links, lists
+- January 2, 2026: Signature generator - pulls Name and Title from Users table, generates HTML signature, copy buttons for Gmail and Mercury
+- January 2, 2026: Settings table - team-wide email link storage in Airtable, syncs across all team members
+- January 2, 2026: Renamed gas-shim.js to api-bridge.js for clarity
+- January 2, 2026: "Fields from Taco Enquiry tab" heading replaces old "Taco Fields"
+- January 2, 2026: Calendly checkbox text now proper case and updates reactively
 - January 2, 2026: User signature storage - signatures stored in Airtable Users table ("Email Signature" field), syncs across all devices, edited via email settings modal
 - January 2, 2026: WYSIWYG email editor - actual clickable HTML links in preview (Office, here, Fact Find, myGov, video, instructions), editable contenteditable preview, converts to plain text with URLs when opening Gmail
 - January 2, 2026: Calendly integration - "Need Appt Reminder" checkbox shows "Not required as Calendly will do it automatically" when How Appt Booked = Calendly

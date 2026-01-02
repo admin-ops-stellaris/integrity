@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { Issuer, generators } from "openid-client";
 import * as airtable from "./services/airtable.js";
+import * as gmail from "./services/gmail.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -713,19 +714,18 @@ app.post("/api/updateSetting", async (req, res) => {
   }
 });
 
-// --- EMAIL SENDING (placeholder for Gmail API integration) ---
+// --- EMAIL SENDING via Gmail API ---
 app.post("/api/sendEmail", async (req, res) => {
   try {
     const [to, subject, body] = req.body.args || [];
-    // TODO: Implement Gmail API integration
-    // For now, return an error indicating that Gmail API is not yet configured
-    res.json({ 
-      success: false, 
-      error: "Gmail API integration not yet configured. Please set up the Gmail connector first." 
-    });
+    if (!to || !subject || !body) {
+      return res.json({ success: false, error: "Missing required fields: to, subject, or body" });
+    }
+    const result = await gmail.sendEmail(to, subject, body);
+    res.json(result);
   } catch (err) {
     console.error("sendEmail error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

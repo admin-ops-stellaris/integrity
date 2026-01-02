@@ -41,6 +41,7 @@ export async function getUserProfileByEmail(email) {
         id: records[0].id,
         name: records[0].fields["Name"] || null,
         email: email,
+        title: records[0].fields["Title"] || null,
         signature: records[0].fields["Email Signature"] || null
       };
       userProfileCache.set(cacheKey, profile);
@@ -48,10 +49,10 @@ export async function getUserProfileByEmail(email) {
     }
     
     console.warn(`User not found in Users table for email: ${email}`);
-    return { name: null, email: email, signature: null };
+    return { name: null, email: email, title: null, signature: null };
   } catch (err) {
     console.error("getUserProfileByEmail error:", err.message);
-    return { name: null, email: email, signature: null };
+    return { name: null, email: email, title: null, signature: null };
   }
 }
 
@@ -69,6 +70,8 @@ export async function getUserSignature(email) {
     if (records.length > 0) {
       return {
         id: records[0].id,
+        name: records[0].fields["Name"] || "",
+        title: records[0].fields["Title"] || "",
         signature: records[0].fields["Email Signature"] || ""
       };
     }

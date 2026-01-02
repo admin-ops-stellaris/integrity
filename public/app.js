@@ -633,15 +633,135 @@
     }
   }
   
+  let currentUserProfile = null;
+  
   function loadUserSignature() {
     google.script.run.withSuccessHandler(function(result) {
-      if (result && result.signature) {
-        userSignature = result.signature;
+      if (result) {
+        currentUserProfile = result;
+        if (result.signature) {
+          userSignature = result.signature;
+        }
       }
     }).getUserSignature();
   }
   
   loadUserSignature();
+  
+  // --- SIGNATURE GENERATOR ---
+  let generatedSignatureHtml = '';
+  
+  function openSignatureGenerator() {
+    openModal('signatureGeneratorModal');
+    
+    // Load user info
+    if (currentUserProfile) {
+      document.getElementById('sigGenName').innerText = currentUserProfile.name || 'Not set';
+      document.getElementById('sigGenTitle').innerText = currentUserProfile.title || 'Not set';
+      generateSignaturePreview();
+    } else {
+      google.script.run.withSuccessHandler(function(result) {
+        if (result) {
+          currentUserProfile = result;
+          document.getElementById('sigGenName').innerText = result.name || 'Not set';
+          document.getElementById('sigGenTitle').innerText = result.title || 'Not set';
+          generateSignaturePreview();
+        }
+      }).getUserSignature();
+    }
+  }
+  
+  function closeSignatureGenerator() {
+    closeModal('signatureGeneratorModal');
+  }
+  
+  function generateSignaturePreview() {
+    if (!currentUserProfile) return;
+    
+    const name = currentUserProfile.name || 'Your Name';
+    const title = currentUserProfile.title || 'Your Title';
+    
+    // Team-wide signature template - pull from Settings in future
+    const signatureHtml = `
+<div style="font-family: Arial, sans-serif; font-size: 13px; color: #333;">
+  <div style="font-weight: bold; color: #1a5276;">${name}</div>
+  <div style="color: #666; font-size: 12px;">${title}</div>
+  <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
+    <div style="color: #333;">Stellaris Finance Broking</div>
+    <div style="font-size: 11px; color: #666;">18 / 56 Creaney Drive, Kingsley WA 6026</div>
+    <div style="font-size: 11px; color: #666;">Phone: 0488 839 212</div>
+    <div style="font-size: 11px; margin-top: 4px;">
+      <a href="https://stellaris.loans" style="color: #1a5276; text-decoration: none;">stellaris.loans</a>
+    </div>
+  </div>
+</div>`.trim();
+    
+    generatedSignatureHtml = signatureHtml;
+    document.getElementById('sigGenPreview').innerHTML = signatureHtml;
+    document.getElementById('sigGenHtml').value = signatureHtml;
+  }
+  
+  async function copySignatureForGmail() {
+    const previewEl = document.getElementById('sigGenPreview');
+    
+    try {
+      // Try Clipboard API with HTML blob (for rich text)
+      if (navigator.clipboard && navigator.clipboard.write) {
+        const htmlBlob = new Blob([generatedSignatureHtml], { type: 'text/html' });
+        const textBlob = new Blob([previewEl.innerText], { type: 'text/plain' });
+        const clipboardItem = new ClipboardItem({
+          'text/html': htmlBlob,
+          'text/plain': textBlob
+        });
+        await navigator.clipboard.write([clipboardItem]);
+        showAlert('Copied!', 'Signature copied as formatted text. Paste it directly into Gmail signature settings.', 'success');
+      } else {
+        // Fallback: copy HTML as plain text
+        await navigator.clipboard.writeText(generatedSignatureHtml);
+        showAlert('Copied!', 'HTML copied to clipboard. Paste it into Gmail signature settings.', 'success');
+      }
+    } catch (err) {
+      // Last resort fallback
+      const range = document.createRange();
+      range.selectNodeContents(previewEl);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand('copy');
+      selection.removeAllRanges();
+      showAlert('Copied!', 'Signature copied. Paste it into Gmail signature settings.', 'success');
+    }
+  }
+  
+  async function copySignatureForMercury() {
+    const previewEl = document.getElementById('sigGenPreview');
+    const plainText = previewEl.innerText;
+    
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(plainText);
+        showAlert('Copied!', 'Signature copied for Mercury. Paste it into your Mercury signature settings.', 'success');
+      } else {
+        throw new Error('Clipboard API not available');
+      }
+    } catch (err) {
+      // Fallback
+      const range = document.createRange();
+      range.selectNodeContents(previewEl);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand('copy');
+      selection.removeAllRanges();
+      showAlert('Copied!', 'Signature copied. Paste it into Mercury settings.', 'success');
+    }
+  }
+  
+  function useGeneratedSignature() {
+    document.getElementById('settingSignature').value = generatedSignatureHtml;
+    closeSignatureGenerator();
+    showAlert('Applied!', 'Signature added to your settings. Click Save to store it in Airtable.', 'success');
+  }
   
   const EMAIL_TEMPLATE = {
     subject: {

@@ -345,6 +345,7 @@
   .email-settings-form .setting-row label { font-size: 12px; font-weight: 500; color: var(--color-midnight); }
   .email-settings-form .setting-row input { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 13px; font-family: var(--font-body); width: 100%; box-sizing: border-box; }
   .email-settings-form .setting-row textarea { width: 100%; box-sizing: border-box; }
+  .email-settings-form .setting-row button { width: auto; margin-top: 0; }
   .dark-mode .email-settings-form .setting-row label { color: var(--color-salt); }
   .dark-mode .email-settings-form .setting-row input { background: #444; border-color: #555; color: #FFF; }
   body.dark-mode .email-composer-content { background: #242424; }

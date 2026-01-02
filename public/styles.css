@@ -215,7 +215,7 @@
   .modal.showing .modal-content { transform: scale(1); }
   .modal-sidebar { width: 100px; background: var(--color-trail); display: flex; align-items: center; justify-content: center; flex-direction: column; }
   .modal-sidebar img { width: 48px; height: auto; opacity: 0.9; }
-  .modal-body { flex: 1; padding: 30px; display: flex; flex-direction: column; position: relative; }
+  .modal-body { flex: 1; padding: 30px; display: flex; flex-direction: column; position: relative; min-width: 0; overflow: hidden; }
   .search-dropdown { border: 1px solid #DDD; max-height: 150px; overflow-y: auto; margin-top: 5px; display: none; border-radius: 4px; }
   .search-option { padding: 10px; cursor: pointer; border-bottom: 1px solid #EEE; }
   .search-option:hover { background-color: #F5F5F5; }
@@ -340,10 +340,11 @@
   .email-composer-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid var(--color-border); background: #F5F5F5; }
   .btn-settings { background: transparent; border: 1px solid var(--color-border); color: var(--color-midnight); padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
   .btn-settings:hover { background: var(--color-border); }
-  .email-settings-form { display: flex; flex-direction: column; gap: 12px; }
-  .email-settings-form .setting-row { display: flex; flex-direction: column; gap: 4px; }
+  .email-settings-form { display: flex; flex-direction: column; gap: 12px; width: 100%; min-width: 0; }
+  .email-settings-form .setting-row { display: flex; flex-direction: column; gap: 4px; width: 100%; min-width: 0; }
   .email-settings-form .setting-row label { font-size: 12px; font-weight: 500; color: var(--color-midnight); }
-  .email-settings-form .setting-row input { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 13px; font-family: var(--font-body); }
+  .email-settings-form .setting-row input { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 13px; font-family: var(--font-body); width: 100%; box-sizing: border-box; }
+  .email-settings-form .setting-row textarea { width: 100%; box-sizing: border-box; }
   .dark-mode .email-settings-form .setting-row label { color: var(--color-salt); }
   .dark-mode .email-settings-form .setting-row input { background: #444; border-color: #555; color: #FFF; }
   body.dark-mode .email-composer-content { background: #242424; }

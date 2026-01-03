@@ -1316,7 +1316,8 @@ Best wishes,
     const subjectText = templateSubjectQuill.getText().trim();
     const bodyHtml = templateEditorQuill.root.innerHTML;
     
-    const context = templatePreviewContext || SAMPLE_PREVIEW_DATA;
+    // Build context with control overrides
+    const context = getPreviewContextWithOverrides();
     
     // Render subject (plain text)
     const renderedSubject = renderWithMissingIndicators(subjectText, context);
@@ -1325,6 +1326,56 @@ Best wishes,
     // Render body (HTML with conditionals)
     const renderedBody = renderBodyWithMissingIndicators(bodyHtml, context);
     document.getElementById('templatePreviewBody').innerHTML = renderedBody;
+  }
+  
+  // Get preview context with overrides from control dropdowns
+  function getPreviewContextWithOverrides() {
+    const baseContext = templatePreviewContext || SAMPLE_PREVIEW_DATA;
+    
+    // Read override values from controls
+    const apptTypeEl = document.getElementById('previewApptType');
+    const clientTypeEl = document.getElementById('previewClientType');
+    const prepHandlerEl = document.getElementById('previewPrepHandler');
+    
+    const appointmentType = apptTypeEl ? apptTypeEl.value : baseContext.appointmentType;
+    const clientType = clientTypeEl ? clientTypeEl.value : baseContext.clientType;
+    const prepHandler = prepHandlerEl ? prepHandlerEl.value : baseContext.prepHandler;
+    
+    // Compute derived values based on overrides
+    const brokerIntro = clientType === 'New' 
+      ? `our Mortgage Broker ${baseContext.broker}`
+      : baseContext.brokerFirst;
+    
+    const prefillNote = clientType === 'Repeat' 
+      ? ' I have prefilled as much as I can using the information we previously received from you.'
+      : '';
+    
+    return {
+      ...baseContext,
+      appointmentType,
+      clientType,
+      prepHandler,
+      brokerIntro,
+      prefillNote
+    };
+  }
+  
+  // Called when preview control dropdowns change
+  function updateTemplatePreviewFromControls() {
+    renderTemplatePreview();
+  }
+  
+  // Initialize preview controls with current context values
+  function initializePreviewControls() {
+    const context = templatePreviewContext || SAMPLE_PREVIEW_DATA;
+    
+    const apptTypeEl = document.getElementById('previewApptType');
+    const clientTypeEl = document.getElementById('previewClientType');
+    const prepHandlerEl = document.getElementById('previewPrepHandler');
+    
+    if (apptTypeEl) apptTypeEl.value = context.appointmentType || 'Office';
+    if (clientTypeEl) clientTypeEl.value = context.clientType || 'New';
+    if (prepHandlerEl) prepHandlerEl.value = context.prepHandler || 'Team';
   }
   
   // Render template text with missing variable indicators
@@ -1521,7 +1572,8 @@ Best wishes,
     modal.style.display = 'flex';
     setTimeout(() => {
       modal.classList.add('showing');
-      // Render initial preview
+      // Initialize controls and render preview
+      initializePreviewControls();
       setTimeout(renderTemplatePreview, 100);
     }, 10);
   }

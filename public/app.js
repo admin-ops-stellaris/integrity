@@ -2408,9 +2408,10 @@ Best wishes,
           
           html += `<div class="appointment-item subsequent-appt ${expandedClass}" data-appt-id="${appt.id}">`;
           
-          // Collapsible header - aligned with fields below
+          // Collapsible header - "Appointment:" label, then time/type aligned with columns below, status badge on right
           html += `<div class="appointment-item-header appointment-header-grid" onclick="toggleAppointmentExpand('${appt.id}')">`;
           html += `<span class="appointment-item-chevron">▶</span>`;
+          html += `<span class="appt-header-label">Appointment:</span>`;
           html += `<span class="appt-header-time">${formatDatetimeForDisplay(appt.appointmentTime)}</span>`;
           html += `<span class="appt-header-type">${appt.typeOfAppointment || '-'}</span>`;
           html += `<span class="appointment-status ${statusClass}">${status}</span>`;

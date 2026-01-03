@@ -179,10 +179,14 @@ export async function getContactById(id) {
 
 function parseModifiedDate(modifiedText) {
   if (!modifiedText) return new Date(0);
+  // Match "HH:MM DD/MM/YYYY" format from Perth timezone (GMT+8)
   const match = modifiedText.match(/(\d{2}):(\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
   if (match) {
     const [, hours, mins, day, month, year] = match;
-    return new Date(year, month - 1, day, hours, mins);
+    // Create UTC timestamp and subtract 8 hours to convert Perth time to UTC
+    const utcMs = Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(mins));
+    const perthOffsetMs = 8 * 60 * 60 * 1000; // GMT+8
+    return new Date(utcMs - perthOffsetMs);
   }
   return new Date(0);
 }

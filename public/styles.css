@@ -490,9 +490,9 @@
   body.dark-mode .ql-snow .ql-tooltip input[type=text] { background: #222; border-color: #555; color: #E8E6E1; }
 
   /* TEMPLATE EDITOR */
-  .template-editor-modal { width: 95vw; max-width: 1080px; height: 85vh; max-height: 800px; display: flex; flex-direction: column; }
+  .modal-content.template-editor-modal { width: 95vw !important; max-width: 1080px !important; height: 85vh; max-height: 800px; display: flex; flex-direction: column; }
   .template-editor-body { display: flex; flex: 1; overflow: hidden; }
-  .template-editor-main { width: 800px; min-width: 800px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+  .template-editor-main { flex: 1; min-width: 0; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; box-sizing: border-box; }
   .template-editor-sidebar { width: 280px; min-width: 280px; background: var(--color-salt); border-left: 1px solid var(--color-border); padding: 15px; overflow-y: auto; flex-shrink: 0; }
   .template-editor-field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
   .template-editor-field input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 14px; }

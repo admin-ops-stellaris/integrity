@@ -2972,16 +2972,26 @@ Best wishes,
     const status = f.Status || "Active";
     const statusClass = status === "Inactive" ? "status-inactive" : "status-active";
     
+    // Parse Created/Modified - strip "Created:" or "Modified:" prefix if present
+    let createdDisplay = f.Created || '';
+    let modifiedDisplay = f.Modified || '';
+    if (createdDisplay.toLowerCase().startsWith('created:')) {
+      createdDisplay = createdDisplay.substring(8).trim();
+    }
+    if (modifiedDisplay.toLowerCase().startsWith('modified:')) {
+      modifiedDisplay = modifiedDisplay.substring(9).trim();
+    }
+    
     let html = '';
     // Status badge
     html += `<div class="meta-status ${statusClass}" onclick="toggleContactStatus()" title="Click to toggle status">${status}</div>`;
-    html += '<div class="meta-divider"></div>';
-    if (f.Created) {
-      html += `<div class="meta-item"><span class="meta-label">Created</span><span class="meta-value">${f.Created}</span></div>`;
-    }
-    if (f.Modified) {
+    if (createdDisplay) {
       html += '<div class="meta-divider"></div>';
-      html += `<div class="meta-item"><span class="meta-label">Modified</span><span class="meta-value">${f.Modified}</span></div>`;
+      html += `<div class="meta-item"><span class="meta-label">Created:</span> <span class="meta-value">${createdDisplay}</span></div>`;
+    }
+    if (modifiedDisplay) {
+      html += '<div class="meta-divider"></div>';
+      html += `<div class="meta-item"><span class="meta-label">Modified:</span> <span class="meta-value">${modifiedDisplay}</span></div>`;
     }
     html += `<div class="meta-marketing" onclick="openUnsubscribeEdit()"><span class="meta-label">Marketing:</span><span class="${marketingClass}">${marketingText}</span></div>`;
     

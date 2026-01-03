@@ -84,7 +84,7 @@
   .contact-form-grid .span-full { grid-column: 1 / -1; }
   .contact-form-grid .span-2 { grid-column: span 2; }
   .contact-form-grid textarea { height: 50px; resize: vertical; }
-  #genderOtherGroup.hidden { display: none !important; }
+  #genderOtherGroup.hidden { visibility: hidden; }
 
   /* CONTACT META BAR */
   .contact-meta-bar { display: none; align-items: center; gap: 16px; padding: 8px 12px; background: var(--color-salt); border: 1px solid var(--color-border); border-radius: 6px; margin-top: 10px; margin-bottom: 12px; font-size: 11px; }

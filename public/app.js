@@ -980,7 +980,7 @@ Best wishes,
       greeting: contactData.PreferredName || contactData.FirstName || 'there',
       broker: opportunityData['Taco: Broker'] || 'our Mortgage Broker',
       brokerFirst: (opportunityData['Taco: Broker'] || '').split(' ')[0] || 'the broker',
-      appointmentTime: apptData.appointmentTime || opportunityData['Taco: Appointment Time'] || '[appointment time]',
+      appointmentTime: formatAppointmentTime(apptData.appointmentTime || opportunityData['Taco: Appointment Time']),
       phoneNumber: apptData.phoneNumber || opportunityData['Taco: Appt Phone Number'] || '[phone number]',
       meetUrl: apptData.meetUrl || opportunityData['Taco: Appt Meet URL'] || '[Google Meet URL]',
       emails: emails,
@@ -1811,7 +1811,7 @@ Best wishes,
         broker: currentEmailContext.broker,
         brokerFirst: currentEmailContext.brokerFirst,
         brokerIntro: brokerIntro,
-        appointmentTime: currentEmailContext.appointmentTime,
+        appointmentTime: formatAppointmentTime(currentEmailContext.appointmentTime),
         appointmentType: apptType,
         clientType: clientType,
         prepHandler: prepHandler,
@@ -1850,53 +1850,121 @@ Best wishes,
     }
   }
   
+  // Format ISO date string to human-readable Perth time format
+  function formatAppointmentTime(dateStr) {
+    if (!dateStr) return '[appointment time]';
+    
+    try {
+      // Handle ISO date strings
+      if (dateStr.includes('T') || dateStr.includes('Z')) {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr; // Return original if invalid
+        
+        // Format in Perth timezone (GMT+8)
+        const options = {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+          timeZone: 'Australia/Perth'
+        };
+        
+        const formatted = date.toLocaleString('en-AU', options);
+        
+        // Add ordinal suffix to day
+        const dayMatch = formatted.match(/(\d+)/);
+        if (dayMatch) {
+          const day = parseInt(dayMatch[1]);
+          const suffix = getOrdinalSuffix(day);
+          return formatted.replace(/(\d+)/, `${day}${suffix}`);
+        }
+        return formatted;
+      }
+      
+      // Already formatted string, return as-is
+      return dateStr;
+    } catch (e) {
+      console.error('Error formatting date:', e);
+      return dateStr;
+    }
+  }
+  
+  function getOrdinalSuffix(day) {
+    if (day > 3 && day < 21) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  }
+  
   function calculateDaysUntil(appointmentTimeStr) {
     if (!appointmentTimeStr) return '?';
     
-    const months = {
-      'january': 0, 'jan': 0,
-      'february': 1, 'feb': 1,
-      'march': 2, 'mar': 2,
-      'april': 3, 'apr': 3,
-      'may': 4,
-      'june': 5, 'jun': 5,
-      'july': 6, 'jul': 6,
-      'august': 7, 'aug': 7,
-      'september': 8, 'sep': 8, 'sept': 8,
-      'october': 9, 'oct': 9,
-      'november': 10, 'nov': 10,
-      'december': 11, 'dec': 11
-    };
-    
-    const cleanStr = appointmentTimeStr.toLowerCase().replace(/,/g, '');
-    
-    const dayMatch = cleanStr.match(/(\d{1,2})(st|nd|rd|th)?/);
-    if (!dayMatch) return '?';
-    const day = parseInt(dayMatch[1]);
-    
-    let monthIdx = -1;
-    for (const [name, idx] of Object.entries(months)) {
-      if (cleanStr.includes(name)) {
-        monthIdx = idx;
-        break;
+    try {
+      let apptDate;
+      
+      // Handle ISO date strings
+      if (appointmentTimeStr.includes('T') || appointmentTimeStr.includes('Z')) {
+        apptDate = new Date(appointmentTimeStr);
+        if (isNaN(apptDate.getTime())) return '?';
+      } else {
+        // Parse human-readable format
+        const months = {
+          'january': 0, 'jan': 0,
+          'february': 1, 'feb': 1,
+          'march': 2, 'mar': 2,
+          'april': 3, 'apr': 3,
+          'may': 4,
+          'june': 5, 'jun': 5,
+          'july': 6, 'jul': 6,
+          'august': 7, 'aug': 7,
+          'september': 8, 'sep': 8, 'sept': 8,
+          'october': 9, 'oct': 9,
+          'november': 10, 'nov': 10,
+          'december': 11, 'dec': 11
+        };
+        
+        const cleanStr = appointmentTimeStr.toLowerCase().replace(/,/g, '');
+        
+        const dayMatch = cleanStr.match(/(\d{1,2})(st|nd|rd|th)?/);
+        if (!dayMatch) return '?';
+        const day = parseInt(dayMatch[1]);
+        
+        let monthIdx = -1;
+        for (const [name, idx] of Object.entries(months)) {
+          if (cleanStr.includes(name)) {
+            monthIdx = idx;
+            break;
+          }
+        }
+        if (monthIdx === -1) return '?';
+        
+        const now = new Date();
+        let year = now.getFullYear();
+        apptDate = new Date(year, monthIdx, day);
+        
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        if (apptDate < today) {
+          apptDate = new Date(year + 1, monthIdx, day);
+        }
       }
+      
+      // Calculate days difference
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const apptDateOnly = new Date(apptDate.getFullYear(), apptDate.getMonth(), apptDate.getDate());
+      
+      const diffTime = apptDateOnly - today;
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 ? String(diffDays) : '?';
+    } catch (e) {
+      console.error('Error calculating days until:', e);
+      return '?';
     }
-    if (monthIdx === -1) return '?';
-    
-    const now = new Date();
-    let year = now.getFullYear();
-    let apptDate = new Date(year, monthIdx, day);
-    
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const apptDateOnly = new Date(year, monthIdx, day);
-    
-    if (apptDateOnly < today) {
-      apptDate = new Date(year + 1, monthIdx, day);
-    }
-    
-    const diffTime = apptDate - today;
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays >= 0 ? diffDays : '?';
   }
   
   function openInGmail() {

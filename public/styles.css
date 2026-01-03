@@ -499,7 +499,7 @@
   .template-body-field { flex: 1; display: flex; flex-direction: column; min-height: 300px; }
   #templateEditorQuillContainer { flex: 1; display: flex; flex-direction: column; min-height: 250px; }
   #templateEditorToolbar { background: #F5F5F5; border: 1px solid var(--color-border); border-bottom: none; border-radius: 4px 4px 0 0; }
-  #templateEditorBody.ql-container { flex: 1; border-radius: 0 0 4px 4px; font-family: var(--font-body); font-size: 13px; }
+  #templateEditorBody.ql-container { flex: 1; border-radius: 0 0 4px 4px; font-family: var(--font-body); font-size: 13px; background: #fff; }
   #templateEditorBody .ql-editor { min-height: 200px; line-height: 1.6; }
   .sidebar-section { margin-bottom: 20px; }
   .sidebar-section h4 { font-size: 12px; font-weight: 600; color: #333; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; }

@@ -234,15 +234,19 @@ export async function createContact(fields, userContext = null) {
       if (userContext.email) {
         createFields["Created By (Web App User Email)"] = userContext.email;
       }
-      // Add created timestamp in DD/MM/YYYY HH:MM format (Perth time, GMT+8)
+      // Add created timestamp in ISO format with Perth timezone (GMT+8)
+      // Airtable will display it according to the field's display settings
       const now = new Date();
-      const perthTime = new Date(now.getTime() + (8 * 60 * 60 * 1000) + (now.getTimezoneOffset() * 60 * 1000));
-      const day = String(perthTime.getDate()).padStart(2, '0');
-      const month = String(perthTime.getMonth() + 1).padStart(2, '0');
+      // Convert to Perth time and format as ISO with +08:00 offset
+      const perthOffset = 8 * 60; // Perth is UTC+8
+      const perthTime = new Date(now.getTime() + (perthOffset + now.getTimezoneOffset()) * 60 * 1000);
       const year = perthTime.getFullYear();
+      const month = String(perthTime.getMonth() + 1).padStart(2, '0');
+      const day = String(perthTime.getDate()).padStart(2, '0');
       const hours = String(perthTime.getHours()).padStart(2, '0');
       const minutes = String(perthTime.getMinutes()).padStart(2, '0');
-      createFields["Created On (Web App)"] = `${day}/${month}/${year} ${hours}:${minutes}`;
+      const seconds = String(perthTime.getSeconds()).padStart(2, '0');
+      createFields["Created On (Web App)"] = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000+08:00`;
     }
     const record = await base("Contacts").create(createFields);
     return formatRecord(record);

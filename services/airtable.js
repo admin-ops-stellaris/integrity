@@ -201,6 +201,7 @@ export async function getRecentContacts() {
       })
       .all();
     const formatted = records.map(formatRecord);
+    
     // Sort by Modified field (parsed from "HH:MM DD/MM/YYYY by Name" format)
     formatted.sort((a, b) => {
       const dateA = parseModifiedDate(a.fields.Modified);

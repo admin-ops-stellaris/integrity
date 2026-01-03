@@ -2881,15 +2881,28 @@ Best wishes,
     if (f.Mobile) parts.push(`<span>${f.Mobile}</span>`);
     return parts.join('');
   }
+  function parseModifiedFormula(modifiedStr) {
+    // Parse "Modified: HH:MM DD/MM/YYYY by Name" or "HH:MM DD/MM/YYYY by Name"
+    if (!modifiedStr) return null;
+    const match = modifiedStr.match(/(\d{2}):(\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
+    if (!match) return null;
+    const [, hours, mins, day, month, year] = match;
+    // Treat as Perth time (GMT+8)
+    const utcMs = Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(mins));
+    const perthOffsetMs = 8 * 60 * 60 * 1000;
+    return new Date(utcMs - perthOffsetMs);
+  }
   function formatModifiedTooltip(f) {
-    const modifiedOn = f['Modified On'];
-    const modifiedBy = f['Last Site User Name'];
-    if (!modifiedOn) return null;
+    const modified = f.Modified;
+    if (!modified) return null;
     
-    const dateMatch = modifiedOn.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-    if (!dateMatch) return null;
+    const modDate = parseModifiedFormula(modified);
+    if (!modDate) return null;
     
-    const modDate = new Date(dateMatch[1], dateMatch[2] - 1, dateMatch[3], dateMatch[4], dateMatch[5]);
+    // Extract "by Name" part
+    const byMatch = modified.match(/by\s+(.+)$/);
+    const modifiedBy = byMatch ? byMatch[1] : null;
+    
     const now = new Date();
     const diffMs = now - modDate;
     const diffMins = Math.floor(diffMs / (1000 * 60));
@@ -2908,13 +2921,12 @@ Best wishes,
     return `Modified ${timeAgo}`;
   }
   function formatModifiedShort(f) {
-    const modifiedOn = f['Modified On'];
-    if (!modifiedOn) return null;
+    const modified = f.Modified;
+    if (!modified) return null;
     
-    const dateMatch = modifiedOn.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-    if (!dateMatch) return null;
+    const modDate = parseModifiedFormula(modified);
+    if (!modDate) return null;
     
-    const modDate = new Date(dateMatch[1], dateMatch[2] - 1, dateMatch[3], dateMatch[4], dateMatch[5]);
     const now = new Date();
     const diffMs = now - modDate;
     const diffMins = Math.floor(diffMs / (1000 * 60));

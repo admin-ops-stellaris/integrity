@@ -2439,10 +2439,7 @@ Best wishes,
           html += `<div class="appointment-item-body">`;
           html += `<div class="appointment-item-divider"></div>`;
           
-          // Section 1: Appointment details and preparation
-          html += `<div class="appt-section appt-section-1">`;
-          
-          // Audit info between header and fields
+          // Audit info above both sections
           let auditParts = [];
           if (appt.createdTime) {
             const createdDate = new Date(appt.createdTime).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true });
@@ -2459,6 +2456,9 @@ Best wishes,
           if (auditParts.length > 0) {
             html += `<div class="appt-audit-info">${auditParts.join(' · ')}</div>`;
           }
+          
+          // Section 1: Appointment details and preparation
+          html += `<div class="appt-section appt-section-1">`;
           
           // Row 1: Appointment Time, Type of Appointment, How Booked (editable)
           html += `<div class="taco-row">`;

@@ -414,7 +414,8 @@ app.post("/api/createOpportunity", async (req, res) => {
             "Video Meet URL": tacoFields["Taco: Appt Meet URL"] || null,
             "Need Evidence in Advance": tacoFields["Taco: Need Evidence in Advance"] === true,
             "Need Appt Reminder": tacoFields["Taco: Need Appt Reminder"] === true,
-            "Notes": tacoFields["Taco: Appt Notes"] || null
+            "Notes": tacoFields["Taco: Appt Notes"] || null,
+            "Appointment Status": parsedTime ? "Scheduled" : null
           };
           await airtable.createAppointment(record.id, apptFields, userContext);
           console.log("Created appointment record for new opportunity:", record.id, "with parsed time:", parsedTime);

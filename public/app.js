@@ -2275,13 +2275,20 @@ Best wishes,
   function saveApptField(apptId, fieldKey, value, type) {
     const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
     
-    // If setting appointment time and status is currently blank, auto-set to Scheduled
+    // If setting appointment time to a future date and status is currently blank, auto-set to Scheduled
     if (fieldKey === 'appointmentTime' && value) {
-      const statusEl = document.querySelector(`[data-appt-id="${apptId}"][data-field="appointmentStatus"]`);
-      const currentStatus = statusEl?.querySelector('span')?.textContent || '';
-      if (!currentStatus || currentStatus === 'Not Set' || currentStatus === '-') {
-        // Also update status to Scheduled
-        google.script.run.updateAppointment(apptId, 'appointmentStatus', 'Scheduled');
+      // Parse as local time (datetime-local gives YYYY-MM-DDTHH:MM format without timezone)
+      const apptTime = new Date(value);
+      const now = new Date();
+      if (apptTime > now) {
+        const statusEl = document.querySelector(`[data-appt-id="${apptId}"][data-field="appointmentStatus"]`);
+        // Get current status from the displayed text
+        const statusSpan = statusEl?.querySelector('span');
+        const currentStatus = statusSpan?.textContent?.trim() || '';
+        // Only auto-set if status is blank/not set (not if already has a real status)
+        if (!currentStatus || currentStatus === 'Not Set' || currentStatus === '-' || currentStatus === '') {
+          google.script.run.updateAppointment(apptId, 'appointmentStatus', 'Scheduled');
+        }
       }
     }
     
@@ -2388,13 +2395,13 @@ Best wishes,
               })
               .withFailureHandler(function(err) {
                 console.error('Failed to backfill legacy appointment:', err);
-                container.innerHTML = '<div style="color:#888; padding:16px 16px 4px 16px; font-style:italic;">No appointments scheduled</div>';
+                container.innerHTML = '<div style="color:#888; padding:10px 0; font-style:italic;">No appointments scheduled</div>';
               })
               .createAppointment(opportunityId, fields);
             return;
           }
           
-          container.innerHTML = '<div style="color:#888; padding:16px 16px 4px 16px; font-style:italic;">No appointments scheduled</div>';
+          container.innerHTML = '<div style="color:#888; padding:10px 0; font-style:italic;">No appointments scheduled</div>';
           return;
         }
         
@@ -2473,7 +2480,7 @@ Best wishes,
           const videoStyle = appt.typeOfAppointment === 'Video' ? '' : 'display:none;';
           const otherStyle = appt.howBooked === 'Other' ? '' : 'display:none;';
           html += `<div id="appt_field_wrap_${appt.id}_phone" style="${phoneStyle}">${renderApptField(appt.id, 'Phone Number', 'phoneNumber', appt.phoneNumber, 'text')}</div>`;
-          html += `<div id="appt_field_wrap_${appt.id}_video" style="${videoStyle}">${renderApptField(appt.id, 'Video Meet URL', 'videoMeetUrl', appt.videoMeetUrl, 'text')}</div>`;
+          html += `<div id="appt_field_wrap_${appt.id}_video" style="${videoStyle}">${renderApptFieldNoIcon(appt.id, 'Video Meet URL', 'videoMeetUrl', appt.videoMeetUrl, 'text')}</div>`;
           html += `<div id="appt_field_wrap_${appt.id}_other" style="${otherStyle}">${renderApptField(appt.id, 'How Booked Other', 'howBookedOther', appt.howBookedOther, 'text')}</div>`;
           html += `</div>`;
           
@@ -2570,6 +2577,15 @@ Best wishes,
     updateAppointmentFormVisibility();
     modal.classList.add('visible');
     setTimeout(() => modal.classList.add('showing'), 10);
+    
+    // Scroll modal to top and focus first field
+    modal.scrollTop = 0;
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
+    setTimeout(() => {
+      const firstInput = document.getElementById('apptFormTime');
+      if (firstInput) firstInput.focus();
+    }, 100);
   }
   
   function updateAppointmentFormVisibility() {

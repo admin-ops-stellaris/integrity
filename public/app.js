@@ -341,6 +341,11 @@
     
     const currentStatus = currentContactRecord.fields.Status || "Active";
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    const contactName = currentContactRecord.fields.PreferredName || currentContactRecord.fields.FirstName || "this contact";
+    
+    const actionWord = newStatus === "Active" ? "activate" : "deactivate";
+    const confirmed = confirm(`Are you sure you want to ${actionWord} ${contactName}?`);
+    if (!confirmed) return;
     
     google.script.run
       .withSuccessHandler(function() {

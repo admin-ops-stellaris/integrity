@@ -190,13 +190,20 @@ function parseModifiedDate(modifiedText) {
 export async function getRecentContacts() {
   if (!base) return [];
   try {
+    // Fetch more records and sort by the "Modified" formula field in JavaScript
     const records = await base("Contacts")
       .select({
-        maxRecords: 50,
-        sort: [{ field: "Modified On", direction: "desc" }]
+        maxRecords: 100
       })
       .all();
-    return records.map(formatRecord);
+    const formatted = records.map(formatRecord);
+    // Sort by Modified field (parsed from "HH:MM DD/MM/YYYY by Name" format)
+    formatted.sort((a, b) => {
+      const dateA = parseModifiedDate(a.fields.Modified);
+      const dateB = parseModifiedDate(b.fields.Modified);
+      return dateB - dateA; // Most recent first
+    });
+    return formatted.slice(0, 50); // Return top 50
   } catch (err) {
     console.error("getRecentContacts error:", err.message);
     return [];

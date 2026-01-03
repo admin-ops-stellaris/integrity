@@ -1885,7 +1885,7 @@ Best wishes,
     if (diffDays > 730) return `${Math.floor(diffDays / 365)}+ years`;
     if (diffDays > 60) return `${Math.floor(diffDays / 30)}+ months`;
     if (diffDays >= 1) return diffDays === 1 ? "1 day" : `${diffDays} days`;
-    return "today";
+    return "just added today";
   }
   function formatAuditDate(dateStr) {
     if (!dateStr) return null;

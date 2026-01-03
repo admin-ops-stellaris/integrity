@@ -2310,8 +2310,23 @@ Best wishes,
         console.log('Appointments received:', appointments);
         if (!appointments || appointments.length === 0) {
           // Check if this is a legacy record that needs backfill
-          const convertedToAppt = currentPanelData['Taco: Converted to Appt'];
-          if (convertedToAppt === true || convertedToAppt === 'true') {
+          // Helper to detect truthy checkbox values (handles various Airtable serializations)
+          const isTruthyCheckbox = (val) => {
+            if (val === true || val === 1) return true;
+            if (typeof val === 'string') {
+              const lower = val.trim().toLowerCase();
+              return ['true', 'yes', 'checked', '1'].includes(lower);
+            }
+            return Boolean(val);
+          };
+          
+          // currentPanelData may contain objects like {value: true} or primitives
+          const rawConverted = currentPanelData['Taco: Converted to Appt'];
+          let convertedVal = (typeof rawConverted === 'object' && rawConverted !== null) 
+            ? rawConverted.value 
+            : rawConverted;
+          
+          if (isTruthyCheckbox(convertedVal)) {
             console.log('Legacy backfill: Converted to Appt is true but no appointments exist - creating from Taco fields');
             container.innerHTML = '<div style="color:#888; padding:16px 16px 4px 16px; font-style:italic;">Migrating appointment data...</div>';
             
@@ -2324,7 +2339,7 @@ Best wishes,
             };
             const getBool = (key) => {
               const v = getVal(key);
-              return v === true || v === 'true';
+              return isTruthyCheckbox(v);
             };
             
             // Build appointment fields from Taco data (server will parse the date)

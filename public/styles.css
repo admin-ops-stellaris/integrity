@@ -86,6 +86,17 @@
   .contact-form-grid textarea { height: 50px; resize: vertical; }
   #genderOtherGroup.hidden { visibility: hidden; }
 
+  /* CLICK-TO-EDIT FORM */
+  .profile-top { position: relative; cursor: pointer; border-radius: 8px; padding: 12px; margin: -12px; transition: background 0.2s; }
+  .profile-top:hover { background: rgba(187, 153, 52, 0.03); }
+  .profile-top.editing { cursor: default; background: transparent; }
+  .profile-top.editing:hover { background: transparent; }
+  .edit-hint { position: absolute; top: 8px; right: 12px; font-size: 11px; color: var(--color-star); opacity: 0; transition: opacity 0.2s; pointer-events: none; display: flex; align-items: center; gap: 4px; }
+  .profile-top:hover .edit-hint { opacity: 1; }
+  .profile-top.editing .edit-hint { display: none; }
+  .edit-hint-icon { font-size: 12px; }
+  body.dark-mode .profile-top:hover { background: rgba(187, 153, 52, 0.08); }
+
   /* CONTACT META BAR */
   .contact-meta-bar { display: none; align-items: center; gap: 16px; padding: 8px 12px; background: var(--color-salt); border: 1px solid var(--color-border); border-radius: 6px; margin-top: 10px; margin-bottom: 12px; font-size: 11px; }
   .contact-meta-bar.visible { display: flex; }

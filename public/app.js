@@ -326,12 +326,12 @@
   }
 
   function handleFormClick(event) {
-    const target = event.target;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.tagName === 'LABEL') {
-      const actionRow = document.getElementById('actionRow');
-      if (actionRow.style.display !== 'flex') {
-        enableEditMode();
-      }
+    const profileTop = document.getElementById('profileTop');
+    if (profileTop.classList.contains('editing')) return;
+    
+    const actionRow = document.getElementById('actionRow');
+    if (actionRow.style.display !== 'flex') {
+      enableEditMode();
     }
   }
 
@@ -360,7 +360,7 @@
     selects.forEach(select => { select.classList.remove('locked'); select.disabled = false; });
     document.getElementById('actionRow').style.display = 'flex';
     document.getElementById('cancelBtn').style.display = 'inline-block';
-    document.getElementById('editBtn').style.visibility = 'hidden';
+    document.getElementById('profileTop').classList.add('editing');
     updateHeaderTitle(true); 
   }
 
@@ -371,6 +371,7 @@
     selects.forEach(select => { select.classList.add('locked'); select.disabled = true; });
     document.getElementById('actionRow').style.display = 'none';
     document.getElementById('cancelBtn').style.display = 'none';
+    document.getElementById('profileTop').classList.remove('editing');
     updateHeaderTitle(false); 
   }
   

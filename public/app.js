@@ -2431,12 +2431,16 @@ Best wishes,
           html += `<span class="appt-header-time">${formatDatetimeForDisplay(appt.appointmentTime)}</span>`;
           html += `<span class="appt-header-type">${appt.typeOfAppointment || '-'}</span>`;
           html += `</div>`;
-          html += `<span class="appointment-status ${statusClass}">${statusDisplay}</span>`;
+          const statusTooltip = needsUpdate ? ' title="This appointment time has passed but the status is still Scheduled or blank. Please update to Completed, Cancelled, or No Show."' : '';
+          html += `<span class="appointment-status ${statusClass}"${statusTooltip}>${statusDisplay}</span>`;
           html += `</div>`;
           
           // Expandable body with editable fields
           html += `<div class="appointment-item-body">`;
           html += `<div class="appointment-item-divider"></div>`;
+          
+          // Section 1: Appointment details and preparation
+          html += `<div class="appt-section appt-section-1">`;
           
           // Audit info between header and fields
           let auditParts = [];
@@ -2482,6 +2486,11 @@ Best wishes,
           // Send Confirmation Email button
           html += `<div style="margin:15px 0;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${opportunityId}')">Send Confirmation Email</button></div>`;
           
+          html += `</div>`; // close section 1
+          
+          // Section 2: Confirmation status and outcome
+          html += `<div class="appt-section appt-section-2">`;
+          
           // Row 4: Conf Email Sent, Conf Text Sent
           html += `<div class="taco-row">`;
           html += renderApptCheckbox(appt.id, 'Conf Email Sent', 'confEmailSent', appt.confEmailSent);
@@ -2494,6 +2503,7 @@ Best wishes,
           html += `<div style="grid-column: span 2;">${renderApptFieldNoIcon(appt.id, 'Notes', 'notes', appt.notes, 'textarea')}</div>`;
           html += `</div>`;
           
+          html += `</div>`; // close section 2
           html += `</div>`; // close body
           html += `</div>`; // close item
         });

@@ -146,6 +146,9 @@
   body.dark-mode .appt-notes-field { background: rgba(255,255,255,0.03); border-color: #444; }
   .appt-audit-info { font-size: 10px; color: #999; font-style: italic; margin-bottom: 12px; }
   body.dark-mode .appt-audit-info { color: #777; }
+  .appt-section { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+  body.dark-mode .appt-section { background: #2a2a2a; border-color: #444; }
+  .appt-section:last-child { margin-bottom: 0; }
   .appointment-item-left { display: flex; align-items: center; gap: 10px; }
   .appointment-item-chevron { transition: transform 0.2s; color: #666; font-size: 12px; }
   .appointment-item.expanded .appointment-item-chevron { transform: rotate(90deg); }

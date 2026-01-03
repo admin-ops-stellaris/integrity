@@ -194,21 +194,23 @@ function parseModifiedDate(modifiedText) {
 export async function getRecentContacts() {
   if (!base) return [];
   try {
-    // Fetch more records and sort by the "Modified" formula field in JavaScript
+    // Fetch contacts sorted by "Modified On (Web App)" descending at Airtable level
+    // This ensures we get the most recently web-modified contacts first
     const records = await base("Contacts")
       .select({
-        maxRecords: 100
+        maxRecords: 50,
+        sort: [{ field: "Modified On (Web App)", direction: "desc" }]
       })
       .all();
     const formatted = records.map(formatRecord);
     
-    // Sort by Modified field (parsed from "HH:MM DD/MM/YYYY by Name" format)
+    // Secondary sort in JS by Modified formula field for better ordering
     formatted.sort((a, b) => {
       const dateA = parseModifiedDate(a.fields.Modified);
       const dateB = parseModifiedDate(b.fields.Modified);
       return dateB - dateA; // Most recent first
     });
-    return formatted.slice(0, 50); // Return top 50
+    return formatted;
   } catch (err) {
     console.error("getRecentContacts error:", err.message);
     return [];

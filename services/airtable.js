@@ -214,10 +214,7 @@ export async function updateContact(id, field, value, userContext = null) {
   if (!base) return null;
   try {
     const updateFields = { [field]: value };
-    if (userContext) {
-      if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
-      if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
-    }
+    // Note: "Last Site User" tracking fields removed - not present in Contacts table
     const record = await base("Contacts").update(id, updateFields);
     return formatRecord(record);
   } catch (err) {
@@ -233,11 +230,9 @@ export async function createContact(fields, userContext = null) {
     if (userContext) {
       if (userContext.name) {
         createFields["Created By (Web App User)"] = userContext.name;
-        createFields["Last Site User Name"] = userContext.name;
       }
       if (userContext.email) {
         createFields["Created By (Web App User Email)"] = userContext.email;
-        createFields["Last Site User Email"] = userContext.email;
       }
       // Add created timestamp in DD/MM/YYYY HH:MM format
       const now = new Date();

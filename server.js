@@ -580,10 +580,10 @@ app.post("/api/processForm", async (req, res) => {
           await airtable.updateContact(recordId, field, value, userContext);
         }
       }
-      res.json("Contact updated successfully");
+      res.json({ type: "update", message: "Contact updated successfully" });
     } else {
-      await airtable.createContact(fields, userContext);
-      res.json("Contact created successfully");
+      const newRecord = await airtable.createContact(fields, userContext);
+      res.json({ type: "create", record: newRecord });
     }
   } catch (err) {
     console.error("processForm error:", err);

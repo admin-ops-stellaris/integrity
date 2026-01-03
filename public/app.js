@@ -2006,10 +2006,20 @@ Best wishes,
       description: formObject.description.value
     };
     google.script.run.withSuccessHandler(function(response) {
-         status.innerText = "✅ " + response; status.className = "status-success";
-         loadContacts(); if(!formData.recordId) resetForm();
-         btn.disabled = false; btn.innerText = "Update Contact"; disableEditMode(); 
-         setTimeout(() => { status.innerText = ""; status.className = ""; }, 3000);
+         loadContacts();
+         btn.disabled = false;
+         if (response.type === 'create' && response.record) {
+           // New contact created - navigate to view it
+           selectContact(response.record);
+           disableEditMode();
+         } else {
+           // Contact updated
+           status.innerText = "✅ " + (response.message || "Contact updated successfully"); 
+           status.className = "status-success";
+           btn.innerText = "Update Contact"; 
+           disableEditMode();
+           setTimeout(() => { status.innerText = ""; status.className = ""; }, 3000);
+         }
       }).withFailureHandler(function(err) { status.innerText = "❌ " + err.message; status.className = "status-error"; btn.disabled = false; btn.innerText = "Try Again"; }).processForm(formData);
   }
   function loadPanelRecord(table, id) {

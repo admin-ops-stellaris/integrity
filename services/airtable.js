@@ -234,13 +234,14 @@ export async function createContact(fields, userContext = null) {
       if (userContext.email) {
         createFields["Created By (Web App User Email)"] = userContext.email;
       }
-      // Add created timestamp in DD/MM/YYYY HH:MM format
+      // Add created timestamp in DD/MM/YYYY HH:MM format (Perth time, GMT+8)
       const now = new Date();
-      const day = String(now.getDate()).padStart(2, '0');
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const year = now.getFullYear();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const perthTime = new Date(now.getTime() + (8 * 60 * 60 * 1000) + (now.getTimezoneOffset() * 60 * 1000));
+      const day = String(perthTime.getDate()).padStart(2, '0');
+      const month = String(perthTime.getMonth() + 1).padStart(2, '0');
+      const year = perthTime.getFullYear();
+      const hours = String(perthTime.getHours()).padStart(2, '0');
+      const minutes = String(perthTime.getMinutes()).padStart(2, '0');
       createFields["Created On (Web App)"] = `${day}/${month}/${year} ${hours}:${minutes}`;
     }
     const record = await base("Contacts").create(createFields);

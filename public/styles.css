@@ -496,11 +496,17 @@
   .template-editor-sidebar { width: 350px; min-width: 350px; background: var(--color-salt); border-left: 1px solid var(--color-border); padding: 15px; overflow-y: auto; flex-shrink: 0; }
   .template-editor-field label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
   .template-editor-field input[type="text"], .template-editor-field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 14px; font-family: var(--font-body); resize: none; overflow: hidden; box-sizing: border-box; }
+  .template-subject-field #templateEditorSubjectContainer { border: 1px solid var(--color-border); border-radius: 4px; background: #fff; }
+  .template-subject-field #templateEditorSubject.ql-container { border: none; font-family: var(--font-body); font-size: 14px; }
+  .template-subject-field #templateEditorSubject .ql-editor { min-height: 36px; padding: 10px 12px; line-height: 1.4; }
+  .template-subject-field #templateEditorSubject .ql-editor.ql-blank::before { left: 12px; font-style: normal; color: #aaa; }
   .template-body-field { flex: 1; display: flex; flex-direction: column; min-height: 300px; }
   #templateEditorQuillContainer { flex: 1; display: flex; flex-direction: column; min-height: 250px; }
   #templateEditorToolbar { background: #F5F5F5; border: 1px solid var(--color-border); border-bottom: none; border-radius: 4px 4px 0 0; }
   #templateEditorBody.ql-container { flex: 1; border-radius: 0 0 4px 4px; font-family: var(--font-body); font-size: 13px; background: #fff; }
   #templateEditorBody .ql-editor { min-height: 200px; line-height: 1.6; }
+  /* Variable highlighting in template editors */
+  .template-variable { background-color: var(--color-sky); border-radius: 3px; padding: 1px 2px; }
   .sidebar-section { margin-bottom: 20px; }
   .sidebar-section h4 { font-size: 12px; font-weight: 600; color: #333; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; }
   .variable-picker-list { max-height: 250px; overflow-y: auto; }
@@ -508,7 +514,7 @@
   .variable-group-title { font-size: 11px; font-weight: 600; color: #888; margin-bottom: 6px; }
   .variable-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #FFF; border: 1px solid #E0E0E0; border-radius: 4px; margin-bottom: 4px; cursor: pointer; transition: background 0.15s; }
   .variable-item:hover { background: var(--color-sky); }
-  .variable-item-name { font-family: monospace; font-size: 12px; color: var(--color-midnight); font-weight: 500; }
+  .variable-item-name { font-family: monospace; font-size: 12px; color: var(--color-midnight); font-weight: 500; background-color: var(--color-sky); padding: 2px 4px; border-radius: 3px; }
   .variable-item-desc { font-size: 10px; color: #888; max-width: 140px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
   .condition-builder select { width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 4px; font-size: 13px; margin-bottom: 10px; }
   .condition-options { background: #FFF; border: 1px solid #E0E0E0; border-radius: 4px; padding: 10px; margin-bottom: 10px; }
@@ -531,6 +537,8 @@
   body.dark-mode #templateEditorToolbar { background: #333; border-color: #555; }
   body.dark-mode #templateEditorBody.ql-container { background: #333; border-color: #555; }
   body.dark-mode #templateEditorBody .ql-editor { color: #E8E6E1; }
+  body.dark-mode .template-subject-field #templateEditorSubjectContainer { background: #333; border-color: #555; }
+  body.dark-mode .template-subject-field #templateEditorSubject .ql-editor { color: #E8E6E1; }
   body.dark-mode .sidebar-section h4 { color: #CCC; }
   body.dark-mode .variable-item { background: #333; border-color: #555; }
   body.dark-mode .variable-item:hover { background: #444; }

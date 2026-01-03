@@ -971,20 +971,23 @@ Best wishes,
       });
     }
     
+    // Use appointment data from Appointments table if available, fall back to Taco fields
+    const apptData = opportunityData._appointmentData || {};
+    
     currentEmailContext = {
       opportunity: opportunityData,
       contact: contactData,
       greeting: contactData.PreferredName || contactData.FirstName || 'there',
       broker: opportunityData['Taco: Broker'] || 'our Mortgage Broker',
       brokerFirst: (opportunityData['Taco: Broker'] || '').split(' ')[0] || 'the broker',
-      appointmentTime: opportunityData['Taco: Appointment Time'] || '[appointment time]',
-      phoneNumber: opportunityData['Taco: Appt Phone Number'] || '[phone number]',
-      meetUrl: opportunityData['Taco: Appt Meet URL'] || '[Google Meet URL]',
+      appointmentTime: apptData.appointmentTime || opportunityData['Taco: Appointment Time'] || '[appointment time]',
+      phoneNumber: apptData.phoneNumber || opportunityData['Taco: Appt Phone Number'] || '[phone number]',
+      meetUrl: apptData.meetUrl || opportunityData['Taco: Appt Meet URL'] || '[Google Meet URL]',
       emails: emails,
       sender: 'Shae'
     };
     
-    const apptType = opportunityData['Taco: Type of Appointment'] || 'Phone';
+    const apptType = apptData.typeOfAppointment || opportunityData['Taco: Type of Appointment'] || 'Phone';
     document.getElementById('emailApptType').value = apptType;
     
     const isNew = opportunityData['Taco: New or Existing Client'] === 'New Client';
@@ -1279,17 +1282,36 @@ Best wishes,
   
   // --- TEMPLATE EDITOR FUNCTIONS ---
   let templateEditorQuill = null;
+  let templateSubjectQuill = null;
+  let activeTemplateEditor = 'body'; // 'subject' or 'body'
   
   function openTemplateEditor(templateId) {
     const modal = document.getElementById('templateEditorModal');
     if (!modal) return;
     
-    // Initialize Quill for template editor if not done
+    // Initialize Quill for subject line (no toolbar)
+    if (!templateSubjectQuill && typeof Quill !== 'undefined') {
+      templateSubjectQuill = new Quill('#templateEditorSubject', {
+        modules: { toolbar: false },
+        theme: 'snow',
+        placeholder: 'Email subject with {{variables}}'
+      });
+      templateSubjectQuill.on('text-change', () => {
+        highlightVariables(templateSubjectQuill);
+      });
+      templateSubjectQuill.root.addEventListener('focus', () => { activeTemplateEditor = 'subject'; });
+    }
+    
+    // Initialize Quill for body
     if (!templateEditorQuill && typeof Quill !== 'undefined') {
       templateEditorQuill = new Quill('#templateEditorBody', {
         modules: { toolbar: '#templateEditorToolbar' },
         theme: 'snow'
       });
+      templateEditorQuill.on('text-change', () => {
+        highlightVariables(templateEditorQuill);
+      });
+      templateEditorQuill.root.addEventListener('focus', () => { activeTemplateEditor = 'body'; });
     }
     
     // Populate variable picker
@@ -1308,11 +1330,13 @@ Best wishes,
         currentEditingTemplate = template;
         document.getElementById('templateEditorTitle').innerText = 'Edit Template';
         document.getElementById('templateEditorName').value = template.name;
-        const subjectEl = document.getElementById('templateEditorSubject');
-        subjectEl.value = template.subject;
-        setTimeout(() => autoExpandTextarea(subjectEl), 0);
+        if (templateSubjectQuill) {
+          templateSubjectQuill.setText(template.subject || '');
+          setTimeout(() => highlightVariables(templateSubjectQuill), 50);
+        }
         if (templateEditorQuill) {
           templateEditorQuill.clipboard.dangerouslyPasteHTML(template.body);
+          setTimeout(() => highlightVariables(templateEditorQuill), 50);
         }
       }
     } else {
@@ -1320,14 +1344,27 @@ Best wishes,
       currentEditingTemplate = null;
       document.getElementById('templateEditorTitle').innerText = 'New Template';
       document.getElementById('templateEditorName').value = '';
-      document.getElementById('templateEditorSubject').value = '';
-      if (templateEditorQuill) {
-        templateEditorQuill.setText('');
-      }
+      if (templateSubjectQuill) templateSubjectQuill.setText('');
+      if (templateEditorQuill) templateEditorQuill.setText('');
     }
     
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('showing'), 10);
+  }
+  
+  function highlightVariables(quillInstance) {
+    if (!quillInstance) return;
+    const text = quillInstance.getText();
+    const regex = /\{\{[^}]+\}\}/g;
+    let match;
+    
+    // Remove existing highlights first
+    quillInstance.formatText(0, text.length, 'background', false);
+    
+    // Apply sky background to all {{variable}} patterns
+    while ((match = regex.exec(text)) !== null) {
+      quillInstance.formatText(match.index, match[0].length, 'background', '#D0DFE6');
+    }
   }
   
   function closeTemplateEditor() {
@@ -1359,12 +1396,13 @@ Best wishes,
   }
   
   function insertVariable(varName) {
-    if (!templateEditorQuill) return;
+    const quill = activeTemplateEditor === 'subject' ? templateSubjectQuill : templateEditorQuill;
+    if (!quill) return;
     
-    const range = templateEditorQuill.getSelection();
-    const insertPos = range ? range.index : templateEditorQuill.getLength();
-    templateEditorQuill.insertText(insertPos, `{{${varName}}}`);
-    templateEditorQuill.setSelection(insertPos + varName.length + 4);
+    const range = quill.getSelection();
+    const insertPos = range ? range.index : quill.getLength() - 1;
+    quill.insertText(insertPos, `{{${varName}}}`);
+    quill.setSelection(insertPos + varName.length + 4);
   }
   
   function updateConditionOptions(varName) {
@@ -1443,7 +1481,7 @@ Best wishes,
   
   function saveTemplate() {
     const name = document.getElementById('templateEditorName').value.trim();
-    const subject = document.getElementById('templateEditorSubject').value;
+    const subject = templateSubjectQuill ? templateSubjectQuill.getText().trim() : '';
     const body = templateEditorQuill ? templateEditorQuill.root.innerHTML : '';
     
     if (!name) {
@@ -1687,40 +1725,60 @@ Best wishes,
       const fields = oppData.fields || {};
       const contactFields = currentContactRecord ? currentContactRecord.fields : {};
       
-      // Fetch emails from Primary Applicant and Applicants
-      const applicantIds = [];
-      if (fields['Primary Applicant'] && fields['Primary Applicant'].length > 0) {
-        applicantIds.push(...fields['Primary Applicant']);
-      }
-      if (fields['Applicants'] && fields['Applicants'].length > 0) {
-        applicantIds.push(...fields['Applicants']);
-      }
-      
-      if (applicantIds.length > 0) {
-        // Fetch email addresses for all applicants
-        let fetchedCount = 0;
-        const emails = [];
-        applicantIds.forEach(id => {
-          google.script.run.withSuccessHandler(function(contact) {
-            if (contact && contact.fields && contact.fields.EmailAddress1) {
-              emails.push(contact.fields.EmailAddress1);
-            }
-            fetchedCount++;
-            if (fetchedCount === applicantIds.length) {
-              fields._applicantEmails = emails;
-              openEmailComposer(fields, contactFields);
-            }
-          }).withFailureHandler(function() {
-            fetchedCount++;
-            if (fetchedCount === applicantIds.length) {
-              fields._applicantEmails = emails;
-              openEmailComposer(fields, contactFields);
-            }
-          }).getRecordById('Contacts', id);
-        });
-      } else {
+      // Also fetch appointments for this opportunity
+      google.script.run.withSuccessHandler(function(appointments) {
+        // Find the first scheduled appointment (future or most recent)
+        if (appointments && appointments.length > 0) {
+          // Sort by appointment time, prefer scheduled/future appointments
+          const scheduled = appointments.find(a => a.status === 'Scheduled' && a.appointmentTime);
+          const appt = scheduled || appointments[0];
+          if (appt) {
+            fields._appointmentData = {
+              appointmentTime: appt.appointmentTime,
+              typeOfAppointment: appt.typeOfAppointment,
+              phoneNumber: appt.phoneNumber,
+              meetUrl: appt.meetUrl
+            };
+          }
+        }
+        
+        // Fetch emails from Primary Applicant and Applicants
+        const applicantIds = [];
+        if (fields['Primary Applicant'] && fields['Primary Applicant'].length > 0) {
+          applicantIds.push(...fields['Primary Applicant']);
+        }
+        if (fields['Applicants'] && fields['Applicants'].length > 0) {
+          applicantIds.push(...fields['Applicants']);
+        }
+        
+        if (applicantIds.length > 0) {
+          let fetchedCount = 0;
+          const emails = [];
+          applicantIds.forEach(id => {
+            google.script.run.withSuccessHandler(function(contact) {
+              if (contact && contact.fields && contact.fields.EmailAddress1) {
+                emails.push(contact.fields.EmailAddress1);
+              }
+              fetchedCount++;
+              if (fetchedCount === applicantIds.length) {
+                fields._applicantEmails = emails;
+                openEmailComposer(fields, contactFields);
+              }
+            }).withFailureHandler(function() {
+              fetchedCount++;
+              if (fetchedCount === applicantIds.length) {
+                fields._applicantEmails = emails;
+                openEmailComposer(fields, contactFields);
+              }
+            }).getRecordById('Contacts', id);
+          });
+        } else {
+          openEmailComposer(fields, contactFields);
+        }
+      }).withFailureHandler(function() {
+        // Continue without appointment data
         openEmailComposer(fields, contactFields);
-      }
+      }).getAppointmentsForOpportunity(opportunityId);
     }).getRecordById('Opportunities', opportunityId);
   }
 

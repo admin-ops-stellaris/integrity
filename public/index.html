@@ -463,9 +463,11 @@
               <label>Template Name</label>
               <input type="text" id="templateEditorName" placeholder="e.g., Appointment Confirmation">
             </div>
-            <div class="template-editor-field">
+            <div class="template-editor-field template-subject-field">
               <label>Subject Line</label>
-              <textarea id="templateEditorSubject" placeholder="Email subject with {{variables}}" rows="1" oninput="autoExpandTextarea(this)"></textarea>
+              <div id="templateEditorSubjectContainer">
+                <div id="templateEditorSubject"></div>
+              </div>
             </div>
             <div class="template-editor-field template-body-field">
               <label>Email Body</label>

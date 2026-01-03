@@ -2408,13 +2408,14 @@ Best wishes,
         let html = '';
         appointments.forEach(appt => {
           const status = appt.appointmentStatus || '';
-          const isPastScheduled = status === 'Scheduled' && appt.appointmentTime && new Date(appt.appointmentTime) < new Date();
-          const statusClass = isPastScheduled ? 'status-needs-update' :
+          const isPast = appt.appointmentTime && new Date(appt.appointmentTime) < new Date();
+          const needsUpdate = isPast && (status === 'Scheduled' || status === '');
+          const statusClass = needsUpdate ? 'status-needs-update' :
                              status === 'Completed' ? 'status-completed' : 
                              status === 'Cancelled' ? 'status-cancelled' : 
                              status === 'No Show' ? 'status-noshow' : 
                              status === 'Scheduled' ? 'status-scheduled' : 'status-blank';
-          const statusDisplay = isPastScheduled ? 'Needs Update' : (status || 'Not Set');
+          const statusDisplay = needsUpdate ? 'Needs Update' : (status || 'Not Set');
           
           // Expand Scheduled appointments by default, collapse others
           const isExpanded = status === 'Scheduled';

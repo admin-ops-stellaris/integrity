@@ -348,9 +348,9 @@
         renderContactMetaBar(currentContactRecord.fields);
       })
       .withFailureHandler(function(err) {
-        alert("Failed to update status: " + err.message);
+        console.error("Failed to update status:", err);
       })
-      .updateContactField(recordId, "Status", newStatus);
+      .updateRecord("Contacts", recordId, "Status", newStatus);
   }
 
   function enableEditMode() {

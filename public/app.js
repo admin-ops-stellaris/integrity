@@ -331,6 +331,8 @@
   function enableEditMode() {
     const inputs = document.querySelectorAll('#contactForm input, #contactForm textarea');
     inputs.forEach(input => { input.classList.remove('locked'); input.readOnly = false; });
+    const selects = document.querySelectorAll('#contactForm select');
+    selects.forEach(select => { select.classList.remove('locked'); select.disabled = false; });
     document.getElementById('actionRow').style.display = 'flex';
     document.getElementById('cancelBtn').style.display = 'inline-block';
     document.getElementById('editBtn').style.visibility = 'hidden';
@@ -340,6 +342,8 @@
   function disableEditMode() {
     const inputs = document.querySelectorAll('#contactForm input, #contactForm textarea');
     inputs.forEach(input => { input.classList.add('locked'); input.readOnly = true; });
+    const selects = document.querySelectorAll('#contactForm select');
+    selects.forEach(select => { select.classList.add('locked'); select.disabled = true; });
     document.getElementById('actionRow').style.display = 'none';
     document.getElementById('cancelBtn').style.display = 'none';
     updateHeaderTitle(false); 
@@ -369,8 +373,25 @@
     document.getElementById('lastName').value = f.LastName || "";
     document.getElementById('preferredName').value = f.PreferredName || "";
     document.getElementById('mobilePhone').value = f.Mobile || "";
+    
+    // Email fields (3 emails + comments)
     document.getElementById('email1').value = f.EmailAddress1 || "";
-    document.getElementById('description').value = f.Description || "";
+    document.getElementById('email1Comment').value = f.EmailAddress1Comment || "";
+    document.getElementById('email2').value = f.EmailAddress2 || "";
+    document.getElementById('email2Comment').value = f.EmailAddress2Comment || "";
+    document.getElementById('email3').value = f.EmailAddress3 || "";
+    document.getElementById('email3Comment').value = f.EmailAddress3Comment || "";
+    
+    // Notes field (renamed from Description in Airtable)
+    document.getElementById('notes').value = f.Notes || "";
+    
+    // Gender fields
+    document.getElementById('gender').value = f.Gender || "";
+    document.getElementById('genderOther').value = f["Gender - Other"] || "";
+    updateGenderOtherVisibility();
+    
+    // Unsubscribe status
+    updateUnsubscribeDisplay(f["Unsubscribed from Marketing"] || false);
 
     disableEditMode(); 
     document.getElementById('editBtn').style.visibility = 'visible';
@@ -389,6 +410,77 @@
     loadOpportunities(f);
     renderSpouseSection(f); 
     closeOppPanel();
+  }
+  
+  // Gender field handling
+  function handleGenderChange() {
+    updateGenderOtherVisibility();
+  }
+  
+  function updateGenderOtherVisibility() {
+    const genderValue = document.getElementById('gender').value;
+    const genderOtherGroup = document.getElementById('genderOtherGroup');
+    if (genderValue === 'Other (specify)') {
+      genderOtherGroup.classList.remove('hidden');
+    } else {
+      genderOtherGroup.classList.add('hidden');
+    }
+  }
+  
+  // Unsubscribe handling
+  function updateUnsubscribeDisplay(isUnsubscribed) {
+    const statusEl = document.getElementById('unsubscribeStatus');
+    if (isUnsubscribed) {
+      statusEl.textContent = 'Unsubscribed';
+      statusEl.className = 'unsubscribe-status-unsubscribed';
+    } else {
+      statusEl.textContent = 'Subscribed';
+      statusEl.className = 'unsubscribe-status-subscribed';
+    }
+  }
+  
+  function openUnsubscribeEdit() {
+    if (!currentContactRecord) return;
+    const currentValue = currentContactRecord.fields["Unsubscribed from Marketing"] || false;
+    document.getElementById('unsubscribeCheckbox').checked = currentValue;
+    openModal('unsubscribeModal');
+  }
+  
+  function closeUnsubscribeModal() {
+    closeModal('unsubscribeModal');
+  }
+  
+  function saveUnsubscribePreference() {
+    if (!currentContactRecord) return;
+    
+    const newValue = document.getElementById('unsubscribeCheckbox').checked;
+    const currentValue = currentContactRecord.fields["Unsubscribed from Marketing"] || false;
+    
+    if (newValue === currentValue) {
+      closeUnsubscribeModal();
+      return;
+    }
+    
+    // Show confirmation
+    const confirmMsg = "Are you sure you want to change this client's marketing preferences? If they expressed an opinion and you're going against that, it's a breach of the SPAM Act among other things.";
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+    
+    closeUnsubscribeModal();
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result && result.fields) {
+          currentContactRecord = result;
+          updateUnsubscribeDisplay(result.fields["Unsubscribed from Marketing"] || false);
+          showAlert('Success', 'Marketing preference updated.', 'success');
+        }
+      })
+      .withFailureHandler(function(err) {
+        showAlert('Error', err.message, 'error');
+      })
+      .updateContact(currentContactRecord.id, "Unsubscribed from Marketing", newValue);
   }
 
   function refreshCurrentContact() {
@@ -2656,6 +2748,8 @@ Best wishes,
     document.getElementById('spouseHistoryList').innerHTML = "";
     document.getElementById('spouseEditLink').style.display = 'inline';
     document.getElementById('refreshBtn').style.display = 'none';
+    updateGenderOtherVisibility();
+    updateUnsubscribeDisplay(false);
     closeOppPanel();
   }
   function handleSearch(event) {
@@ -2906,7 +3000,14 @@ Best wishes,
       preferredName: formObject.preferredName.value,
       mobilePhone: formObject.mobilePhone.value,
       email1: formObject.email1.value,
-      description: formObject.description.value
+      email1Comment: formObject.email1Comment.value,
+      email2: formObject.email2.value,
+      email2Comment: formObject.email2Comment.value,
+      email3: formObject.email3.value,
+      email3Comment: formObject.email3Comment.value,
+      notes: formObject.notes.value,
+      gender: formObject.gender.value,
+      genderOther: formObject.genderOther.value
     };
     google.script.run.withSuccessHandler(function(response) {
          loadContacts();

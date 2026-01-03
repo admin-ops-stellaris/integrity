@@ -571,7 +571,14 @@ app.post("/api/processForm", async (req, res) => {
       PreferredName: formData.preferredName || "",
       Mobile: formData.mobilePhone || "",
       EmailAddress1: formData.email1 || "",
-      Description: formData.description || ""
+      EmailAddress1Comment: formData.email1Comment || "",
+      EmailAddress2: formData.email2 || "",
+      EmailAddress2Comment: formData.email2Comment || "",
+      EmailAddress3: formData.email3 || "",
+      EmailAddress3Comment: formData.email3Comment || "",
+      Notes: formData.notes || "",
+      Gender: formData.gender || "",
+      "Gender - Other": formData.genderOther || ""
     };
     
     if (recordId) {

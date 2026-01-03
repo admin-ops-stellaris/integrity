@@ -91,6 +91,19 @@
   .contact-name { display: block; font-family: var(--font-body); font-size: 13px; font-weight: 400; color: var(--color-trail); }
   .contact-details-row { display: flex; gap: 12px; font-size: 11px; color: #888; margin-top: 2px; }
   .contact-details-row span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  
+  /* Unsubscribe field styling */
+  .unsubscribe-display { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #F5F5F5; border: 1px solid var(--color-border); border-radius: 4px; cursor: pointer; min-height: 20px; }
+  .unsubscribe-display:hover { background: #EBEBEB; }
+  .unsubscribe-display .unsubscribe-edit-hint { font-size: 10px; color: #999; margin-left: auto; }
+  .unsubscribe-status-subscribed { color: var(--color-cedar); font-weight: 500; }
+  .unsubscribe-status-unsubscribed { color: #A00; font-weight: 500; }
+  body.dark-mode .unsubscribe-display { background: #333; border-color: #555; }
+  body.dark-mode .unsubscribe-display:hover { background: #3a3a3a; }
+  body.dark-mode .unsubscribe-display .unsubscribe-edit-hint { color: #777; }
+  
+  /* Gender Other field visibility */
+  #genderOtherGroup.hidden { display: none !important; }
   .contact-detail { display: block; font-size: 12px; color: #666; margin-top: 2px; font-weight: 300; }
   .list-label { font-size: 10px; text-transform: uppercase; color: #999; margin-top: 10px; font-weight: 700; letter-spacing: 0.5px; }
 

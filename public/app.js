@@ -323,7 +323,7 @@
       document.getElementById('formSubtitle').innerText = '';
       document.getElementById('editBtn').style.visibility = 'hidden';
       document.getElementById('refreshBtn').style.display = 'none'; 
-      document.getElementById('auditSection').style.display = 'none';
+      document.getElementById('contactMetaBar').classList.remove('visible');
       document.getElementById('duplicateWarningBox').style.display = 'none'; 
     }
   }
@@ -2762,14 +2762,13 @@ Best wishes,
     document.getElementById('cancelBtn').style.display = 'inline-block';
     document.getElementById('editBtn').style.visibility = 'hidden';
     document.getElementById('oppList').innerHTML = '<li style="color:#CCC; font-size:12px; font-style:italic;">No opportunities linked.</li>';
-    document.getElementById('auditSection').style.display = 'none';
+    document.getElementById('contactMetaBar').classList.remove('visible');
     document.getElementById('duplicateWarningBox').style.display = 'none';
     document.getElementById('spouseStatusText').innerHTML = "Single";
     document.getElementById('spouseHistoryList').innerHTML = "";
     document.getElementById('spouseEditLink').style.display = 'inline';
     document.getElementById('refreshBtn').style.display = 'none';
     updateGenderOtherVisibility();
-    document.getElementById('marketingHeaderSection').style.display = 'none';
     closeOppPanel();
   }
   function handleSearch(event) {
@@ -2935,56 +2934,29 @@ Best wishes,
     return date.toLocaleDateString('en-AU');
   }
 
-  // --- CORRECTED HISTORY DATE LOGIC ---
+  // Render contact meta bar with created/modified/marketing info
   function renderHistory(f) {
-    const section = document.getElementById('auditSection');
-    section.innerHTML = ''; section.style.display = 'block';
-    const createdStr = f.Created || "";
-    const dateMatch = createdStr.match(/(\d{2}):(\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
-    let durationText = "unavailable";
-
-    if (dateMatch) {
-       const hours = parseInt(dateMatch[1], 10);
-       const minutes = parseInt(dateMatch[2], 10);
-       const day = parseInt(dateMatch[3], 10);
-       const month = parseInt(dateMatch[4], 10) - 1; 
-       const year = parseInt(dateMatch[5], 10);
-       const createdDate = new Date(year, month, day, hours, minutes);
-       const now = new Date();
-       const diffMs = now - createdDate;
-       const diffMinsTotal = Math.floor(diffMs / (1000 * 60));
-       const diffHoursTotal = Math.floor(diffMs / (1000 * 60 * 60));
-       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-       if (diffDays > 730) { const years = Math.floor(diffDays / 365); durationText = `over ${years} years`; } 
-       else if (diffDays > 60) { const months = Math.floor(diffDays / 30); durationText = `over ${months} months`; } 
-       else if (diffDays >= 1) { durationText = (diffDays === 1) ? "1 day" : `${diffDays} days`; } 
-       else {
-          const mins = diffMinsTotal % 60;
-          const hStr = (diffHoursTotal === 1) ? "hr" : "hrs";
-          durationText = `${diffHoursTotal} ${hStr} and ${mins} minutes`;
-       }
-    }
-    if (f.Created) { const line1 = document.createElement('div'); line1.className = 'audit-modified'; line1.innerText = f.Created; section.appendChild(line1); }
-    if (f.Modified) { const line2 = document.createElement('div'); line2.className = 'audit-modified'; line2.innerText = f.Modified; section.appendChild(line2); }
-    
-    // Render marketing status in header
-    renderMarketingHeader(f);
+    renderContactMetaBar(f);
   }
   
-  function renderMarketingHeader(f) {
-    const section = document.getElementById('marketingHeaderSection');
+  function renderContactMetaBar(f) {
+    const bar = document.getElementById('contactMetaBar');
     const isUnsubscribed = f["Unsubscribed from Marketing"] || false;
-    const statusText = isUnsubscribed ? "Unsubscribed" : "Subscribed";
-    const statusClass = isUnsubscribed ? "unsubscribe-status-unsubscribed" : "unsubscribe-status-subscribed";
-    section.innerHTML = `
-      <div class="marketing-header-display" onclick="openUnsubscribeEdit()">
-        <span class="marketing-label">Marketing:</span>
-        <span class="${statusClass}">${statusText}</span>
-        <span class="marketing-edit-hint">Edit</span>
-      </div>
-    `;
-    section.style.display = 'block';
+    const marketingText = isUnsubscribed ? "Unsubscribed" : "Subscribed";
+    const marketingClass = isUnsubscribed ? "marketing-status-unsubscribed" : "marketing-status-subscribed";
+    
+    let html = '';
+    if (f.Created) {
+      html += `<div class="meta-item"><span class="meta-label">Created</span><span class="meta-value">${f.Created}</span></div>`;
+    }
+    if (f.Modified) {
+      if (html) html += '<div class="meta-divider"></div>';
+      html += `<div class="meta-item"><span class="meta-label">Modified</span><span class="meta-value">${f.Modified}</span></div>`;
+    }
+    html += `<div class="meta-marketing" onclick="openUnsubscribeEdit()"><span class="meta-label">Marketing:</span><span class="${marketingClass}">${marketingText}</span></div>`;
+    
+    bar.innerHTML = html;
+    bar.classList.add('visible');
   }
 
   function loadOpportunities(f) {

@@ -76,10 +76,34 @@
   .sort-icon { cursor: pointer; color: #BBB; font-size: 14px; margin-left: 8px; vertical-align: middle; display: none; }
   .sort-icon:hover { color: var(--color-trail); }
 
+  /* CONTACT FORM GRID */
+  .contact-form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 12px; }
+  .contact-form-grid .field-group { margin-bottom: 0; }
+  .contact-form-grid .span-full { grid-column: 1 / -1; }
+  .contact-form-grid .span-2 { grid-column: span 2; }
+  .contact-form-grid textarea { height: 50px; resize: vertical; }
+  #genderOtherGroup.hidden { display: none !important; }
+
+  /* CONTACT META BAR */
+  .contact-meta-bar { display: none; align-items: center; gap: 16px; padding: 8px 12px; background: var(--color-salt); border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 12px; font-size: 11px; }
+  .contact-meta-bar.visible { display: flex; }
+  .meta-item { display: flex; align-items: center; gap: 6px; color: #666; }
+  .meta-label { color: #999; }
+  .meta-value { color: var(--color-trail); }
+  .meta-divider { width: 1px; height: 16px; background: var(--color-border); }
+  .meta-marketing { display: flex; align-items: center; gap: 6px; padding: 3px 8px; background: #FFF; border: 1px solid var(--color-border); border-radius: 4px; cursor: pointer; margin-left: auto; }
+  .meta-marketing:hover { background: #F5F5F5; border-color: var(--color-star); }
+  .marketing-status-subscribed { color: var(--color-cedar); font-weight: 500; }
+  .marketing-status-unsubscribed { color: #A00; font-weight: 500; }
+  body.dark-mode .contact-meta-bar { background: #2a2a2a; border-color: #444; }
+  body.dark-mode .meta-item { color: #AAA; }
+  body.dark-mode .meta-label { color: #777; }
+  body.dark-mode .meta-value { color: #DDD; }
+  body.dark-mode .meta-divider { background: #444; }
+  body.dark-mode .meta-marketing { background: #333; border-color: #555; }
+  body.dark-mode .meta-marketing:hover { background: #3a3a3a; }
+
   /* AUDIT & DIRECTORY */
-  #auditSection { display: none; margin-bottom: 4px; margin-top: 2px; background-color: transparent; color: #666; font-size: 13px; }
-  .audit-text { font-style: italic; color: #555; }
-  .audit-modified { font-size: 10px; color: #999; margin-top: 2px; }
   .panel-audit-section { font-size: 11px; color: #999; font-style: italic; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--color-border); }
   .editable-field { cursor: pointer; }
   .editable-field:hover { background: rgba(0,0,0,0.02); border-radius: 4px; }
@@ -91,22 +115,6 @@
   .contact-name { display: block; font-family: var(--font-body); font-size: 13px; font-weight: 400; color: var(--color-trail); }
   .contact-details-row { display: flex; gap: 12px; font-size: 11px; color: #888; margin-top: 2px; }
   .contact-details-row span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  
-  /* Marketing header styling */
-  .marketing-header-display { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #F5F5F5; border: 1px solid var(--color-border); border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 15px; }
-  .marketing-header-display:hover { background: #EBEBEB; }
-  .marketing-label { color: #888; }
-  .marketing-edit-hint { font-size: 10px; color: #999; margin-left: 4px; }
-  .marketing-edit-hint:hover { color: var(--color-star); }
-  .unsubscribe-status-subscribed { color: var(--color-cedar); font-weight: 500; }
-  .unsubscribe-status-unsubscribed { color: #A00; font-weight: 500; }
-  body.dark-mode .marketing-header-display { background: #333; border-color: #555; }
-  body.dark-mode .marketing-header-display:hover { background: #3a3a3a; }
-  body.dark-mode .marketing-label { color: #999; }
-  body.dark-mode .unsubscribe-display .unsubscribe-edit-hint { color: #777; }
-  
-  /* Gender Other field visibility */
-  #genderOtherGroup.hidden { display: none !important; }
   .contact-detail { display: block; font-size: 12px; color: #666; margin-top: 2px; font-weight: 300; }
   .list-label { font-size: 10px; text-transform: uppercase; color: #999; margin-top: 10px; font-weight: 700; letter-spacing: 0.5px; }
 

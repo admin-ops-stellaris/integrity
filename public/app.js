@@ -1510,7 +1510,11 @@ Best wishes,
     if (!container) return;
     
     if (airtableTemplates.length === 0) {
-      container.innerHTML = '<div style="color:#888; font-style:italic; padding:20px; text-align:center;">No templates yet. Create your first template to get started.</div>';
+      container.innerHTML = `<div style="text-align:center; padding:30px;">
+        <div style="color:#888; font-style:italic; margin-bottom:15px;">No templates yet.</div>
+        <button type="button" onclick="seedDefaultTemplate()" style="padding:10px 20px; background:var(--color-star); color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500;">Load Default Confirmation Template</button>
+        <div style="font-size:11px; color:#999; margin-top:10px;">This will create the standard Appointment Confirmation template with all variations.</div>
+      </div>`;
       return;
     }
     
@@ -1530,6 +1534,34 @@ Best wishes,
   function createNewTemplate() {
     closeTemplateList();
     openTemplateEditor(null);
+  }
+  
+  // Seed the default Appointment Confirmation template
+  function seedDefaultTemplate() {
+    const defaultSubject = `{{if appointmentType=Office}}Confirmation of Appointment - {{appointmentTime}}{{elseif appointmentType=Phone}}Confirmation of Phone Appointment - {{appointmentTime}}{{elseif appointmentType=Video}}Confirmation of Google Meet Appointment - {{appointmentTime}}{{endif}}`;
+    
+    const defaultBody = `Hi {{greeting}},<br><br>{{if appointmentType=Office}}I'm writing to confirm your appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today) at our office - Kingsley Professional Centre, 18 / 56 Creaney Drive, Kingsley ({{officeMapLink}}).{{elseif appointmentType=Phone}}I'm writing to confirm your phone appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today). {{brokerFirst}} will call you on {{phoneNumber}}.{{elseif appointmentType=Video}}I'm writing to confirm your video call appointment with {{brokerIntro}} on {{appointmentTime}} (Perth time) ({{daysUntil}} days from today) using Google Meet URL: {{meetUrl}}. If you have any trouble logging in, please call or text our team on 0488 839 212.{{endif}}<br><br>{{if clientType=New}}Click {{ourTeamLink}} to meet {{brokerFirst}} and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!{{elseif clientType=Repeat}}Click {{ourTeamLink}} to get reacquainted with the Team at Stellaris Finance Broking. We will be supporting you each step of the way!{{endif}}<br><br>{{if prepHandler=Shae}}In preparation for your appointment, please email me the following information:<br><br>{{factFindLink}} (please note you cannot access this file directly, you will need to download it to your device and fill it in)<br>- Complete with as much detail as possible<br>- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3<br><br>Income<br>a) PAYG Income – Your latest two consecutive payslips and your 2024-25 Income Statement (which can be downloaded from {{myGovLink}}. If you need help creating a myGov account, watch {{myGovVideoLink}}. For instructions on how to download your Income Statement, {{incomeInstructionsLink}})<br>b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment<br><br>I work part time – please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information.{{elseif prepHandler=Team}}In preparation for your appointment, please email Shae (shae@stellaris.loans) the following information:<br><br>{{factFindLink}} (please note you cannot access this file directly, you will need to download it to your device and fill it in)<br>- Complete with as much detail as possible<br>- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3<br><br>Income<br>a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from {{myGovLink}}. If you need help creating a myGov account, watch {{myGovVideoLink}}. For instructions on how to download your Income Statement, {{incomeInstructionsLink}})<br>b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment<br><br>Please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information.{{elseif prepHandler=OpenBanking}}You will soon receive invitations to share your information with us via Frollo's Open Banking and Connective's Client Centre. These two systems streamline the collection of your key financial and personal data, including your contact details, employment history, savings and liabilities, to give us a complete picture of your situation.{{prefillNote}}{{endif}}<br><br>{{if clientType=New}}Do not hesitate to contact our team on 0488 839 212 if you have any questions.<br><br>We look forward to working with you!<br><br>Best wishes,<br>{{sender}}{{elseif clientType=Repeat}}Do not hesitate to contact our team on 0488 839 212 if you have any questions.<br><br>We look forward to working with you again!<br><br>Best wishes,<br>{{sender}}{{endif}}`;
+    
+    showAlert('Creating...', 'Creating default template...', 'success');
+    
+    google.script.run.withSuccessHandler(function(result) {
+      if (result) {
+        showAlert('Success', 'Default template created! Refresh to see it.', 'success');
+        loadEmailTemplates();
+        refreshTemplateList();
+      } else {
+        showAlert('Error', 'Failed to create template', 'error');
+      }
+    }).withFailureHandler(function(err) {
+      showAlert('Error', 'Failed to create template: ' + (err.message || 'Unknown error'), 'error');
+    }).createEmailTemplate({
+      name: 'Appointment Confirmation',
+      type: 'Confirmation',
+      subject: defaultSubject,
+      body: defaultBody,
+      description: 'Standard appointment confirmation email with variations for appointment type, client type, and preparation method.',
+      active: true
+    });
   }
   
   // Open template editor from email composer context

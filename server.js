@@ -53,6 +53,82 @@ app.use((req, res, next) => {
 
 let clientCache = new Map();
 
+// Helper to parse Taco appointment date formats to ISO string (Australia/Sydney timezone)
+// Supports formats like: "13/01/26 3:30 PM", "Mon 5 Jan 2026 3:30 PM", "13/01/2026 15:30"
+function parseTacoAppointmentTime(tacoDateStr) {
+  if (!tacoDateStr || typeof tacoDateStr !== 'string') return null;
+  
+  const str = tacoDateStr.trim();
+  if (!str) return null;
+  
+  try {
+    // If already ISO format, return as-is
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) {
+      return str;
+    }
+    
+    // Australia/Sydney is typically UTC+10 or UTC+11 (daylight saving)
+    // For simplicity, we'll construct an ISO string with explicit offset
+    // Airtable accepts datetime-local format for datetime fields
+    
+    let day, month, year, hour, minute;
+    
+    // Try DD/MM/YY HH:MM AM/PM format (e.g., "13/01/26 3:30 PM")
+    const ddmmyyAmpm = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+    if (ddmmyyAmpm) {
+      day = parseInt(ddmmyyAmpm[1]);
+      month = parseInt(ddmmyyAmpm[2]);
+      year = parseInt(ddmmyyAmpm[3]);
+      if (year < 100) year += 2000;
+      
+      hour = parseInt(ddmmyyAmpm[4]);
+      minute = parseInt(ddmmyyAmpm[5]);
+      const ampm = (ddmmyyAmpm[6] || '').toUpperCase();
+      
+      if (ampm === 'PM' && hour !== 12) hour += 12;
+      if (ampm === 'AM' && hour === 12) hour = 0;
+    }
+    
+    // Try "Day D Mon YYYY H:MM AM/PM" format (e.g., "Mon 5 Jan 2026 3:30 PM")
+    if (!day) {
+      const dayMonFormat = str.match(/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      if (dayMonFormat) {
+        day = parseInt(dayMonFormat[1]);
+        const monthNames = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+        month = monthNames[dayMonFormat[2].toLowerCase()];
+        year = parseInt(dayMonFormat[3]);
+        
+        hour = parseInt(dayMonFormat[4]);
+        minute = parseInt(dayMonFormat[5]);
+        const ampm = (dayMonFormat[6] || '').toUpperCase();
+        
+        if (ampm === 'PM' && hour !== 12) hour += 12;
+        if (ampm === 'AM' && hour === 12) hour = 0;
+      }
+    }
+    
+    // If we parsed the components, build a datetime-local format string
+    // This format is accepted by Airtable for datetime fields
+    if (day && month && year && hour !== undefined && minute !== undefined) {
+      const isoStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      console.log("Parsed Taco time:", str, "->", isoStr);
+      return isoStr;
+    }
+    
+    // Try native Date parsing as fallback
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+    
+    console.warn("Could not parse Taco appointment time:", str);
+    return null;
+  } catch (err) {
+    console.error("Error parsing Taco appointment time:", err.message);
+    return null;
+  }
+}
+
 function getBaseUrl(req) {
   const proto = req.headers["x-forwarded-proto"] || req.protocol;
   const host = req.headers["x-forwarded-host"] || req.get("host");
@@ -305,6 +381,36 @@ app.post("/api/createOpportunity", async (req, res) => {
     if (userContext && contactId) {
       await airtable.markRecordModified("Contacts", contactId, userContext);
     }
+    
+    // If Converted to Appt is true, also create an appointment record
+    if (record && record.id && tacoFields && tacoFields["Taco: Converted to Appt"] === true) {
+      try {
+        // Parse Taco appointment time to ISO format - skip appointment creation if unparseable
+        const parsedTime = parseTacoAppointmentTime(tacoFields["Taco: Appointment Time"]);
+        
+        if (!parsedTime && tacoFields["Taco: Appointment Time"]) {
+          console.warn("Skipping appointment creation - could not parse time:", tacoFields["Taco: Appointment Time"]);
+        } else {
+          const apptFields = {
+            "Appointment Time": parsedTime,
+            "Type of Appointment": tacoFields["Taco: Type of Appointment"] || "Phone",
+            "How Booked": tacoFields["Taco: How appt booked"] || "Calendly",
+            "How Booked Other": tacoFields["Taco: How Appt Booked Other"] || null,
+            "Phone Number": tacoFields["Taco: Appt Phone Number"] || null,
+            "Video Meet URL": tacoFields["Taco: Appt Meet URL"] || null,
+            "Need Evidence in Advance": tacoFields["Taco: Need Evidence in Advance"] === true,
+            "Need Appt Reminder": tacoFields["Taco: Need Appt Reminder"] === true,
+            "Notes": tacoFields["Taco: Appt Notes"] || null
+          };
+          await airtable.createAppointment(record.id, apptFields, userContext);
+          console.log("Created appointment record for new opportunity:", record.id, "with parsed time:", parsedTime);
+        }
+      } catch (apptErr) {
+        console.error("Failed to create appointment for new opportunity:", apptErr.message);
+        // Don't fail the whole request, just log the error
+      }
+    }
+    
     res.json(record);
   } catch (err) {
     console.error("createOpportunity error:", err);
@@ -731,6 +837,16 @@ app.post("/api/createAppointment", async (req, res) => {
     const [opportunityId, fields] = req.body.args || [];
     const userEmail = req.session?.user?.email || null;
     const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    
+    // Parse Taco-format appointment time if present - fail if unparseable
+    if (fields && fields["Appointment Time"]) {
+      const parsedTime = parseTacoAppointmentTime(fields["Appointment Time"]);
+      if (!parsedTime) {
+        return res.status(400).json({ error: `Could not parse appointment time: "${fields["Appointment Time"]}". Please use format DD/MM/YY H:MM AM/PM or enter time manually.` });
+      }
+      fields["Appointment Time"] = parsedTime;
+    }
+    
     const result = await airtable.createAppointment(opportunityId, fields, userContext);
     res.json(result);
   } catch (err) {

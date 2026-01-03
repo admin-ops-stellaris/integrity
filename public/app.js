@@ -1380,10 +1380,58 @@ Best wishes,
       if (label) label.innerText = isChecked ? 'Yes' : 'No';
       // Toggle appointment fields visibility
       if (fieldKey === 'Taco: Converted to Appt') {
-        const section = document.getElementById('apptFieldsSection');
-        const notice = document.getElementById('apptCollapsedNotice');
+        const section = document.getElementById('tacoApptFieldsSection');
         if (section) section.style.display = isChecked ? '' : 'none';
-        if (notice) notice.style.display = isChecked ? '' : 'none';
+        
+        // If checked and this is an Opportunities record, create an appointment in the Appointments table
+        if (isChecked && table === 'Opportunities') {
+          // Get raw primitive values from currentPanelData 
+          const getRawValue = (key) => {
+            const item = currentPanelData[key];
+            // Handle both primitive values and objects with .value property
+            if (item === undefined || item === null) return null;
+            if (typeof item === 'object' && item.value !== undefined) return item.value;
+            return item;
+          };
+          
+          // Get boolean values - check currentPanelData first, then DOM
+          const getBoolValue = (key) => {
+            const item = currentPanelData[key];
+            if (item !== undefined && item !== null) {
+              if (typeof item === 'object' && item.value !== undefined) return item.value === true;
+              return item === true;
+            }
+            // Fallback to DOM checkbox
+            const input = document.getElementById('input_' + key);
+            return input ? input.checked : false;
+          };
+          
+          // Build appointment fields with Airtable field names
+          const apptFields = {
+            "Appointment Time": getRawValue('Taco: Appointment Time'),
+            "Type of Appointment": getRawValue('Taco: Type of Appointment'),
+            "How Booked": getRawValue('Taco: How appt booked'),
+            "How Booked Other": getRawValue('Taco: How Appt Booked Other'),
+            "Phone Number": getRawValue('Taco: Appt Phone Number'),
+            "Video Meet URL": getRawValue('Taco: Appt Meet URL'),
+            "Need Evidence in Advance": getBoolValue('Taco: Need Evidence in Advance'),
+            "Need Appt Reminder": getBoolValue('Taco: Need Appt Reminder'),
+            "Notes": getRawValue('Taco: Appt Notes')
+          };
+          
+          console.log('Creating appointment from Converted to Appt toggle with fields:', apptFields);
+          
+          // Create appointment record in Appointments table
+          google.script.run
+            .withSuccessHandler(function() {
+              console.log('Appointment record created from Converted to Appt toggle');
+              loadAppointmentsForOpportunity(id);
+            })
+            .withFailureHandler(function(err) {
+              console.error('Failed to create appointment record:', err);
+            })
+            .createAppointment(id, apptFields);
+        }
       }
     }).withFailureHandler(function(err) {
       const input = document.getElementById('input_' + fieldKey);
@@ -1969,7 +2017,14 @@ Best wishes,
       if (!response || !response.data) { content.innerHTML = "Error loading."; return; }
 
       currentPanelData = {};
-      response.data.forEach(item => { if(item.type === 'link') currentPanelData[item.key] = item.value; });
+      response.data.forEach(item => { 
+        if(item.type === 'link') {
+          currentPanelData[item.key] = item.value;
+        } else {
+          // Store raw values for all fields (for appointment creation, etc.)
+          currentPanelData[item.key] = item.value;
+        }
+      });
 
       panelHistory.push({ table: table, id: id, title: response.title });
       updateBackButton(); titleEl.innerText = response.title;
@@ -2126,22 +2181,18 @@ Best wishes,
           // Get status for expand/collapse default
           const tacoApptStatus = dataMap['Taco: Appt Status']?.value || 'Scheduled';
           const tacoApptExpanded = tacoApptStatus === 'Scheduled';
-          const typeIcon = typeOfAppt === 'Phone' ? '📞' : typeOfAppt === 'Video' ? '🎥' : '🏢';
           const statusClass = tacoApptStatus === 'Completed' ? 'status-completed' : 
                              tacoApptStatus === 'Cancelled' ? 'status-cancelled' : 
                              tacoApptStatus === 'No Show' ? 'status-noshow' : 'status-scheduled';
           
           html += `<div id="tacoApptFieldsSection" class="appointment-item ${tacoApptExpanded ? 'expanded' : ''}" style="${convertedToAppt ? '' : 'display:none;'}" data-taco-appt="true">`;
           
-          // Collapsible header
-          html += `<div class="appointment-item-header" onclick="toggleTacoApptExpand()">`;
-          html += `<div class="appointment-item-left">`;
+          // Collapsible header - 3 equal columns: Appointment label, Time, Type, Status
+          html += `<div class="appointment-item-header appointment-header-grid" onclick="toggleTacoApptExpand()">`;
           html += `<span class="appointment-item-chevron">▶</span>`;
-          html += `<div class="appointment-item-summary">`;
-          html += `<span class="appointment-type">${typeIcon} ${typeOfAppt || 'Appointment'}</span>`;
-          html += `<span class="appointment-datetime">${dataMap['Taco: Appointment Time']?.value || 'Time not set'}</span>`;
-          html += `</div>`;
-          html += `</div>`;
+          html += `<span class="appt-header-label">Appointment:</span>`;
+          html += `<span class="appt-header-time">${dataMap['Taco: Appointment Time']?.value || 'Time not set'}</span>`;
+          html += `<span class="appt-header-type">${typeOfAppt || '-'}</span>`;
           html += `<span class="appointment-status ${statusClass}">${tacoApptStatus}</span>`;
           html += `</div>`;
           
@@ -2262,6 +2313,93 @@ Best wishes,
   let currentAppointmentOpportunityId = null;
   let editingAppointmentId = null;
   
+  // Helper function to render editable appointment fields
+  function renderApptField(apptId, label, fieldKey, value, type, options = []) {
+    const displayValue = value || '-';
+    let valueHtml = '';
+    
+    if (type === 'datetime') {
+      const formatted = formatDatetimeForDisplay(value);
+      valueHtml = `<span class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}">${formatted}</span>`;
+    } else if (type === 'select') {
+      valueHtml = `<span class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}', ${JSON.stringify(options).replace(/"/g, '&quot;')})" data-appt-id="${apptId}" data-field="${fieldKey}">${displayValue}</span>`;
+    } else if (type === 'textarea') {
+      const escaped = (value || '').replace(/"/g, '&quot;');
+      valueHtml = `<span class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="white-space:pre-wrap;">${displayValue}</span>`;
+    } else {
+      valueHtml = `<span class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}">${displayValue}</span>`;
+    }
+    
+    return `<div class="detail-group"><span class="detail-label">${label}</span>${valueHtml}</div>`;
+  }
+  
+  // Helper function to render appointment checkboxes
+  function renderApptCheckbox(apptId, label, fieldKey, checked) {
+    return `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" ${checked ? 'checked' : ''} onchange="updateApptCheckbox('${apptId}', '${fieldKey}', this.checked)"><label>${label}</label></div></div>`;
+  }
+  
+  // Edit appointment field inline
+  function editApptField(apptId, fieldKey, type, options) {
+    const valueSpan = document.querySelector(`[data-appt-id="${apptId}"][data-field="${fieldKey}"]`);
+    if (!valueSpan) return;
+    
+    const currentValue = valueSpan.dataset.value || valueSpan.textContent;
+    const parent = valueSpan.parentElement;
+    
+    let inputHtml = '';
+    if (type === 'datetime') {
+      const dtValue = formatDatetimeForInput(currentValue);
+      inputHtml = `<input type="datetime-local" class="inline-edit-input" value="${dtValue}" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){cancelApptEdit('${apptId}', '${fieldKey}');}">`;
+    } else if (type === 'select') {
+      let optHtml = options.map(o => `<option value="${o}" ${o === currentValue ? 'selected' : ''}>${o}</option>`).join('');
+      inputHtml = `<select class="inline-edit-input" onchange="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')">${optHtml}</select>`;
+    } else if (type === 'textarea') {
+      inputHtml = `<textarea class="inline-edit-input" rows="3" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onkeydown="if(event.key==='Escape'){cancelApptEdit('${apptId}', '${fieldKey}');}">${currentValue === '-' ? '' : currentValue}</textarea>`;
+    } else {
+      inputHtml = `<input type="text" class="inline-edit-input" value="${currentValue === '-' ? '' : currentValue}" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){cancelApptEdit('${apptId}', '${fieldKey}');}">`;
+    }
+    
+    valueSpan.outerHTML = inputHtml;
+    const input = parent.querySelector('.inline-edit-input');
+    if (input) input.focus();
+  }
+  
+  // Save appointment field
+  function saveApptField(apptId, fieldKey, value, type) {
+    const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
+    
+    google.script.run
+      .withSuccessHandler(function() {
+        // Reload appointments to reflect changes
+        if (opportunityId) loadAppointmentsForOpportunity(opportunityId);
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error updating appointment field:', err);
+        alert('Error updating field: ' + (err.message || err));
+        if (opportunityId) loadAppointmentsForOpportunity(opportunityId);
+      })
+      .updateAppointment(apptId, fieldKey, value);
+  }
+  
+  // Update appointment checkbox
+  function updateApptCheckbox(apptId, fieldKey, checked) {
+    google.script.run
+      .withSuccessHandler(function() {
+        console.log('Appointment checkbox updated');
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error updating appointment checkbox:', err);
+        alert('Error updating: ' + (err.message || err));
+      })
+      .updateAppointment(apptId, fieldKey, checked);
+  }
+  
+  // Cancel appointment edit
+  function cancelApptEdit(apptId, fieldKey) {
+    const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
+    if (opportunityId) loadAppointmentsForOpportunity(opportunityId);
+  }
+  
   function loadAppointmentsForOpportunity(opportunityId) {
     const container = document.getElementById('appointmentsContainer');
     if (!container) {
@@ -2285,80 +2423,62 @@ Best wishes,
           const statusClass = status === 'Completed' ? 'status-completed' : 
                              status === 'Cancelled' ? 'status-cancelled' : 
                              status === 'No Show' ? 'status-noshow' : 'status-scheduled';
-          const typeIcon = appt.typeOfAppointment === 'Phone' ? '📞' : 
-                          appt.typeOfAppointment === 'Video' ? '🎥' : '🏢';
           
           // Expand Scheduled appointments by default, collapse others
           const isExpanded = status === 'Scheduled';
           const expandedClass = isExpanded ? 'expanded' : '';
           
-          html += `<div class="appointment-item ${expandedClass}" data-appt-id="${appt.id}">`;
+          html += `<div class="appointment-item subsequent-appt ${expandedClass}" data-appt-id="${appt.id}">`;
           
-          // Clickable header with summary
-          html += `<div class="appointment-item-header" onclick="toggleAppointmentExpand('${appt.id}')">`;
-          html += `<div class="appointment-item-left">`;
+          // Collapsible header - 3 equal columns matching Taco layout
+          html += `<div class="appointment-item-header appointment-header-grid" onclick="toggleAppointmentExpand('${appt.id}')">`;
           html += `<span class="appointment-item-chevron">▶</span>`;
-          html += `<div class="appointment-item-summary">`;
-          html += `<span class="appointment-type">${typeIcon} ${appt.typeOfAppointment || 'Appointment'}</span>`;
-          html += `<span class="appointment-datetime">${formatDatetimeForDisplay(appt.appointmentTime)}</span>`;
-          html += `</div>`;
-          html += `</div>`;
+          html += `<span class="appt-header-label">Appointment:</span>`;
+          html += `<span class="appt-header-time">${formatDatetimeForDisplay(appt.appointmentTime)}</span>`;
+          html += `<span class="appt-header-type">${appt.typeOfAppointment || '-'}</span>`;
           html += `<span class="appointment-status ${statusClass}">${status}</span>`;
           html += `</div>`;
           
-          // Expandable body with Taco-style fields
+          // Expandable body with editable fields
           html += `<div class="appointment-item-body">`;
           html += `<div class="appointment-item-divider"></div>`;
           
-          // Row 1: Appointment Time, Type of Appointment, How Booked
-          html += `<div class="appointment-row">`;
-          html += `<div class="detail-group"><span class="detail-label">Appointment Time</span><span class="detail-value">${formatDatetimeForDisplay(appt.appointmentTime)}</span></div>`;
-          html += `<div class="detail-group"><span class="detail-label">Type of Appointment</span><span class="detail-value">${appt.typeOfAppointment || '-'}</span></div>`;
-          html += `<div class="detail-group"><span class="detail-label">How Booked</span><span class="detail-value">${appt.howBooked || '-'}${appt.howBooked === 'Other' && appt.howBookedOther ? ' - ' + appt.howBookedOther : ''}</span></div>`;
+          // Row 1: Appointment Time, Type of Appointment, How Booked (editable)
+          html += `<div class="taco-row">`;
+          html += renderApptField(appt.id, 'Appointment Time', 'appointmentTime', appt.appointmentTime, 'datetime');
+          html += renderApptField(appt.id, 'Type of Appointment', 'typeOfAppointment', appt.typeOfAppointment, 'select', ['Phone', 'Video', 'Office']);
+          html += renderApptField(appt.id, 'How Booked', 'howBooked', appt.howBooked, 'select', ['Calendly', 'Email', 'Phone', 'Podium', 'Other']);
           html += `</div>`;
           
-          // Row 2: Phone Number (if Phone), Video Meet URL (if Video), empty
-          html += `<div class="appointment-row">`;
-          if (appt.typeOfAppointment === 'Phone') {
-            html += `<div class="detail-group"><span class="detail-label">Phone Number</span><span class="detail-value">${appt.phoneNumber || '-'}</span></div>`;
-          } else if (appt.typeOfAppointment === 'Video') {
-            const meetUrl = appt.videoMeetUrl || '-';
-            const meetLink = meetUrl !== '-' ? `<a href="https://${meetUrl.replace(/^https?:\/\//, '')}" target="_blank">${meetUrl}</a>` : '-';
-            html += `<div class="detail-group"><span class="detail-label">Video Meet URL</span><span class="detail-value">${meetLink}</span></div>`;
-          } else {
-            html += `<div class="detail-group"></div>`;
-          }
-          html += `<div class="detail-group"></div>`;
-          html += `<div class="detail-group"></div>`;
+          // Row 2: Phone Number (if Phone), Video Meet URL (if Video), How Booked Other (if Other)
+          html += `<div class="taco-row">`;
+          const phoneStyle = appt.typeOfAppointment === 'Phone' ? '' : 'display:none;';
+          const videoStyle = appt.typeOfAppointment === 'Video' ? '' : 'display:none;';
+          const otherStyle = appt.howBooked === 'Other' ? '' : 'display:none;';
+          html += `<div id="appt_field_wrap_${appt.id}_phone" style="${phoneStyle}">${renderApptField(appt.id, 'Phone Number', 'phoneNumber', appt.phoneNumber, 'text')}</div>`;
+          html += `<div id="appt_field_wrap_${appt.id}_video" style="${videoStyle}">${renderApptField(appt.id, 'Video Meet URL', 'videoMeetUrl', appt.videoMeetUrl, 'text')}</div>`;
+          html += `<div id="appt_field_wrap_${appt.id}_other" style="${otherStyle}">${renderApptField(appt.id, 'How Booked Other', 'howBookedOther', appt.howBookedOther, 'text')}</div>`;
           html += `</div>`;
           
-          // Row 3: Need Evidence, Need Reminder, empty
-          html += `<div class="appointment-row">`;
-          html += `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" disabled ${appt.needEvidenceInAdvance ? 'checked' : ''}><label>Need Evidence in Advance</label></div></div>`;
-          html += `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" disabled ${appt.needApptReminder ? 'checked' : ''}><label>Need Appt Reminder</label></div></div>`;
-          html += `<div class="detail-group"></div>`;
+          // Row 3: Need Evidence, Need Reminder
+          html += `<div class="taco-row">`;
+          html += renderApptCheckbox(appt.id, 'Need Evidence in Advance', 'needEvidenceInAdvance', appt.needEvidenceInAdvance);
+          html += renderApptCheckbox(appt.id, 'Need Appt Reminder', 'needApptReminder', appt.needApptReminder);
           html += `</div>`;
           
-          // Send Confirmation Email button (before conf checkboxes)
+          // Send Confirmation Email button
           html += `<div style="margin:15px 0;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${opportunityId}')">Send Confirmation Email</button></div>`;
           
-          // Row 4: Conf Email Sent, Conf Text Sent, empty
-          html += `<div class="appointment-row">`;
-          html += `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" disabled ${appt.confEmailSent ? 'checked' : ''}><label>Conf Email Sent</label></div></div>`;
-          html += `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" disabled ${appt.confTextSent ? 'checked' : ''}><label>Conf Text Sent</label></div></div>`;
-          html += `<div class="detail-group"></div>`;
+          // Row 4: Conf Email Sent, Conf Text Sent
+          html += `<div class="taco-row">`;
+          html += renderApptCheckbox(appt.id, 'Conf Email Sent', 'confEmailSent', appt.confEmailSent);
+          html += renderApptCheckbox(appt.id, 'Conf Text Sent', 'confTextSent', appt.confTextSent);
           html += `</div>`;
           
-          // Row 5: Notes (2/3) and Status (1/3) at the bottom
-          html += `<div class="appointment-row" style="margin-top:15px;">`;
-          html += `<div class="detail-group" style="grid-column: span 2;"><span class="detail-label">Notes</span><span class="detail-value">${appt.notes || '-'}</span></div>`;
-          html += `<div class="detail-group"><span class="detail-label">Status</span><span class="detail-value">${status}</span></div>`;
-          html += `</div>`;
-          
-          // Actions
-          html += `<div class="appointment-actions">`;
-          html += `<button onclick="editAppointment('${appt.id}', '${opportunityId}')" class="btn-edit-appt">Edit</button>`;
-          html += `<button onclick="deleteAppointment('${appt.id}', '${opportunityId}')" class="btn-delete-appt">Delete</button>`;
+          // Row 5: Notes (2/3) and Status (1/3)
+          html += `<div class="taco-row taco-row-notes-status" style="margin-top:15px;">`;
+          html += `<div style="grid-column: span 2;">${renderApptField(appt.id, 'Notes', 'notes', appt.notes, 'textarea')}</div>`;
+          html += renderApptField(appt.id, 'Status', 'appointmentStatus', status, 'select', ['Scheduled', 'Completed', 'Cancelled', 'No Show']);
           html += `</div>`;
           
           html += `</div>`; // close body

@@ -232,13 +232,21 @@ export async function createContact(fields, userContext = null) {
     const createFields = { ...fields };
     if (userContext) {
       if (userContext.name) {
-        createFields["Creating Site User Name"] = userContext.name;
+        createFields["Created By (Web App User)"] = userContext.name;
         createFields["Last Site User Name"] = userContext.name;
       }
       if (userContext.email) {
-        createFields["Creating Site User Email"] = userContext.email;
+        createFields["Created By (Web App User Email)"] = userContext.email;
         createFields["Last Site User Email"] = userContext.email;
       }
+      // Add created timestamp in DD/MM/YYYY HH:MM format
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      createFields["Created On (Web App)"] = `${day}/${month}/${year} ${hours}:${minutes}`;
     }
     const record = await base("Contacts").create(createFields);
     return formatRecord(record);

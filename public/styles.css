@@ -501,6 +501,7 @@
   .template-editor-cell { padding: 12px 15px; box-sizing: border-box; }
   .template-editor-cell:nth-child(odd) { border-right: 1px solid var(--color-border); }
   .template-name-cell { padding-bottom: 0; }
+  .template-name-cell:nth-child(even) { background: #FAFAFA; }
   .preview-cell { background: #FAFAFA; }
   .preview-cell label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
   .template-body-cell { overflow-y: auto; display: flex; flex-direction: column; }
@@ -552,7 +553,7 @@
   .template-list-edit { background: var(--color-star); color: #FFF; }
   .template-list-edit:hover { opacity: 0.9; }
   body.dark-mode .template-editor-panel-header { background: #222; border-color: #444; color: #AAA; }
-  body.dark-mode .preview-cell { background: #1a1a1a; }
+  body.dark-mode .preview-cell, body.dark-mode .template-name-cell:nth-child(even) { background: #1a1a1a; }
   body.dark-mode .preview-subject-text, body.dark-mode .preview-body-content { background: #2a2a2a; border-color: #444; color: #E8E6E1; }
   body.dark-mode .template-editor-cell:nth-child(odd) { border-color: #444; }
   body.dark-mode .template-editor-grid > .template-editor-panel-header:first-child { border-color: #444; }

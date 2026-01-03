@@ -1869,7 +1869,8 @@ Best wishes,
     if (!preferredName && !tenure) return '';
     const parts = [];
     if (preferredName) parts.push(`prefers ${preferredName}`);
-    if (tenure) parts.push(`in our database for ${tenure}`);
+    if (tenure === 'just added today') parts.push(tenure);
+    else if (tenure) parts.push(`in our database for ${tenure}`);
     return parts.join(' · ');
   }
   function calculateTenure(createdStr) {

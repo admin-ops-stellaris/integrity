@@ -8,6 +8,14 @@ Integrity is a Customer Relationship Management (CRM) system designed for Stella
 - Security is important - Google Workspace OAuth for team access control
 - Future plans: Mercury CRM integration, WYSIWYG email editor, Slack integration, requirements tracking
 
+## Brand Colors
+- Trail: #2C2622
+- Midnight: #19414C
+- Star: #BB9934
+- Cedar: #7B8B64
+- Salt: #F2F0E9
+- Sky: #D0DFE6
+
 ## System Architecture
 Integrity is built on a Node.js/Express backend, serving a static frontend.
 - **UI/UX Decisions**: The application features a modern UI with custom fonts (Geist, Libre Baskerville), dark mode toggle with persistence, and intuitive UX enhancements like keyboard shortcuts and status color-coding. Opportunity status badges, avatar initials with colored circles, and a redesigned header contribute to a clean and efficient interface.

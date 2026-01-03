@@ -2499,7 +2499,7 @@ Best wishes,
           
           // Row 5: Status (1/3) and Notes (2/3)
           html += `<div class="taco-row taco-row-status-notes" style="margin-top:15px;">`;
-          html += renderApptField(appt.id, 'Status', 'appointmentStatus', status, 'select', ['', 'Scheduled', 'Completed', 'Cancelled', 'No Show']);
+          html += renderApptField(appt.id, 'Appointment Status', 'appointmentStatus', status, 'select', ['', 'Scheduled', 'Completed', 'Cancelled', 'No Show']);
           html += `<div style="grid-column: span 2;">${renderApptFieldNoIcon(appt.id, 'Notes', 'notes', appt.notes, 'textarea')}</div>`;
           html += `</div>`;
           

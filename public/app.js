@@ -1300,6 +1300,16 @@ Best wishes,
   }
 
   // --- INLINE EDIT LOGIC ---
+  function refreshPanelAudit(table, id) {
+    google.script.run.withSuccessHandler(function(response) {
+      if (!response || !response.audit) return;
+      const auditSection = document.querySelector('.panel-audit-section');
+      if (auditSection && response.audit.Modified) {
+        const modifiedDiv = auditSection.querySelectorAll('div')[1];
+        if (modifiedDiv) modifiedDiv.innerText = response.audit.Modified;
+      }
+    }).getRecordDetail(table, id);
+  }
   function toggleFieldEdit(fieldKey) {
      document.getElementById('view_' + fieldKey).style.display = 'none';
      document.getElementById('edit_' + fieldKey).style.display = 'block';
@@ -1319,6 +1329,7 @@ Best wishes,
         if (displayEl) displayEl.innerText = val || 'Not set';
         cancelFieldEdit(fieldKey);
         btn.innerText = originalText; btn.disabled = false;
+        refreshPanelAudit(table, id);
         if(fieldKey === 'Opportunity Name') {
            document.getElementById('panelTitle').innerText = val;
            if(currentContactRecord) { loadOpportunities(currentContactRecord.fields); }
@@ -1370,6 +1381,7 @@ Best wishes,
         document.getElementById('display_' + fieldKey).innerText = displayVal || 'Not set';
         cancelFieldEdit(fieldKey);
         btn.innerText = originalText; btn.disabled = false;
+        refreshPanelAudit(table, id);
      }).updateRecord(table, id, fieldKey, saveVal);
   }
 
@@ -1382,6 +1394,7 @@ Best wishes,
       // Restore the proper label text (not Yes/No)
       if (label) label.innerText = labelText;
       // Toggle appointment fields visibility
+      refreshPanelAudit(table, id);
       if (fieldKey === 'Taco: Converted to Appt') {
         const section = document.getElementById('tacoApptFieldsSection');
         if (section) section.style.display = isChecked ? '' : 'none';

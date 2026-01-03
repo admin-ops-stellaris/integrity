@@ -71,6 +71,12 @@
     localStorage.setItem('integrity-theme', isDark ? 'dark' : 'light');
   }
 
+  // --- AUTO-EXPANDING TEXTAREA ---
+  function autoExpandTextarea(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
   // --- SCREENSAVER ---
   let screensaverTimer = null;
   const SCREENSAVER_DELAY = 120000; // 2 minutes
@@ -1302,7 +1308,9 @@ Best wishes,
         currentEditingTemplate = template;
         document.getElementById('templateEditorTitle').innerText = 'Edit Template';
         document.getElementById('templateEditorName').value = template.name;
-        document.getElementById('templateEditorSubject').value = template.subject;
+        const subjectEl = document.getElementById('templateEditorSubject');
+        subjectEl.value = template.subject;
+        setTimeout(() => autoExpandTextarea(subjectEl), 0);
         if (templateEditorQuill) {
           templateEditorQuill.clipboard.dangerouslyPasteHTML(template.body);
         }

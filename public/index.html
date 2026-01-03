@@ -465,7 +465,7 @@
             </div>
             <div class="template-editor-field">
               <label>Subject Line</label>
-              <input type="text" id="templateEditorSubject" placeholder="Email subject with {{variables}}">
+              <textarea id="templateEditorSubject" placeholder="Email subject with {{variables}}" rows="1" oninput="autoExpandTextarea(this)"></textarea>
             </div>
             <div class="template-editor-field template-body-field">
               <label>Email Body</label>

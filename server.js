@@ -54,7 +54,7 @@ app.use((req, res, next) => {
 let clientCache = new Map();
 
 // Helper to parse Taco appointment date formats to ISO string (Australia/Sydney timezone)
-// Supports formats like: "13/01/26 3:30 PM", "Mon 5 Jan 2026 3:30 PM", "13/01/2026 15:30"
+// Supports formats like: "13/01/26 3:30 PM", "Mon 5 Jan 2026 3:30 PM", "Thursday 15/01/26 at 9:00am"
 function parseTacoAppointmentTime(tacoDateStr) {
   if (!tacoDateStr || typeof tacoDateStr !== 'string') return null;
   
@@ -67,26 +67,40 @@ function parseTacoAppointmentTime(tacoDateStr) {
       return str;
     }
     
-    // Australia/Sydney is typically UTC+10 or UTC+11 (daylight saving)
-    // For simplicity, we'll construct an ISO string with explicit offset
-    // Airtable accepts datetime-local format for datetime fields
-    
     let day, month, year, hour, minute;
     
-    // Try DD/MM/YY HH:MM AM/PM format (e.g., "13/01/26 3:30 PM")
-    const ddmmyyAmpm = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
-    if (ddmmyyAmpm) {
-      day = parseInt(ddmmyyAmpm[1]);
-      month = parseInt(ddmmyyAmpm[2]);
-      year = parseInt(ddmmyyAmpm[3]);
+    // Try "DayName DD/MM/YY at H:MMam/pm" format (e.g., "Thursday 15/01/26 at 9:00am")
+    const dayNameAtFormat = str.match(/^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+at\s+(\d{1,2}):(\d{2})\s*(am|pm)?$/i);
+    if (dayNameAtFormat) {
+      day = parseInt(dayNameAtFormat[1]);
+      month = parseInt(dayNameAtFormat[2]);
+      year = parseInt(dayNameAtFormat[3]);
       if (year < 100) year += 2000;
       
-      hour = parseInt(ddmmyyAmpm[4]);
-      minute = parseInt(ddmmyyAmpm[5]);
-      const ampm = (ddmmyyAmpm[6] || '').toUpperCase();
+      hour = parseInt(dayNameAtFormat[4]);
+      minute = parseInt(dayNameAtFormat[5]);
+      const ampm = (dayNameAtFormat[6] || '').toUpperCase();
       
       if (ampm === 'PM' && hour !== 12) hour += 12;
       if (ampm === 'AM' && hour === 12) hour = 0;
+    }
+    
+    // Try DD/MM/YY HH:MM AM/PM format (e.g., "13/01/26 3:30 PM")
+    if (!day) {
+      const ddmmyyAmpm = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      if (ddmmyyAmpm) {
+        day = parseInt(ddmmyyAmpm[1]);
+        month = parseInt(ddmmyyAmpm[2]);
+        year = parseInt(ddmmyyAmpm[3]);
+        if (year < 100) year += 2000;
+        
+        hour = parseInt(ddmmyyAmpm[4]);
+        minute = parseInt(ddmmyyAmpm[5]);
+        const ampm = (ddmmyyAmpm[6] || '').toUpperCase();
+        
+        if (ampm === 'PM' && hour !== 12) hour += 12;
+        if (ampm === 'AM' && hour === 12) hour = 0;
+      }
     }
     
     // Try "Day D Mon YYYY H:MM AM/PM" format (e.g., "Mon 5 Jan 2026 3:30 PM")

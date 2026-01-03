@@ -2125,29 +2125,6 @@ Best wishes,
           html += `<div class="taco-section-header"><img src="https://taco.insightprocessing.com.au/static/images/taco.jpg" alt="Taco"><span>Fields from Taco Enquiry tab</span></div>`;
           html += '<div id="tacoFieldsContainer">';
           
-          // Get current values for conditional logic
-          const convertedToAppt = dataMap['Taco: Converted to Appt']?.value === true || dataMap['Taco: Converted to Appt']?.value === 'true';
-          const typeOfAppt = dataMap['Taco: Type of Appointment']?.value || '';
-          const howBooked = dataMap['Taco: How appt booked']?.value || '';
-          
-          // Check if appointment is in the past (at least 1 day after)
-          const apptTimeStr = dataMap['Taco: Appointment Time']?.value || '';
-          let apptIsPast = false;
-          if (apptTimeStr && convertedToAppt) {
-            const match = apptTimeStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
-            if (match) {
-              const day = parseInt(match[1]);
-              const month = parseInt(match[2]) - 1;
-              let year = parseInt(match[3]);
-              if (year < 100) year += 2000;
-              const apptDate = new Date(year, month, day);
-              apptDate.setHours(23, 59, 59, 999);
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              apptIsPast = today > apptDate;
-            }
-          }
-          
           // Row 1: New or Existing Client, Lead Source (3rd empty)
           html += '<div class="taco-row">';
           if (dataMap['Taco: New or Existing Client']) html += renderField(dataMap['Taco: New or Existing Client'], table, id);
@@ -2173,87 +2150,6 @@ Best wishes,
           html += '<div class="taco-row">';
           if (dataMap['Taco: Converted to Appt']) html += renderField(dataMap['Taco: Converted to Appt'], table, id);
           html += '</div>';
-          
-          // Thin divider line before appointment fields section
-          html += '<div class="taco-section-divider"></div>';
-          
-          // Appointment fields section (only visible if Converted to Appt is checked)
-          // Get status for expand/collapse default
-          const tacoApptStatus = dataMap['Taco: Appt Status']?.value || 'Scheduled';
-          const tacoApptExpanded = tacoApptStatus === 'Scheduled';
-          const statusClass = tacoApptStatus === 'Completed' ? 'status-completed' : 
-                             tacoApptStatus === 'Cancelled' ? 'status-cancelled' : 
-                             tacoApptStatus === 'No Show' ? 'status-noshow' : 'status-scheduled';
-          
-          html += `<div id="tacoApptFieldsSection" class="appointment-item ${tacoApptExpanded ? 'expanded' : ''}" style="${convertedToAppt ? '' : 'display:none;'}" data-taco-appt="true">`;
-          
-          // Collapsible header - 3 equal columns: Appointment label, Time, Type, Status
-          html += `<div class="appointment-item-header appointment-header-grid" onclick="toggleTacoApptExpand()">`;
-          html += `<span class="appointment-item-chevron">▶</span>`;
-          html += `<span class="appt-header-label">Appointment:</span>`;
-          html += `<span class="appt-header-time">${dataMap['Taco: Appointment Time']?.value || 'Time not set'}</span>`;
-          html += `<span class="appt-header-type">${typeOfAppt || '-'}</span>`;
-          html += `<span class="appointment-status ${statusClass}">${tacoApptStatus}</span>`;
-          html += `</div>`;
-          
-          // Expandable body
-          html += `<div class="appointment-item-body">`;
-          html += `<div class="appointment-item-divider"></div>`;
-          
-          // Row 1: Appointment Time, Type of Appointment, How Appt Booked
-          html += '<div class="taco-row">';
-          if (dataMap['Taco: Appointment Time']) html += renderField(dataMap['Taco: Appointment Time'], table, id);
-          if (dataMap['Taco: Type of Appointment']) html += renderField(dataMap['Taco: Type of Appointment'], table, id);
-          if (dataMap['Taco: How appt booked']) html += renderField(dataMap['Taco: How appt booked'], table, id);
-          html += '</div>';
-          
-          // Row 2: Appt Phone Number (if Phone), Appt Meet URL (if Video), How Appt Booked Other (if Other)
-          html += '<div class="taco-row">';
-          const phoneDisplay = typeOfAppt === 'Phone' ? '' : 'display:none;';
-          const videoDisplay = typeOfAppt === 'Video' ? '' : 'display:none;';
-          const otherDisplay = howBooked === 'Other' ? '' : 'display:none;';
-          if (dataMap['Taco: Appt Phone Number']) html += `<div id="field_wrap_Taco: Appt Phone Number" style="${phoneDisplay}">${renderField(dataMap['Taco: Appt Phone Number'], table, id)}</div>`;
-          if (dataMap['Taco: Appt Meet URL']) html += `<div id="field_wrap_Taco: Appt Meet URL" style="${videoDisplay}">${renderField(dataMap['Taco: Appt Meet URL'], table, id)}</div>`;
-          if (dataMap['Taco: How Appt Booked Other']) html += `<div id="field_wrap_Taco: How Appt Booked Other" style="${otherDisplay}">${renderField(dataMap['Taco: How Appt Booked Other'], table, id)}</div>`;
-          html += '</div>';
-          
-          // Row 3: Need Evidence in Advance, Need Appt Reminder
-          html += '<div class="taco-row">';
-          if (dataMap['Taco: Need Evidence in Advance']) html += renderField(dataMap['Taco: Need Evidence in Advance'], table, id);
-          if (dataMap['Taco: Need Appt Reminder']) {
-            const reminderField = { ...dataMap['Taco: Need Appt Reminder'] };
-            if (howBooked === 'Calendly') {
-              reminderField.noLabel = 'Not required as Calendly will do it automatically';
-            }
-            html += renderField(reminderField, table, id);
-          }
-          html += '</div>';
-          
-          // Send Confirmation Email button (before conf checkboxes)
-          html += `<div style="margin:15px 0;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${id}')">Send Confirmation Email</button></div>`;
-          
-          // Row 4: Appt Conf Email Sent, Appt Conf Text Sent
-          html += '<div class="taco-row">';
-          if (dataMap['Taco: Appt Conf Email Sent']) html += renderField(dataMap['Taco: Appt Conf Email Sent'], table, id);
-          if (dataMap['Taco: Appt Conf Text Sent']) html += renderField(dataMap['Taco: Appt Conf Text Sent'], table, id);
-          html += '</div>';
-          
-          // Row 5: Notes (2/3) and Status (1/3) at the bottom
-          html += '<div class="taco-row taco-row-notes-status" style="margin-top:15px;">';
-          if (dataMap['Taco: Appt Notes']) {
-            html += `<div style="grid-column: span 2;">${renderField(dataMap['Taco: Appt Notes'], table, id)}</div>`;
-          } else {
-            html += `<div class="detail-group" style="grid-column: span 2;"><span class="detail-label">Notes</span><span class="detail-value">-</span></div>`;
-          }
-          if (dataMap['Taco: Appt Status']) {
-            html += renderField(dataMap['Taco: Appt Status'], table, id);
-          } else {
-            html += `<div class="detail-group"><span class="detail-label">Status</span><span class="detail-value">Scheduled</span></div>`;
-          }
-          html += '</div>';
-          
-          html += '</div>'; // close appointment-item-body
-          html += '</div>'; // close tacoApptFieldsSection / appointment-item
           
           html += '</div></div>'; // close tacoFieldsContainer and taco-section-box
         }
@@ -2413,6 +2309,55 @@ Best wishes,
       .withSuccessHandler(function(appointments) {
         console.log('Appointments received:', appointments);
         if (!appointments || appointments.length === 0) {
+          // Check if this is a legacy record that needs backfill
+          const convertedToAppt = currentPanelData['Taco: Converted to Appt'];
+          if (convertedToAppt === true || convertedToAppt === 'true') {
+            console.log('Legacy backfill: Converted to Appt is true but no appointments exist - creating from Taco fields');
+            container.innerHTML = '<div style="color:#888; padding:16px 16px 4px 16px; font-style:italic;">Migrating appointment data...</div>';
+            
+            // Helper to extract primitive values from currentPanelData
+            const getVal = (key) => {
+              const v = currentPanelData[key];
+              if (v === undefined || v === null) return null;
+              if (typeof v === 'object' && v.value !== undefined) return v.value;
+              return v;
+            };
+            const getBool = (key) => {
+              const v = getVal(key);
+              return v === true || v === 'true';
+            };
+            
+            // Build appointment fields from Taco data (server will parse the date)
+            const fields = {
+              "Appointment Time": getVal('Taco: Appointment Time') || null,
+              "Type of Appointment": getVal('Taco: Type of Appointment') || "Phone",
+              "How Booked": getVal('Taco: How appt booked') || "Calendly",
+              "How Booked Other": getVal('Taco: How Appt Booked Other') || null,
+              "Phone Number": getVal('Taco: Appt Phone Number') || null,
+              "Video Meet URL": getVal('Taco: Appt Meet URL') || null,
+              "Need Evidence in Advance": getBool('Taco: Need Evidence in Advance'),
+              "Need Appt Reminder": getBool('Taco: Need Appt Reminder'),
+              "Conf Email Sent": getBool('Taco: Appt Conf Email Sent'),
+              "Conf Text Sent": getBool('Taco: Appt Conf Text Sent'),
+              "Appointment Status": getVal('Taco: Appt Status') || "Scheduled",
+              "Notes": getVal('Taco: Appt Notes') || null
+            };
+            
+            console.log('Backfill fields:', fields);
+            
+            google.script.run
+              .withSuccessHandler(function() {
+                console.log('Legacy appointment backfilled successfully');
+                loadAppointmentsForOpportunity(opportunityId);
+              })
+              .withFailureHandler(function(err) {
+                console.error('Failed to backfill legacy appointment:', err);
+                container.innerHTML = '<div style="color:#888; padding:16px 16px 4px 16px; font-style:italic;">No appointments scheduled</div>';
+              })
+              .createAppointment(opportunityId, fields);
+            return;
+          }
+          
           container.innerHTML = '<div style="color:#888; padding:16px 16px 4px 16px; font-style:italic;">No appointments scheduled</div>';
           return;
         }
@@ -2624,12 +2569,6 @@ Best wishes,
     }
   }
   
-  function toggleTacoApptExpand() {
-    const item = document.querySelector('.appointment-item[data-taco-appt="true"]');
-    if (item) {
-      item.classList.toggle('expanded');
-    }
-  }
   
   function editAppointment(appointmentId, opportunityId) {
     google.script.run

@@ -2437,13 +2437,13 @@ Best wishes,
               })
               .withFailureHandler(function(err) {
                 console.error('Failed to backfill legacy appointment:', err);
-                container.innerHTML = '<div style="color:#888; padding:10px 0; font-style:italic;">No appointments scheduled</div>';
+                container.innerHTML = '';
               })
               .createAppointment(opportunityId, fields);
             return;
           }
           
-          container.innerHTML = '<div style="color:#888; padding:10px 0; font-style:italic;">No appointments scheduled</div>';
+          container.innerHTML = '';
           return;
         }
         

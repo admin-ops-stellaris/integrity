@@ -590,6 +590,8 @@ app.post("/api/processForm", async (req, res) => {
       }
       res.json({ type: "update", message: "Contact updated successfully" });
     } else {
+      // Set Status to Active for new contacts
+      fields.Status = "Active";
       const newRecord = await airtable.createContact(fields, userContext);
       res.json({ type: "create", record: newRecord });
     }

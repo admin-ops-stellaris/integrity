@@ -314,11 +314,9 @@
     if(show) {
       document.getElementById('emptyState').style.display = 'none';
       document.getElementById('profileContent').style.display = 'flex';
-      document.getElementById('formDivider').style.display = 'block';
     } else {
       document.getElementById('emptyState').style.display = 'flex';
       document.getElementById('profileContent').style.display = 'none';
-      document.getElementById('formDivider').style.display = 'none';
       document.getElementById('formTitle').innerText = "Contact";
       document.getElementById('formSubtitle').innerText = '';
       document.getElementById('editBtn').style.visibility = 'hidden';
@@ -2944,13 +2942,18 @@ Best wishes,
     const isUnsubscribed = f["Unsubscribed from Marketing"] || false;
     const marketingText = isUnsubscribed ? "Unsubscribed" : "Subscribed";
     const marketingClass = isUnsubscribed ? "marketing-status-unsubscribed" : "marketing-status-subscribed";
+    const status = f.Status || "Active";
+    const statusClass = status === "Inactive" ? "status-inactive" : "status-active";
     
     let html = '';
+    // Status badge
+    html += `<div class="meta-status ${statusClass}">${status}</div>`;
+    html += '<div class="meta-divider"></div>';
     if (f.Created) {
       html += `<div class="meta-item"><span class="meta-label">Created</span><span class="meta-value">${f.Created}</span></div>`;
     }
     if (f.Modified) {
-      if (html) html += '<div class="meta-divider"></div>';
+      html += '<div class="meta-divider"></div>';
       html += `<div class="meta-item"><span class="meta-label">Modified</span><span class="meta-value">${f.Modified}</span></div>`;
     }
     html += `<div class="meta-marketing" onclick="openUnsubscribeEdit()"><span class="meta-label">Marketing:</span><span class="${marketingClass}">${marketingText}</span></div>`;

@@ -91,10 +91,15 @@
   .meta-label { color: #999; }
   .meta-value { color: var(--color-trail); }
   .meta-divider { width: 1px; height: 16px; background: var(--color-border); }
+  .meta-status { font-weight: 600; padding: 2px 8px; border-radius: 3px; }
+  .meta-status.status-active { color: var(--color-cedar); background: rgba(123, 139, 100, 0.15); }
+  .meta-status.status-inactive { color: #888; background: rgba(0, 0, 0, 0.08); }
   .meta-marketing { display: flex; align-items: center; gap: 6px; padding: 3px 8px; background: #FFF; border: 1px solid var(--color-border); border-radius: 4px; cursor: pointer; margin-left: auto; }
   .meta-marketing:hover { background: #F5F5F5; border-color: var(--color-star); }
   .marketing-status-subscribed { color: var(--color-cedar); font-weight: 500; }
   .marketing-status-unsubscribed { color: #A00; font-weight: 500; }
+  body.dark-mode .meta-status.status-active { background: rgba(123, 139, 100, 0.25); }
+  body.dark-mode .meta-status.status-inactive { background: rgba(255, 255, 255, 0.1); color: #999; }
   body.dark-mode .contact-meta-bar { background: #2a2a2a; border-color: #444; }
   body.dark-mode .meta-item { color: #AAA; }
   body.dark-mode .meta-label { color: #777; }

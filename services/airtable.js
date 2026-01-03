@@ -556,12 +556,23 @@ export async function getAppointmentsForOpportunity(opportunityId) {
   if (!base || !opportunityId) return [];
   
   try {
-    const records = await base("Appointments")
+    console.log("Fetching appointments for opportunity:", opportunityId);
+    
+    // Fetch all appointments and filter by linked Opportunity record ID
+    // ARRAYJOIN returns display names not record IDs, so we filter server-side
+    const allRecords = await base("Appointments")
       .select({
-        filterByFormula: `FIND("${opportunityId}", ARRAYJOIN({Opportunity}))`,
         sort: [{ field: "Appointment Time", direction: "asc" }]
       })
       .all();
+    
+    // Filter to only appointments linked to this opportunity
+    const records = allRecords.filter(r => {
+      const linkedOpps = r.fields["Opportunity"] || [];
+      return linkedOpps.includes(opportunityId);
+    });
+    
+    console.log("Appointments found:", records.length, "out of", allRecords.length, "total");
     
     return records.map(r => ({
       id: r.id,

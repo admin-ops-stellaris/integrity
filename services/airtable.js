@@ -638,9 +638,27 @@ export async function createAppointment(opportunityId, fields, userContext = nul
 export async function updateAppointment(appointmentId, field, value) {
   if (!base || !appointmentId) return null;
   
+  // Map frontend field names to Airtable field names
+  const fieldMap = {
+    'appointmentTime': 'Appointment Time',
+    'typeOfAppointment': 'Type of Appointment',
+    'howBooked': 'How Booked',
+    'howBookedOther': 'How Booked Other',
+    'phoneNumber': 'Phone Number',
+    'videoMeetUrl': 'Video Meet URL',
+    'needEvidenceInAdvance': 'Need Evidence in Advance',
+    'needApptReminder': 'Need Appt Reminder',
+    'confEmailSent': 'Conf Email Sent',
+    'confTextSent': 'Conf Text Sent',
+    'appointmentStatus': 'Appointment Status',
+    'notes': 'Notes'
+  };
+  
+  const airtableField = fieldMap[field] || field;
+  
   try {
     const record = await base("Appointments").update(appointmentId, {
-      [field]: value
+      [airtableField]: value || null
     });
     return formatRecord(record);
   } catch (err) {

@@ -344,18 +344,36 @@
     const contactName = currentContactRecord.fields.PreferredName || currentContactRecord.fields.FirstName || "this contact";
     
     const actionWord = newStatus === "Active" ? "activate" : "deactivate";
-    const confirmed = confirm(`Are you sure you want to ${actionWord} ${contactName}?`);
-    if (!confirmed) return;
+    showConfirmModal(`Are you sure you want to ${actionWord} ${contactName}?`, function() {
+      google.script.run
+        .withSuccessHandler(function() {
+          currentContactRecord.fields.Status = newStatus;
+          renderContactMetaBar(currentContactRecord.fields);
+        })
+        .withFailureHandler(function(err) {
+          console.error("Failed to update status:", err);
+        })
+        .updateRecord("Contacts", recordId, "Status", newStatus);
+    });
+  }
+
+  function showConfirmModal(message, onConfirm) {
+    const modal = document.getElementById('confirmModal');
+    const msgEl = document.getElementById('confirmModalMessage');
+    const okBtn = document.getElementById('confirmModalOk');
+    const cancelBtn = document.getElementById('confirmModalCancel');
     
-    google.script.run
-      .withSuccessHandler(function() {
-        currentContactRecord.fields.Status = newStatus;
-        renderContactMetaBar(currentContactRecord.fields);
-      })
-      .withFailureHandler(function(err) {
-        console.error("Failed to update status:", err);
-      })
-      .updateRecord("Contacts", recordId, "Status", newStatus);
+    msgEl.textContent = message;
+    modal.style.display = 'flex';
+    
+    const cleanup = () => {
+      modal.style.display = 'none';
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+    };
+    
+    okBtn.onclick = () => { cleanup(); if (onConfirm) onConfirm(); };
+    cancelBtn.onclick = cleanup;
   }
 
   function enableEditMode() {

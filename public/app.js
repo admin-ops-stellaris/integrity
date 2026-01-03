@@ -1360,18 +1360,25 @@ Best wishes,
     setTimeout(() => modal.classList.add('showing'), 10);
   }
   
+  let isHighlighting = false;
   function highlightVariables(quillInstance) {
-    if (!quillInstance) return;
-    const text = quillInstance.getText();
-    const regex = /\{\{[^}]+\}\}/g;
-    let match;
+    if (!quillInstance || isHighlighting) return;
+    isHighlighting = true;
     
-    // Remove existing highlights first
-    quillInstance.formatText(0, text.length, 'background', false);
-    
-    // Apply sky background to all {{variable}} patterns
-    while ((match = regex.exec(text)) !== null) {
-      quillInstance.formatText(match.index, match[0].length, 'background', '#D0DFE6');
+    try {
+      const text = quillInstance.getText();
+      const regex = /\{\{[^}]+\}\}/g;
+      let match;
+      
+      // Remove existing highlights first
+      quillInstance.formatText(0, text.length, 'background', false);
+      
+      // Apply sky background to all {{variable}} patterns
+      while ((match = regex.exec(text)) !== null) {
+        quillInstance.formatText(match.index, match[0].length, 'background', '#D0DFE6');
+      }
+    } finally {
+      isHighlighting = false;
     }
   }
   

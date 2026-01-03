@@ -144,7 +144,7 @@
   body.dark-mode .appt-editable:hover { background: rgba(255,255,255,0.06); }
   .appt-notes-field { background: rgba(0,0,0,0.02); }
   body.dark-mode .appt-notes-field { background: rgba(255,255,255,0.03); border-color: #444; }
-  .appt-audit-info { font-size: 10px; color: #999; font-style: italic; margin-bottom: 12px; }
+  .appt-audit-info { font-size: 10px; color: #999; font-style: italic; padding-top: 8px; margin-bottom: 12px; }
   body.dark-mode .appt-audit-info { color: #777; }
   .appt-section { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
   body.dark-mode .appt-section { background: #2a2a2a; border-color: #444; }

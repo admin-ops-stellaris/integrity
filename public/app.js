@@ -2219,16 +2219,24 @@ Best wishes,
     
     if (type === 'datetime') {
       const formatted = formatDatetimeForDisplay(value);
-      valueHtml = `<div class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}" style="display:flex; justify-content:space-between; align-items:center;"><span>${formatted}</span><span class="edit-field-icon">✎</span></div>`;
+      valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}" style="display:flex; justify-content:space-between; align-items:center;"><span>${formatted}</span><span class="edit-field-icon">✎</span></div>`;
     } else if (type === 'select') {
-      valueHtml = `<div class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}', ${JSON.stringify(options).replace(/"/g, '&quot;')})" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
+      valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}', ${JSON.stringify(options).replace(/"/g, '&quot;')})" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
     } else if (type === 'textarea') {
       const escaped = (value || '').replace(/"/g, '&quot;');
-      valueHtml = `<div class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="display:flex; justify-content:space-between; align-items:flex-start;"><span style="white-space:pre-wrap; flex:1;">${displayValue}</span><span class="edit-field-icon" style="margin-left:8px;">✎</span></div>`;
+      valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="display:flex; justify-content:space-between; align-items:flex-start;"><span style="white-space:pre-wrap; flex:1;">${displayValue}</span><span class="edit-field-icon" style="margin-left:8px;">✎</span></div>`;
     } else {
-      valueHtml = `<div class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
+      valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
     }
     
+    return `<div class="detail-group"><div class="detail-label">${label}</div>${valueHtml}</div>`;
+  }
+  
+  // Helper function to render editable appointment fields without edit icon (for Notes)
+  function renderApptFieldNoIcon(apptId, label, fieldKey, value, type) {
+    const displayValue = value || '';
+    const escaped = (value || '').replace(/"/g, '&quot;');
+    const valueHtml = `<div class="detail-value appt-editable appt-notes-field" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="white-space:pre-wrap; min-height:60px; padding:8px; border:1px solid #ddd; border-radius:4px; cursor:text;">${displayValue}</div>`;
     return `<div class="detail-group"><div class="detail-label">${label}</div>${valueHtml}</div>`;
   }
   
@@ -2380,6 +2388,13 @@ Best wishes,
           return;
         }
         
+        // Sort appointments oldest-first (ascending by date)
+        appointments.sort((a, b) => {
+          const dateA = a.appointmentTime ? new Date(a.appointmentTime).getTime() : 0;
+          const dateB = b.appointmentTime ? new Date(b.appointmentTime).getTime() : 0;
+          return dateA - dateB;
+        });
+        
         let html = '';
         appointments.forEach(appt => {
           const status = appt.appointmentStatus || 'Scheduled';
@@ -2393,10 +2408,9 @@ Best wishes,
           
           html += `<div class="appointment-item subsequent-appt ${expandedClass}" data-appt-id="${appt.id}">`;
           
-          // Collapsible header - 3 equal columns matching Taco layout
+          // Collapsible header - aligned with fields below
           html += `<div class="appointment-item-header appointment-header-grid" onclick="toggleAppointmentExpand('${appt.id}')">`;
           html += `<span class="appointment-item-chevron">▶</span>`;
-          html += `<span class="appt-header-label">Appointment:</span>`;
           html += `<span class="appt-header-time">${formatDatetimeForDisplay(appt.appointmentTime)}</span>`;
           html += `<span class="appt-header-type">${appt.typeOfAppointment || '-'}</span>`;
           html += `<span class="appointment-status ${statusClass}">${status}</span>`;
@@ -2438,10 +2452,10 @@ Best wishes,
           html += renderApptCheckbox(appt.id, 'Conf Text Sent', 'confTextSent', appt.confTextSent);
           html += `</div>`;
           
-          // Row 5: Notes (2/3) and Status (1/3)
-          html += `<div class="taco-row taco-row-notes-status" style="margin-top:15px;">`;
-          html += `<div style="grid-column: span 2;">${renderApptField(appt.id, 'Notes', 'notes', appt.notes, 'textarea')}</div>`;
+          // Row 5: Status (1/3) and Notes (2/3)
+          html += `<div class="taco-row taco-row-status-notes" style="margin-top:15px;">`;
           html += renderApptField(appt.id, 'Status', 'appointmentStatus', status, 'select', ['Scheduled', 'Completed', 'Cancelled', 'No Show']);
+          html += `<div style="grid-column: span 2;">${renderApptFieldNoIcon(appt.id, 'Notes', 'notes', appt.notes, 'textarea')}</div>`;
           html += `</div>`;
           
           html += `</div>`; // close body

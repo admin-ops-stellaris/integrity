@@ -134,11 +134,15 @@
   .appointment-item-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; user-select: none; }
   .appointment-item-header:hover { background: rgba(160, 190, 210, 0.2); }
   .dark-mode .appointment-item-header:hover { background: rgba(80, 110, 130, 0.2); }
-  .appointment-header-grid { display: grid; grid-template-columns: auto 1fr 1fr 1fr auto; gap: 12px; align-items: center; }
-  .appt-header-label { font-weight: 600; color: var(--color-trail); font-size: 14px; }
-  .appt-header-time { font-size: 13px; color: #666; }
+  .appointment-header-grid { display: grid; grid-template-columns: auto 1fr 1fr auto; gap: 12px; align-items: center; }
+  .appt-header-time { font-size: 13px; color: #666; font-weight: 500; }
   .appt-header-type { font-size: 13px; color: #666; }
   .dark-mode .appt-header-time, .dark-mode .appt-header-type { color: #AAA; }
+  .appt-editable { cursor: pointer; transition: background 0.15s; border-radius: 4px; }
+  .appt-editable:hover { background: rgba(0,0,0,0.04); }
+  body.dark-mode .appt-editable:hover { background: rgba(255,255,255,0.06); }
+  .appt-notes-field { background: rgba(0,0,0,0.02); }
+  body.dark-mode .appt-notes-field { background: rgba(255,255,255,0.03); border-color: #444; }
   .appointment-item-left { display: flex; align-items: center; gap: 10px; }
   .appointment-item-chevron { transition: transform 0.2s; color: #666; font-size: 12px; }
   .appointment-item.expanded .appointment-item-chevron { transform: rotate(90deg); }

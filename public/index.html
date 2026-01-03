@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="/styles.css?v=21">
+    <link rel="stylesheet" href="/styles.css?v=22">
   </head>
   <body>
     <div class="app-header">
@@ -37,7 +37,7 @@
               <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
             </div>
           </div>
-          <button type="button" class="new-btn" onclick="resetForm()">+ New Client</button>
+          <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>
         </div>
 
         <div id="duplicateWarningBox">
@@ -51,16 +51,14 @@
 
         <div id="emptyState">
            <img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:128,h:128,m" style="height:64px; width:64px; margin-bottom:15px; opacity:0.8;">
-           Search for a contact or click '+ New Client' to begin.
+           Search for a contact or click '+ New Contact' to begin.
         </div>
 
         <div id="profileContent" style="display:none; flex:1; flex-direction:column;">
           <form id="contactForm" onsubmit="handleFormSubmit(this)" style="display:flex; flex-direction:column; flex:1;">
             <input type="hidden" name="recordId" id="recordId">
-            <div class="profile-top">
-              <div class="fields-header">
-                <span id="editBtn" class="edit-icon" onclick="enableEditMode()" title="Edit Contact"><span class="edit-pencil">✎</span> Edit</span>
-              </div>
+            <div class="profile-top" onclick="handleFormClick(event)">
+              <span id="editBtn" style="display:none;"></span>
               <div class="contact-form-grid">
                 <div class="field-group"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
                 <div class="field-group"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
@@ -83,11 +81,13 @@
                   <input type="text" name="genderOther" id="genderOther" class="locked" readonly placeholder="Specify">
                 </div>
                 <div class="field-group"><label>Email</label><input type="email" name="email1" id="email1" class="locked" readonly></div>
-                <div class="field-group"><label>Email Note</label><input type="text" name="email1Comment" id="email1Comment" class="locked" readonly></div>
                 <div class="field-group"><label>Email 2</label><input type="email" name="email2" id="email2" class="locked" readonly></div>
-                <div class="field-group"><label>Email 2 Note</label><input type="text" name="email2Comment" id="email2Comment" class="locked" readonly></div>
                 <div class="field-group"><label>Email 3</label><input type="email" name="email3" id="email3" class="locked" readonly></div>
+                <div class="field-group"></div>
+                <div class="field-group"><label>Email Note</label><input type="text" name="email1Comment" id="email1Comment" class="locked" readonly></div>
+                <div class="field-group"><label>Email 2 Note</label><input type="text" name="email2Comment" id="email2Comment" class="locked" readonly></div>
                 <div class="field-group"><label>Email 3 Note</label><input type="text" name="email3Comment" id="email3Comment" class="locked" readonly></div>
+                <div class="field-group"></div>
                 <div class="field-group span-full"><label>Notes</label><textarea name="notes" id="notes" class="locked" readonly></textarea></div>
               </div>
             </div>
@@ -116,7 +116,7 @@
               <div class="profile-bottom-right">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                   <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
-                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New</button>
+                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New Opportunity</button>
                 </div>
                 <div id="oppLoading" style="display:none;">Loading...</div>
                 <ul id="oppList" class="opp-list"></ul>
@@ -728,7 +728,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=21"></script>
-    <script src="/app.js?v=21"></script>
+    <script src="/api-bridge.js?v=22"></script>
+    <script src="/app.js?v=22"></script>
   </body>
 </html>

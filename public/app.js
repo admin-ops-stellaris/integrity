@@ -319,11 +319,38 @@
       document.getElementById('profileContent').style.display = 'none';
       document.getElementById('formTitle').innerText = "Contact";
       document.getElementById('formSubtitle').innerText = '';
-      document.getElementById('editBtn').style.visibility = 'hidden';
       document.getElementById('refreshBtn').style.display = 'none'; 
       document.getElementById('contactMetaBar').classList.remove('visible');
       document.getElementById('duplicateWarningBox').style.display = 'none'; 
     }
+  }
+
+  function handleFormClick(event) {
+    const target = event.target;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.tagName === 'LABEL') {
+      const actionRow = document.getElementById('actionRow');
+      if (actionRow.style.display !== 'flex') {
+        enableEditMode();
+      }
+    }
+  }
+
+  function toggleContactStatus() {
+    const recordId = document.getElementById('recordId').value;
+    if (!recordId || !currentContactRecord) return;
+    
+    const currentStatus = currentContactRecord.fields.Status || "Active";
+    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    
+    google.script.run
+      .withSuccessHandler(function() {
+        currentContactRecord.fields.Status = newStatus;
+        renderContactMetaBar(currentContactRecord.fields);
+      })
+      .withFailureHandler(function(err) {
+        alert("Failed to update status: " + err.message);
+      })
+      .updateContactField(recordId, "Status", newStatus);
   }
 
   function enableEditMode() {
@@ -2947,7 +2974,7 @@ Best wishes,
     
     let html = '';
     // Status badge
-    html += `<div class="meta-status ${statusClass}">${status}</div>`;
+    html += `<div class="meta-status ${statusClass}" onclick="toggleContactStatus()" title="Click to toggle status">${status}</div>`;
     html += '<div class="meta-divider"></div>';
     if (f.Created) {
       html += `<div class="meta-item"><span class="meta-label">Created</span><span class="meta-value">${f.Created}</span></div>`;

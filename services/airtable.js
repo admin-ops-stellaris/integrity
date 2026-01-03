@@ -31,7 +31,7 @@ function formatAppointmentRecord(record) {
     needEvidenceInAdvance: f["Need Evidence in Advance"] || false,
     needApptReminder: f["Need Appt Reminder"] || false,
     notes: f["Notes"] || null,
-    appointmentStatus: f["Appointment Status"] || "Scheduled",
+    appointmentStatus: f["Appointment Status"] || null,
     opportunityId: Array.isArray(f["Opportunity"]) ? f["Opportunity"][0] : f["Opportunity"]
   };
 }
@@ -586,7 +586,7 @@ export async function getAppointmentsForOpportunity(opportunityId) {
       needApptReminder: r.fields["Need Appt Reminder"] || false,
       confEmailSent: r.fields["Conf Email Sent"] || false,
       confTextSent: r.fields["Conf Text Sent"] || false,
-      appointmentStatus: r.fields["Appointment Status"] || "Scheduled",
+      appointmentStatus: r.fields["Appointment Status"] || null,
       notes: r.fields["Notes"] || null,
       createdTime: r.fields["Created Time"] || null
     }));

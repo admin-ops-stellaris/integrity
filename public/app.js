@@ -2275,6 +2275,16 @@ Best wishes,
   function saveApptField(apptId, fieldKey, value, type) {
     const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
     
+    // If setting appointment time and status is currently blank, auto-set to Scheduled
+    if (fieldKey === 'appointmentTime' && value) {
+      const statusEl = document.querySelector(`[data-appt-id="${apptId}"][data-field="appointmentStatus"]`);
+      const currentStatus = statusEl?.querySelector('span')?.textContent || '';
+      if (!currentStatus || currentStatus === 'Not Set' || currentStatus === '-') {
+        // Also update status to Scheduled
+        google.script.run.updateAppointment(apptId, 'appointmentStatus', 'Scheduled');
+      }
+    }
+    
     google.script.run
       .withSuccessHandler(function() {
         // Reload appointments to reflect changes
@@ -2365,7 +2375,7 @@ Best wishes,
               "Need Appt Reminder": getBool('Taco: Need Appt Reminder'),
               "Conf Email Sent": getBool('Taco: Appt Conf Email Sent'),
               "Conf Text Sent": getBool('Taco: Appt Conf Text Sent'),
-              "Appointment Status": getVal('Taco: Appt Status') || "Scheduled",
+              "Appointment Status": getVal('Taco: Appt Status') || null,
               "Notes": getVal('Taco: Appt Notes') || null
             };
             
@@ -2397,10 +2407,14 @@ Best wishes,
         
         let html = '';
         appointments.forEach(appt => {
-          const status = appt.appointmentStatus || 'Scheduled';
-          const statusClass = status === 'Completed' ? 'status-completed' : 
+          const status = appt.appointmentStatus || '';
+          const isPastScheduled = status === 'Scheduled' && appt.appointmentTime && new Date(appt.appointmentTime) < new Date();
+          const statusClass = isPastScheduled ? 'status-needs-update' :
+                             status === 'Completed' ? 'status-completed' : 
                              status === 'Cancelled' ? 'status-cancelled' : 
-                             status === 'No Show' ? 'status-noshow' : 'status-scheduled';
+                             status === 'No Show' ? 'status-noshow' : 
+                             status === 'Scheduled' ? 'status-scheduled' : 'status-blank';
+          const statusDisplay = isPastScheduled ? 'Needs Update' : (status || 'Not Set');
           
           // Expand Scheduled appointments by default, collapse others
           const isExpanded = status === 'Scheduled';
@@ -2416,7 +2430,7 @@ Best wishes,
           html += `<span class="appt-header-time">${formatDatetimeForDisplay(appt.appointmentTime)}</span>`;
           html += `<span class="appt-header-type">${appt.typeOfAppointment || '-'}</span>`;
           html += `</div>`;
-          html += `<span class="appointment-status ${statusClass}">${status}</span>`;
+          html += `<span class="appointment-status ${statusClass}">${statusDisplay}</span>`;
           html += `</div>`;
           
           // Expandable body with editable fields
@@ -2457,7 +2471,7 @@ Best wishes,
           
           // Row 5: Status (1/3) and Notes (2/3)
           html += `<div class="taco-row taco-row-status-notes" style="margin-top:15px;">`;
-          html += renderApptField(appt.id, 'Status', 'appointmentStatus', status, 'select', ['Scheduled', 'Completed', 'Cancelled', 'No Show']);
+          html += renderApptField(appt.id, 'Status', 'appointmentStatus', status, 'select', ['', 'Scheduled', 'Completed', 'Cancelled', 'No Show']);
           html += `<div style="grid-column: span 2;">${renderApptFieldNoIcon(appt.id, 'Notes', 'notes', appt.notes, 'textarea')}</div>`;
           html += `</div>`;
           
@@ -2522,7 +2536,7 @@ Best wishes,
     document.getElementById('apptFormNeedEvidence').checked = appointment?.needEvidenceInAdvance || false;
     document.getElementById('apptFormNeedReminder').checked = appointment?.needApptReminder || false;
     document.getElementById('apptFormNotes').value = appointment?.notes || '';
-    document.getElementById('apptFormStatus').value = appointment?.appointmentStatus || 'Scheduled';
+    document.getElementById('apptFormStatus').value = appointment?.appointmentStatus || '';
     
     updateAppointmentFormVisibility();
     modal.classList.add('visible');

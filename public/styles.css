@@ -155,6 +155,9 @@
   .appointment-status.status-scheduled { background: var(--color-sky); color: #1a5a80; }
   .appointment-status.status-completed { background: rgba(60, 130, 60, 0.2); color: #2a6a2a; }
   .appointment-status.status-cancelled { background: rgba(180, 60, 60, 0.2); color: #8a2a2a; }
+  .appointment-status.status-blank { background: rgba(150, 150, 150, 0.15); color: #888; }
+  .appointment-status.status-needs-update { background: rgba(220, 120, 40, 0.25); color: #a05010; animation: pulse-warning 2s infinite; }
+  @keyframes pulse-warning { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
   .appointment-status.status-noshow { background: rgba(180, 120, 60, 0.2); color: #8a5a2a; }
   .appointment-item-body { display: none; padding: 0 16px 16px 16px; }
   .appointment-item.expanded .appointment-item-body { display: block; }

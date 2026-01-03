@@ -214,7 +214,25 @@ export async function updateContact(id, field, value, userContext = null) {
   if (!base) return null;
   try {
     const updateFields = { [field]: value };
-    // Note: "Last Site User" tracking fields removed - not present in Contacts table
+    if (userContext) {
+      if (userContext.name) {
+        updateFields["Modified By (Web App User)"] = userContext.name;
+      }
+      if (userContext.email) {
+        updateFields["Modified By (Web App User Email)"] = userContext.email;
+      }
+      // Add modified timestamp in ISO format with Perth timezone (GMT+8)
+      const now = new Date();
+      const perthOffset = 8 * 60; // Perth is UTC+8
+      const perthTime = new Date(now.getTime() + (perthOffset + now.getTimezoneOffset()) * 60 * 1000);
+      const year = perthTime.getFullYear();
+      const month = String(perthTime.getMonth() + 1).padStart(2, '0');
+      const day = String(perthTime.getDate()).padStart(2, '0');
+      const hours = String(perthTime.getHours()).padStart(2, '0');
+      const minutes = String(perthTime.getMinutes()).padStart(2, '0');
+      const seconds = String(perthTime.getSeconds()).padStart(2, '0');
+      updateFields["Modified On (Web App)"] = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000+08:00`;
+    }
     const record = await base("Contacts").update(id, updateFields);
     return formatRecord(record);
   } catch (err) {

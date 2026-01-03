@@ -1063,6 +1063,9 @@ Best wishes,
       brokerFirst: currentEmailContext.brokerFirst,
       brokerIntro: brokerIntro,
       appointmentTime: currentEmailContext.appointmentTime,
+      appointmentType: apptType,
+      clientType: clientType,
+      prepHandler: prepHandler,
       daysUntil: calculateDaysUntil(currentEmailContext.appointmentTime),
       phoneNumber: currentEmailContext.phoneNumber,
       meetUrl: currentEmailContext.meetUrl,
@@ -1076,29 +1079,474 @@ Best wishes,
       incomeInstructionsLink: `<a href="${EMAIL_LINKS.incomeStatementInstructions}" target="_blank" style="color:#0066CC;">click here</a>`
     };
     
-    const subject = replaceVariables(EMAIL_TEMPLATE.subject[apptType], variables);
-    document.getElementById('emailSubject').value = subject;
+    // Try to use Airtable template first
+    const confirmationTemplate = getTemplateByType('Confirmation') || getTemplateByName('Appointment Confirmation');
     
-    let body = `Hi ${variables.greeting},<br><br>`;
-    body += replaceVariables(EMAIL_TEMPLATE.opening[apptType], variables) + '<br><br>';
-    body += replaceVariables(EMAIL_TEMPLATE.meetLine[clientType], variables) + '<br><br>';
-    body += replaceVariables(EMAIL_TEMPLATE.preparation[prepHandler], variables) + '<br><br>';
-    body += replaceVariables(EMAIL_TEMPLATE.closing[clientType], variables);
-    
-    if (userSignature) {
-      body += '<br><br>' + userSignature.replace(/\n/g, '<br>');
-    }
-    
-    // Set content in Quill editor if available, otherwise fallback to innerHTML
-    if (emailQuill) {
-      emailQuill.clipboard.dangerouslyPasteHTML(body);
+    if (confirmationTemplate && confirmationTemplate.body) {
+      // Use Airtable template with conditional parser
+      const subject = parseConditionalTemplate(confirmationTemplate.subject || EMAIL_TEMPLATE.subject[apptType], variables);
+      document.getElementById('emailSubject').value = subject;
+      
+      let body = parseConditionalTemplate(confirmationTemplate.body, variables);
+      
+      if (userSignature) {
+        body += '<br><br>' + userSignature.replace(/\n/g, '<br>');
+      }
+      
+      if (emailQuill) {
+        emailQuill.clipboard.dangerouslyPasteHTML(body);
+      } else {
+        document.getElementById('emailPreviewBody').innerHTML = body;
+      }
     } else {
-      document.getElementById('emailPreviewBody').innerHTML = body;
+      // Fallback to hardcoded template
+      const subject = replaceVariables(EMAIL_TEMPLATE.subject[apptType], variables);
+      document.getElementById('emailSubject').value = subject;
+      
+      let body = `Hi ${variables.greeting},<br><br>`;
+      body += replaceVariables(EMAIL_TEMPLATE.opening[apptType], variables) + '<br><br>';
+      body += replaceVariables(EMAIL_TEMPLATE.meetLine[clientType], variables) + '<br><br>';
+      body += replaceVariables(EMAIL_TEMPLATE.preparation[prepHandler], variables) + '<br><br>';
+      body += replaceVariables(EMAIL_TEMPLATE.closing[clientType], variables);
+      
+      if (userSignature) {
+        body += '<br><br>' + userSignature.replace(/\n/g, '<br>');
+      }
+      
+      if (emailQuill) {
+        emailQuill.clipboard.dangerouslyPasteHTML(body);
+      } else {
+        document.getElementById('emailPreviewBody').innerHTML = body;
+      }
     }
   }
   
   function replaceVariables(template, variables) {
     return template.replace(/\{\{(\w+)\}\}/g, (match, key) => variables[key] || match);
+  }
+  
+  // --- AIRTABLE EMAIL TEMPLATES ---
+  let airtableTemplates = [];
+  let templatesLoaded = false;
+  let currentEditingTemplate = null;
+  
+  // Available template variables with descriptions (for Variable Picker)
+  const TEMPLATE_VARIABLES = {
+    'Client Info': [
+      { name: 'greeting', description: 'Client first name or preferred greeting' },
+      { name: 'clientType', description: '"New" or "Repeat"' }
+    ],
+    'Broker Info': [
+      { name: 'broker', description: 'Full broker name' },
+      { name: 'brokerFirst', description: 'Broker first name' },
+      { name: 'brokerIntro', description: '"our Mortgage Broker [Name]" for new clients, just first name for repeat' },
+      { name: 'sender', description: 'Current user (email sender) name' }
+    ],
+    'Appointment Details': [
+      { name: 'appointmentType', description: '"Office", "Phone", or "Video"' },
+      { name: 'appointmentTime', description: 'Formatted appointment date/time' },
+      { name: 'daysUntil', description: 'Number of days until appointment' },
+      { name: 'phoneNumber', description: 'Client phone number' },
+      { name: 'meetUrl', description: 'Google Meet URL for video calls' }
+    ],
+    'Preparation': [
+      { name: 'prepHandler', description: '"Shae", "Team", or "OpenBanking"' },
+      { name: 'prefillNote', description: 'Auto-fill note based on client type' }
+    ],
+    'Links': [
+      { name: 'officeMapLink', description: 'Office map link (clickable)' },
+      { name: 'ourTeamLink', description: 'Team page link (clickable)' },
+      { name: 'factFindLink', description: 'Fact Find document link' },
+      { name: 'myGovLink', description: 'myGov link' },
+      { name: 'myGovVideoLink', description: 'myGov help video link' },
+      { name: 'incomeInstructionsLink', description: 'Income statement instructions link' }
+    ]
+  };
+  
+  // Condition variables available for {{if}} blocks
+  const CONDITION_VARIABLES = [
+    { name: 'appointmentType', options: ['Office', 'Phone', 'Video'] },
+    { name: 'clientType', options: ['New', 'Repeat'] },
+    { name: 'prepHandler', options: ['Shae', 'Team', 'OpenBanking'] }
+  ];
+  
+  function loadEmailTemplates() {
+    google.script.run.withSuccessHandler(function(templates) {
+      airtableTemplates = templates || [];
+      templatesLoaded = true;
+      console.log('Email templates loaded:', airtableTemplates.length);
+    }).withFailureHandler(function(err) {
+      console.error('Failed to load email templates:', err);
+      airtableTemplates = [];
+      templatesLoaded = true;
+    }).getEmailTemplates();
+  }
+  
+  // Load templates on startup
+  loadEmailTemplates();
+  
+  // Parse conditional template syntax and render with context
+  function parseConditionalTemplate(template, context) {
+    if (!template) return '';
+    
+    // First, process conditional blocks {{if}}...{{endif}}
+    let result = processConditionals(template, context);
+    
+    // Then replace simple variables {{varName}}
+    result = replaceVariables(result, context);
+    
+    return result;
+  }
+  
+  // Process {{if var=value}}...{{elseif var=value}}...{{else}}...{{endif}} blocks
+  function processConditionals(template, context) {
+    // Regex to match {{if ...}} blocks including nested content
+    const conditionalPattern = /\{\{if\s+(\w+)\s*=\s*(\w+)\}\}([\s\S]*?)\{\{endif\}\}/gi;
+    
+    return template.replace(conditionalPattern, function(match, varName, varValue, innerContent) {
+      // Parse the inner content for elseif/else branches
+      const branches = parseConditionalBranches(innerContent);
+      const contextValue = context[varName];
+      
+      // Find matching branch
+      for (const branch of branches) {
+        if (branch.type === 'if' || branch.type === 'elseif') {
+          if (branch.value === contextValue) {
+            // Recursively process nested conditionals
+            return processConditionals(branch.content, context);
+          }
+        } else if (branch.type === 'else') {
+          // Else is the fallback
+          return processConditionals(branch.content, context);
+        }
+      }
+      
+      // Check if the initial if condition matches
+      if (varValue === contextValue) {
+        // Get content before first elseif/else
+        const firstBranchContent = innerContent.split(/\{\{(?:elseif|else)/i)[0];
+        return processConditionals(firstBranchContent, context);
+      }
+      
+      // No match found, return empty
+      return '';
+    });
+  }
+  
+  // Parse branches within a conditional block
+  function parseConditionalBranches(content) {
+    const branches = [];
+    
+    // Split by elseif and else, keeping the delimiters
+    const parts = content.split(/(\{\{elseif\s+\w+\s*=\s*\w+\}\}|\{\{else\}\})/gi);
+    
+    let currentBranch = { type: 'if', content: parts[0] || '', value: null };
+    
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i];
+      
+      if (/\{\{elseif\s+(\w+)\s*=\s*(\w+)\}\}/i.test(part)) {
+        branches.push(currentBranch);
+        const match = part.match(/\{\{elseif\s+(\w+)\s*=\s*(\w+)\}\}/i);
+        currentBranch = { type: 'elseif', varName: match[1], value: match[2], content: '' };
+      } else if (/\{\{else\}\}/i.test(part)) {
+        branches.push(currentBranch);
+        currentBranch = { type: 'else', content: '' };
+      } else {
+        currentBranch.content += part;
+      }
+    }
+    
+    branches.push(currentBranch);
+    return branches;
+  }
+  
+  // Get template by name
+  function getTemplateByName(name) {
+    return airtableTemplates.find(t => t.name.toLowerCase() === name.toLowerCase());
+  }
+  
+  // Get template by type
+  function getTemplateByType(type) {
+    return airtableTemplates.find(t => t.type === type);
+  }
+  
+  // --- TEMPLATE EDITOR FUNCTIONS ---
+  let templateEditorQuill = null;
+  
+  function openTemplateEditor(templateId) {
+    const modal = document.getElementById('templateEditorModal');
+    if (!modal) return;
+    
+    // Initialize Quill for template editor if not done
+    if (!templateEditorQuill && typeof Quill !== 'undefined') {
+      templateEditorQuill = new Quill('#templateEditorBody', {
+        modules: { toolbar: '#templateEditorToolbar' },
+        theme: 'snow'
+      });
+    }
+    
+    // Populate variable picker
+    populateVariablePicker();
+    
+    // Setup condition variable dropdown handler
+    const conditionVarSelect = document.getElementById('conditionVariable');
+    conditionVarSelect.onchange = function() {
+      updateConditionOptions(this.value);
+    };
+    
+    if (templateId) {
+      // Editing existing template
+      const template = airtableTemplates.find(t => t.id === templateId);
+      if (template) {
+        currentEditingTemplate = template;
+        document.getElementById('templateEditorTitle').innerText = 'Edit Template';
+        document.getElementById('templateEditorName').value = template.name;
+        document.getElementById('templateEditorSubject').value = template.subject;
+        if (templateEditorQuill) {
+          templateEditorQuill.clipboard.dangerouslyPasteHTML(template.body);
+        }
+      }
+    } else {
+      // New template
+      currentEditingTemplate = null;
+      document.getElementById('templateEditorTitle').innerText = 'New Template';
+      document.getElementById('templateEditorName').value = '';
+      document.getElementById('templateEditorSubject').value = '';
+      if (templateEditorQuill) {
+        templateEditorQuill.setText('');
+      }
+    }
+    
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
+  }
+  
+  function closeTemplateEditor() {
+    const modal = document.getElementById('templateEditorModal');
+    if (modal) {
+      modal.classList.remove('showing');
+      setTimeout(() => { modal.style.display = 'none'; }, 250);
+    }
+    currentEditingTemplate = null;
+  }
+  
+  function populateVariablePicker() {
+    const container = document.getElementById('variablePickerList');
+    if (!container) return;
+    
+    let html = '';
+    for (const [groupName, variables] of Object.entries(TEMPLATE_VARIABLES)) {
+      html += `<div class="variable-group">`;
+      html += `<div class="variable-group-title">${groupName}</div>`;
+      for (const v of variables) {
+        html += `<div class="variable-item" onclick="insertVariable('${v.name}')" title="${v.description}">`;
+        html += `<span class="variable-item-name">{{${v.name}}}</span>`;
+        html += `<span class="variable-item-desc">${v.description}</span>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+    container.innerHTML = html;
+  }
+  
+  function insertVariable(varName) {
+    if (!templateEditorQuill) return;
+    
+    const range = templateEditorQuill.getSelection();
+    const insertPos = range ? range.index : templateEditorQuill.getLength();
+    templateEditorQuill.insertText(insertPos, `{{${varName}}}`);
+    templateEditorQuill.setSelection(insertPos + varName.length + 4);
+  }
+  
+  function updateConditionOptions(varName) {
+    const container = document.getElementById('conditionOptionsContainer');
+    const optionsDiv = document.getElementById('conditionOptions');
+    
+    if (!varName) {
+      container.style.display = 'none';
+      return;
+    }
+    
+    const condVar = CONDITION_VARIABLES.find(v => v.name === varName);
+    if (!condVar) {
+      container.style.display = 'none';
+      return;
+    }
+    
+    let html = `<div class="condition-option-label">Select options to include:</div>`;
+    condVar.options.forEach(opt => {
+      html += `<div class="condition-option-row">`;
+      html += `<input type="checkbox" id="condOpt_${opt}" value="${opt}" checked>`;
+      html += `<span>${opt}</span>`;
+      html += `</div>`;
+    });
+    
+    optionsDiv.innerHTML = html;
+    container.style.display = 'block';
+  }
+  
+  function insertConditionBlock() {
+    if (!templateEditorQuill) return;
+    
+    const varName = document.getElementById('conditionVariable').value;
+    if (!varName) {
+      showAlert('Error', 'Please select a variable first', 'error');
+      return;
+    }
+    
+    const condVar = CONDITION_VARIABLES.find(v => v.name === varName);
+    if (!condVar) return;
+    
+    // Get selected options
+    const selectedOptions = [];
+    condVar.options.forEach(opt => {
+      const checkbox = document.getElementById(`condOpt_${opt}`);
+      if (checkbox && checkbox.checked) {
+        selectedOptions.push(opt);
+      }
+    });
+    
+    if (selectedOptions.length === 0) {
+      showAlert('Error', 'Please select at least one option', 'error');
+      return;
+    }
+    
+    // Build conditional block
+    let block = '';
+    selectedOptions.forEach((opt, idx) => {
+      if (idx === 0) {
+        block += `{{if ${varName}=${opt}}}\n[Content for ${opt}]\n`;
+      } else {
+        block += `{{elseif ${varName}=${opt}}}\n[Content for ${opt}]\n`;
+      }
+    });
+    block += `{{endif}}`;
+    
+    // Insert at cursor
+    const range = templateEditorQuill.getSelection();
+    const insertPos = range ? range.index : templateEditorQuill.getLength();
+    templateEditorQuill.insertText(insertPos, block);
+    
+    // Reset dropdown
+    document.getElementById('conditionVariable').value = '';
+    document.getElementById('conditionOptionsContainer').style.display = 'none';
+  }
+  
+  function saveTemplate() {
+    const name = document.getElementById('templateEditorName').value.trim();
+    const subject = document.getElementById('templateEditorSubject').value;
+    const body = templateEditorQuill ? templateEditorQuill.root.innerHTML : '';
+    
+    if (!name) {
+      showAlert('Error', 'Please enter a template name', 'error');
+      return;
+    }
+    
+    const btn = document.getElementById('templateEditorSaveBtn');
+    btn.innerText = 'Saving...';
+    btn.disabled = true;
+    
+    const fields = { name, subject, body };
+    
+    if (currentEditingTemplate) {
+      // Update existing
+      google.script.run.withSuccessHandler(function(result) {
+        btn.innerText = 'Save Template';
+        btn.disabled = false;
+        if (result) {
+          showAlert('Success', 'Template saved successfully', 'success');
+          loadEmailTemplates();
+          closeTemplateEditor();
+        } else {
+          showAlert('Error', 'Failed to save template', 'error');
+        }
+      }).withFailureHandler(function(err) {
+        btn.innerText = 'Save Template';
+        btn.disabled = false;
+        showAlert('Error', 'Failed to save template: ' + (err.message || 'Unknown error'), 'error');
+      }).updateEmailTemplate(currentEditingTemplate.id, fields);
+    } else {
+      // Create new
+      google.script.run.withSuccessHandler(function(result) {
+        btn.innerText = 'Save Template';
+        btn.disabled = false;
+        if (result) {
+          showAlert('Success', 'Template created successfully', 'success');
+          loadEmailTemplates();
+          closeTemplateEditor();
+        } else {
+          showAlert('Error', 'Failed to create template', 'error');
+        }
+      }).withFailureHandler(function(err) {
+        btn.innerText = 'Save Template';
+        btn.disabled = false;
+        showAlert('Error', 'Failed to create template: ' + (err.message || 'Unknown error'), 'error');
+      }).createEmailTemplate(fields);
+    }
+  }
+  
+  // --- TEMPLATE LIST (Central Hub) ---
+  function openTemplateList() {
+    const modal = document.getElementById('templateListModal');
+    if (!modal) return;
+    
+    refreshTemplateList();
+    
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
+  }
+  
+  function closeTemplateList() {
+    const modal = document.getElementById('templateListModal');
+    if (modal) {
+      modal.classList.remove('showing');
+      setTimeout(() => { modal.style.display = 'none'; }, 250);
+    }
+  }
+  
+  function refreshTemplateList() {
+    const container = document.getElementById('templateListContainer');
+    if (!container) return;
+    
+    if (airtableTemplates.length === 0) {
+      container.innerHTML = '<div style="color:#888; font-style:italic; padding:20px; text-align:center;">No templates yet. Create your first template to get started.</div>';
+      return;
+    }
+    
+    let html = '';
+    airtableTemplates.forEach(t => {
+      html += `<div class="template-list-item">`;
+      html += `<div><span class="template-list-name">${t.name}</span></div>`;
+      html += `<div class="template-list-actions">`;
+      html += `<span class="template-list-type">${t.type || 'General'}</span>`;
+      html += `<button class="template-list-edit" onclick="closeTemplateList(); openTemplateEditor('${t.id}')">Edit</button>`;
+      html += `</div>`;
+      html += `</div>`;
+    });
+    container.innerHTML = html;
+  }
+  
+  function createNewTemplate() {
+    closeTemplateList();
+    openTemplateEditor(null);
+  }
+  
+  // Open template editor from email composer context
+  function openCurrentTemplateEditor() {
+    // Find the Confirmation template (or first available)
+    const confirmationTemplate = airtableTemplates.find(t => 
+      t.type === 'Confirmation' || t.name.toLowerCase().includes('confirmation')
+    );
+    
+    if (confirmationTemplate) {
+      openTemplateEditor(confirmationTemplate.id);
+    } else if (airtableTemplates.length > 0) {
+      openTemplateEditor(airtableTemplates[0].id);
+    } else {
+      // No templates exist, open new template editor
+      openTemplateEditor(null);
+    }
   }
   
   function calculateDaysUntil(appointmentTimeStr) {

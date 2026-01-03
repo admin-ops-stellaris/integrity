@@ -349,7 +349,10 @@
               </div>
             </div>
             <div class="email-preview-container">
-              <div class="email-preview-label">Email Body (editable)</div>
+              <div class="email-preview-label" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Email Body (editable)</span>
+                <a href="javascript:void(0)" onclick="openCurrentTemplateEditor()" style="font-size:11px; color:var(--color-star);">Edit Template</a>
+              </div>
               <div id="emailQuillContainer">
                 <div id="emailQuillToolbar">
                   <span class="ql-formats">
@@ -387,6 +390,13 @@
           <div class="modal-body" style="overflow-y:auto; max-height:calc(90vh - 40px); flex:1;">
             <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Settings</h3>
             <p style="font-size:12px; color:#666; margin-bottom:15px;">These settings are shared with the whole team. Changes you make here will update for everyone.</p>
+            <div style="margin-bottom:15px; padding:12px; background:var(--color-sky); border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:600; font-size:13px;">Email Templates</div>
+                <div style="font-size:11px; color:#666;">Manage email templates with conditional content</div>
+              </div>
+              <button type="button" onclick="closeEmailSettings(); openTemplateList();" style="padding:8px 16px; background:var(--color-star); color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:500;">Manage Templates</button>
+            </div>
             <div class="email-settings-form">
               <div class="setting-row">
                 <label>Office Map Link</label>
@@ -436,6 +446,96 @@
               <button type="button" class="btn-confirm" onclick="saveEmailSettings()">Save</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template Editor Modal -->
+    <div id="templateEditorModal" class="modal-overlay" style="display:none;">
+      <div class="modal-content template-editor-modal">
+        <div class="modal-header">
+          <h3 id="templateEditorTitle">Edit Template</h3>
+          <button class="close-panel" onclick="closeTemplateEditor()">&times;</button>
+        </div>
+        <div class="template-editor-body">
+          <div class="template-editor-main">
+            <div class="template-editor-field">
+              <label>Template Name</label>
+              <input type="text" id="templateEditorName" placeholder="e.g., Appointment Confirmation">
+            </div>
+            <div class="template-editor-field">
+              <label>Subject Line</label>
+              <input type="text" id="templateEditorSubject" placeholder="Email subject with {{variables}}">
+            </div>
+            <div class="template-editor-field template-body-field">
+              <label>Email Body</label>
+              <div id="templateEditorQuillContainer">
+                <div id="templateEditorToolbar">
+                  <span class="ql-formats">
+                    <button class="ql-bold"></button>
+                    <button class="ql-italic"></button>
+                    <button class="ql-underline"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-link"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-list" value="ordered"></button>
+                    <button class="ql-list" value="bullet"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-clean"></button>
+                  </span>
+                </div>
+                <div id="templateEditorBody"></div>
+              </div>
+            </div>
+          </div>
+          <div class="template-editor-sidebar">
+            <div class="sidebar-section">
+              <h4>Insert Variable</h4>
+              <div id="variablePickerList" class="variable-picker-list"></div>
+            </div>
+            <div class="sidebar-section">
+              <h4>Add Condition</h4>
+              <div class="condition-builder">
+                <select id="conditionVariable">
+                  <option value="">Select variable...</option>
+                  <option value="appointmentType">Appointment Type</option>
+                  <option value="clientType">Client Type</option>
+                  <option value="prepHandler">Prep Handler</option>
+                </select>
+                <div id="conditionOptionsContainer" style="display:none;">
+                  <div class="condition-options" id="conditionOptions"></div>
+                  <button type="button" class="btn-insert-condition" onclick="insertConditionBlock()">Insert Condition Block</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeTemplateEditor()">Cancel</button>
+          <button type="button" class="btn-confirm" id="templateEditorSaveBtn" onclick="saveTemplate()">Save Template</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template List Modal (Central Hub) -->
+    <div id="templateListModal" class="modal-overlay" style="display:none;">
+      <div class="modal-content" style="max-width:700px;">
+        <div class="modal-header">
+          <h3>Email Templates</h3>
+          <button class="close-panel" onclick="closeTemplateList()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+          <p style="font-size:13px; color:#666; margin-bottom:15px;">Manage email templates used across the system. Changes apply to everyone.</p>
+          <div id="templateListContainer"></div>
+          <div style="margin-top:15px;">
+            <button type="button" class="btn-confirm" onclick="createNewTemplate()">+ New Template</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeTemplateList()">Close</button>
         </div>
       </div>
     </div>

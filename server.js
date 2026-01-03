@@ -766,16 +766,12 @@ app.post("/api/getRecordDetail", async (req, res) => {
     
     const auditInfo = {};
     if (schemaDef.auditFields) {
-      // Use the formula fields 'Created' and 'Modified' which already contain formatted timestamps
-      // Then append "by [Name]" from the user tracking fields
+      // Use the formula fields 'Created' and 'Modified' which already contain formatted timestamps and user names
       if (schemaDef.auditFields.includes('Created') && rawFields['Created']) {
-        // Support both old field name and new (Created By (Web App User))
-        const createdBy = rawFields['Created By (Web App User)'] || rawFields['Creating Site User Name'] || null;
-        auditInfo.Created = rawFields['Created'] + (createdBy ? ' by ' + createdBy : '');
+        auditInfo.Created = rawFields['Created'];
       }
       if (schemaDef.auditFields.includes('Modified') && rawFields['Modified']) {
-        const modifiedBy = rawFields['Last Site User Name'] || null;
-        auditInfo.Modified = rawFields['Modified'] + (modifiedBy ? ' by ' + modifiedBy : '');
+        auditInfo.Modified = rawFields['Modified'];
       }
     }
     

@@ -3093,7 +3093,8 @@ Best wishes,
       email3Comment: formObject.email3Comment.value,
       notes: formObject.notes.value,
       gender: formObject.gender.value,
-      genderOther: formObject.genderOther.value
+      genderOther: formObject.genderOther.value,
+      dateOfBirth: formObject.dateOfBirth.value
     };
     google.script.run.withSuccessHandler(function(response) {
          loadContacts();

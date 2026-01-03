@@ -814,3 +814,149 @@ export async function deleteAppointment(appointmentId) {
     return false;
   }
 }
+
+// --- EMAIL TEMPLATES CRUD ---
+
+const templateCache = new Map();
+const TEMPLATE_CACHE_TTL = 60000; // 1 minute cache
+
+export async function getEmailTemplates() {
+  if (!base) return [];
+  
+  // Check cache first
+  const cached = templateCache.get('all');
+  if (cached && (Date.now() - cached.timestamp < TEMPLATE_CACHE_TTL)) {
+    return cached.value;
+  }
+  
+  try {
+    const records = await base("Email Templates")
+      .select({
+        filterByFormula: "{Active} = TRUE()",
+        sort: [{ field: "Template Name", direction: "asc" }]
+      })
+      .all();
+    
+    const templates = records.map(r => ({
+      id: r.id,
+      name: r.fields["Template Name"] || "",
+      type: r.fields["Template Type"] || "General",
+      subject: r.fields["Subject Template"] || "",
+      body: r.fields["Body Template"] || "",
+      description: r.fields["Description"] || "",
+      active: r.fields["Active"] || false
+    }));
+    
+    templateCache.set('all', { value: templates, timestamp: Date.now() });
+    return templates;
+  } catch (err) {
+    console.error("getEmailTemplates error:", err.message);
+    return [];
+  }
+}
+
+export async function getEmailTemplate(templateId) {
+  if (!base || !templateId) return null;
+  
+  try {
+    const record = await base("Email Templates").find(templateId);
+    if (!record) return null;
+    
+    return {
+      id: record.id,
+      name: record.fields["Template Name"] || "",
+      type: record.fields["Template Type"] || "General",
+      subject: record.fields["Subject Template"] || "",
+      body: record.fields["Body Template"] || "",
+      description: record.fields["Description"] || "",
+      active: record.fields["Active"] || false
+    };
+  } catch (err) {
+    console.error("getEmailTemplate error:", err.message);
+    return null;
+  }
+}
+
+export async function updateEmailTemplate(templateId, fields, userContext = null) {
+  if (!base || !templateId) return null;
+  
+  try {
+    const updateFields = {};
+    
+    if (fields.name !== undefined) updateFields["Template Name"] = fields.name;
+    if (fields.type !== undefined) updateFields["Template Type"] = fields.type;
+    if (fields.subject !== undefined) updateFields["Subject Template"] = fields.subject;
+    if (fields.body !== undefined) updateFields["Body Template"] = fields.body;
+    if (fields.description !== undefined) updateFields["Description"] = fields.description;
+    if (fields.active !== undefined) updateFields["Active"] = fields.active;
+    
+    // Add modified timestamp and user
+    updateFields["Modified On"] = getPerthTimeISO();
+    if (userContext && userContext.id) {
+      updateFields["Modified By"] = [userContext.id];
+    }
+    
+    const record = await base("Email Templates").update(templateId, updateFields);
+    
+    // Clear cache
+    templateCache.clear();
+    
+    return {
+      id: record.id,
+      name: record.fields["Template Name"] || "",
+      type: record.fields["Template Type"] || "General",
+      subject: record.fields["Subject Template"] || "",
+      body: record.fields["Body Template"] || "",
+      description: record.fields["Description"] || "",
+      active: record.fields["Active"] || false
+    };
+  } catch (err) {
+    console.error("updateEmailTemplate error:", err.message);
+    return null;
+  }
+}
+
+export async function createEmailTemplate(fields, userContext = null) {
+  if (!base) return null;
+  
+  try {
+    const perthTime = getPerthTimeISO();
+    const createFields = {
+      "Template Name": fields.name || "New Template",
+      "Template Type": fields.type || "General",
+      "Subject Template": fields.subject || "",
+      "Body Template": fields.body || "",
+      "Description": fields.description || "",
+      "Active": fields.active !== undefined ? fields.active : true,
+      "Created On": perthTime,
+      "Modified On": perthTime
+    };
+    
+    if (userContext && userContext.id) {
+      createFields["Created By"] = [userContext.id];
+      createFields["Modified By"] = [userContext.id];
+    }
+    
+    const record = await base("Email Templates").create(createFields);
+    
+    // Clear cache
+    templateCache.clear();
+    
+    return {
+      id: record.id,
+      name: record.fields["Template Name"] || "",
+      type: record.fields["Template Type"] || "General",
+      subject: record.fields["Subject Template"] || "",
+      body: record.fields["Body Template"] || "",
+      description: record.fields["Description"] || "",
+      active: record.fields["Active"] || false
+    };
+  } catch (err) {
+    console.error("createEmailTemplate error:", err.message);
+    return null;
+  }
+}
+
+export function clearTemplateCache() {
+  templateCache.clear();
+}

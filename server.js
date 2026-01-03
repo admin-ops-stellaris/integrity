@@ -832,6 +832,54 @@ app.post("/api/updateSetting", async (req, res) => {
   }
 });
 
+// --- EMAIL TEMPLATES API ENDPOINTS ---
+app.post("/api/getEmailTemplates", async (req, res) => {
+  try {
+    const templates = await airtable.getEmailTemplates();
+    res.json(templates);
+  } catch (err) {
+    console.error("getEmailTemplates error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getEmailTemplate", async (req, res) => {
+  try {
+    const [templateId] = req.body.args || [];
+    const template = await airtable.getEmailTemplate(templateId);
+    res.json(template);
+  } catch (err) {
+    console.error("getEmailTemplate error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/updateEmailTemplate", async (req, res) => {
+  try {
+    const [templateId, fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.updateEmailTemplate(templateId, fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("updateEmailTemplate error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/createEmailTemplate", async (req, res) => {
+  try {
+    const [fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.createEmailTemplate(fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("createEmailTemplate error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- APPOINTMENTS API ENDPOINTS ---
 app.post("/api/getAppointmentsForOpportunity", async (req, res) => {
   try {

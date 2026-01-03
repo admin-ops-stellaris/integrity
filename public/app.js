@@ -2012,7 +2012,7 @@ Best wishes,
         if (item.type === 'checkbox') {
           const isChecked = item.value === true || item.value === 'true' || item.value === 'Yes';
           const checkedAttr = isChecked ? 'checked' : '';
-          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="checkbox-field"><input type="checkbox" id="input_${item.key}" ${checkedAttr} onchange="saveCheckboxField('${tbl}', '${recId}', '${item.key}', this.checked)"></div></div>`;
+          return `<div class="detail-group${tacoClass}"><div class="checkbox-field"><input type="checkbox" id="input_${item.key}" ${checkedAttr} onchange="saveCheckboxField('${tbl}', '${recId}', '${item.key}', this.checked)"><label for="input_${item.key}">${item.label}</label></div></div>`;
         }
         if (item.type === 'url') {
           const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
@@ -2123,16 +2123,40 @@ Best wishes,
           html += '<div class="taco-section-divider"></div>';
           
           // Appointment fields section (only visible if Converted to Appt is checked)
-          html += `<div id="tacoApptFieldsSection" style="${convertedToAppt ? '' : 'display:none;'}">`;
+          // Get status for expand/collapse default
+          const tacoApptStatus = dataMap['Taco: Appt Status']?.value || 'Scheduled';
+          const tacoApptExpanded = tacoApptStatus === 'Scheduled';
+          const typeIcon = typeOfAppt === 'Phone' ? '📞' : typeOfAppt === 'Video' ? '🎥' : '🏢';
+          const statusClass = tacoApptStatus === 'Completed' ? 'status-completed' : 
+                             tacoApptStatus === 'Cancelled' ? 'status-cancelled' : 
+                             tacoApptStatus === 'No Show' ? 'status-noshow' : 'status-scheduled';
           
-          // Row 5: Appointment Time, Type of Appointment, How Appt Booked
+          html += `<div id="tacoApptFieldsSection" class="appointment-item ${tacoApptExpanded ? 'expanded' : ''}" style="${convertedToAppt ? '' : 'display:none;'}" data-taco-appt="true">`;
+          
+          // Collapsible header
+          html += `<div class="appointment-item-header" onclick="toggleTacoApptExpand()">`;
+          html += `<div class="appointment-item-left">`;
+          html += `<span class="appointment-item-chevron">▶</span>`;
+          html += `<div class="appointment-item-summary">`;
+          html += `<span class="appointment-type">${typeIcon} ${typeOfAppt || 'Appointment'}</span>`;
+          html += `<span class="appointment-datetime">${dataMap['Taco: Appointment Time']?.value || 'Time not set'}</span>`;
+          html += `</div>`;
+          html += `</div>`;
+          html += `<span class="appointment-status ${statusClass}">${tacoApptStatus}</span>`;
+          html += `</div>`;
+          
+          // Expandable body
+          html += `<div class="appointment-item-body">`;
+          html += `<div class="appointment-item-divider"></div>`;
+          
+          // Row 1: Appointment Time, Type of Appointment, How Appt Booked
           html += '<div class="taco-row">';
           if (dataMap['Taco: Appointment Time']) html += renderField(dataMap['Taco: Appointment Time'], table, id);
           if (dataMap['Taco: Type of Appointment']) html += renderField(dataMap['Taco: Type of Appointment'], table, id);
           if (dataMap['Taco: How appt booked']) html += renderField(dataMap['Taco: How appt booked'], table, id);
           html += '</div>';
           
-          // Row 6: Appt Phone Number (if Phone), Appt Meet URL (if Video), How Appt Booked Other (if Other)
+          // Row 2: Appt Phone Number (if Phone), Appt Meet URL (if Video), How Appt Booked Other (if Other)
           html += '<div class="taco-row">';
           const phoneDisplay = typeOfAppt === 'Phone' ? '' : 'display:none;';
           const videoDisplay = typeOfAppt === 'Video' ? '' : 'display:none;';
@@ -2142,11 +2166,10 @@ Best wishes,
           if (dataMap['Taco: How Appt Booked Other']) html += `<div id="field_wrap_Taco: How Appt Booked Other" style="${otherDisplay}">${renderField(dataMap['Taco: How Appt Booked Other'], table, id)}</div>`;
           html += '</div>';
           
-          // Row 7: Need Evidence in Advance, Need Appt Reminder
+          // Row 3: Need Evidence in Advance, Need Appt Reminder
           html += '<div class="taco-row">';
           if (dataMap['Taco: Need Evidence in Advance']) html += renderField(dataMap['Taco: Need Evidence in Advance'], table, id);
           if (dataMap['Taco: Need Appt Reminder']) {
-            // Custom label if Calendly
             const reminderField = { ...dataMap['Taco: Need Appt Reminder'] };
             if (howBooked === 'Calendly') {
               reminderField.noLabel = 'Not required as Calendly will do it automatically';
@@ -2155,32 +2178,31 @@ Best wishes,
           }
           html += '</div>';
           
-          // Row 8: Appt Conf Email Sent, Appt Conf Text Sent
+          // Send Confirmation Email button (before conf checkboxes)
+          html += `<div style="margin:15px 0;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${id}')">Send Confirmation Email</button></div>`;
+          
+          // Row 4: Appt Conf Email Sent, Appt Conf Text Sent
           html += '<div class="taco-row">';
           if (dataMap['Taco: Appt Conf Email Sent']) html += renderField(dataMap['Taco: Appt Conf Email Sent'], table, id);
           if (dataMap['Taco: Appt Conf Text Sent']) html += renderField(dataMap['Taco: Appt Conf Text Sent'], table, id);
           html += '</div>';
           
-          // Send Confirmation Email button
-          html += `<div style="margin-top:15px;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${id}')">Send Confirmation Email</button></div>`;
-          
-          // Row: Status and Notes at the end
-          html += '<div class="taco-row" style="margin-top:15px;">';
+          // Row 5: Notes (2/3) and Status (1/3) at the bottom
+          html += '<div class="taco-row taco-row-notes-status" style="margin-top:15px;">';
+          if (dataMap['Taco: Appt Notes']) {
+            html += `<div style="grid-column: span 2;">${renderField(dataMap['Taco: Appt Notes'], table, id)}</div>`;
+          } else {
+            html += `<div class="detail-group" style="grid-column: span 2;"><span class="detail-label">Notes</span><span class="detail-value">-</span></div>`;
+          }
           if (dataMap['Taco: Appt Status']) {
             html += renderField(dataMap['Taco: Appt Status'], table, id);
           } else {
-            // Fallback if field doesn't exist - create a placeholder
             html += `<div class="detail-group"><span class="detail-label">Status</span><span class="detail-value">Scheduled</span></div>`;
-          }
-          if (dataMap['Taco: Appt Notes']) {
-            html += renderField(dataMap['Taco: Appt Notes'], table, id);
-          } else {
-            // Fallback if field doesn't exist
-            html += `<div class="detail-group"></div>`;
           }
           html += '</div>';
           
-          html += '</div>'; // close tacoApptFieldsSection
+          html += '</div>'; // close appointment-item-body
+          html += '</div>'; // close tacoApptFieldsSection / appointment-item
           
           html += '</div></div>'; // close tacoFieldsContainer and taco-section-box
         }
@@ -2317,6 +2339,9 @@ Best wishes,
           html += `<div class="detail-group"></div>`;
           html += `</div>`;
           
+          // Send Confirmation Email button (before conf checkboxes)
+          html += `<div style="margin:15px 0;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${opportunityId}')">Send Confirmation Email</button></div>`;
+          
           // Row 4: Conf Email Sent, Conf Text Sent, empty
           html += `<div class="appointment-row">`;
           html += `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" disabled ${appt.confEmailSent ? 'checked' : ''}><label>Conf Email Sent</label></div></div>`;
@@ -2324,14 +2349,10 @@ Best wishes,
           html += `<div class="detail-group"></div>`;
           html += `</div>`;
           
-          // Send Confirmation Email button
-          html += `<div style="margin-top:15px;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${opportunityId}')">Send Confirmation Email</button></div>`;
-          
-          // Row: Status and Notes
+          // Row 5: Notes (2/3) and Status (1/3) at the bottom
           html += `<div class="appointment-row" style="margin-top:15px;">`;
+          html += `<div class="detail-group" style="grid-column: span 2;"><span class="detail-label">Notes</span><span class="detail-value">${appt.notes || '-'}</span></div>`;
           html += `<div class="detail-group"><span class="detail-label">Status</span><span class="detail-value">${status}</span></div>`;
-          html += `<div class="detail-group"><span class="detail-label">Notes</span><span class="detail-value">${appt.notes || '-'}</span></div>`;
-          html += `<div class="detail-group"></div>`;
           html += `</div>`;
           
           // Actions
@@ -2478,6 +2499,13 @@ Best wishes,
   
   function toggleAppointmentExpand(appointmentId) {
     const item = document.querySelector(`.appointment-item[data-appt-id="${appointmentId}"]`);
+    if (item) {
+      item.classList.toggle('expanded');
+    }
+  }
+  
+  function toggleTacoApptExpand() {
+    const item = document.querySelector('.appointment-item[data-taco-appt="true"]');
     if (item) {
       item.classList.toggle('expanded');
     }

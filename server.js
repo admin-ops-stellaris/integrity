@@ -578,7 +578,8 @@ app.post("/api/processForm", async (req, res) => {
       EmailAddress3Comment: formData.email3Comment || "",
       Notes: formData.notes || "",
       Gender: formData.gender || "",
-      "Gender - Other": formData.genderOther || ""
+      "Gender - Other": formData.genderOther || "",
+      "Date of Birth": convertDDMMYYYYtoISO(formData.dateOfBirth)
     };
     
     if (recordId) {
@@ -597,6 +598,15 @@ app.post("/api/processForm", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Convert DD/MM/YYYY to ISO date format for Airtable
+function convertDDMMYYYYtoISO(dateStr) {
+  if (!dateStr) return null;
+  const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+  const [, day, month, year] = match;
+  return `${year}-${month}-${day}`;
+}
 
 // Format timestamp to "HH:MM DD/MM/YYYY" format matching Contact audit display
 function formatAuditTimestamp(isoString) {

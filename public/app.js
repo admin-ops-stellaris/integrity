@@ -390,8 +390,21 @@
     document.getElementById('genderOther').value = f["Gender - Other"] || "";
     updateGenderOtherVisibility();
     
-    // Unsubscribe status
-    updateUnsubscribeDisplay(f["Unsubscribed from Marketing"] || false);
+    // Date of Birth - convert from ISO to DD/MM/YYYY display format
+    const dob = f["Date of Birth"] || "";
+    if (dob) {
+      const dobDate = new Date(dob);
+      if (!isNaN(dobDate.getTime())) {
+        const day = String(dobDate.getDate()).padStart(2, '0');
+        const month = String(dobDate.getMonth() + 1).padStart(2, '0');
+        const year = dobDate.getFullYear();
+        document.getElementById('dateOfBirth').value = `${day}/${month}/${year}`;
+      } else {
+        document.getElementById('dateOfBirth').value = dob;
+      }
+    } else {
+      document.getElementById('dateOfBirth').value = "";
+    }
 
     disableEditMode(); 
     document.getElementById('editBtn').style.visibility = 'visible';
@@ -2756,7 +2769,7 @@ Best wishes,
     document.getElementById('spouseEditLink').style.display = 'inline';
     document.getElementById('refreshBtn').style.display = 'none';
     updateGenderOtherVisibility();
-    updateUnsubscribeDisplay(false);
+    document.getElementById('marketingHeaderSection').style.display = 'none';
     closeOppPanel();
   }
   function handleSearch(event) {
@@ -2954,6 +2967,24 @@ Best wishes,
     }
     if (f.Created) { const line1 = document.createElement('div'); line1.className = 'audit-modified'; line1.innerText = f.Created; section.appendChild(line1); }
     if (f.Modified) { const line2 = document.createElement('div'); line2.className = 'audit-modified'; line2.innerText = f.Modified; section.appendChild(line2); }
+    
+    // Render marketing status in header
+    renderMarketingHeader(f);
+  }
+  
+  function renderMarketingHeader(f) {
+    const section = document.getElementById('marketingHeaderSection');
+    const isUnsubscribed = f["Unsubscribed from Marketing"] || false;
+    const statusText = isUnsubscribed ? "Unsubscribed" : "Subscribed";
+    const statusClass = isUnsubscribed ? "unsubscribe-status-unsubscribed" : "unsubscribe-status-subscribed";
+    section.innerHTML = `
+      <div class="marketing-header-display" onclick="openUnsubscribeEdit()">
+        <span class="marketing-label">Marketing:</span>
+        <span class="${statusClass}">${statusText}</span>
+        <span class="marketing-edit-hint">Edit</span>
+      </div>
+    `;
+    section.style.display = 'block';
   }
 
   function loadOpportunities(f) {

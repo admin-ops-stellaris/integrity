@@ -669,8 +669,8 @@ export async function createAppointment(opportunityId, fields, userContext = nul
     createFields["Need Evidence in Advance"] = fields["Need Evidence in Advance"] === true;
     createFields["Need Appt Reminder"] = fields["Need Appt Reminder"] === true;
     
-    // Only set Appointment Status if the field exists in Airtable (skip to avoid select option errors)
-    // The field should default in Airtable or we skip it
+    // Set Appointment Status if provided
+    if (fields["Appointment Status"]) createFields["Appointment Status"] = fields["Appointment Status"];
     
     if (userContext && userContext.id) {
       createFields["Created By"] = [userContext.id];

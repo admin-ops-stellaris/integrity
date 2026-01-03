@@ -589,21 +589,38 @@ export async function createAppointment(opportunityId, fields, userContext = nul
   if (!base || !opportunityId) return null;
   
   try {
+    // Build create fields - only include fields that have values
     const createFields = {
-      "Opportunity": [opportunityId],
-      "Appointment Status": "Scheduled",
-      ...fields
+      "Opportunity": [opportunityId]
     };
+    
+    // Map frontend field names to Airtable field names and only include non-empty values
+    if (fields["Appointment Time"]) createFields["Appointment Time"] = fields["Appointment Time"];
+    if (fields["Type of Appointment"]) createFields["Type of Appointment"] = fields["Type of Appointment"];
+    if (fields["How Booked"]) createFields["How Booked"] = fields["How Booked"];
+    if (fields["How Booked Other"]) createFields["How Booked Other"] = fields["How Booked Other"];
+    if (fields["Phone Number"]) createFields["Phone Number"] = fields["Phone Number"];
+    if (fields["Video Meet URL"]) createFields["Video Meet URL"] = fields["Video Meet URL"];
+    if (fields["Notes"]) createFields["Notes"] = fields["Notes"];
+    
+    // Booleans - always set
+    createFields["Need Evidence in Advance"] = fields["Need Evidence in Advance"] === true;
+    createFields["Need Appt Reminder"] = fields["Need Appt Reminder"] === true;
+    
+    // Only set Appointment Status if the field exists in Airtable (skip to avoid select option errors)
+    // The field should default in Airtable or we skip it
     
     if (userContext && userContext.id) {
       createFields["Created By"] = [userContext.id];
     }
     
+    console.log("Creating appointment with fields:", JSON.stringify(createFields, null, 2));
+    
     const record = await base("Appointments").create(createFields);
     return formatRecord(record);
   } catch (err) {
     console.error("createAppointment error:", err.message);
-    return null;
+    throw err; // Re-throw so the API can return proper error to frontend
   }
 }
 

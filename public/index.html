@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="/styles.css?v=12">
+    <link rel="stylesheet" href="/styles.css?v=13">
   </head>
   <body>
     <div class="app-header">
@@ -458,63 +458,68 @@
           <button class="close-panel" onclick="closeTemplateEditor()">&times;</button>
         </div>
         <div class="template-editor-body">
-          <div class="template-editor-split">
-            <div class="template-editor-left">
-              <div class="template-editor-panel-header">
-                <span>Template Source</span>
+          <div class="template-editor-grid">
+            <!-- Row 1: Headers -->
+            <div class="template-editor-panel-header">
+              <span>Template Source</span>
+            </div>
+            <div class="template-editor-panel-header">
+              <span>Live Preview</span>
+              <span id="previewDataSource" class="preview-data-badge">Sample Data</span>
+            </div>
+            
+            <!-- Row 2: Template Name (left only, empty right) -->
+            <div class="template-editor-cell template-name-cell">
+              <div class="template-editor-field">
+                <label>Template Name</label>
+                <input type="text" id="templateEditorName" placeholder="e.g., Appointment Confirmation">
               </div>
-              <div class="template-editor-main">
-                <div class="template-editor-field">
-                  <label>Template Name</label>
-                  <input type="text" id="templateEditorName" placeholder="e.g., Appointment Confirmation">
-                </div>
-                <div class="template-editor-field template-subject-field">
-                  <label>Subject Line</label>
-                  <div id="templateEditorSubjectContainer">
-                    <div id="templateEditorSubject" spellcheck="false"></div>
-                  </div>
-                </div>
-                <div class="template-editor-field template-body-field">
-                  <label>Email Body</label>
-                  <div id="templateEditorQuillContainer">
-                    <div id="templateEditorToolbar">
-                      <span class="ql-formats">
-                        <button class="ql-bold"></button>
-                        <button class="ql-italic"></button>
-                        <button class="ql-underline"></button>
-                      </span>
-                      <span class="ql-formats">
-                        <button class="ql-link"></button>
-                      </span>
-                      <span class="ql-formats">
-                        <button class="ql-list" value="ordered"></button>
-                        <button class="ql-list" value="bullet"></button>
-                      </span>
-                      <span class="ql-formats">
-                        <button class="ql-clean"></button>
-                      </span>
-                    </div>
-                    <div id="templateEditorBody" spellcheck="false"></div>
-                  </div>
+            </div>
+            <div class="template-editor-cell template-name-cell"></div>
+            
+            <!-- Row 3: Subject -->
+            <div class="template-editor-cell">
+              <div class="template-editor-field template-subject-field">
+                <label>Subject Line</label>
+                <div id="templateEditorSubjectContainer">
+                  <div id="templateEditorSubject" spellcheck="false"></div>
                 </div>
               </div>
             </div>
-            <div class="template-editor-right">
-              <div class="template-editor-panel-header">
-                <span>Live Preview</span>
-                <span id="previewDataSource" class="preview-data-badge">Sample Data</span>
-              </div>
-              <div class="template-preview-content">
-                <div class="preview-name-spacer"></div>
-                <div class="preview-subject-section">
-                  <label>Subject</label>
-                  <div id="templatePreviewSubject" class="preview-subject-text"></div>
+            <div class="template-editor-cell preview-cell">
+              <label>Subject</label>
+              <div id="templatePreviewSubject" class="preview-subject-text"></div>
+            </div>
+            
+            <!-- Row 4: Body -->
+            <div class="template-editor-cell template-body-cell">
+              <div class="template-editor-field template-body-field">
+                <label>Email Body</label>
+                <div id="templateEditorQuillContainer">
+                  <div id="templateEditorToolbar">
+                    <span class="ql-formats">
+                      <button class="ql-bold"></button>
+                      <button class="ql-italic"></button>
+                      <button class="ql-underline"></button>
+                    </span>
+                    <span class="ql-formats">
+                      <button class="ql-link"></button>
+                    </span>
+                    <span class="ql-formats">
+                      <button class="ql-list" value="ordered"></button>
+                      <button class="ql-list" value="bullet"></button>
+                    </span>
+                    <span class="ql-formats">
+                      <button class="ql-clean"></button>
+                    </span>
+                  </div>
+                  <div id="templateEditorBody" spellcheck="false"></div>
                 </div>
-                <div class="preview-body-section">
-                  <label>Body</label>
-                  <div id="templatePreviewBody" class="preview-body-content"></div>
-                </div>
               </div>
+            </div>
+            <div class="template-editor-cell preview-cell template-body-cell">
+              <label>Body</label>
+              <div id="templatePreviewBody" class="preview-body-content"></div>
             </div>
           </div>
           <div class="template-editor-sidebar">
@@ -665,7 +670,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=12"></script>
-    <script src="/app.js?v=12"></script>
+    <script src="/api-bridge.js?v=13"></script>
+    <script src="/app.js?v=13"></script>
   </body>
 </html>

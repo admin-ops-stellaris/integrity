@@ -493,20 +493,19 @@
   #templateEditorModal.modal-overlay { z-index: 1100; }
   .modal-content.template-editor-modal { width: 98vw !important; max-width: 1400px !important; height: 90vh; max-height: 900px; display: flex; flex-direction: column; }
   .template-editor-body { display: flex; flex: 1; overflow: hidden; }
-  .template-editor-split { display: flex; flex: 1; min-width: 0; }
-  .template-editor-left, .template-editor-right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  .template-editor-left { border-right: 1px solid var(--color-border); }
+  .template-editor-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto 1fr; flex: 1; min-width: 0; overflow: hidden; }
+  .template-editor-grid > .template-editor-panel-header:first-child { border-right: 1px solid var(--color-border); }
   .template-editor-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background: var(--color-salt); border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
   .preview-data-badge { font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 10px; background: var(--color-cedar); color: #FFF; text-transform: none; letter-spacing: 0; }
   .preview-data-badge.live-data { background: var(--color-star); }
-  .template-editor-main { flex: 1; min-width: 0; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
-  .template-preview-content { flex: 1; padding: 15px; overflow-y: auto; background: #FAFAFA; display: flex; flex-direction: column; gap: 12px; }
-  .template-preview-content label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
-  .preview-name-spacer { height: 66px; } /* Matches Template Name field height (label 18px + input 36px + gap 12px) */
-  .preview-subject-section { }
+  .template-editor-cell { padding: 12px 15px; box-sizing: border-box; }
+  .template-editor-cell:nth-child(odd) { border-right: 1px solid var(--color-border); }
+  .template-name-cell { padding-bottom: 0; }
+  .preview-cell { background: #FAFAFA; }
+  .preview-cell label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
+  .template-body-cell { overflow-y: auto; display: flex; flex-direction: column; }
   .preview-subject-text { padding: 10px 12px; background: #FFF; border: 1px solid #E0E0E0; border-radius: 4px; font-size: 14px; min-height: 36px; line-height: 1.4; }
-  .preview-body-section { flex: 1; display: flex; flex-direction: column; }
-  .preview-body-content { flex: 1; padding: 15px; background: #FFF; border: 1px solid #E0E0E0; border-radius: 4px; font-size: 13px; line-height: 1.7; min-height: 200px; }
+  .preview-body-content { flex: 1; padding: 15px; background: #FFF; border: 1px solid #E0E0E0; border-radius: 4px; font-size: 13px; line-height: 1.7; min-height: 200px; overflow-y: auto; }
   .preview-body-content a { color: #0066CC; text-decoration: underline; }
   .template-editor-sidebar { width: 280px; min-width: 280px; background: var(--color-salt); border-left: 1px solid var(--color-border); padding: 15px; overflow-y: auto; flex-shrink: 0; }
   /* Missing variable indicator in preview */
@@ -553,9 +552,10 @@
   .template-list-edit { background: var(--color-star); color: #FFF; }
   .template-list-edit:hover { opacity: 0.9; }
   body.dark-mode .template-editor-panel-header { background: #222; border-color: #444; color: #AAA; }
-  body.dark-mode .template-preview-content { background: #1a1a1a; }
+  body.dark-mode .preview-cell { background: #1a1a1a; }
   body.dark-mode .preview-subject-text, body.dark-mode .preview-body-content { background: #2a2a2a; border-color: #444; color: #E8E6E1; }
-  body.dark-mode .template-editor-left { border-color: #444; }
+  body.dark-mode .template-editor-cell:nth-child(odd) { border-color: #444; }
+  body.dark-mode .template-editor-grid > .template-editor-panel-header:first-child { border-color: #444; }
   body.dark-mode .preview-missing-var { background: #5C4813; color: #FFD54F; }
   body.dark-mode .template-editor-sidebar { background: #1a1a1a; border-color: #444; }
   body.dark-mode .template-editor-field input[type="text"] { background: #333; border-color: #555; color: #E8E6E1; }

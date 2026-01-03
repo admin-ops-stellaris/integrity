@@ -1284,6 +1284,156 @@ Best wishes,
   let templateEditorQuill = null;
   let templateSubjectQuill = null;
   let activeTemplateEditor = 'body'; // 'subject' or 'body'
+  let templatePreviewContext = null; // Stores context for live preview
+  
+  // Sample data for preview when no opportunity is selected
+  const SAMPLE_PREVIEW_DATA = {
+    greeting: 'Sarah',
+    clientType: 'New',
+    broker: 'Michael Thompson',
+    brokerFirst: 'Michael',
+    brokerIntro: 'our Mortgage Broker Michael Thompson',
+    sender: 'Shae',
+    appointmentType: 'Office',
+    appointmentTime: 'Tuesday 15th January at 10:00am',
+    daysUntil: '3',
+    phoneNumber: '0412 345 678',
+    meetUrl: 'https://meet.google.com/abc-defg-hij',
+    prepHandler: 'Team',
+    prefillNote: '',
+    officeMapLink: '<a href="#" style="color:#0066CC;">Office</a>',
+    ourTeamLink: '<a href="#" style="color:#0066CC;">here</a>',
+    factFindLink: '<a href="#" style="color:#0066CC;">Fact Find</a>',
+    myGovLink: '<a href="#" style="color:#0066CC;">myGov</a>',
+    myGovVideoLink: '<a href="#" style="color:#0066CC;">myGov Video</a>',
+    incomeInstructionsLink: '<a href="#" style="color:#0066CC;">Income Instructions</a>'
+  };
+  
+  // Render template preview with context (shows missing vars with indicator)
+  function renderTemplatePreview() {
+    if (!templateSubjectQuill || !templateEditorQuill) return;
+    
+    const subjectText = templateSubjectQuill.getText().trim();
+    const bodyHtml = templateEditorQuill.root.innerHTML;
+    
+    const context = templatePreviewContext || SAMPLE_PREVIEW_DATA;
+    
+    // Render subject (plain text)
+    const renderedSubject = renderWithMissingIndicators(subjectText, context);
+    document.getElementById('templatePreviewSubject').innerHTML = renderedSubject;
+    
+    // Render body (HTML with conditionals)
+    const renderedBody = renderBodyWithMissingIndicators(bodyHtml, context);
+    document.getElementById('templatePreviewBody').innerHTML = renderedBody;
+  }
+  
+  // Render template text with missing variable indicators
+  function renderWithMissingIndicators(template, context) {
+    if (!template) return '';
+    
+    // First process conditionals
+    let result = processConditionalsForPreview(template, context);
+    
+    // Then replace variables, showing missing indicator for undefined ones
+    result = result.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+      const value = context[varName];
+      if (value !== undefined && value !== null && value !== '') {
+        return value;
+      }
+      return `<span class="preview-missing-var">[${varName} not set]</span>`;
+    });
+    
+    return result;
+  }
+  
+  // Render body HTML with missing indicators and condition visualization
+  function renderBodyWithMissingIndicators(html, context) {
+    if (!html) return '';
+    
+    // Process conditionals first
+    let result = processConditionalsForPreview(html, context);
+    
+    // Replace variables
+    result = result.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+      const value = context[varName];
+      if (value !== undefined && value !== null && value !== '') {
+        return value;
+      }
+      return `<span class="preview-missing-var">[${varName} not set]</span>`;
+    });
+    
+    return result;
+  }
+  
+  // Process conditionals for preview with visualization
+  function processConditionalsForPreview(template, context) {
+    if (!template) return '';
+    
+    // Match {{if var=value}}...{{endif}} blocks
+    const conditionalPattern = /\{\{if\s+(\w+)\s*=\s*(\w+)\}\}([\s\S]*?)\{\{endif\}\}/gi;
+    
+    return template.replace(conditionalPattern, function(match, varName, varValue, innerContent) {
+      try {
+        const contextValue = context[varName];
+        
+        // Parse branches
+        const branches = parseConditionalBranches(innerContent);
+        
+        // Safety check for empty branches
+        if (!branches || branches.length === 0) {
+          return '';
+        }
+        
+        // Add the initial if condition value
+        branches[0].value = varValue;
+        
+        // Find matching branch
+        let matchedContent = '';
+        let matchedCondition = '';
+        
+        for (const branch of branches) {
+          if (branch.type === 'if' || branch.type === 'elseif') {
+            if (branch.value === contextValue) {
+              matchedContent = branch.content;
+              matchedCondition = `${varName} = ${branch.value}`;
+              break;
+            }
+          } else if (branch.type === 'else') {
+            matchedContent = branch.content;
+            matchedCondition = 'else (fallback)';
+            break;
+          }
+        }
+        
+        // If no branch matched, return nothing
+        if (!matchedContent && !matchedCondition) {
+          return '';
+        }
+        
+        // Recursively process nested conditionals
+        if (matchedContent) {
+          matchedContent = processConditionalsForPreview(matchedContent, context);
+        }
+        
+        // Return with visual condition indicator
+        if (matchedCondition) {
+          return `<div class="preview-condition-block"><div class="preview-condition-label">IF: ${matchedCondition}</div>${matchedContent}</div>`;
+        }
+        
+        return matchedContent || '';
+      } catch (err) {
+        console.error('Error processing conditional:', err);
+        return match; // Return original on error
+      }
+    });
+  }
+  
+  // Debounce function for preview updates
+  let previewUpdateTimeout = null;
+  function schedulePreviewUpdate() {
+    if (previewUpdateTimeout) clearTimeout(previewUpdateTimeout);
+    previewUpdateTimeout = setTimeout(renderTemplatePreview, 150);
+  }
   
   function openTemplateEditor(templateId) {
     console.log('openTemplateEditor called with:', templateId);
@@ -1303,6 +1453,7 @@ Best wishes,
         });
         templateSubjectQuill.on('text-change', () => {
           highlightVariables(templateSubjectQuill);
+          schedulePreviewUpdate();
         });
         templateSubjectQuill.root.addEventListener('focus', () => { activeTemplateEditor = 'subject'; });
       }
@@ -1315,6 +1466,7 @@ Best wishes,
         });
         templateEditorQuill.on('text-change', () => {
           highlightVariables(templateEditorQuill);
+          schedulePreviewUpdate();
         });
         templateEditorQuill.root.addEventListener('focus', () => { activeTemplateEditor = 'body'; });
       }
@@ -1356,8 +1508,22 @@ Best wishes,
       if (templateEditorQuill) templateEditorQuill.setText('');
     }
     
+    // Update preview data badge
+    const dataBadge = document.getElementById('previewDataSource');
+    if (templatePreviewContext) {
+      dataBadge.textContent = 'Live Data';
+      dataBadge.classList.add('live-data');
+    } else {
+      dataBadge.textContent = 'Sample Data';
+      dataBadge.classList.remove('live-data');
+    }
+    
     modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('showing'), 10);
+    setTimeout(() => {
+      modal.classList.add('showing');
+      // Render initial preview
+      setTimeout(renderTemplatePreview, 100);
+    }, 10);
   }
   
   let isHighlighting = false;
@@ -1389,6 +1555,7 @@ Best wishes,
       setTimeout(() => { modal.style.display = 'none'; }, 250);
     }
     currentEditingTemplate = null;
+    templatePreviewContext = null; // Clear preview context
   }
   
   function populateVariablePicker() {
@@ -1628,6 +1795,43 @@ Best wishes,
   // Open template editor from email composer context
   function openCurrentTemplateEditor() {
     console.log('openCurrentTemplateEditor called, templates:', airtableTemplates.length);
+    
+    // If we have email context, use it for live preview
+    if (currentEmailContext) {
+      const apptType = document.getElementById('emailApptType').value;
+      const clientType = document.getElementById('emailClientType').value;
+      const prepHandler = document.getElementById('emailPrepHandler').value;
+      
+      const brokerIntro = clientType === 'New' 
+        ? `our Mortgage Broker ${currentEmailContext.broker}`
+        : currentEmailContext.brokerFirst;
+      
+      templatePreviewContext = {
+        greeting: currentEmailContext.greeting,
+        broker: currentEmailContext.broker,
+        brokerFirst: currentEmailContext.brokerFirst,
+        brokerIntro: brokerIntro,
+        appointmentTime: currentEmailContext.appointmentTime,
+        appointmentType: apptType,
+        clientType: clientType,
+        prepHandler: prepHandler,
+        daysUntil: calculateDaysUntil(currentEmailContext.appointmentTime),
+        phoneNumber: currentEmailContext.phoneNumber,
+        meetUrl: currentEmailContext.meetUrl,
+        sender: currentEmailContext.sender,
+        prefillNote: EMAIL_TEMPLATE.prefillNote[clientType] || '',
+        officeMapLink: `<a href="${EMAIL_LINKS.officeMap}" target="_blank" style="color:#0066CC;">Office</a>`,
+        ourTeamLink: `<a href="${EMAIL_LINKS.ourTeam}" target="_blank" style="color:#0066CC;">here</a>`,
+        factFindLink: `<a href="${EMAIL_LINKS.factFind}" target="_blank" style="color:#0066CC;">Fact Find</a>`,
+        myGovLink: `<a href="${EMAIL_LINKS.myGov}" target="_blank" style="color:#0066CC;">myGov</a>`,
+        myGovVideoLink: `<a href="${EMAIL_LINKS.myGovVideo}" target="_blank" style="color:#0066CC;">myGov Video</a>`,
+        incomeInstructionsLink: `<a href="${EMAIL_LINKS.incomeInstructions}" target="_blank" style="color:#0066CC;">click here</a>`
+      };
+    } else {
+      // No email context - use sample data
+      templatePreviewContext = null;
+    }
+    
     // Find the Confirmation template (or first available)
     const confirmationTemplate = airtableTemplates.find(t => 
       t.type === 'Confirmation' || t.name.toLowerCase().includes('confirmation')

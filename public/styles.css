@@ -502,7 +502,7 @@
   .template-editor-main { flex: 1; min-width: 0; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
   .template-preview-content { flex: 1; padding: 15px; overflow-y: auto; background: #FAFAFA; display: flex; flex-direction: column; gap: 12px; }
   .template-preview-content label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
-  .preview-name-spacer { height: 52px; } /* Matches Template Name field height */
+  .preview-name-spacer { height: 66px; } /* Matches Template Name field height (label 18px + input 36px + gap 12px) */
   .preview-subject-section { }
   .preview-subject-text { padding: 10px 12px; background: #FFF; border: 1px solid #E0E0E0; border-radius: 4px; font-size: 14px; min-height: 36px; line-height: 1.4; }
   .preview-body-section { flex: 1; display: flex; flex-direction: column; }

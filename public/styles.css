@@ -501,12 +501,12 @@
   .template-editor-cell { padding: 12px 15px; box-sizing: border-box; }
   .template-editor-cell:nth-child(odd) { border-right: 1px solid var(--color-border); }
   .template-name-cell { padding-bottom: 0; }
-  .template-name-cell:nth-child(even) { background: #FAFAFA; }
-  .preview-cell { background: #FAFAFA; }
+  .template-name-cell:nth-child(even) { background: var(--color-salt); }
+  .preview-cell { background: var(--color-salt); }
   .preview-cell label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
   .template-body-cell { overflow-y: auto; display: flex; flex-direction: column; }
-  .preview-subject-text { padding: 10px 12px; background: #FFF; border: 1px solid #E0E0E0; border-radius: 4px; font-size: 14px; min-height: 36px; line-height: 1.4; }
-  .preview-body-content { flex: 1; padding: 15px; background: #FFF; border: 1px solid #E0E0E0; border-radius: 4px; font-size: 13px; line-height: 1.7; min-height: 200px; overflow-y: auto; }
+  .preview-subject-text { padding: 10px 12px; background: #FFF; border: 1px solid var(--color-border); border-radius: 4px; font-size: 14px; min-height: 36px; line-height: 1.4; }
+  .preview-body-content { flex: 1; padding: 15px; background: #FFF; border: 1px solid var(--color-border); border-radius: 4px; font-size: 13px; line-height: 1.7; min-height: 200px; overflow-y: auto; }
   .preview-body-content a { color: #0066CC; text-decoration: underline; }
   .template-editor-sidebar { width: 280px; min-width: 280px; background: var(--color-salt); border-left: 1px solid var(--color-border); padding: 15px; overflow-y: auto; flex-shrink: 0; }
   /* Missing variable indicator in preview */

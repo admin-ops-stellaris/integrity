@@ -1375,9 +1375,12 @@ Best wishes,
 
   function saveCheckboxField(table, id, fieldKey, isChecked) {
     const label = document.querySelector(`label[for="input_${fieldKey}"]`);
+    // For "Converted to Appt", always use that as the label (not Yes/No)
+    const labelText = fieldKey === 'Taco: Converted to Appt' ? 'Converted to Appt' : (label ? label.innerText : '');
     if (label) label.innerText = 'Saving...';
     google.script.run.withSuccessHandler(function(res) {
-      if (label) label.innerText = isChecked ? 'Yes' : 'No';
+      // Restore the proper label text (not Yes/No)
+      if (label) label.innerText = labelText;
       // Toggle appointment fields visibility
       if (fieldKey === 'Taco: Converted to Appt') {
         const section = document.getElementById('tacoApptFieldsSection');
@@ -1436,7 +1439,7 @@ Best wishes,
     }).withFailureHandler(function(err) {
       const input = document.getElementById('input_' + fieldKey);
       if (input) input.checked = !isChecked;
-      if (label) label.innerText = !isChecked ? 'Yes' : 'No';
+      if (label) label.innerText = labelText;
       console.error('Failed to save checkbox:', err);
     }).updateRecord(table, id, fieldKey, isChecked);
   }
@@ -2156,8 +2159,8 @@ Best wishes,
         
         // Appointments section - linked from Appointments table
         html += `<div class="appointments-section-box" style="margin-top:15px;">`;
-        html += `<div style="padding:12px 16px;"><button type="button" class="btn-add-appointment" style="padding:6px 14px; background:#3a8a3a; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600;" onclick="openAppointmentForm('${id}')">+ Add Appointment</button></div>`;
         html += `<div id="appointmentsContainer" data-opportunity-id="${id}"><div style="color:#888; padding:10px;">Loading appointments...</div></div>`;
+        html += `<div style="padding:12px 16px;"><button type="button" class="btn-add-appointment" style="padding:6px 14px; background:#3a8a3a; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600;" onclick="openAppointmentForm('${id}')">+ Add Appointment</button></div>`;
         html += `</div>`;
         
         // Load appointments asynchronously
@@ -2209,24 +2212,24 @@ Best wishes,
   let currentAppointmentOpportunityId = null;
   let editingAppointmentId = null;
   
-  // Helper function to render editable appointment fields
+  // Helper function to render editable appointment fields (label above value like Taco fields)
   function renderApptField(apptId, label, fieldKey, value, type, options = []) {
     const displayValue = value || '-';
     let valueHtml = '';
     
     if (type === 'datetime') {
       const formatted = formatDatetimeForDisplay(value);
-      valueHtml = `<span class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}">${formatted}</span>`;
+      valueHtml = `<div class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}" style="display:flex; justify-content:space-between; align-items:center;"><span>${formatted}</span><span class="edit-field-icon">✎</span></div>`;
     } else if (type === 'select') {
-      valueHtml = `<span class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}', ${JSON.stringify(options).replace(/"/g, '&quot;')})" data-appt-id="${apptId}" data-field="${fieldKey}">${displayValue}</span>`;
+      valueHtml = `<div class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}', ${JSON.stringify(options).replace(/"/g, '&quot;')})" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
     } else if (type === 'textarea') {
       const escaped = (value || '').replace(/"/g, '&quot;');
-      valueHtml = `<span class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="white-space:pre-wrap;">${displayValue}</span>`;
+      valueHtml = `<div class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="display:flex; justify-content:space-between; align-items:flex-start;"><span style="white-space:pre-wrap; flex:1;">${displayValue}</span><span class="edit-field-icon" style="margin-left:8px;">✎</span></div>`;
     } else {
-      valueHtml = `<span class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}">${displayValue}</span>`;
+      valueHtml = `<div class="detail-value editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
     }
     
-    return `<div class="detail-group"><span class="detail-label">${label}</span>${valueHtml}</div>`;
+    return `<div class="detail-group"><div class="detail-label">${label}</div>${valueHtml}</div>`;
   }
   
   // Helper function to render appointment checkboxes

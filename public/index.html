@@ -160,15 +160,15 @@
           </div>
           <div class="composer-section">
             <div class="composer-section-title">Applicants</div>
-            <div class="composer-applicant-card primary">
-              <div class="applicant-role">Primary Applicant</div>
-              <div id="composerPrimaryName" class="applicant-name"></div>
-            </div>
-            <div id="composerSpouseSection" class="composer-spouse-option" style="display:none;">
-              <label class="composer-checkbox-label">
-                <input type="checkbox" id="composerAddSpouse" onchange="updateComposerSpouseLabel()">
-                <span id="composerSpouseLabel"><span id="composerSpouseLabelPrefix">Also add </span><strong id="composerSpouseName"></strong><span id="composerSpouseLabelSuffix"> as Applicant?</span></span>
-              </label>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+              <span style="font-size:11px; color:#666;">Primary:</span>
+              <a id="composerPrimaryName" class="data-link" style="margin:0; padding:4px 8px; font-size:12px;"></a>
+              <span id="composerSpouseSection" style="display:none;">
+                <label class="composer-checkbox-label" style="margin-left:8px;">
+                  <input type="checkbox" id="composerAddSpouse" onchange="updateComposerSpouseLabel()">
+                  <span id="composerSpouseLabel"><span id="composerSpouseLabelPrefix">+ </span><strong id="composerSpouseName"></strong></span>
+                </label>
+              </span>
             </div>
           </div>
           <div class="composer-section">

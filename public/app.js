@@ -2232,11 +2232,19 @@ Best wishes,
     return `<div class="detail-group"><div class="detail-label">${label}</div>${valueHtml}</div>`;
   }
   
-  // Helper function to render editable appointment fields without edit icon (for Notes)
+  // Helper function to render editable appointment fields without edit icon (for Notes/Video URL)
   function renderApptFieldNoIcon(apptId, label, fieldKey, value, type) {
     const displayValue = value || '';
     const escaped = (value || '').replace(/"/g, '&quot;');
-    const valueHtml = `<div class="detail-value appt-editable appt-notes-field" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="white-space:pre-wrap; min-height:60px; padding:8px; border:1px solid #ddd; border-radius:4px; cursor:text;">${displayValue}</div>`;
+    // For textarea fields like Notes, auto-size based on content (min 1 line)
+    const isTextarea = type === 'textarea';
+    const lineHeight = 20;
+    const lines = displayValue ? displayValue.split('\n').length : 1;
+    const minHeight = isTextarea ? `${Math.max(lineHeight, lines * lineHeight)}px` : 'auto';
+    const style = isTextarea 
+      ? `white-space:pre-wrap; min-height:${minHeight}; padding:8px; border:1px solid #ddd; border-radius:4px; cursor:text;`
+      : `padding:8px; border:1px solid #ddd; border-radius:4px; cursor:text;`;
+    const valueHtml = `<div class="detail-value appt-editable appt-notes-field" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="${style}">${displayValue || '-'}</div>`;
     return `<div class="detail-group"><div class="detail-label">${label}</div>${valueHtml}</div>`;
   }
   
@@ -2498,16 +2506,16 @@ Best wishes,
           // Section 2: Confirmation status and outcome
           html += `<div class="appt-section appt-section-2">`;
           
-          // Row 4: Conf Email Sent, Conf Text Sent
+          // Row 4: Conf Email Sent, Conf Text Sent, Appointment Status
           html += `<div class="taco-row">`;
           html += renderApptCheckbox(appt.id, 'Conf Email Sent', 'confEmailSent', appt.confEmailSent);
           html += renderApptCheckbox(appt.id, 'Conf Text Sent', 'confTextSent', appt.confTextSent);
+          html += renderApptField(appt.id, 'Appointment Status', 'appointmentStatus', status, 'select', ['', 'Scheduled', 'Completed', 'Cancelled', 'No Show']);
           html += `</div>`;
           
-          // Row 5: Status (1/3) and Notes (2/3)
-          html += `<div class="taco-row taco-row-status-notes" style="margin-top:15px;">`;
-          html += renderApptField(appt.id, 'Appointment Status', 'appointmentStatus', status, 'select', ['', 'Scheduled', 'Completed', 'Cancelled', 'No Show']);
-          html += `<div style="grid-column: span 2;">${renderApptFieldNoIcon(appt.id, 'Notes', 'notes', appt.notes, 'textarea')}</div>`;
+          // Row 5: Notes (full width, auto-resize)
+          html += `<div style="margin-top:12px;">`;
+          html += renderApptFieldNoIcon(appt.id, 'Notes', 'notes', appt.notes, 'textarea');
           html += `</div>`;
           
           html += `</div>`; // close section 2

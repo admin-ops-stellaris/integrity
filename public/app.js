@@ -2158,9 +2158,9 @@ Best wishes,
         }
         
         // Appointments section - linked from Appointments table
-        html += `<div class="appointments-section-box" style="margin-top:15px;">`;
+        html += `<div class="appointments-section" style="margin-top:15px;">`;
         html += `<div id="appointmentsContainer" data-opportunity-id="${id}"><div style="color:#888; padding:10px;">Loading appointments...</div></div>`;
-        html += `<div style="padding:12px 16px;"><button type="button" class="btn-add-appointment" style="padding:6px 14px; background:#3a8a3a; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600;" onclick="openAppointmentForm('${id}')">+ Add Appointment</button></div>`;
+        html += `<div style="padding:8px 0;"><button type="button" class="btn-add-appointment" style="padding:6px 14px; background:#3a8a3a; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600;" onclick="openAppointmentForm('${id}')">+ Add Appointment</button></div>`;
         html += `</div>`;
         
         // Load appointments asynchronously

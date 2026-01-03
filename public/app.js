@@ -461,8 +461,15 @@
       return;
     }
     
-    // Show confirmation
-    const confirmMsg = "Are you sure you want to change this client's marketing preferences? If they expressed an opinion and you're going against that, it's a breach of the SPAM Act among other things.";
+    // Different warnings for subscribe vs unsubscribe
+    let confirmMsg;
+    if (newValue) {
+      // Unsubscribing someone who is subscribed
+      confirmMsg = "If you proceed, this person won't receive any marketing communications from us again. Are you sure you want that?";
+    } else {
+      // Subscribing someone who is unsubscribed - SPAM Act warning
+      confirmMsg = "Are you sure you want to change this client's marketing preferences? If they expressed an opinion and you're going against that, it's a breach of the SPAM Act among other things.";
+    }
     if (!confirm(confirmMsg)) {
       return;
     }

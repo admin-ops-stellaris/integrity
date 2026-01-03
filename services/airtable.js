@@ -333,8 +333,9 @@ export async function updateOpportunity(id, field, value, userContext = null) {
     
     const updateFields = { [field]: value };
     if (userContext) {
-      if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
-      if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
+      if (userContext.name) updateFields["Modified By (Web App User)"] = userContext.name;
+      if (userContext.email) updateFields["Modified By (Web App User Email)"] = userContext.email;
+      updateFields["Modified On (Web App)"] = getPerthTimeISO();
     }
     const record = await base("Opportunities").update(id, updateFields);
     
@@ -361,8 +362,9 @@ export async function updateRecordInTable(tableName, id, field, value, userConte
   try {
     const updateFields = { [field]: value };
     if (userContext && TRACKED_TABLES.includes(tableName)) {
-      if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
-      if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
+      if (userContext.name) updateFields["Modified By (Web App User)"] = userContext.name;
+      if (userContext.email) updateFields["Modified By (Web App User Email)"] = userContext.email;
+      updateFields["Modified On (Web App)"] = getPerthTimeISO();
     }
     const record = await base(tableName).update(id, updateFields);
     return formatRecord(record);
@@ -376,9 +378,9 @@ export async function markRecordModified(tableName, id, userContext) {
   if (!base || !userContext || !TRACKED_TABLES.includes(tableName)) return null;
   try {
     const updateFields = {};
-    if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
-    if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
-    if (Object.keys(updateFields).length === 0) return null;
+    if (userContext.name) updateFields["Modified By (Web App User)"] = userContext.name;
+    if (userContext.email) updateFields["Modified By (Web App User Email)"] = userContext.email;
+    updateFields["Modified On (Web App)"] = getPerthTimeISO();
     const record = await base(tableName).update(id, updateFields);
     return formatRecord(record);
   } catch (err) {
@@ -397,17 +399,19 @@ export async function createOpportunity(name, contactId, opportunityType = "Home
       "Opportunity Type": opportunityType,
       ...additionalFields
     };
-    // Set Created timestamp
-    fields["Created On (Web App)"] = getPerthTimeISO();
+    // Set Created and Modified timestamps (both set on creation)
+    const perthTime = getPerthTimeISO();
+    fields["Created On (Web App)"] = perthTime;
+    fields["Modified On (Web App)"] = perthTime;
     
     if (userContext) {
       if (userContext.name) {
         fields["Created By (Web App User)"] = userContext.name;
-        fields["Last Site User Name"] = userContext.name;
+        fields["Modified By (Web App User)"] = userContext.name;
       }
       if (userContext.email) {
         fields["Created By (Web App User Email)"] = userContext.email;
-        fields["Last Site User Email"] = userContext.email;
+        fields["Modified By (Web App User Email)"] = userContext.email;
       }
     }
     const record = await base("Opportunities").create(fields);

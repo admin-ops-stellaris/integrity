@@ -397,13 +397,16 @@ export async function createOpportunity(name, contactId, opportunityType = "Home
       "Opportunity Type": opportunityType,
       ...additionalFields
     };
+    // Set Created timestamp
+    fields["Created On (Web App)"] = getPerthTimeISO();
+    
     if (userContext) {
       if (userContext.name) {
-        fields["Creating Site User Name"] = userContext.name;
+        fields["Created By (Web App User)"] = userContext.name;
         fields["Last Site User Name"] = userContext.name;
       }
       if (userContext.email) {
-        fields["Creating Site User Email"] = userContext.email;
+        fields["Created By (Web App User Email)"] = userContext.email;
         fields["Last Site User Email"] = userContext.email;
       }
     }

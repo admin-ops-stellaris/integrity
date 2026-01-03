@@ -11,6 +11,20 @@ const base = AIRTABLE_API_KEY && AIRTABLE_BASE_ID
   ? new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_ID)
   : null;
 
+// Helper to generate Perth time ISO string
+function getPerthTimeISO() {
+  const now = new Date();
+  const perthOffset = 8 * 60; // Perth is UTC+8
+  const perthTime = new Date(now.getTime() + (perthOffset + now.getTimezoneOffset()) * 60 * 1000);
+  const year = perthTime.getFullYear();
+  const month = String(perthTime.getMonth() + 1).padStart(2, '0');
+  const day = String(perthTime.getDate()).padStart(2, '0');
+  const hours = String(perthTime.getHours()).padStart(2, '0');
+  const minutes = String(perthTime.getMinutes()).padStart(2, '0');
+  const seconds = String(perthTime.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000+08:00`;
+}
+
 function formatRecord(record) {
   return {
     id: record.id,
@@ -222,16 +236,7 @@ export async function updateContact(id, field, value, userContext = null) {
         updateFields["Modified By (Web App User Email)"] = userContext.email;
       }
       // Add modified timestamp in ISO format with Perth timezone (GMT+8)
-      const now = new Date();
-      const perthOffset = 8 * 60; // Perth is UTC+8
-      const perthTime = new Date(now.getTime() + (perthOffset + now.getTimezoneOffset()) * 60 * 1000);
-      const year = perthTime.getFullYear();
-      const month = String(perthTime.getMonth() + 1).padStart(2, '0');
-      const day = String(perthTime.getDate()).padStart(2, '0');
-      const hours = String(perthTime.getHours()).padStart(2, '0');
-      const minutes = String(perthTime.getMinutes()).padStart(2, '0');
-      const seconds = String(perthTime.getSeconds()).padStart(2, '0');
-      updateFields["Modified On (Web App)"] = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000+08:00`;
+      updateFields["Modified On (Web App)"] = getPerthTimeISO();
     }
     const record = await base("Contacts").update(id, updateFields);
     return formatRecord(record);
@@ -253,18 +258,7 @@ export async function createContact(fields, userContext = null) {
         createFields["Created By (Web App User Email)"] = userContext.email;
       }
       // Add created timestamp in ISO format with Perth timezone (GMT+8)
-      // Airtable will display it according to the field's display settings
-      const now = new Date();
-      // Convert to Perth time and format as ISO with +08:00 offset
-      const perthOffset = 8 * 60; // Perth is UTC+8
-      const perthTime = new Date(now.getTime() + (perthOffset + now.getTimezoneOffset()) * 60 * 1000);
-      const year = perthTime.getFullYear();
-      const month = String(perthTime.getMonth() + 1).padStart(2, '0');
-      const day = String(perthTime.getDate()).padStart(2, '0');
-      const hours = String(perthTime.getHours()).padStart(2, '0');
-      const minutes = String(perthTime.getMinutes()).padStart(2, '0');
-      const seconds = String(perthTime.getSeconds()).padStart(2, '0');
-      createFields["Created On (Web App)"] = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000+08:00`;
+      createFields["Created On (Web App)"] = getPerthTimeISO();
     }
     const record = await base("Contacts").create(createFields);
     return formatRecord(record);
@@ -310,15 +304,49 @@ export async function getOpportunitiesById(ids) {
   }
 }
 
+// Mark a contact as modified (updates Modified On/By fields)
+async function markContactModified(contactId, userContext) {
+  if (!base || !contactId || !userContext) return;
+  try {
+    const updateFields = {};
+    if (userContext.name) updateFields["Modified By (Web App User)"] = userContext.name;
+    if (userContext.email) updateFields["Modified By (Web App User Email)"] = userContext.email;
+    updateFields["Modified On (Web App)"] = getPerthTimeISO();
+    await base("Contacts").update(contactId, updateFields);
+  } catch (err) {
+    console.error("markContactModified error:", err.message);
+  }
+}
+
+// Contact link fields on Opportunities
+const CONTACT_LINK_FIELDS = ["Primary Applicant", "Applicants", "Guarantors"];
+
 export async function updateOpportunity(id, field, value, userContext = null) {
   if (!base) return null;
   try {
+    // If updating a contact link field, get old values first to mark removed contacts
+    let oldContactIds = [];
+    if (CONTACT_LINK_FIELDS.includes(field) && userContext) {
+      const oldRecord = await base("Opportunities").find(id);
+      oldContactIds = oldRecord.fields[field] || [];
+    }
+    
     const updateFields = { [field]: value };
     if (userContext) {
       if (userContext.name) updateFields["Last Site User Name"] = userContext.name;
       if (userContext.email) updateFields["Last Site User Email"] = userContext.email;
     }
     const record = await base("Opportunities").update(id, updateFields);
+    
+    // If updating a contact link field, mark both old and new contacts as modified
+    if (CONTACT_LINK_FIELDS.includes(field) && userContext) {
+      const newContactIds = Array.isArray(value) ? value : (value ? [value] : []);
+      const allContactIds = [...new Set([...oldContactIds, ...newContactIds])];
+      for (const contactId of allContactIds) {
+        await markContactModified(contactId, userContext);
+      }
+    }
+    
     return formatRecord(record);
   } catch (err) {
     console.error("updateOpportunity error:", err.message);

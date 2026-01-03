@@ -2119,19 +2119,11 @@ Best wishes,
           if (dataMap['Taco: Converted to Appt']) html += renderField(dataMap['Taco: Converted to Appt'], table, id);
           html += '</div>';
           
-          // Appointment fields (only if Converted to Appt is checked)
-          const showApptFields = convertedToAppt && !apptIsPast;
+          // Thin divider line before appointment fields section
+          html += '<div class="taco-section-divider"></div>';
           
-          // Show collapsed notice ABOVE appointment fields if appointment is past
-          if (convertedToAppt && apptIsPast) {
-            const collapsedText = `Appointment details hidden (${apptTimeStr} has passed)`;
-            html += `<div id="apptCollapsedNotice" class="appt-collapsed-notice" onclick="togglePastApptFields()">
-              <span class="chevron">▶</span>
-              <span id="apptNoticeText" data-collapsed-text="${collapsedText.replace(/"/g, '&quot;')}">${collapsedText}</span>
-            </div>`;
-          }
-          
-          html += `<div id="apptFieldsSection" style="${showApptFields ? '' : 'display:none;'}">`;
+          // Appointment fields section (only visible if Converted to Appt is checked)
+          html += `<div id="tacoApptFieldsSection" style="${convertedToAppt ? '' : 'display:none;'}">`;
           
           // Row 5: Appointment Time, Type of Appointment, How Appt Booked
           html += '<div class="taco-row">';
@@ -2169,17 +2161,33 @@ Best wishes,
           if (dataMap['Taco: Appt Conf Text Sent']) html += renderField(dataMap['Taco: Appt Conf Text Sent'], table, id);
           html += '</div>';
           
-          // Send Confirmation Email button - inside Taco section
+          // Send Confirmation Email button
           html += `<div style="margin-top:15px;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${id}')">Send Confirmation Email</button></div>`;
           
-          html += '</div>'; // close apptFieldsSection
+          // Row: Status and Notes at the end
+          html += '<div class="taco-row" style="margin-top:15px;">';
+          if (dataMap['Taco: Appt Status']) {
+            html += renderField(dataMap['Taco: Appt Status'], table, id);
+          } else {
+            // Fallback if field doesn't exist - create a placeholder
+            html += `<div class="detail-group"><span class="detail-label">Status</span><span class="detail-value">Scheduled</span></div>`;
+          }
+          if (dataMap['Taco: Appt Notes']) {
+            html += renderField(dataMap['Taco: Appt Notes'], table, id);
+          } else {
+            // Fallback if field doesn't exist
+            html += `<div class="detail-group"></div>`;
+          }
+          html += '</div>';
+          
+          html += '</div>'; // close tacoApptFieldsSection
           
           html += '</div></div>'; // close tacoFieldsContainer and taco-section-box
         }
         
         // Appointments section - linked from Appointments table
         html += `<div class="appointments-section-box" style="margin-top:15px;">`;
-        html += `<div class="appointments-section-header"><span style="font-weight:600; color:#333;">Appointments</span><button type="button" class="btn-add-appointment" style="padding:6px 14px; background:#3a8a3a; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600;" onclick="openAppointmentForm('${id}')">+ Add</button></div>`;
+        html += `<div style="padding:12px 16px;"><button type="button" class="btn-add-appointment" style="padding:6px 14px; background:#3a8a3a; color:white; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600;" onclick="openAppointmentForm('${id}')">+ Add Appointment</button></div>`;
         html += `<div id="appointmentsContainer" data-opportunity-id="${id}"><div style="color:#888; padding:10px;">Loading appointments...</div></div>`;
         html += `</div>`;
         
@@ -2245,40 +2253,95 @@ Best wishes,
       .withSuccessHandler(function(appointments) {
         console.log('Appointments received:', appointments);
         if (!appointments || appointments.length === 0) {
-          container.innerHTML = '<div style="color:#888; padding:10px; font-style:italic;">No appointments scheduled</div>';
+          container.innerHTML = '<div style="color:#888; padding:16px 16px 4px 16px; font-style:italic;">No appointments scheduled</div>';
           return;
         }
         
         let html = '';
         appointments.forEach(appt => {
-          const statusClass = appt.appointmentStatus === 'Completed' ? 'status-completed' : 
-                             appt.appointmentStatus === 'Cancelled' ? 'status-cancelled' : 'status-scheduled';
+          const status = appt.appointmentStatus || 'Scheduled';
+          const statusClass = status === 'Completed' ? 'status-completed' : 
+                             status === 'Cancelled' ? 'status-cancelled' : 
+                             status === 'No Show' ? 'status-noshow' : 'status-scheduled';
           const typeIcon = appt.typeOfAppointment === 'Phone' ? '📞' : 
                           appt.typeOfAppointment === 'Video' ? '🎥' : '🏢';
           
-          html += `<div class="appointment-card">`;
-          html += `<div class="appointment-header">`;
+          // Expand Scheduled appointments by default, collapse others
+          const isExpanded = status === 'Scheduled';
+          const expandedClass = isExpanded ? 'expanded' : '';
+          
+          html += `<div class="appointment-item ${expandedClass}" data-appt-id="${appt.id}">`;
+          
+          // Clickable header with summary
+          html += `<div class="appointment-item-header" onclick="toggleAppointmentExpand('${appt.id}')">`;
+          html += `<div class="appointment-item-left">`;
+          html += `<span class="appointment-item-chevron">▶</span>`;
+          html += `<div class="appointment-item-summary">`;
           html += `<span class="appointment-type">${typeIcon} ${appt.typeOfAppointment || 'Appointment'}</span>`;
-          html += `<span class="appointment-status ${statusClass}">${appt.appointmentStatus || 'Scheduled'}</span>`;
+          html += `<span class="appointment-datetime">${formatDatetimeForDisplay(appt.appointmentTime)}</span>`;
           html += `</div>`;
-          html += `<div class="appointment-time">${formatDatetimeForDisplay(appt.appointmentTime)}</div>`;
-          if (appt.howBooked) {
-            html += `<div class="appointment-detail">Booked via: ${appt.howBooked}${appt.howBooked === 'Other' && appt.howBookedOther ? ' - ' + appt.howBookedOther : ''}</div>`;
+          html += `</div>`;
+          html += `<span class="appointment-status ${statusClass}">${status}</span>`;
+          html += `</div>`;
+          
+          // Expandable body with Taco-style fields
+          html += `<div class="appointment-item-body">`;
+          html += `<div class="appointment-item-divider"></div>`;
+          
+          // Row 1: Appointment Time, Type of Appointment, How Booked
+          html += `<div class="appointment-row">`;
+          html += `<div class="detail-group"><span class="detail-label">Appointment Time</span><span class="detail-value">${formatDatetimeForDisplay(appt.appointmentTime)}</span></div>`;
+          html += `<div class="detail-group"><span class="detail-label">Type of Appointment</span><span class="detail-value">${appt.typeOfAppointment || '-'}</span></div>`;
+          html += `<div class="detail-group"><span class="detail-label">How Booked</span><span class="detail-value">${appt.howBooked || '-'}${appt.howBooked === 'Other' && appt.howBookedOther ? ' - ' + appt.howBookedOther : ''}</span></div>`;
+          html += `</div>`;
+          
+          // Row 2: Phone Number (if Phone), Video Meet URL (if Video), empty
+          html += `<div class="appointment-row">`;
+          if (appt.typeOfAppointment === 'Phone') {
+            html += `<div class="detail-group"><span class="detail-label">Phone Number</span><span class="detail-value">${appt.phoneNumber || '-'}</span></div>`;
+          } else if (appt.typeOfAppointment === 'Video') {
+            const meetUrl = appt.videoMeetUrl || '-';
+            const meetLink = meetUrl !== '-' ? `<a href="https://${meetUrl.replace(/^https?:\/\//, '')}" target="_blank">${meetUrl}</a>` : '-';
+            html += `<div class="detail-group"><span class="detail-label">Video Meet URL</span><span class="detail-value">${meetLink}</span></div>`;
+          } else {
+            html += `<div class="detail-group"></div>`;
           }
-          if (appt.phoneNumber && appt.typeOfAppointment === 'Phone') {
-            html += `<div class="appointment-detail">Phone: ${appt.phoneNumber}</div>`;
-          }
-          if (appt.videoMeetUrl && appt.typeOfAppointment === 'Video') {
-            html += `<div class="appointment-detail">Meet URL: <a href="https://${appt.videoMeetUrl.replace(/^https?:\/\//, '')}" target="_blank">${appt.videoMeetUrl}</a></div>`;
-          }
-          if (appt.notes) {
-            html += `<div class="appointment-notes">${appt.notes}</div>`;
-          }
+          html += `<div class="detail-group"></div>`;
+          html += `<div class="detail-group"></div>`;
+          html += `</div>`;
+          
+          // Row 3: Need Evidence, Need Reminder, empty
+          html += `<div class="appointment-row">`;
+          html += `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" disabled ${appt.needEvidenceInAdvance ? 'checked' : ''}><label>Need Evidence in Advance</label></div></div>`;
+          html += `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" disabled ${appt.needApptReminder ? 'checked' : ''}><label>Need Appt Reminder</label></div></div>`;
+          html += `<div class="detail-group"></div>`;
+          html += `</div>`;
+          
+          // Row 4: Conf Email Sent, Conf Text Sent, empty
+          html += `<div class="appointment-row">`;
+          html += `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" disabled ${appt.confEmailSent ? 'checked' : ''}><label>Conf Email Sent</label></div></div>`;
+          html += `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" disabled ${appt.confTextSent ? 'checked' : ''}><label>Conf Text Sent</label></div></div>`;
+          html += `<div class="detail-group"></div>`;
+          html += `</div>`;
+          
+          // Send Confirmation Email button
+          html += `<div style="margin-top:15px;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${opportunityId}')">Send Confirmation Email</button></div>`;
+          
+          // Row: Status and Notes
+          html += `<div class="appointment-row" style="margin-top:15px;">`;
+          html += `<div class="detail-group"><span class="detail-label">Status</span><span class="detail-value">${status}</span></div>`;
+          html += `<div class="detail-group"><span class="detail-label">Notes</span><span class="detail-value">${appt.notes || '-'}</span></div>`;
+          html += `<div class="detail-group"></div>`;
+          html += `</div>`;
+          
+          // Actions
           html += `<div class="appointment-actions">`;
           html += `<button onclick="editAppointment('${appt.id}', '${opportunityId}')" class="btn-edit-appt">Edit</button>`;
           html += `<button onclick="deleteAppointment('${appt.id}', '${opportunityId}')" class="btn-delete-appt">Delete</button>`;
           html += `</div>`;
-          html += `</div>`;
+          
+          html += `</div>`; // close body
+          html += `</div>`; // close item
         });
         
         container.innerHTML = html;
@@ -2410,6 +2473,13 @@ Best wishes,
         .withSuccessHandler(onSaveComplete)
         .withFailureHandler(onSaveError)
         .createAppointment(currentAppointmentOpportunityId, fields);
+    }
+  }
+  
+  function toggleAppointmentExpand(appointmentId) {
+    const item = document.querySelector(`.appointment-item[data-appt-id="${appointmentId}"]`);
+    if (item) {
+      item.classList.toggle('expanded');
     }
   }
   

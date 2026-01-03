@@ -872,7 +872,9 @@ app.post("/api/createAppointment", async (req, res) => {
 app.post("/api/updateAppointment", async (req, res) => {
   try {
     const [appointmentId, field, value] = req.body.args || [];
-    const result = await airtable.updateAppointment(appointmentId, field, value);
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.updateAppointment(appointmentId, field, value, userContext);
     res.json(result);
   } catch (err) {
     console.error("updateAppointment error:", err);

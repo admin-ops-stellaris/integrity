@@ -2415,7 +2415,7 @@ Best wishes,
                              status === 'Cancelled' ? 'status-cancelled' : 
                              status === 'No Show' ? 'status-noshow' : 
                              status === 'Scheduled' ? 'status-scheduled' : 'status-blank';
-          const statusDisplay = needsUpdate ? 'Needs Update' : (status || 'Not Set');
+          const statusDisplay = needsUpdate ? 'Please Update Status' : (status || 'Not Set');
           
           // Expand Scheduled appointments by default, collapse others
           const isExpanded = status === 'Scheduled';
@@ -2437,6 +2437,20 @@ Best wishes,
           // Expandable body with editable fields
           html += `<div class="appointment-item-body">`;
           html += `<div class="appointment-item-divider"></div>`;
+          
+          // Audit info between header and fields
+          let auditParts = [];
+          if (appt.createdTime) {
+            const createdDate = new Date(appt.createdTime).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true });
+            auditParts.push(`Created ${createdDate}`);
+          }
+          if (appt.modifiedTime && appt.modifiedTime !== appt.createdTime) {
+            const modifiedDate = new Date(appt.modifiedTime).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true });
+            auditParts.push(`Modified ${modifiedDate}`);
+          }
+          if (auditParts.length > 0) {
+            html += `<div class="appt-audit-info">${auditParts.join(' · ')}</div>`;
+          }
           
           // Row 1: Appointment Time, Type of Appointment, How Booked (editable)
           html += `<div class="taco-row">`;

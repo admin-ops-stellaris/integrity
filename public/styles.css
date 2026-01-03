@@ -144,6 +144,8 @@
   body.dark-mode .appt-editable:hover { background: rgba(255,255,255,0.06); }
   .appt-notes-field { background: rgba(0,0,0,0.02); }
   body.dark-mode .appt-notes-field { background: rgba(255,255,255,0.03); border-color: #444; }
+  .appt-audit-info { font-size: 10px; color: #999; font-style: italic; margin-bottom: 12px; }
+  body.dark-mode .appt-audit-info { color: #777; }
   .appointment-item-left { display: flex; align-items: center; gap: 10px; }
   .appointment-item-chevron { transition: transform 0.2s; color: #666; font-size: 12px; }
   .appointment-item.expanded .appointment-item-chevron { transform: rotate(90deg); }

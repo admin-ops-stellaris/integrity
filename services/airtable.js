@@ -588,7 +588,10 @@ export async function getAppointmentsForOpportunity(opportunityId) {
       confTextSent: r.fields["Conf Text Sent"] || false,
       appointmentStatus: r.fields["Appointment Status"] || null,
       notes: r.fields["Notes"] || null,
-      createdTime: r.fields["Created Time"] || null
+      createdTime: r.fields["Created Time"] || null,
+      modifiedTime: r.fields["Modified Time"] || null,
+      createdById: Array.isArray(r.fields["Created By"]) ? r.fields["Created By"][0] : null,
+      modifiedById: Array.isArray(r.fields["Modified By"]) ? r.fields["Modified By"][0] : null
     }));
   } catch (err) {
     console.error("getAppointmentsForOpportunity error:", err.message);
@@ -635,7 +638,7 @@ export async function createAppointment(opportunityId, fields, userContext = nul
   }
 }
 
-export async function updateAppointment(appointmentId, field, value) {
+export async function updateAppointment(appointmentId, field, value, userContext = null) {
   if (!base || !appointmentId) return null;
   
   // Map frontend field names to Airtable field names
@@ -657,9 +660,16 @@ export async function updateAppointment(appointmentId, field, value) {
   const airtableField = fieldMap[field] || field;
   
   try {
-    const record = await base("Appointments").update(appointmentId, {
+    const updateFields = {
       [airtableField]: value || null
-    });
+    };
+    
+    // Set Modified By if user context is available
+    if (userContext && userContext.id) {
+      updateFields["Modified By"] = [userContext.id];
+    }
+    
+    const record = await base("Appointments").update(appointmentId, updateFields);
     return formatRecord(record);
   } catch (err) {
     console.error("updateAppointment error:", err.message);

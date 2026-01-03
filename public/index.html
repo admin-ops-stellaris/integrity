@@ -159,16 +159,18 @@
             </div>
           </div>
           <div class="composer-section">
-            <div class="composer-section-title">Applicants</div>
-            <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
-              <span style="font-size:11px; color:#666;">Primary:</span>
-              <a id="composerPrimaryName" class="data-link" style="margin:0; padding:4px 8px; font-size:12px;"></a>
-              <span id="composerSpouseSection" style="display:none;">
-                <label class="composer-checkbox-label" style="margin-left:8px;">
+            <div class="composer-section-title">Who's on this opportunity?</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:11px; color:#666; min-width:100px;">Primary Applicant:</span>
+                <a id="composerPrimaryName" class="data-link" style="margin:0; padding:4px 8px; font-size:12px;"></a>
+              </div>
+              <div id="composerSpouseSection" style="display:none;">
+                <label class="composer-checkbox-label">
                   <input type="checkbox" id="composerAddSpouse" onchange="updateComposerSpouseLabel()">
-                  <span id="composerSpouseLabel"><span id="composerSpouseLabelPrefix">+ </span><strong id="composerSpouseName"></strong></span>
+                  <span id="composerSpouseLabel"><span id="composerSpouseLabelPrefix">Also add </span><strong id="composerSpouseName"></strong><span id="composerSpouseLabelSuffix"> as Applicant</span></span>
                 </label>
-              </span>
+              </div>
             </div>
           </div>
           <div class="composer-section">

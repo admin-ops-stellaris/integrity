@@ -2269,14 +2269,19 @@ Best wishes,
       let optHtml = options.map(o => `<option value="${o}" ${o === currentValue ? 'selected' : ''}>${o}</option>`).join('');
       inputHtml = `<select class="inline-edit-input" onchange="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')">${optHtml}</select>`;
     } else if (type === 'textarea') {
-      inputHtml = `<textarea class="inline-edit-input" rows="3" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onkeydown="if(event.key==='Escape'){cancelApptEdit('${apptId}', '${fieldKey}');}">${currentValue === '-' ? '' : currentValue}</textarea>`;
+      inputHtml = `<textarea class="inline-edit-input auto-resize-textarea" rows="1" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" oninput="autoResizeTextarea(this)" onfocus="autoResizeTextarea(this)" onkeydown="if(event.key==='Escape'){cancelApptEdit('${apptId}', '${fieldKey}');}">${currentValue === '-' ? '' : currentValue}</textarea>`;
     } else {
       inputHtml = `<input type="text" class="inline-edit-input" value="${currentValue === '-' ? '' : currentValue}" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){cancelApptEdit('${apptId}', '${fieldKey}');}">`;
     }
     
     valueSpan.outerHTML = inputHtml;
     const input = parent.querySelector('.inline-edit-input');
-    if (input) input.focus();
+    if (input) {
+      input.focus();
+      if (input.classList.contains('auto-resize-textarea')) {
+        autoResizeTextarea(input);
+      }
+    }
   }
   
   // Save appointment field
@@ -2324,6 +2329,12 @@ Best wishes,
         alert('Error updating: ' + (err.message || err));
       })
       .updateAppointment(apptId, fieldKey, checked);
+  }
+  
+  // Auto-resize textarea based on content
+  function autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
   }
   
   // Cancel appointment edit

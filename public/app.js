@@ -2408,11 +2408,14 @@ Best wishes,
           
           html += `<div class="appointment-item subsequent-appt ${expandedClass}" data-appt-id="${appt.id}">`;
           
-          // Collapsible header - chevron+label in col1, time aligns with col2 below, type aligns with col3 below, status on right
-          html += `<div class="appointment-item-header appointment-header-grid" onclick="toggleAppointmentExpand('${appt.id}')">`;
-          html += `<div class="appt-header-col1"><span class="appointment-item-chevron">▶</span><span class="appt-header-label">Appointment:</span></div>`;
+          // Collapsible header - nice text flow with status badge on right
+          html += `<div class="appointment-item-header" onclick="toggleAppointmentExpand('${appt.id}')">`;
+          html += `<div class="appt-header-left">`;
+          html += `<span class="appointment-item-chevron">▶</span>`;
+          html += `<span class="appt-header-label">Appointment:</span>`;
           html += `<span class="appt-header-time">${formatDatetimeForDisplay(appt.appointmentTime)}</span>`;
           html += `<span class="appt-header-type">${appt.typeOfAppointment || '-'}</span>`;
+          html += `</div>`;
           html += `<span class="appointment-status ${statusClass}">${status}</span>`;
           html += `</div>`;
           

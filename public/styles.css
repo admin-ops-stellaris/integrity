@@ -134,11 +134,10 @@
   .appointment-item-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; user-select: none; }
   .appointment-item-header:hover { background: rgba(160, 190, 210, 0.2); }
   .dark-mode .appointment-item-header:hover { background: rgba(80, 110, 130, 0.2); }
-  .appointment-header-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: center; }
-  .appt-header-col1 { display: flex; align-items: center; gap: 8px; }
+  .appt-header-left { display: flex; align-items: center; gap: 10px; }
   .appt-header-label { font-weight: 600; color: var(--color-trail); font-size: 14px; }
-  .appt-header-time { font-size: 13px; color: #666; font-weight: 500; }
-  .appt-header-type { font-size: 13px; color: #666; }
+  .appt-header-time { font-size: 13px; color: #666; font-weight: 500; min-width: 170px; }
+  .appt-header-type { font-size: 13px; color: #666; min-width: 60px; }
   .dark-mode .appt-header-time, .dark-mode .appt-header-type { color: #AAA; }
   .appt-editable { cursor: pointer; transition: background 0.15s; border-radius: 4px; }
   .appt-editable:hover { background: rgba(0,0,0,0.04); }

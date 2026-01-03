@@ -2013,8 +2013,12 @@ Best wishes,
          if (response.type === 'create' && response.record) {
            // New contact created - navigate to view it
            selectContact(response.record);
+         } else if (formData.recordId) {
+           // For updates, refresh the contact to show updated Modified date
+           google.script.run.withSuccessHandler(function(r) {
+             if (r && r.fields) selectContact(r);
+           }).getContactById(formData.recordId);
          }
-         // For updates, just stay on the view (no success message needed)
       }).withFailureHandler(function(err) { status.innerText = "❌ " + err.message; status.className = "status-error"; btn.disabled = false; btn.innerText = "Try Again"; }).processForm(formData);
   }
   function loadPanelRecord(table, id) {

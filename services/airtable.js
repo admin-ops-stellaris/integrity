@@ -74,6 +74,31 @@ export async function getUserProfileByEmail(email) {
   }
 }
 
+export async function getUserById(userId) {
+  if (!base || !userId) return null;
+  
+  if (userProfileCache.has(userId)) {
+    return userProfileCache.get(userId);
+  }
+  
+  try {
+    const record = await base("Users").find(userId);
+    if (record) {
+      const profile = {
+        id: record.id,
+        name: record.fields["Name"] || null,
+        email: record.fields["Email"] || null
+      };
+      userProfileCache.set(userId, profile);
+      return profile;
+    }
+    return null;
+  } catch (err) {
+    console.error("getUserById error:", err.message);
+    return null;
+  }
+}
+
 export async function getUserSignature(email) {
   if (!base || !email) return null;
   
@@ -574,25 +599,48 @@ export async function getAppointmentsForOpportunity(opportunityId) {
     
     console.log("Appointments found:", records.length, "out of", allRecords.length, "total");
     
-    return records.map(r => ({
-      id: r.id,
-      appointmentTime: r.fields["Appointment Time"] || null,
-      typeOfAppointment: r.fields["Type of Appointment"] || null,
-      howBooked: r.fields["How Booked"] || null,
-      howBookedOther: r.fields["How Booked Other"] || null,
-      phoneNumber: r.fields["Phone Number"] || null,
-      videoMeetUrl: r.fields["Video Meet URL"] || null,
-      needEvidenceInAdvance: r.fields["Need Evidence in Advance"] || false,
-      needApptReminder: r.fields["Need Appt Reminder"] || false,
-      confEmailSent: r.fields["Conf Email Sent"] || false,
-      confTextSent: r.fields["Conf Text Sent"] || false,
-      appointmentStatus: r.fields["Appointment Status"] || null,
-      notes: r.fields["Notes"] || null,
-      createdTime: r.fields["Created Time"] || null,
-      modifiedTime: r.fields["Modified Time"] || null,
-      createdById: Array.isArray(r.fields["Created By"]) ? r.fields["Created By"][0] : null,
-      modifiedById: Array.isArray(r.fields["Modified By"]) ? r.fields["Modified By"][0] : null
-    }));
+    // Collect all unique user IDs for batch lookup
+    const userIds = new Set();
+    records.forEach(r => {
+      const createdBy = Array.isArray(r.fields["Created By"]) ? r.fields["Created By"][0] : null;
+      const modifiedBy = Array.isArray(r.fields["Modified By"]) ? r.fields["Modified By"][0] : null;
+      if (createdBy) userIds.add(createdBy);
+      if (modifiedBy) userIds.add(modifiedBy);
+    });
+    
+    // Look up all user names in parallel
+    const userLookups = await Promise.all([...userIds].map(id => getUserById(id)));
+    const userMap = new Map();
+    userLookups.forEach(user => {
+      if (user && user.id) userMap.set(user.id, user.name || 'Unknown');
+    });
+    
+    return records.map(r => {
+      const createdById = Array.isArray(r.fields["Created By"]) ? r.fields["Created By"][0] : null;
+      const modifiedById = Array.isArray(r.fields["Modified By"]) ? r.fields["Modified By"][0] : null;
+      
+      return {
+        id: r.id,
+        appointmentTime: r.fields["Appointment Time"] || null,
+        typeOfAppointment: r.fields["Type of Appointment"] || null,
+        howBooked: r.fields["How Booked"] || null,
+        howBookedOther: r.fields["How Booked Other"] || null,
+        phoneNumber: r.fields["Phone Number"] || null,
+        videoMeetUrl: r.fields["Video Meet URL"] || null,
+        needEvidenceInAdvance: r.fields["Need Evidence in Advance"] || false,
+        needApptReminder: r.fields["Need Appt Reminder"] || false,
+        confEmailSent: r.fields["Conf Email Sent"] || false,
+        confTextSent: r.fields["Conf Text Sent"] || false,
+        appointmentStatus: r.fields["Appointment Status"] || null,
+        notes: r.fields["Notes"] || null,
+        createdTime: r.fields["Created Time"] || null,
+        modifiedTime: r.fields["Modified Time"] || null,
+        createdById,
+        modifiedById,
+        createdByName: createdById ? userMap.get(createdById) : null,
+        modifiedByName: modifiedById ? userMap.get(modifiedById) : null
+      };
+    });
   } catch (err) {
     console.error("getAppointmentsForOpportunity error:", err.message);
     return [];
@@ -677,10 +725,15 @@ export async function updateAppointment(appointmentId, field, value, userContext
   }
 }
 
-export async function updateAppointmentFields(appointmentId, fields) {
+export async function updateAppointmentFields(appointmentId, fields, userContext = null) {
   if (!base || !appointmentId) return null;
   
   try {
+    // Track who modified the record
+    if (userContext && userContext.id) {
+      fields["Modified By"] = [userContext.id];
+    }
+    
     const record = await base("Appointments").update(appointmentId, fields);
     return formatRecord(record);
   } catch (err) {

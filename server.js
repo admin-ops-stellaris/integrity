@@ -885,7 +885,9 @@ app.post("/api/updateAppointment", async (req, res) => {
 app.post("/api/updateAppointmentFields", async (req, res) => {
   try {
     const [appointmentId, fields] = req.body.args || [];
-    const result = await airtable.updateAppointmentFields(appointmentId, fields);
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.updateAppointmentFields(appointmentId, fields, userContext);
     res.json(result);
   } catch (err) {
     console.error("updateAppointmentFields error:", err);

@@ -2442,11 +2442,15 @@ Best wishes,
           let auditParts = [];
           if (appt.createdTime) {
             const createdDate = new Date(appt.createdTime).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true });
-            auditParts.push(`Created ${createdDate}`);
+            let createdText = `Created ${createdDate}`;
+            if (appt.createdByName) createdText += ` by ${appt.createdByName}`;
+            auditParts.push(createdText);
           }
           if (appt.modifiedTime && appt.modifiedTime !== appt.createdTime) {
             const modifiedDate = new Date(appt.modifiedTime).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true });
-            auditParts.push(`Modified ${modifiedDate}`);
+            let modifiedText = `Modified ${modifiedDate}`;
+            if (appt.modifiedByName) modifiedText += ` by ${appt.modifiedByName}`;
+            auditParts.push(modifiedText);
           }
           if (auditParts.length > 0) {
             html += `<div class="appt-audit-info">${auditParts.join(' · ')}</div>`;

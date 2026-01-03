@@ -490,6 +490,7 @@
   body.dark-mode .ql-snow .ql-tooltip input[type=text] { background: #222; border-color: #555; color: #E8E6E1; }
 
   /* TEMPLATE EDITOR */
+  #templateEditorModal.modal-overlay { z-index: 1100; }
   .modal-content.template-editor-modal { width: 95vw !important; max-width: 1080px !important; height: 85vh; max-height: 800px; display: flex; flex-direction: column; }
   .template-editor-body { display: flex; flex: 1; overflow: hidden; }
   .template-editor-main { flex: 1; min-width: 0; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; box-sizing: border-box; }

@@ -1286,32 +1286,40 @@ Best wishes,
   let activeTemplateEditor = 'body'; // 'subject' or 'body'
   
   function openTemplateEditor(templateId) {
+    console.log('openTemplateEditor called with:', templateId);
     const modal = document.getElementById('templateEditorModal');
-    if (!modal) return;
-    
-    // Initialize Quill for subject line (no toolbar)
-    if (!templateSubjectQuill && typeof Quill !== 'undefined') {
-      templateSubjectQuill = new Quill('#templateEditorSubject', {
-        modules: { toolbar: false },
-        theme: 'snow',
-        placeholder: 'Email subject with {{variables}}'
-      });
-      templateSubjectQuill.on('text-change', () => {
-        highlightVariables(templateSubjectQuill);
-      });
-      templateSubjectQuill.root.addEventListener('focus', () => { activeTemplateEditor = 'subject'; });
+    if (!modal) {
+      console.error('Template editor modal not found');
+      return;
     }
     
-    // Initialize Quill for body
-    if (!templateEditorQuill && typeof Quill !== 'undefined') {
-      templateEditorQuill = new Quill('#templateEditorBody', {
-        modules: { toolbar: '#templateEditorToolbar' },
-        theme: 'snow'
-      });
-      templateEditorQuill.on('text-change', () => {
-        highlightVariables(templateEditorQuill);
-      });
-      templateEditorQuill.root.addEventListener('focus', () => { activeTemplateEditor = 'body'; });
+    try {
+      // Initialize Quill for subject line (no toolbar)
+      if (!templateSubjectQuill && typeof Quill !== 'undefined') {
+        templateSubjectQuill = new Quill('#templateEditorSubject', {
+          modules: { toolbar: false },
+          theme: 'snow',
+          placeholder: 'Email subject with {{variables}}'
+        });
+        templateSubjectQuill.on('text-change', () => {
+          highlightVariables(templateSubjectQuill);
+        });
+        templateSubjectQuill.root.addEventListener('focus', () => { activeTemplateEditor = 'subject'; });
+      }
+      
+      // Initialize Quill for body
+      if (!templateEditorQuill && typeof Quill !== 'undefined') {
+        templateEditorQuill = new Quill('#templateEditorBody', {
+          modules: { toolbar: '#templateEditorToolbar' },
+          theme: 'snow'
+        });
+        templateEditorQuill.on('text-change', () => {
+          highlightVariables(templateEditorQuill);
+        });
+        templateEditorQuill.root.addEventListener('focus', () => { activeTemplateEditor = 'body'; });
+      }
+    } catch (err) {
+      console.error('Error initializing Quill editors:', err);
     }
     
     // Populate variable picker
@@ -1612,16 +1620,20 @@ Best wishes,
   
   // Open template editor from email composer context
   function openCurrentTemplateEditor() {
+    console.log('openCurrentTemplateEditor called, templates:', airtableTemplates.length);
     // Find the Confirmation template (or first available)
     const confirmationTemplate = airtableTemplates.find(t => 
       t.type === 'Confirmation' || t.name.toLowerCase().includes('confirmation')
     );
     
     if (confirmationTemplate) {
+      console.log('Opening confirmation template:', confirmationTemplate.id);
       openTemplateEditor(confirmationTemplate.id);
     } else if (airtableTemplates.length > 0) {
+      console.log('Opening first template:', airtableTemplates[0].id);
       openTemplateEditor(airtableTemplates[0].id);
     } else {
+      console.log('No templates, opening new');
       // No templates exist, open new template editor
       openTemplateEditor(null);
     }

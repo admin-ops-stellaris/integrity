@@ -351,7 +351,7 @@
             <div class="email-preview-container">
               <div class="email-preview-label" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Email Body (editable)</span>
-                <a href="javascript:void(0)" onclick="openCurrentTemplateEditor()" style="font-size:11px; color:var(--color-star);">Edit Template</a>
+                <a href="#" onclick="event.preventDefault(); event.stopPropagation(); openCurrentTemplateEditor();" style="font-size:11px; color:var(--color-star); cursor:pointer;">Edit Template</a>
               </div>
               <div id="emailQuillContainer">
                 <div id="emailQuillToolbar">

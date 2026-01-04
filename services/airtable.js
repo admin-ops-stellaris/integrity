@@ -52,6 +52,20 @@ function formatAppointmentRecord(record) {
 
 const userProfileCache = new Map();
 
+// Connections cache with 5-minute TTL
+const connectionsCache = new Map();
+const CONNECTIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function invalidateConnectionsCache(contactId) {
+  if (contactId) {
+    connectionsCache.delete(contactId);
+  }
+}
+
+function invalidateAllConnectionsCacheForContacts(contactIds) {
+  contactIds.forEach(id => connectionsCache.delete(id));
+}
+
 export async function getUserProfileByEmail(email) {
   if (!base || !email) return null;
   
@@ -546,8 +560,19 @@ export function getConnectionRoleTypes() {
   return CONNECTION_ROLE_PAIRS;
 }
 
-export async function getConnectionsForContact(contactId) {
+export async function getConnectionsForContact(contactId, bypassCache = false) {
   if (!base || !contactId) return [];
+  
+  // Check cache first unless bypassed
+  if (!bypassCache) {
+    const cached = connectionsCache.get(contactId);
+    if (cached && (Date.now() - cached.timestamp) < CONNECTIONS_CACHE_TTL) {
+      console.log(`[Cache HIT] Connections for ${contactId}`);
+      return cached.data;
+    }
+  }
+  console.log(`[Cache MISS] Fetching connections for ${contactId}`);
+  
   try {
     // Get connection record IDs from the Contact's back-link fields
     const contact = await base("Contacts").find(contactId);
@@ -654,9 +679,14 @@ export async function getConnectionsForContact(contactId) {
     });
     
     // Filter to active only and sort by name
-    return connections
+    const result = connections
       .filter(c => c.status === "Active")
       .sort((a, b) => (a.otherContactName || "").localeCompare(b.otherContactName || ""));
+    
+    // Cache the result
+    connectionsCache.set(contactId, { data: result, timestamp: Date.now() });
+    
+    return result;
   } catch (err) {
     console.error("getConnectionsForContact error:", err.message);
     return [];
@@ -701,6 +731,10 @@ export async function createConnection(contact1Id, contact2Id, record1Role, reco
     }
     
     const record = await base("Connections").create(createFields);
+    
+    // Invalidate cache for both contacts
+    invalidateAllConnectionsCacheForContacts([contact1Id, contact2Id]);
+    
     return { success: true, record: formatRecord(record) };
   } catch (err) {
     console.error("createConnection error:", err.message);
@@ -722,7 +756,16 @@ export async function deactivateConnection(connectionId, userContext = null) {
       updateFields["Modified By"] = [userContext.id];
     }
     
+    // Fetch the connection to get both contact IDs for cache invalidation
+    const conn = await base("Connections").find(connectionId);
+    const contact1Ids = conn?.fields["Contact 1"] || [];
+    const contact2Ids = conn?.fields["Contact 2"] || [];
+    
     await base("Connections").update(connectionId, updateFields);
+    
+    // Invalidate cache for both contacts
+    invalidateAllConnectionsCacheForContacts([...contact1Ids, ...contact2Ids]);
+    
     return { success: true };
   } catch (err) {
     console.error("deactivateConnection error:", err.message);

@@ -2946,7 +2946,7 @@ Best wishes,
     title.textContent = `${currentContactName}: ${displayRole} ${conn.otherContactName}`;
     
     body.innerHTML = `
-      <div class="panel-audit-section" style="margin-bottom: 20px; text-align: left;">
+      <div class="panel-audit-section" style="margin-bottom: 15px; text-align: left;">
         <div><span class="audit-label">Created</span> <span class="audit-value">${createdText}</span></div>
         <div><span class="audit-label">Modified</span> <span class="audit-value">${modifiedText}</span></div>
       </div>
@@ -2954,10 +2954,17 @@ Best wishes,
         <span class="remove-label">Remove this connection?</span>
         <button type="button" class="btn-danger conn-modal-btn" onclick="executeDeactivateConnection()">Remove</button>
       </div>
-      <div class="connection-modal-close">
-        <button type="button" class="btn-secondary conn-modal-btn" onclick="closeDeactivateConnectionModal()">Close</button>
-      </div>
     `;
+    
+    // Add close button to modal-body (parent), not modal-body-content
+    const modalBody = modal.querySelector('.modal-body');
+    let closeDiv = modalBody.querySelector('.connection-modal-close');
+    if (!closeDiv) {
+      closeDiv = document.createElement('div');
+      closeDiv.className = 'connection-modal-close';
+      closeDiv.innerHTML = '<button type="button" class="btn-secondary conn-modal-btn" onclick="closeDeactivateConnectionModal()">Close</button>';
+      modalBody.appendChild(closeDiv);
+    }
     
     // Store connection info for the confirm action
     modal.setAttribute('data-conn-id', conn.id);

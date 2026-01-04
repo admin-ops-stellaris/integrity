@@ -5385,30 +5385,57 @@ ${evidenceListHtml}`;
 <p>Kind regards,</p>`;
     }
     
+    // Store the base email body HTML for sending (without custom note)
+    window.pendingEvidenceEmailBodyBase = body;
+    
     // Populate modal
     document.getElementById('evidenceEmailModalTitle').textContent = title;
     document.getElementById('evidenceEmailTo').value = contactEmail;
     document.getElementById('evidenceEmailSubject').value = subject;
     document.getElementById('evidenceEmailItemCount').textContent = outstanding.length;
     
+    // Clear and setup custom note field
+    const customNoteEl = document.getElementById('evidenceEmailCustomNote');
+    if (customNoteEl) {
+      customNoteEl.value = '';
+      customNoteEl.oninput = updateEvidenceEmailPreview;
+    }
+    
+    // Render the HTML preview
+    updateEvidenceEmailPreview();
+    
     // Open modal
     const modal = document.getElementById('evidenceEmailModal');
     modal.classList.add('visible');
     setTimeout(() => modal.classList.add('showing'), 10);
+  };
+  
+  function updateEvidenceEmailPreview() {
+    const customNote = document.getElementById('evidenceEmailCustomNote')?.value?.trim() || '';
+    const baseBody = window.pendingEvidenceEmailBodyBase || '';
     
-    // Initialize Quill editor if needed
-    if (!evidenceEmailQuill) {
-      evidenceEmailQuill = new Quill('#evidenceEmailBody', {
-        theme: 'snow',
-        modules: {
-          toolbar: '#evidenceEmailToolbar'
-        }
-      });
+    // If there's a custom note, insert it after the greeting (first <p> tag)
+    let fullBody = baseBody;
+    if (customNote) {
+      const noteHtml = `<p style="background:#FFFDE7; padding:10px; border-left:3px solid #FFB300; margin:10px 0;"><em>${customNote.replace(/\n/g, '<br>')}</em></p>`;
+      // Insert after first paragraph (greeting)
+      const firstPEnd = fullBody.indexOf('</p>');
+      if (firstPEnd !== -1) {
+        fullBody = fullBody.slice(0, firstPEnd + 4) + noteHtml + fullBody.slice(firstPEnd + 4);
+      } else {
+        fullBody = noteHtml + fullBody;
+      }
     }
     
-    // Set content
-    evidenceEmailQuill.clipboard.dangerouslyPasteHTML(body);
-  };
+    // Update preview
+    const previewEl = document.getElementById('evidenceEmailPreview');
+    if (previewEl) {
+      previewEl.innerHTML = fullBody;
+    }
+    
+    // Store the full body for sending
+    window.pendingEvidenceEmailBody = fullBody;
+  }
   
   window.closeEvidenceEmailModal = function() {
     const modal = document.getElementById('evidenceEmailModal');
@@ -5416,12 +5443,14 @@ ${evidenceListHtml}`;
     setTimeout(() => modal.classList.remove('visible'), 200);
     pendingEvidenceEmailItemIds = [];
     currentEvidenceEmailType = null;
+    window.pendingEvidenceEmailBody = null;
+    window.pendingEvidenceEmailBodyBase = null;
   };
   
   window.sendEvidenceEmail = function() {
     const to = document.getElementById('evidenceEmailTo').value.trim();
     const subject = document.getElementById('evidenceEmailSubject').value.trim();
-    const body = evidenceEmailQuill ? evidenceEmailQuill.root.innerHTML : '';
+    const body = window.pendingEvidenceEmailBody || '';
     
     if (!to) {
       showAlert('warning', 'Missing Recipient', 'Please enter an email address.');
@@ -5725,7 +5754,7 @@ ${evidenceListHtml}`;
     let html = '';
     oppTypes.forEach(type => {
       const checked = selectedTypes.includes(type) ? ' checked' : '';
-      html += `<label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; padding:4px 0;"><input type="checkbox" class="evTplOppType" value="${type}"${checked}> ${type}</label>`;
+      html += `<label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer;"><input type="checkbox" class="evTplOppType" value="${type}"${checked}> ${type}</label>`;
     });
     container.innerHTML = html;
   }

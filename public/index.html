@@ -876,6 +876,11 @@
               <input type="checkbox" id="evidenceShowNA" checked onchange="filterEvidenceItems()">
               <span>Show N/A</span>
             </label>
+            <label class="evidence-checkbox-label">
+              <input type="checkbox" id="evidenceOutstandingFirst" onchange="filterEvidenceItems()">
+              <span>Outstanding First</span>
+            </label>
+            <button type="button" class="evidence-btn-text" onclick="populateEvidenceFromTemplates()">+ Add from Templates</button>
           </div>
         </div>
         <div id="evidenceModalBody" class="evidence-modal-body">
@@ -894,7 +899,7 @@
 
     <!-- Add Evidence Item Modal -->
     <div id="addEvidenceItemModal" class="modal-overlay" style="z-index:1300;">
-      <div class="modal-content" style="width:750px; max-width:90vw; min-height:480px;">
+      <div class="modal-content" style="width:750px; max-width:90vw; min-height:550px;">
         <div class="modal-header">
           <h3>Add Custom Evidence Item</h3>
           <button type="button" class="close-panel" onclick="closeAddEvidenceItemModal()">&times;</button>

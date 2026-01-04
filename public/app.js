@@ -4735,12 +4735,20 @@ Best wishes,
     const container = document.getElementById('evidenceItemsContainer');
     const filter = document.getElementById('evidenceStatusFilter').value;
     const showNA = document.getElementById('evidenceShowNA').checked;
+    const outstandingFirst = document.getElementById('evidenceOutstandingFirst').checked;
+    
+    // Sort items if "Outstanding First" is checked
+    let itemsToRender = [...currentEvidenceItems];
+    if (outstandingFirst) {
+      const statusOrder = { 'Outstanding': 0, 'Received': 1, 'N/A': 2 };
+      itemsToRender.sort((a, b) => (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2));
+    }
     
     // Group items by category
     const categoryOrder = ['Identification', 'Income', 'Assets', 'Liabilities', 'Refinance', 'Purchase & Property', 'Construction', 'Expenses', 'Other'];
     const grouped = {};
     
-    currentEvidenceItems.forEach(item => {
+    itemsToRender.forEach(item => {
       const cat = item.category || 'Other';
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(item);
@@ -4823,17 +4831,19 @@ Best wishes,
       const notesMeta = item.modifiedByName && item.modifiedOn 
         ? `<span class="evidence-notes-meta">${item.modifiedByName} - ${formatPerthDate(item.modifiedOn)}</span>`
         : '';
-      notesHtml = `<div class="evidence-item-notes"><strong>Notes:</strong> ${item.notes}${notesMeta}</div>`;
+      notesHtml = `<div class="evidence-item-notes"><strong>Internal Notes:</strong> ${item.notes}${notesMeta}</div>`;
     }
+    
+    // Combine name and description on one line
+    const nameDesc = item.description 
+      ? `${item.name || 'Unnamed Item'} - ${item.description}`
+      : (item.name || 'Unnamed Item');
     
     return `
       <div class="evidence-item status-${statusClass}" data-item-id="${item.id}">
         <div class="evidence-item-status ${statusClass}">${statusIcon}</div>
         <div class="evidence-item-content">
-          <div class="evidence-item-header">
-            <h4 class="evidence-item-name">${item.name || 'Unnamed Item'}</h4>
-          </div>
-          <div class="evidence-item-desc">${item.description || ''}</div>
+          <div class="evidence-item-name-desc">${nameDesc}</div>
           ${notesHtml}
           ${metaHtml}
         </div>
@@ -4903,27 +4913,39 @@ Best wishes,
   };
 
   window.populateEvidenceFromTemplates = function() {
+    // Show loading state in appropriate place
     const emptyState = document.getElementById('evidenceEmptyState');
-    emptyState.innerHTML = '<p>Populating evidence list...</p>';
+    const hasExistingItems = currentEvidenceItems.length > 0;
+    
+    if (!hasExistingItems) {
+      emptyState.innerHTML = '<p>Populating evidence list...</p>';
+    }
     
     google.script.run
       .withSuccessHandler(function(result) {
         if (result.success) {
           if (result.itemsCreated === 0) {
             alert('No templates found for this opportunity type/lender. You can add custom items using the "+ Add Custom" button, or create templates in Airtable\'s "Evidence Templates" table.');
-            emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
+            if (!hasExistingItems) {
+              emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
+            }
           } else {
+            alert(result.itemsCreated + ' item(s) added from templates.');
             loadEvidenceItems();
           }
         } else {
           alert('Error: ' + (result.error || 'Unknown error'));
-          emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
+          if (!hasExistingItems) {
+            emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
+          }
         }
       })
       .withFailureHandler(function(err) {
         console.error('Error populating evidence:', err);
         alert('Error populating evidence list');
-        emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
+        if (!hasExistingItems) {
+          emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
+        }
       })
       .populateEvidenceForOpportunity(currentEvidenceOpportunityId, currentEvidenceOpportunityType, currentEvidenceLender);
   };

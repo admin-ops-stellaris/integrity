@@ -539,9 +539,7 @@ const CONNECTION_ROLE_PAIRS = [
   { role1: "Employer of", role2: "Employee of", label: "Employer / Employee" },
   { role1: "Employee of", role2: "Employer of", label: "Employee / Employer" },
   { role1: "Referred by", role2: "Has Referred", label: "Referred by / Has Referred" },
-  { role1: "Has Referred", role2: "Referred by", label: "Has Referred / Referred by" },
-  { role1: "Referred to", role2: "Received Referral", label: "Referred to / Received Referral" },
-  { role1: "Received Referral", role2: "Referred to", label: "Received Referral / Referred to" }
+  { role1: "Has Referred", role2: "Referred by", label: "Has Referred / Referred by" }
 ];
 
 export function getConnectionRoleTypes() {
@@ -610,7 +608,8 @@ export async function getConnectionsForContact(contactId) {
         myRole: myRole,
         theirRole: theirRole,
         status: f["Status"] || "Active",
-        createdOn: f["Created On"] || null
+        createdOn: f["Created On"] || null,
+        modifiedOn: f["Modified On"] || null
       });
     }
     

@@ -2417,9 +2417,7 @@ Best wishes,
       'employer of': 'Employer of',
       'employee of': 'Employee of',
       'referred by': 'Referred by',
-      'has referred': 'Has Referred',
-      'referred to': 'Referred to',
-      'received referral': 'Received Referral from'
+      'has referred': 'Has Referred'
     };
     
     const getDisplayRole = (role) => {
@@ -2427,9 +2425,27 @@ Best wishes,
       return roleDisplayMap[r] || role;
     };
     
+    // Format date as DD/MM/YYYY
+    const formatConnectionDate = (dateStr) => {
+      if (!dateStr) return '';
+      try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '';
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      } catch (e) {
+        return '';
+      }
+    };
+    
+    // Roles that show date
+    const rolesWithDate = ['referred by', 'has referred'];
+    
     // Define role ordering for left and right columns
     const leftRoles = ['Referred by', 'Household Representative', 'Household Member', 'Parent', 'Child', 'Sibling', 'Employer of', 'Employee of'];
-    const rightRoles = ['Friend', 'Has Referred', 'Referred to', 'Received Referral'];
+    const rightRoles = ['Friend', 'Has Referred'];
     
     // Roles to group when count > 2
     const groupableRoles = ['friend', 'has referred'];
@@ -2452,20 +2468,28 @@ Best wishes,
       }
     });
     
-    // Sort each column by role priority then name
-    const sortByRolePriority = (conns, roles) => {
+    // Sort each column by role priority then name (or date for Has Referred)
+    const sortByRolePriority = (conns, roles, sortHasReferredByDate = false) => {
       return conns.sort((a, b) => {
         const aRole = (a.myRole || '').toLowerCase();
         const bRole = (b.myRole || '').toLowerCase();
         const aIdx = roles.findIndex(r => aRole.includes(r.toLowerCase()));
         const bIdx = roles.findIndex(r => bRole.includes(r.toLowerCase()));
         if (aIdx !== bIdx) return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+        
+        // For Has Referred, sort by date (newest first)
+        if (sortHasReferredByDate && aRole === 'has referred' && bRole === 'has referred') {
+          const dateA = a.createdOn ? new Date(a.createdOn) : new Date(0);
+          const dateB = b.createdOn ? new Date(b.createdOn) : new Date(0);
+          return dateB - dateA;
+        }
+        
         return (a.otherContactName || '').localeCompare(b.otherContactName || '');
       });
     };
     
     sortByRolePriority(leftConns, leftRoles);
-    sortByRolePriority(rightConns, rightRoles);
+    sortByRolePriority(rightConns, rightRoles, true);
     
     // Group connections by role for groupable roles
     const groupByRole = (conns) => {
@@ -2487,24 +2511,45 @@ Best wishes,
       return { groups, ungrouped };
     };
     
+    // Build connection data attribute for modal
+    const buildConnDataAttr = (conn) => {
+      return `data-conn-id="${conn.id}" data-conn-name="${escapeHtmlForAttr(conn.otherContactName)}" data-conn-created="${conn.createdOn || ''}" data-conn-modified="${conn.modifiedOn || ''}"`;
+    };
+    
     // Render individual connection
     const renderSingleConnection = (list, conn) => {
       const li = document.createElement('li');
-      li.className = 'connection-item';
+      li.className = 'connection-item connection-clickable';
+      li.setAttribute('data-conn-id', conn.id);
+      li.setAttribute('data-conn-name', conn.otherContactName || '');
+      li.setAttribute('data-conn-created', conn.createdOn || '');
+      li.setAttribute('data-conn-modified', conn.modifiedOn || '');
       
       const badgeClass = getRoleBadgeClass(conn.myRole);
       const displayRole = getDisplayRole(conn.myRole);
-      const nameClick = conn.otherContactId 
-        ? `onclick="loadPanelRecord('Contacts', '${conn.otherContactId}')"`
-        : '';
+      const role = (conn.myRole || '').toLowerCase().trim();
+      const showDate = rolesWithDate.includes(role);
+      const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
       
       li.innerHTML = `
         <div class="connection-info">
           <span class="connection-role-badge ${badgeClass}">${displayRole}</span>
-          <span class="connection-name" ${nameClick}>${conn.otherContactName}</span>
+          <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
+          ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
         </div>
-        <span class="connection-remove" onclick="confirmDeactivateConnection('${conn.id}', '${escapeHtmlForAttr(conn.otherContactName)}')" title="Remove connection">×</span>
       `;
+      
+      // Click handler for the whole item (except the name)
+      li.addEventListener('click', function(e) {
+        if (e.target.classList.contains('connection-name')) {
+          e.stopPropagation();
+          const contactId = e.target.getAttribute('data-contact-id');
+          if (contactId) loadPanelRecord('Contacts', contactId);
+        } else {
+          openConnectionDetailsModal(conn);
+        }
+      });
+      
       list.appendChild(li);
     };
     
@@ -2512,8 +2557,18 @@ Best wishes,
     const renderGroupedConnections = (list, role, conns) => {
       if (conns.length === 0) return;
       
+      // Sort Has Referred by date (newest first) within the group
+      if (role === 'has referred') {
+        conns.sort((a, b) => {
+          const dateA = a.createdOn ? new Date(a.createdOn) : new Date(0);
+          const dateB = b.createdOn ? new Date(b.createdOn) : new Date(0);
+          return dateB - dateA;
+        });
+      }
+      
       const badgeClass = getRoleBadgeClass(role);
       const groupId = `conn-group-${role.replace(/\s+/g, '-')}`;
+      const showDate = rolesWithDate.includes(role);
       
       // Header text
       const headerText = role === 'friend' 
@@ -2534,14 +2589,29 @@ Best wishes,
       const subList = li.querySelector(`#${groupId}`);
       conns.forEach(conn => {
         const subLi = document.createElement('li');
-        subLi.className = 'connection-subitem';
-        const nameClick = conn.otherContactId 
-          ? `onclick="loadPanelRecord('Contacts', '${conn.otherContactId}')"`
-          : '';
+        subLi.className = 'connection-subitem connection-clickable';
+        subLi.setAttribute('data-conn-id', conn.id);
+        subLi.setAttribute('data-conn-name', conn.otherContactName || '');
+        subLi.setAttribute('data-conn-created', conn.createdOn || '');
+        subLi.setAttribute('data-conn-modified', conn.modifiedOn || '');
+        
+        const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
+        
         subLi.innerHTML = `
-          <span class="connection-name" ${nameClick}>${conn.otherContactName}</span>
-          <span class="connection-remove" onclick="confirmDeactivateConnection('${conn.id}', '${escapeHtmlForAttr(conn.otherContactName)}')" title="Remove">×</span>
+          <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
+          ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
         `;
+        
+        subLi.addEventListener('click', function(e) {
+          if (e.target.classList.contains('connection-name')) {
+            e.stopPropagation();
+            const contactId = e.target.getAttribute('data-contact-id');
+            if (contactId) loadPanelRecord('Contacts', contactId);
+          } else {
+            openConnectionDetailsModal(conn);
+          }
+        });
+        
         subList.appendChild(subLi);
       });
     };
@@ -2568,6 +2638,45 @@ Best wishes,
     
     renderToList(leftList, leftConns);
     renderToList(rightList, rightConns);
+  }
+  
+  function openConnectionDetailsModal(conn) {
+    const modal = document.getElementById('deactivateConnectionModal');
+    const title = modal.querySelector('.modal-title');
+    const body = modal.querySelector('.modal-body-content');
+    
+    // Format dates
+    const formatDateTime = (dateStr) => {
+      if (!dateStr) return 'Unknown';
+      try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return 'Unknown';
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, '0');
+        const mins = String(d.getMinutes()).padStart(2, '0');
+        return `${hours}:${mins} ${day}/${month}/${year}`;
+      } catch (e) {
+        return 'Unknown';
+      }
+    };
+    
+    title.textContent = `Connection: ${conn.otherContactName}`;
+    body.innerHTML = `
+      <div class="connection-details-info">
+        <p><strong>Created:</strong> ${formatDateTime(conn.createdOn)}</p>
+        <p><strong>Modified:</strong> ${formatDateTime(conn.modifiedOn)}</p>
+      </div>
+      <p style="margin-top: 15px;">Do you want to remove this connection?</p>
+    `;
+    
+    // Store connection info for the confirm action
+    modal.setAttribute('data-conn-id', conn.id);
+    modal.setAttribute('data-conn-name', conn.otherContactName || '');
+    
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
   }
   
   window.toggleConnectionGroup = function(groupId) {
@@ -2752,15 +2861,6 @@ Best wishes,
     }).createConnection(contact1Id, contact2Id, pair.role1, pair.role2);
   }
   
-  function confirmDeactivateConnection(connectionId, contactName) {
-    document.getElementById('deactivateConnectionId').value = connectionId;
-    document.getElementById('deactivateConnectionName').innerText = unescapeHtml(contactName);
-    
-    const modal = document.getElementById('deactivateConnectionModal');
-    modal.classList.add('visible');
-    setTimeout(() => modal.classList.add('showing'), 10);
-  }
-  
   function closeDeactivateConnectionModal() {
     const modal = document.getElementById('deactivateConnectionModal');
     modal.classList.remove('showing');
@@ -2768,7 +2868,13 @@ Best wishes,
   }
   
   function executeDeactivateConnection() {
-    const connectionId = document.getElementById('deactivateConnectionId').value;
+    const modal = document.getElementById('deactivateConnectionModal');
+    const connectionId = modal.getAttribute('data-conn-id');
+    
+    if (!connectionId) {
+      closeDeactivateConnectionModal();
+      return;
+    }
     
     google.script.run.withSuccessHandler(function(result) {
       closeDeactivateConnectionModal();

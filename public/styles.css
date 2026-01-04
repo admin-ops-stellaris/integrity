@@ -342,9 +342,14 @@
   .connection-remove { color: #CCC; cursor: pointer; font-size: 14px; padding: 2px 6px; }
   .connection-remove:hover { color: #C00; }
   .connections-empty { font-size: 11px; color: #AAA; font-style: italic; padding: 8px 0; }
+  .connection-date { font-size: 10px; color: #999; margin-left: auto; }
+  .connection-clickable { cursor: pointer; transition: background-color 0.15s ease; }
+  .connection-clickable:hover { background-color: rgba(0,0,0,0.03); }
+  body.dark-mode .connection-clickable:hover { background-color: rgba(255,255,255,0.05); }
   body.dark-mode .connection-item { border-color: #444; }
   body.dark-mode .connection-name { color: #E8E6E1; }
   body.dark-mode .connection-name:hover { color: var(--color-star); }
+  body.dark-mode .connection-date { color: #777; }
   
   /* Connection Groups */
   .connection-group { padding: 6px 0; border-bottom: 1px dashed #EEE; }

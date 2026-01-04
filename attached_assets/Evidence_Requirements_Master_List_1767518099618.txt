@@ -1,0 +1,118 @@
+Evidence Requirements Master List
+1. IDENTIFICATION
+Photographic ID
+Driver's Licence
+
+Generic: A copy of both the back and front of your current Driver's Licence.
+
+P&N Bank Requirement: Requires both Driver's Licence and Passport to satisfy VOI/AML policies (must submit both).
+
+Passport
+
+Generic: A copy of the photographic page of your current passport. If expired, it must not be more than 2 years expired.
+
+P&N Bank Requirement: Requires both Driver's Licence and Passport.
+
+Non-Photographic ID
+Medicare Card: A copy of your current Medicare Card.
+
+Birth Certificate: A copy of your birth certificate.
+
+Marriage Certificate: A copy of your marriage certificate.
+
+Citizenship Certificate: A copy of your citizenship certificate.
+
+Permanent Residency: A copy of your permanent residency documentation.
+
+2. INCOME
+PAYG (Pay As You Go)
+Payslip (Standard)
+
+Generic: The latest two consecutive payslips.
+
+Payslip (Lender Specific)
+
+ABL: Requires two of the following: Current payslip (<60 days old, with YTD), Employer letter (<60 days old), Current FY Income Statement (<45 days old), or 'Tax ready' Income Statement from the most recent FY.
+
+ANZ: The most recent payslip AND the last 3 months' bank statements showing receipt of income.
+
+GSB: The most recent payslip AND the last 1 month’s bank statement showing receipt of income.
+
+Self Employed
+Individual Tax Return {ITR}: Copies for the latest 2 financial years.
+
+Notice of Assessment {NOA}: Copies from the ATO for the latest 2 financial years.
+
+Company Tax Return {CTR}: Copies for the latest 2 financial years.
+
+Company Financial Statements {CFS}: Copies for the latest 2 financial years.
+
+Trust Tax Return {TTR}: Copies for the latest 2 financial years.
+
+Trust Financial Statements {TFS}: Copies for the latest 2 financial years.
+
+BAS Statements: Copies of the latest 6 months' worth of BAS statements.
+
+Accountant's Letter: A letter from your accountant (typically required if other docs are unavailable).
+
+Rental Income
+Existing Rental Income: Evidence can include an unexpired lease agreement, the most recent monthly management statement, a full valuation (if used as security), bank statements showing rental receipt history, or a tax return.
+
+Proposed Rental Income: A letter from a real estate agent stating market rental value, or a valuation report.
+
+Government & Other Income
+Centrelink: The latest issued/available Centrelink Income Statement (must be the official PDF, not a screenshot).
+
+Child Support (Non-Centrelink): An official document (Court Order, Private Agreement/BFA, or Statutory Declaration) AND 6 months' bank statements showing consistent receipt.
+
+3. ASSETS
+Genuine Savings: Evidence of 5% of the purchase price accumulated or held for at least 3 months (e.g., 3 months of bank statements). Shares held for 3 months also count.
+
+Funds to Complete: Evidence you control the funds for the transaction (Bank statement, Contract of Sale for a house sale, Consent Order for payouts, or Stat Dec for gifts).
+
+Gifted Funds: A fully executed Statutory Declaration from the donor stating the funds are a gift and do not need to be repaid.
+
+4. LIABILITIES (Ongoing Debts)
+Debts you intend to keep after settlement.
+
+Buy Now Pay Later (BNPL): Latest statement showing name, account number, institution, and running balance.
+
+Credit Card: Latest credit card statement (unless lender uses CCR).
+
+Personal Loan: Latest personal loan statement.
+
+Home Loan: Latest home loan statement.
+
+HELP Debt: Latest HELP debt statement from the ATO (via MyGov).
+
+5. REFINANCE (Debts being paid out)
+Debts you are refinancing with the new loan.
+
+Credit Cards: Statements for the 3 most recent months.
+
+Personal Loans: Statements for the 3 most recent months.
+
+Home Loans: Statements for the 6 most recent months.
+
+6. PURCHASE & PROPERTY OWNERSHIP
+Purchase Documents
+Contract of Sale: A copy of the "fully executed" contract of sale including all annexures.
+
+Deposit Receipt: Receipt proving the Real Estate agent has received the deposit funds.
+
+First Home Owners Grant (FHOG): A copy of the "fully executed" FHOG form (original may be required later).
+
+Property Ownership (Existing Property)
+Rates Notice:
+
+Generic: A copy of your latest rates statement.
+
+ING / St George: Explicitly require a rates notice to evidence ownership if the property is being used as security.
+
+7. CONSTRUCTION
+Building Contract: A copy of the Fixed Price building contract, including the progress payment schedule, plans, specifications, and any variations.
+
+Additional Works: Copies of invoices or quotes for any additional works not included in the fixed price contract.
+
+8. EXPENSES
+Declared Living Expenses: An estimate of your living expenses as they are expected to be at settlement.

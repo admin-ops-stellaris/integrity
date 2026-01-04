@@ -1393,12 +1393,19 @@ export async function getEvidenceItemsForOpportunity(opportunityId) {
   if (!base || !opportunityId) return [];
   
   try {
-    const records = await base("Evidence Items")
+    // Fetch all evidence items and filter by opportunity ID in JavaScript
+    // (Airtable's filterByFormula with linked records uses display names, not IDs)
+    const allRecords = await base("Evidence Items")
       .select({
-        filterByFormula: `FIND("${opportunityId}", ARRAYJOIN({Opportunity}))`,
         sort: [{ field: "Display Order", direction: "asc" }]
       })
       .all();
+    
+    // Filter to only items linked to this opportunity
+    const records = allRecords.filter(r => {
+      const oppIds = r.fields["Opportunity"] || [];
+      return oppIds.includes(opportunityId);
+    });
     
     // Collect user IDs for batch lookup
     const userIds = new Set();

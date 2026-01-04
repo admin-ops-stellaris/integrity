@@ -5277,37 +5277,28 @@ Best wishes,
     
     let evidenceListHtml = '';
     
-    // Progress bar using table layout (works in Quill and email clients)
-    evidenceListHtml += `<table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px;"><tr>`;
-    evidenceListHtml += `<td style="vertical-align:middle; padding-right:8px;"><img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" width="18" height="18"></td>`;
-    evidenceListHtml += `<td style="vertical-align:middle; padding-right:8px;">`;
-    evidenceListHtml += `<table cellpadding="0" cellspacing="0" border="0" style="width:${barBgWidth}px; height:10px; background-color:#E0E0E0; border-radius:5px;"><tr>`;
-    evidenceListHtml += `<td style="width:${barWidth}px; height:10px; background-color:#7B8B64; border-radius:5px;"></td>`;
-    evidenceListHtml += `<td></td></tr></table>`;
-    evidenceListHtml += `</td>`;
-    evidenceListHtml += `<td style="vertical-align:middle; font-weight:bold; color:#2C2622; white-space:nowrap;">${pct}% (${received.length}/${total})</td>`;
-    evidenceListHtml += `</tr></table>`;
+    // Progress bar - simple text format that Quill preserves reliably
+    // Quill strips complex HTML/tables, so we use a clean text representation
+    evidenceListHtml += `<p style="margin:8px 0 12px 0;"><strong style="color:#7B8B64;">Progress: ${pct}% (${received.length}/${total})</strong></p>`;
     
-    // Outstanding section with colored header
+    // Outstanding section with bold header
     if (outstanding.length > 0) {
-      evidenceListHtml += `<p style="margin:12px 0 6px 0; font-weight:600; color:#2C2622;">Outstanding</p>`;
+      evidenceListHtml += `<p style="margin:12px 0 6px 0;"><strong style="color:#2C2622;">Outstanding</strong></p>`;
       outstanding.forEach(item => {
         const desc = cleanDesc(item.description);
-        let line = `<span style="color:#2C2622;">○ <strong>${item.name || 'Item'}</strong>`;
+        let line = `○ <strong>${item.name || 'Item'}</strong>`;
         if (desc) line += ` – ${desc}`;
-        line += `</span>`;
         evidenceListHtml += `<p style="margin:4px 0 4px 12px; color:#2C2622;">${line}</p>`;
       });
     }
     
-    // Received section with green header
+    // Received section with bold green header
     if (received.length > 0) {
-      evidenceListHtml += `<p style="margin:12px 0 6px 0; font-weight:600; color:#7B8B64;">Received</p>`;
+      evidenceListHtml += `<p style="margin:12px 0 6px 0;"><strong style="color:#7B8B64;">Received</strong></p>`;
       received.forEach(item => {
         const desc = cleanDesc(item.description);
-        let line = `<span style="color:#7B8B64;">✓ <strong>${item.name || 'Item'}</strong>`;
+        let line = `✓ <strong>${item.name || 'Item'}</strong>`;
         if (desc) line += ` – ${desc}`;
-        line += `</span>`;
         evidenceListHtml += `<p style="margin:4px 0 4px 12px; color:#7B8B64;">${line}</p>`;
       });
     }

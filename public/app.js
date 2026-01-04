@@ -4902,22 +4902,124 @@ Best wishes,
       .updateEvidenceItem(itemId, { status: newStatus });
   };
 
+  // Edit Evidence Item Modal
+  let editEvidenceDescQuill = null;
+
   window.editEvidenceItem = function(itemId) {
     const item = currentEvidenceItems.find(i => i.id === itemId);
     if (!item) return;
     
-    const newNotes = prompt('Internal Notes (not visible to client):', item.notes || '');
-    if (newNotes !== null) {
-      google.script.run
-        .withSuccessHandler(function() {
-          item.notes = newNotes;
-          renderEvidenceItems();
-        })
-        .withFailureHandler(function(err) {
-          console.error('Error updating notes:', err);
-        })
-        .updateEvidenceItem(itemId, { notes: newNotes });
+    // Populate the edit modal
+    document.getElementById('editEvidenceItemId').value = itemId;
+    document.getElementById('editEvidenceCategory').value = item.category || 'Other';
+    document.getElementById('editEvidenceName').value = item.name || '';
+    document.getElementById('editEvidenceNotes').value = item.notes || '';
+    
+    const modal = document.getElementById('editEvidenceItemModal');
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
+    
+    // Initialize Quill editor if not already
+    if (!editEvidenceDescQuill) {
+      editEvidenceDescQuill = new Quill('#editEvidenceDescEditor', {
+        theme: 'snow',
+        modules: {
+          toolbar: '#editEvidenceDescToolbar'
+        },
+        placeholder: 'Description...'
+      });
+      
+      // Auto-prepend https:// to links without protocol
+      const toolbar = editEvidenceDescQuill.getModule('toolbar');
+      toolbar.addHandler('link', function(value) {
+        if (value) {
+          let href = prompt('Enter the link URL:');
+          if (href) {
+            if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) {
+              href = 'https://' + href;
+            }
+            const range = editEvidenceDescQuill.getSelection();
+            if (range && range.length > 0) {
+              editEvidenceDescQuill.format('link', href);
+            } else {
+              editEvidenceDescQuill.insertText(range ? range.index : 0, href, 'link', href);
+            }
+          }
+        } else {
+          editEvidenceDescQuill.format('link', false);
+        }
+      });
     }
+    
+    // Set the description content
+    if (item.description) {
+      editEvidenceDescQuill.root.innerHTML = item.description;
+    } else {
+      editEvidenceDescQuill.setContents([]);
+    }
+  };
+
+  window.closeEditEvidenceItemModal = function() {
+    const modal = document.getElementById('editEvidenceItemModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.classList.remove('visible'), 200);
+  };
+
+  window.saveEditedEvidenceItem = function() {
+    const itemId = document.getElementById('editEvidenceItemId').value;
+    const name = document.getElementById('editEvidenceName').value.trim();
+    const category = document.getElementById('editEvidenceCategory').value;
+    const description = editEvidenceDescQuill ? editEvidenceDescQuill.root.innerHTML : '';
+    const notes = document.getElementById('editEvidenceNotes').value;
+    
+    if (!name) {
+      alert('Please enter a name for the item.');
+      return;
+    }
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          closeEditEvidenceItemModal();
+          loadEvidenceItems();
+        } else {
+          alert('Error: ' + (result.error || 'Unknown error'));
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error updating evidence item:', err);
+        alert('Error saving changes');
+      })
+      .updateEvidenceItem(itemId, {
+        name: name,
+        description: description,
+        category: category,
+        notes: notes
+      });
+  };
+
+  window.deleteEvidenceItem = function() {
+    const itemId = document.getElementById('editEvidenceItemId').value;
+    const item = currentEvidenceItems.find(i => i.id === itemId);
+    
+    if (!confirm(`Are you sure you want to delete "${item?.name || 'this item'}"?`)) {
+      return;
+    }
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          closeEditEvidenceItemModal();
+          loadEvidenceItems();
+        } else {
+          alert('Error: ' + (result.error || 'Unknown error'));
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error deleting evidence item:', err);
+        alert('Error deleting item');
+      })
+      .deleteEvidenceItem(itemId);
   };
 
   window.populateEvidenceFromTemplates = function() {

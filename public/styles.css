@@ -888,7 +888,7 @@
   .evidence-status-select.received { background: var(--color-cedar); color: #FFF; border-color: var(--color-cedar); }
   .evidence-status-select.outstanding { background: var(--color-trail); color: #FFF; border-color: var(--color-trail); }
   .evidence-status-select.na { background: #E0E0E0; color: #666; border-color: #CCC; }
-  .evidence-item-edit-btn { padding: 6px 10px; font-size: 14px; background: transparent; color: #888; border: 1px solid #DDD; border-radius: 4px; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+  .evidence-item-edit-btn { padding: 0; font-size: 16px; background: transparent; color: #888; border: 1px solid #DDD; border-radius: 4px; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .evidence-item-edit-btn:hover { background: #F5F5F5; color: #333; }
   
   /* Details section below main row */

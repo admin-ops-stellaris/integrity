@@ -1510,6 +1510,7 @@ export async function updateEvidenceItem(itemId, fields, userContext = null) {
     if (fields.name !== undefined) updateFields["Name"] = fields.name;
     if (fields.description !== undefined) updateFields["Description"] = fields.description;
     if (fields.notes !== undefined) updateFields["Notes"] = fields.notes;
+    if (fields.category !== undefined) updateFields["Category"] = fields.category;
     if (fields.status !== undefined) {
       updateFields["Status"] = fields.status;
       if (fields.status === "Received" && !fields.dateReceived) {

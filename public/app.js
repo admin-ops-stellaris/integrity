@@ -4383,8 +4383,12 @@ Best wishes,
           }
           
           container.innerHTML = '';
+          window.currentOpportunityAppointments = [];
           return;
         }
+        
+        // Cache appointments for use in evidence email generation
+        window.currentOpportunityAppointments = appointments;
         
         // Sort appointments oldest-first (ascending by date)
         appointments.sort((a, b) => {
@@ -5255,17 +5259,32 @@ Best wishes,
     const contactName = currentContactRecord?.fields?.PreferredName || currentContactRecord?.fields?.FirstName || 'there';
     const contactEmail = currentContactRecord?.fields?.EmailAddress1 || '';
     
-    // Group by category (maintaining order)
-    const categoryOrder = ['Identification', 'Income', 'Assets', 'Liabilities', 'Refinance', 'Purchase & Property', 'Construction', 'Expenses', 'Other'];
+    // Group by category - include ALL categories, not just a predefined list
+    const preferredOrder = ['Identification', 'Income', 'Assets', 'Liabilities', 'Refinance', 'Purchase & Property', 'Construction', 'Expenses'];
     const grouped = {};
+    const allCategories = new Set();
+    
     outstanding.forEach(item => {
       const cat = item.category || 'Other';
+      allCategories.add(cat);
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(item);
     });
     
+    // Sort categories: preferred order first, then remaining alphabetically, 'Other' last
+    const sortedCategories = Array.from(allCategories).sort((a, b) => {
+      if (a === 'Other') return 1;
+      if (b === 'Other') return -1;
+      const aIdx = preferredOrder.indexOf(a);
+      const bIdx = preferredOrder.indexOf(b);
+      if (aIdx >= 0 && bIdx >= 0) return aIdx - bIdx;
+      if (aIdx >= 0) return -1;
+      if (bIdx >= 0) return 1;
+      return a.localeCompare(b);
+    });
+    
     let itemsHtml = '';
-    categoryOrder.forEach(cat => {
+    sortedCategories.forEach(cat => {
       if (!grouped[cat] || grouped[cat].length === 0) return;
       itemsHtml += `<p><strong>${cat}</strong></p><ul>`;
       grouped[cat].forEach(item => {
@@ -5301,8 +5320,49 @@ ${itemsHtml}
       title = 'Appointment Confirmation Email';
       subject = `Your upcoming appointment – ${currentEvidenceOpportunityName}`;
       
-      // Get appointment details from the opportunity if available
-      let apptDetails = '<p>[Appointment details will be inserted here]</p>';
+      // Format appointment details from cached opportunity appointments
+      let apptDetails = '';
+      if (window.currentOpportunityAppointments && window.currentOpportunityAppointments.length > 0) {
+        // Find next upcoming appointment
+        const now = new Date();
+        const upcoming = window.currentOpportunityAppointments
+          .filter(a => a.appointmentTime && new Date(a.appointmentTime) > now)
+          .sort((a, b) => new Date(a.appointmentTime) - new Date(b.appointmentTime))[0];
+        
+        if (upcoming) {
+          const apptDate = new Date(upcoming.appointmentTime);
+          const perthOffset = 8 * 60;
+          const localOffset = apptDate.getTimezoneOffset();
+          const perthTime = new Date(apptDate.getTime() + (perthOffset + localOffset) * 60000);
+          
+          const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+          const dayName = days[perthTime.getDay()];
+          const monthName = months[perthTime.getMonth()];
+          const dayNum = perthTime.getDate();
+          const hours = perthTime.getHours();
+          const mins = String(perthTime.getMinutes()).padStart(2, '0');
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const hour12 = hours % 12 || 12;
+          
+          apptDetails = `<p><strong>Date:</strong> ${dayName}, ${dayNum} ${monthName}<br>`;
+          apptDetails += `<strong>Time:</strong> ${hour12}:${mins} ${ampm} (Perth time)<br>`;
+          apptDetails += `<strong>Type:</strong> ${upcoming.typeOfAppointment || 'Meeting'}`;
+          
+          if (upcoming.typeOfAppointment === 'Phone' && upcoming.phoneNumber) {
+            apptDetails += `<br><strong>Phone:</strong> ${upcoming.phoneNumber}`;
+          } else if (upcoming.typeOfAppointment === 'Video' && upcoming.videoMeetUrl) {
+            apptDetails += `<br><strong>Join Link:</strong> <a href="${upcoming.videoMeetUrl}">${upcoming.videoMeetUrl}</a>`;
+          } else if (upcoming.typeOfAppointment === 'Office') {
+            apptDetails += `<br><strong>Location:</strong> Stellaris Finance Office`;
+          }
+          apptDetails += '</p>';
+        } else {
+          apptDetails = '<p><em>[No upcoming appointments found - please add appointment details]</em></p>';
+        }
+      } else {
+        apptDetails = '<p><em>[No appointments on record - please add appointment details]</em></p>';
+      }
       
       body = `<p>Hi ${contactName},</p>
 <p>This is to confirm your upcoming appointment with Stellaris Finance.</p>

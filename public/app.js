@@ -5119,13 +5119,25 @@ Best wishes,
         const statusColor = item.status === 'Received' ? '#7B8B64' : item.status === 'N/A' ? '#999' : '#2C2622';
         const textStyle = item.status === 'N/A' ? 'text-decoration:line-through; color:#999;' : `color:${statusColor};`;
         
-        let itemText = `<strong>${item.name || 'Item'}</strong>`;
+        // Strip block HTML tags but keep inline formatting (links, bold, etc)
+        let descText = '';
         if (item.description) {
-          // Keep HTML in description for links
-          itemText += ` – ${item.description}`;
+          descText = item.description
+            .replace(/<p>/gi, '')
+            .replace(/<\/p>/gi, ' ')
+            .replace(/<br\s*\/?>/gi, ' ')
+            .replace(/<div>/gi, '')
+            .replace(/<\/div>/gi, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
         }
         
-        html += `<li style="margin-bottom:8px; ${textStyle}">${statusIcon} ${itemText}</li>`;
+        let itemText = `<strong>${item.name || 'Item'}</strong>`;
+        if (descText) {
+          itemText += ` – <span style="font-weight:normal;">${descText}</span>`;
+        }
+        
+        html += `<li style="margin-bottom:6px; ${textStyle}">${statusIcon} ${itemText}</li>`;
       });
       
       html += `</ul></div>`;

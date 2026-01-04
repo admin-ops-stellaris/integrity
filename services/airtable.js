@@ -489,19 +489,27 @@ export function getConnectionRoleTypes() {
 export async function getConnectionsForContact(contactId) {
   if (!base || !contactId) return [];
   try {
-    // Query all active connections and filter for this contact
-    const allRecords = await base("Connections")
-      .select({
-        filterByFormula: `{Status} = "Active"`
-      })
-      .all();
+    // Get connection record IDs from the Contact's back-link fields
+    const contact = await base("Contacts").find(contactId);
+    if (!contact) return [];
     
-    // Filter to connections involving this contact
-    const records = allRecords.filter(record => {
-      const contact1Ids = record.fields["Contact 1"] || [];
-      const contact2Ids = record.fields["Contact 2"] || [];
-      return contact1Ids.includes(contactId) || contact2Ids.includes(contactId);
-    });
+    // Use the correct back-link field names
+    const connectionsAsContact1 = contact.fields["BACK-LINK: Connections: Contact 1"] || [];
+    const connectionsAsContact2 = contact.fields["BACK-LINK: Connections: Contact 2"] || [];
+    const allConnectionIds = [...new Set([...connectionsAsContact1, ...connectionsAsContact2])];
+    
+    if (allConnectionIds.length === 0) return [];
+    
+    // Fetch all connection records in batches (Airtable limits)
+    const records = [];
+    for (const connId of allConnectionIds) {
+      try {
+        const record = await base("Connections").find(connId);
+        if (record) records.push(record);
+      } catch (e) {
+        // Skip if connection record doesn't exist
+      }
+    }
     
     // Format connections with perspective from the given contact
     const connections = [];

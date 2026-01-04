@@ -775,12 +775,12 @@
 
     <!-- Evidence Template Edit Modal -->
     <div id="evidenceTemplateEditModal" class="modal-overlay" style="display:none; z-index:1300;">
-      <div class="modal-content" style="max-width:900px; width:90%; display:flex; flex-direction:column;">
+      <div class="modal-content" style="max-width:950px; width:90%; height:80vh; max-height:80vh; display:flex; flex-direction:column;">
         <div class="modal-header">
           <h3 id="evidenceTemplateEditTitle">Edit Template</h3>
           <button class="close-panel" onclick="closeEvidenceTemplateEditModal()">&times;</button>
         </div>
-        <div class="modal-body" style="padding:24px; background:#fff;">
+        <div class="modal-body" style="padding:24px; background:#fff; flex:1; overflow-y:auto;">
           <div style="display:flex; gap:30px;">
             <!-- Left column: Main fields -->
             <div style="flex:1; min-width:0;">
@@ -792,28 +792,29 @@
                 <label>Category</label>
                 <select id="evTplEditCategory" style="background:#fff; width:100%;"></select>
               </div>
-              <div class="field-group">
+              <div class="field-group" style="margin-bottom:16px;">
                 <label>Description (shown to clients)</label>
-                <div id="evTplEditDescEditor" style="height:120px; border:1px solid #ddd; border-radius:4px; background:#fff;"></div>
+                <div id="evTplEditDescEditor" style="height:150px; border:1px solid #ddd; border-radius:4px; background:#fff;"></div>
+              </div>
+              <div class="form-row" style="display:flex; gap:20px;">
+                <div class="field-group" style="width:120px;">
+                  <label>Display Order</label>
+                  <input type="number" id="evTplEditOrder" min="0" value="100" style="background:#fff; width:100%;">
+                </div>
+                <div class="field-group" style="flex:1; display:flex; align-items:center; padding-top:20px;">
+                  <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0;">
+                    <input type="checkbox" id="evTplEditLenderSpecific">
+                    <span>Lender-Specific <span style="font-size:10px; color:#888;">(requires rules)</span></span>
+                  </label>
+                </div>
               </div>
             </div>
-            <!-- Right column: Settings -->
-            <div style="width:280px; flex-shrink:0;">
-              <div class="field-group" style="margin-bottom:16px;">
-                <label>Display Order</label>
-                <input type="number" id="evTplEditOrder" min="0" value="100" style="background:#fff; width:100%;">
-              </div>
-              <div class="field-group" style="margin-bottom:16px;">
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" id="evTplEditLenderSpecific">
-                  <span>Lender-Specific</span>
-                </label>
-                <p style="font-size:10px; color:#888; margin:4px 0 0;">Requires lender rules to be set up</p>
-              </div>
+            <!-- Right column: Opportunity Types -->
+            <div style="width:220px; flex-shrink:0; border-left:1px solid #eee; padding-left:24px;">
               <div class="field-group">
-                <label>Opportunity Types</label>
-                <p style="font-size:10px; color:#888; margin:2px 0 8px;">Leave unchecked = applies to all</p>
-                <div id="evTplEditOppTypes" style="display:flex; flex-direction:column; gap:6px;"></div>
+                <label style="margin-bottom:8px; display:block;">Opportunity Types</label>
+                <p style="font-size:10px; color:#888; margin:0 0 12px;">Leave all unchecked to apply to all types</p>
+                <div id="evTplEditOppTypes" style="display:flex; flex-direction:column; gap:8px;"></div>
               </div>
             </div>
           </div>
@@ -1072,10 +1073,10 @@
     <div id="evidenceEmailModal" class="modal-overlay" style="z-index:1250;">
       <div class="modal-content" style="width:900px; max-width:95vw; height:90vh; max-height:90vh; display:flex; flex-direction:column;">
         <div class="modal-header">
-          <h3 id="evidenceEmailModalTitle">Email Preview</h3>
+          <h3 id="evidenceEmailModalTitle">Compose Email</h3>
           <button type="button" class="close-panel" onclick="closeEvidenceEmailModal()">&times;</button>
         </div>
-        <div class="modal-body" style="padding:20px; flex:1; overflow-y:auto; background:#f5f5f5; display:flex; flex-direction:column; min-height:0;">
+        <div class="modal-body" style="padding:20px; flex:1; display:flex; flex-direction:column; min-height:0; background:#f5f5f5;">
           <div style="display:flex; gap:15px; margin-bottom:15px;">
             <div class="field-group" style="flex:1;">
               <label>To</label>
@@ -1086,13 +1087,18 @@
               <input type="text" id="evidenceEmailSubject" style="width:100%; padding:8px; border:1px solid #DDD; border-radius:4px; background:#fff;">
             </div>
           </div>
-          <div class="field-group" style="margin-bottom:12px;">
-            <label>Add Custom Note (optional)</label>
-            <textarea id="evidenceEmailCustomNote" placeholder="Add a personal note that will appear at the top of the email..." rows="2" style="width:100%; padding:10px; border:1px solid #DDD; border-radius:4px; background:#fff; font-family:inherit; font-size:13px; resize:none;"></textarea>
-          </div>
-          <div class="field-group" style="flex:1; display:flex; flex-direction:column; min-height:200px;">
-            <label style="margin-bottom:8px;">Email Preview <span style="font-weight:normal; color:#888; font-size:11px;">(this is exactly what will be sent)</span></label>
-            <div id="evidenceEmailPreview" style="flex:1; background:#fff; border:1px solid #DDD; border-radius:4px; padding:20px; overflow-y:auto; font-family:Arial,sans-serif; font-size:14px; line-height:1.6;"></div>
+          <div class="field-group" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <label style="margin:0;">Message <span style="font-weight:normal; color:#888; font-size:11px;">(click to edit anywhere)</span></label>
+              <div style="display:flex; gap:8px;">
+                <button type="button" onclick="emailEditorCommand('bold')" style="padding:4px 8px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-weight:bold;">B</button>
+                <button type="button" onclick="emailEditorCommand('italic')" style="padding:4px 8px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-style:italic;">I</button>
+                <button type="button" onclick="emailEditorCommand('createLink')" style="padding:4px 8px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer;">🔗</button>
+                <span style="border-left:1px solid #ddd; margin:0 4px;"></span>
+                <button type="button" onclick="resetEmailToTemplate()" style="padding:4px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-size:11px; color:#666;">Reset</button>
+              </div>
+            </div>
+            <iframe id="evidenceEmailEditor" style="flex:1; width:100%; border:1px solid #DDD; border-radius:4px; background:#fff; min-height:300px;"></iframe>
           </div>
           <p style="font-size:12px; color:#666; margin-top:12px; background:#fff; padding:10px; border-radius:4px; border-left:3px solid var(--color-star);">
             <strong><span id="evidenceEmailItemCount">0</span> outstanding item(s)</strong> will be marked as "Requested" when sent.

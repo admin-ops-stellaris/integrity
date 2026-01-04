@@ -5385,7 +5385,7 @@ ${evidenceListHtml}`;
 <p>Kind regards,</p>`;
     }
     
-    // Store the base email body HTML for sending (without custom note)
+    // Store the base email body HTML for reset functionality
     window.pendingEvidenceEmailBodyBase = body;
     
     // Populate modal
@@ -5394,47 +5394,92 @@ ${evidenceListHtml}`;
     document.getElementById('evidenceEmailSubject').value = subject;
     document.getElementById('evidenceEmailItemCount').textContent = outstanding.length;
     
-    // Clear and setup custom note field
-    const customNoteEl = document.getElementById('evidenceEmailCustomNote');
-    if (customNoteEl) {
-      customNoteEl.value = '';
-      customNoteEl.oninput = updateEvidenceEmailPreview;
-    }
-    
-    // Render the HTML preview
-    updateEvidenceEmailPreview();
-    
-    // Open modal
+    // Open modal first so iframe is rendered
     const modal = document.getElementById('evidenceEmailModal');
     modal.classList.add('visible');
     setTimeout(() => modal.classList.add('showing'), 10);
+    
+    // Initialize the iframe editor with the email content
+    setTimeout(() => initEmailEditorIframe(body), 100);
   };
   
-  function updateEvidenceEmailPreview() {
-    const customNote = document.getElementById('evidenceEmailCustomNote')?.value?.trim() || '';
-    const baseBody = window.pendingEvidenceEmailBodyBase || '';
+  function initEmailEditorIframe(htmlContent) {
+    const iframe = document.getElementById('evidenceEmailEditor');
+    if (!iframe) return;
     
-    // If there's a custom note, insert it after the greeting (first <p> tag)
-    let fullBody = baseBody;
-    if (customNote) {
-      const noteHtml = `<p style="background:#FFFDE7; padding:10px; border-left:3px solid #FFB300; margin:10px 0;"><em>${customNote.replace(/\n/g, '<br>')}</em></p>`;
-      // Insert after first paragraph (greeting)
-      const firstPEnd = fullBody.indexOf('</p>');
-      if (firstPEnd !== -1) {
-        fullBody = fullBody.slice(0, firstPEnd + 4) + noteHtml + fullBody.slice(firstPEnd + 4);
-      } else {
-        fullBody = noteHtml + fullBody;
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 20px;
+            margin: 0;
+            color: #2C2622;
+          }
+          p { margin: 0 0 12px 0; }
+          a { color: #19414C; }
+          strong { font-weight: bold; }
+        </style>
+      </head>
+      <body>${htmlContent}</body>
+      </html>
+    `);
+    doc.close();
+    doc.designMode = 'on';
+  }
+  
+  window.emailEditorCommand = function(command) {
+    const iframe = document.getElementById('evidenceEmailEditor');
+    if (!iframe) return;
+    
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    
+    if (command === 'createLink') {
+      const url = prompt('Enter URL:', 'https://');
+      if (url) {
+        doc.execCommand('createLink', false, url);
       }
+    } else {
+      doc.execCommand(command, false, null);
     }
     
-    // Update preview
-    const previewEl = document.getElementById('evidenceEmailPreview');
-    if (previewEl) {
-      previewEl.innerHTML = fullBody;
+    iframe.contentWindow.focus();
+  };
+  
+  window.resetEmailToTemplate = function() {
+    if (confirm('Reset email to the original template? Your edits will be lost.')) {
+      initEmailEditorIframe(window.pendingEvidenceEmailBodyBase || '');
+    }
+  };
+  
+  function getEmailEditorContent() {
+    const iframe = document.getElementById('evidenceEmailEditor');
+    if (!iframe) {
+      console.warn('Email editor iframe not found, using stored template');
+      return window.pendingEvidenceEmailBodyBase || '';
     }
     
-    // Store the full body for sending
-    window.pendingEvidenceEmailBody = fullBody;
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      if (doc && doc.body) {
+        const content = doc.body.innerHTML;
+        // If content is empty or just whitespace, fall back to stored template
+        if (content && content.trim() && content.trim() !== '<br>') {
+          return content;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not read iframe content:', e);
+    }
+    
+    // Fallback to stored template
+    return window.pendingEvidenceEmailBodyBase || '';
   }
   
   window.closeEvidenceEmailModal = function() {
@@ -5450,10 +5495,15 @@ ${evidenceListHtml}`;
   window.sendEvidenceEmail = function() {
     const to = document.getElementById('evidenceEmailTo').value.trim();
     const subject = document.getElementById('evidenceEmailSubject').value.trim();
-    const body = window.pendingEvidenceEmailBody || '';
+    const body = getEmailEditorContent();
     
     if (!to) {
       showAlert('warning', 'Missing Recipient', 'Please enter an email address.');
+      return;
+    }
+    
+    if (!body || body.trim() === '<br>' || body.trim() === '') {
+      showAlert('warning', 'Empty Message', 'Please add some content to the email.');
       return;
     }
     
@@ -5754,7 +5804,7 @@ ${evidenceListHtml}`;
     let html = '';
     oppTypes.forEach(type => {
       const checked = selectedTypes.includes(type) ? ' checked' : '';
-      html += `<label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer;"><input type="checkbox" class="evTplOppType" value="${type}"${checked}> ${type}</label>`;
+      html += `<label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; white-space:nowrap;"><input type="checkbox" class="evTplOppType" value="${type}" style="width:14px; height:14px; flex-shrink:0;"${checked}> ${type}</label>`;
     });
     container.innerHTML = html;
   }

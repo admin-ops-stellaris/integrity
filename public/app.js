@@ -5116,13 +5116,17 @@ Best wishes,
     // Build HTML
     let html = '<div style="font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
     
+    // Stellaris star icon (SVG inline)
+    const starIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#BB9934" style="flex-shrink:0;"><polygon points="12,2 15,9 22,9 17,14 19,22 12,17 5,22 7,14 2,9 9,9"/></svg>`;
+    
     // Progress bar
     html += `<div style="margin-bottom:15px;">`;
-    html += `<div style="display:flex; align-items:center; gap:10px;">`;
+    html += `<div style="display:flex; align-items:center; gap:10px; max-width:50%;">`;
+    html += starIcon;
     html += `<div style="flex:1; height:10px; background:#E0E0E0; border-radius:5px; overflow:hidden;">`;
     html += `<div style="width:${pct}%; height:100%; background:#7B8B64; border-radius:5px;"></div>`;
     html += `</div>`;
-    html += `<span style="font-weight:bold; color:#2C2622;">${pct}% (${received.length}/${total})</span>`;
+    html += `<span style="font-weight:bold; color:#2C2622; white-space:nowrap;">${pct}% (${received.length}/${total})</span>`;
     html += `</div></div>`;
     
     // Outstanding section

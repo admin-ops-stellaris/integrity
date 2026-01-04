@@ -5183,16 +5183,36 @@ Best wishes,
     });
     
     navigator.clipboard.write([clipboardItem]).then(() => {
-      alert('Evidence list copied to clipboard! You can now paste it into your email.');
-      closeEvidenceClientView();
+      // Show brief "Copied" feedback
+      const btn = document.querySelector('#evidenceClientViewModal .btn-primary');
+      const originalText = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.style.background = '#7B8B64';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        closeEvidenceClientView();
+      }, 800);
     }).catch(err => {
       console.error('Clipboard error:', err);
       // Fallback to plain text
       navigator.clipboard.writeText(plainText).then(() => {
-        alert('Copied as plain text (rich HTML not supported in this browser).');
-        closeEvidenceClientView();
+        const btn = document.querySelector('#evidenceClientViewModal .btn-primary');
+        btn.textContent = 'Copied (plain text)';
+        btn.style.background = '#7B8B64';
+        setTimeout(() => {
+          btn.textContent = 'Copy to Clipboard';
+          btn.style.background = '';
+          closeEvidenceClientView();
+        }, 800);
       }).catch(() => {
-        alert('Failed to copy to clipboard.');
+        const btn = document.querySelector('#evidenceClientViewModal .btn-primary');
+        btn.textContent = 'Copy failed';
+        btn.style.background = '#C44';
+        setTimeout(() => {
+          btn.textContent = 'Copy to Clipboard';
+          btn.style.background = '';
+        }, 1500);
       });
     });
   };

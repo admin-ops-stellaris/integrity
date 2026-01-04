@@ -32,6 +32,7 @@
   let pollInterval;
   let pollAttempts = 0;
   let panelHistory = []; 
+  let contactHistory = [];
   let currentContactRecord = null; 
   let currentOppRecords = []; 
   let currentOppSortDirection = 'desc'; 
@@ -432,20 +433,47 @@
   }
 
   // Load a contact by ID into the main view
-  function loadContactById(contactId) {
+  function loadContactById(contactId, addToHistory = false) {
+    if (addToHistory && currentContactRecord && currentContactRecord.id !== contactId) {
+      contactHistory.push(currentContactRecord);
+      updateContactBackButton();
+    }
     google.script.run.withSuccessHandler(function(record) {
       if (record && record.fields) {
         selectContact(record);
+        updateContactBackButton();
       }
     }).getContactById(contactId);
   }
+
+  function updateContactBackButton() {
+    const backBtn = document.getElementById('contactBackBtn');
+    if (backBtn) {
+      if (contactHistory.length > 0) {
+        const prevContact = contactHistory[contactHistory.length - 1];
+        const prevName = `${prevContact.fields.FirstName || ''} ${prevContact.fields.LastName || ''}`.trim();
+        backBtn.textContent = `← Back to ${prevName}`;
+        backBtn.style.display = 'inline-block';
+      } else {
+        backBtn.style.display = 'none';
+      }
+    }
+  }
+
+  window.goBackToContact = function() {
+    if (contactHistory.length > 0) {
+      const prevContact = contactHistory.pop();
+      selectContact(prevContact);
+      updateContactBackButton();
+    }
+  };
 
   window.navigateFromQuickView = function() {
     if (!quickViewContactId) return;
     const contactId = quickViewContactId;
     hideContactQuickView();
-    // Navigate to full contact view in main panel
-    loadContactById(contactId);
+    // Navigate to full contact view in main panel, saving current contact to history
+    loadContactById(contactId, true);
   };
 
   // Setup hover behavior for quick-view card itself

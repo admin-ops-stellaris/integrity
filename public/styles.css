@@ -64,6 +64,8 @@
   .new-btn:hover { background: var(--color-trail); color: #FFF; }
   .new-contact-btn { background: transparent; color: var(--color-star); border: 1px solid var(--color-star); margin: 0; padding: 5px 12px; width: auto; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 15px; cursor: pointer; transition: all 0.2s; }
   .new-contact-btn:hover { background: var(--color-star); color: #FFF; }
+  .contact-back-btn { background: transparent; border: none; color: var(--color-midnight); font-size: 11px; cursor: pointer; padding: 2px 0; margin-top: 2px; text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+  .contact-back-btn:hover { opacity: 1; text-decoration: underline; }
   .status-success { color: var(--color-cedar); font-weight: 700; font-size: 14px; letter-spacing: 0.5px; }
   .status-error { color: #A00; font-weight: 700; font-size: 13px; } 
 
@@ -88,8 +90,8 @@
   
   /* New 60/40 split contact form layout */
   .contact-form-split { display: flex; gap: 20px; }
-  .contact-form-left { flex: 3; display: flex; flex-direction: column; gap: 8px; }
-  .contact-form-right { flex: 2; display: flex; flex-direction: column; gap: 8px; border-left: 1px dashed var(--color-border); padding-left: 20px; }
+  .contact-form-left { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .contact-form-right { flex: 1; display: flex; flex-direction: column; gap: 8px; border-left: 1px dashed var(--color-border); padding-left: 20px; }
   .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
   .contact-form-left .field-group textarea { height: 60px; resize: vertical; }
@@ -454,12 +456,10 @@
 
   /* Connection Modal Styling */
   .conn-modal-btn { padding: 8px 20px !important; min-width: 100px !important; width: auto !important; }
-  .connection-modal-remove { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
+  .connection-modal-remove { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
   .connection-modal-remove .remove-label { font-size: 12px; color: #888; }
-  .connection-modal-close { text-align: right; margin-top: 10px; padding-top: 15px; border-top: 1px solid #ddd; }
-  body.dark-mode .connection-modal-remove { border-color: #444; }
+  .connection-modal-close { text-align: right; margin-top: 20px; }
   body.dark-mode .connection-modal-remove .remove-label { color: #777; }
-  body.dark-mode .connection-modal-close { border-color: #444; }
   
   /* Connection Groups */
   .connection-group { padding: 6px 0; border-bottom: 1px dashed #EEE; }

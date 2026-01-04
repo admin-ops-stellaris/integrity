@@ -5079,68 +5079,77 @@ Best wishes,
 
   // Build client-facing HTML for evidence list (no internal notes, no meta, no edit buttons)
   function buildClientEvidenceMarkup() {
-    const filter = document.getElementById('evidenceStatusFilter').value;
-    const showNA = document.getElementById('evidenceShowNA').checked;
-    const outstandingFirst = document.getElementById('evidenceOutstandingFirst').checked;
+    // Split items by status - exclude N/A entirely
+    const outstanding = currentEvidenceItems.filter(i => i.status === 'Outstanding');
+    const received = currentEvidenceItems.filter(i => i.status === 'Received');
     
-    // Apply same filters as renderEvidenceItems
-    let itemsToRender = [...currentEvidenceItems];
-    if (outstandingFirst) {
-      const getPriority = (status) => status === 'Received' ? 2 : status === 'N/A' ? 3 : 1;
-      itemsToRender.sort((a, b) => getPriority(a.status) - getPriority(b.status));
+    // Calculate progress
+    const total = outstanding.length + received.length;
+    const pct = total > 0 ? Math.round((received.length / total) * 100) : 0;
+    
+    // Helper to render an item
+    const renderItem = (item) => {
+      const statusIcon = item.status === 'Received' ? '✓' : '○';
+      const statusColor = item.status === 'Received' ? '#7B8B64' : '#2C2622';
+      
+      // Strip block HTML tags but keep inline formatting (links, bold, etc)
+      let descText = '';
+      if (item.description) {
+        descText = item.description
+          .replace(/<p>/gi, '')
+          .replace(/<\/p>/gi, ' ')
+          .replace(/<br\s*\/?>/gi, ' ')
+          .replace(/<div>/gi, '')
+          .replace(/<\/div>/gi, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+      
+      let itemText = `<strong>${item.name || 'Item'}</strong>`;
+      if (descText) {
+        itemText += ` – <span style="font-weight:normal;">${descText}</span>`;
+      }
+      
+      return `<li style="margin-bottom:6px; color:${statusColor};">${statusIcon} ${itemText}</li>`;
+    };
+    
+    // Build HTML
+    let html = '<div style="font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
+    
+    // Progress bar
+    html += `<div style="margin-bottom:15px;">`;
+    html += `<div style="display:flex; align-items:center; gap:10px;">`;
+    html += `<div style="flex:1; height:10px; background:#E0E0E0; border-radius:5px; overflow:hidden;">`;
+    html += `<div style="width:${pct}%; height:100%; background:#7B8B64; border-radius:5px;"></div>`;
+    html += `</div>`;
+    html += `<span style="font-weight:bold; color:#2C2622;">${pct}% (${received.length}/${total})</span>`;
+    html += `</div></div>`;
+    
+    // Outstanding section
+    if (outstanding.length > 0) {
+      html += `<div style="margin-bottom:15px;">`;
+      html += `<h4 style="margin:0 0 8px 0; font-size:13px; font-weight:bold; color:#2C2622;">Outstanding</h4>`;
+      html += `<ul style="margin:0; padding-left:0; list-style:none;">`;
+      outstanding.forEach(item => { html += renderItem(item); });
+      html += `</ul></div>`;
     }
     
-    // Group by category
-    const categoryOrder = ['Identification', 'Income', 'Assets', 'Liabilities', 'Refinance', 'Purchase & Property', 'Construction', 'Expenses', 'Other'];
-    const grouped = {};
+    // Received section
+    if (received.length > 0) {
+      html += `<div style="margin-bottom:15px;">`;
+      html += `<h4 style="margin:0 0 8px 0; font-size:13px; font-weight:bold; color:#7B8B64;">Received</h4>`;
+      html += `<ul style="margin:0; padding-left:0; list-style:none;">`;
+      received.forEach(item => { html += renderItem(item); });
+      html += `</ul></div>`;
+    }
     
-    itemsToRender.forEach(item => {
-      // Apply filters
-      if (filter === 'outstanding' && item.status !== 'Outstanding') return;
-      if (filter === 'received' && item.status !== 'Received') return;
-      if (!showNA && item.status === 'N/A') return;
-      
-      const cat = item.category || 'Other';
-      if (!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push(item);
-    });
+    html += '</div>';
     
-    // Build HTML - flat list without category headings (clients just want the list)
-    let html = '<ul style="margin:0; padding-left:0; list-style:none; font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
+    if (outstanding.length === 0 && received.length === 0) {
+      return '<p style="color:#888;">No items to display.</p>';
+    }
     
-    categoryOrder.forEach(cat => {
-      if (!grouped[cat] || grouped[cat].length === 0) return;
-      
-      grouped[cat].forEach(item => {
-        const statusIcon = item.status === 'Received' ? '✓' : item.status === 'N/A' ? '—' : '○';
-        const statusColor = item.status === 'Received' ? '#7B8B64' : item.status === 'N/A' ? '#999' : '#2C2622';
-        const textStyle = item.status === 'N/A' ? 'text-decoration:line-through; color:#999;' : `color:${statusColor};`;
-        
-        // Strip block HTML tags but keep inline formatting (links, bold, etc)
-        let descText = '';
-        if (item.description) {
-          descText = item.description
-            .replace(/<p>/gi, '')
-            .replace(/<\/p>/gi, ' ')
-            .replace(/<br\s*\/?>/gi, ' ')
-            .replace(/<div>/gi, '')
-            .replace(/<\/div>/gi, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-        }
-        
-        let itemText = `<strong>${item.name || 'Item'}</strong>`;
-        if (descText) {
-          itemText += ` – <span style="font-weight:normal;">${descText}</span>`;
-        }
-        
-        html += `<li style="margin-bottom:6px; ${textStyle}">${statusIcon} ${itemText}</li>`;
-      });
-    });
-    
-    html += '</ul>';
-    
-    return html || '<p style="color:#888;">No items to display.</p>';
+    return html;
   }
 
   window.openEvidenceClientView = function() {

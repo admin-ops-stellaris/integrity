@@ -435,7 +435,8 @@
     if (!quickViewContactId) return;
     const contactId = quickViewContactId;
     hideContactQuickView();
-    loadPanelRecord('Contacts', contactId);
+    // Navigate to full contact view in main panel
+    loadContactById(contactId);
   };
 
   // Setup hover behavior for quick-view card itself
@@ -644,6 +645,12 @@
     document.getElementById('email2Comment').value = f.EmailAddress2Comment || "";
     document.getElementById('email3').value = f.EmailAddress3 || "";
     document.getElementById('email3Comment').value = f.EmailAddress3Comment || "";
+    
+    // Auto-resize email note textareas
+    ['email1Comment', 'email2Comment', 'email3Comment'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && typeof autoResizeTextarea === 'function') autoResizeTextarea(el);
+    });
     
     // Notes field (renamed from Description in Airtable)
     document.getElementById('notes').value = f.Notes || "";

@@ -454,11 +454,12 @@
 
   /* Connection Modal Styling */
   .conn-modal-btn { padding: 8px 20px !important; min-width: 100px !important; width: auto !important; }
-  .connection-modal-remove { display: flex; align-items: center; justify-content: flex-end; gap: 15px; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
+  .connection-modal-remove { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
   .connection-modal-remove .remove-label { font-size: 12px; color: #888; }
-  .connection-modal-close { text-align: right; }
+  .connection-modal-close { text-align: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid #ddd; }
   body.dark-mode .connection-modal-remove { border-color: #444; }
   body.dark-mode .connection-modal-remove .remove-label { color: #777; }
+  body.dark-mode .connection-modal-close { border-color: #444; }
   
   /* Connection Groups */
   .connection-group { padding: 6px 0; border-bottom: 1px dashed #EEE; }

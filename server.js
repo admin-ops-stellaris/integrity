@@ -1037,6 +1037,113 @@ app.post("/api/sendEmail", async (req, res) => {
   }
 });
 
+// --- EVIDENCE SYSTEM ---
+app.post("/api/getEvidenceCategories", async (req, res) => {
+  try {
+    const categories = await airtable.getEvidenceCategories();
+    res.json(categories);
+  } catch (err) {
+    console.error("getEvidenceCategories error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getEvidenceTemplates", async (req, res) => {
+  try {
+    const [opportunityType, lender] = req.body.args || [];
+    const templates = await airtable.getEvidenceTemplates(opportunityType, lender);
+    res.json(templates);
+  } catch (err) {
+    console.error("getEvidenceTemplates error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getEvidenceItemsForOpportunity", async (req, res) => {
+  try {
+    const [opportunityId] = req.body.args || [];
+    const items = await airtable.getEvidenceItemsForOpportunity(opportunityId);
+    res.json(items);
+  } catch (err) {
+    console.error("getEvidenceItemsForOpportunity error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/populateEvidenceForOpportunity", async (req, res) => {
+  try {
+    const [opportunityId, opportunityType, lender] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.populateEvidenceForOpportunity(opportunityId, opportunityType, lender, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("populateEvidenceForOpportunity error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/updateEvidenceItem", async (req, res) => {
+  try {
+    const [itemId, fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.updateEvidenceItem(itemId, fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("updateEvidenceItem error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/createEvidenceItem", async (req, res) => {
+  try {
+    const [opportunityId, fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.createEvidenceItem(opportunityId, fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("createEvidenceItem error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/deleteEvidenceItem", async (req, res) => {
+  try {
+    const [itemId] = req.body.args || [];
+    const result = await airtable.deleteEvidenceItem(itemId);
+    res.json(result);
+  } catch (err) {
+    console.error("deleteEvidenceItem error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/markEvidenceItemsAsRequested", async (req, res) => {
+  try {
+    const [itemIds] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.markEvidenceItemsAsRequested(itemIds, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("markEvidenceItemsAsRequested error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/updateEvidenceItemsOrder", async (req, res) => {
+  try {
+    const [items] = req.body.args || [];
+    const result = await airtable.updateEvidenceItemsOrder(items);
+    res.json(result);
+  } catch (err) {
+    console.error("updateEvidenceItemsOrder error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {

@@ -4101,8 +4101,13 @@ Best wishes,
         // Appointments section - linked from Appointments table
         html += `<div class="appointments-section" style="margin-top:15px;">`;
         html += `<div id="appointmentsContainer" data-opportunity-id="${id}"><div style="color:#888; padding:10px;">Loading appointments...</div></div>`;
-        html += `<div style="padding:8px 0;"><button type="button" class="btn-add-appointment" style="padding:6px 14px; background:#7B8B64; color:#F2F0E9; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600;" onclick="openAppointmentForm('${id}')">+ Add Appointment</button></div>`;
-        html += `</div>`;
+        html += `<div style="padding:8px 0; display:flex; gap:10px;">`;
+        html += `<button type="button" class="btn-add-appointment" style="padding:6px 14px; background:#7B8B64; color:#F2F0E9; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600;" onclick="openAppointmentForm('${id}')">+ Add Appointment</button>`;
+        const oppName = (dataMap['Opportunity Name']?.value || response.title || '').replace(/'/g, "\\'");
+        const oppType = (dataMap['Opportunity Type']?.value || '').replace(/'/g, "\\'");
+        const lender = (dataMap['Lender']?.value || '').replace(/'/g, "\\'");
+        html += `<button type="button" style="padding:6px 14px; background:#19414C; color:#F2F0E9; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600;" onclick="openEvidenceModal('${id}', '${oppName}', '${oppType}', '${lender}')">📋 Evidence & Data</button>`;
+        html += `</div></div>`;
         
         // Load appointments asynchronously
         setTimeout(() => loadAppointmentsForOpportunity(id), 100);
@@ -4651,3 +4656,407 @@ Best wishes,
       })
       .deleteAppointment(appointmentId);
   }
+
+  // ==================== EVIDENCE MODAL SYSTEM ====================
+  let currentEvidenceOpportunityId = null;
+  let currentEvidenceOpportunityName = '';
+  let currentEvidenceOpportunityType = '';
+  let currentEvidenceLender = '';
+  let currentEvidenceItems = [];
+
+  window.openEvidenceModal = function(opportunityId, opportunityName, opportunityType, lender) {
+    currentEvidenceOpportunityId = opportunityId;
+    currentEvidenceOpportunityName = opportunityName || 'Opportunity';
+    currentEvidenceOpportunityType = opportunityType || '';
+    currentEvidenceLender = lender || '';
+    
+    document.getElementById('evidenceOppName').textContent = currentEvidenceOpportunityName + (lender ? ` - ${lender}` : '');
+    
+    const modal = document.getElementById('evidenceModal');
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
+    
+    loadEvidenceItems();
+  };
+
+  window.closeEvidenceModal = function() {
+    const modal = document.getElementById('evidenceModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.classList.remove('visible'), 300);
+    currentEvidenceOpportunityId = null;
+    currentEvidenceItems = [];
+  };
+
+  function loadEvidenceItems() {
+    const loading = document.getElementById('evidenceLoading');
+    const emptyState = document.getElementById('evidenceEmptyState');
+    const container = document.getElementById('evidenceItemsContainer');
+    
+    loading.style.display = 'block';
+    emptyState.style.display = 'none';
+    container.innerHTML = '';
+    
+    google.script.run
+      .withSuccessHandler(function(items) {
+        loading.style.display = 'none';
+        currentEvidenceItems = items || [];
+        
+        if (currentEvidenceItems.length === 0) {
+          emptyState.style.display = 'block';
+        } else {
+          renderEvidenceItems();
+        }
+      })
+      .withFailureHandler(function(err) {
+        loading.style.display = 'none';
+        console.error('Error loading evidence items:', err);
+        container.innerHTML = '<p style="color:#A00; text-align:center;">Error loading evidence items</p>';
+      })
+      .getEvidenceItemsForOpportunity(currentEvidenceOpportunityId);
+  }
+
+  function renderEvidenceItems() {
+    const container = document.getElementById('evidenceItemsContainer');
+    const filter = document.getElementById('evidenceStatusFilter').value;
+    const showNA = document.getElementById('evidenceShowNA').checked;
+    
+    // Group items by category
+    const categoryOrder = ['Identification', 'Income', 'Assets', 'Liabilities', 'Refinance', 'Purchase & Property', 'Construction', 'Expenses', 'Other'];
+    const grouped = {};
+    
+    currentEvidenceItems.forEach(item => {
+      const cat = item.category || 'Other';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    });
+    
+    // Calculate progress
+    let received = 0, total = 0;
+    currentEvidenceItems.forEach(item => {
+      if (item.status !== 'N/A') {
+        total++;
+        if (item.status === 'Received') received++;
+      }
+    });
+    const pct = total > 0 ? Math.round((received / total) * 100) : 0;
+    document.getElementById('evidenceProgressFill').style.width = pct + '%';
+    document.getElementById('evidenceProgressText').textContent = `${pct}% (${received}/${total})`;
+    
+    // Render categories
+    let html = '';
+    categoryOrder.forEach(cat => {
+      if (!grouped[cat]) return;
+      
+      // Filter items
+      let items = grouped[cat].filter(item => {
+        if (filter === 'outstanding' && item.status !== 'Outstanding') return false;
+        if (filter === 'received' && item.status !== 'Received') return false;
+        if (!showNA && item.status === 'N/A') return false;
+        return true;
+      });
+      
+      if (items.length === 0) return;
+      
+      html += `
+        <div class="evidence-category" data-category="${cat}">
+          <div class="evidence-category-header" onclick="toggleEvidenceCategory('${cat}')">
+            <h3>${cat}</h3>
+            <span class="evidence-category-toggle" id="evidence-cat-toggle-${cat.replace(/[^a-zA-Z]/g, '')}">▼</span>
+          </div>
+          <div class="evidence-category-items" id="evidence-cat-items-${cat.replace(/[^a-zA-Z]/g, '')}">
+            ${items.map(item => renderEvidenceItem(item)).join('')}
+          </div>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html || '<p style="text-align:center; color:#888; padding:40px;">No items match the current filter.</p>';
+  }
+
+  function renderEvidenceItem(item) {
+    const statusIcon = item.status === 'Received' ? '☑' : item.status === 'N/A' ? '─' : '○';
+    const statusClass = item.status === 'Received' ? 'received' : item.status === 'N/A' ? 'na' : 'outstanding';
+    const selectClass = item.status.toLowerCase().replace('/', '');
+    
+    const formatPerthDate = (dateStr) => {
+      if (!dateStr) return '';
+      try {
+        const d = new Date(dateStr);
+        const perthOffset = 8 * 60;
+        const localOffset = d.getTimezoneOffset();
+        const perthTime = new Date(d.getTime() + (perthOffset + localOffset) * 60000);
+        const hours = String(perthTime.getHours()).padStart(2, '0');
+        const mins = String(perthTime.getMinutes()).padStart(2, '0');
+        const day = String(perthTime.getDate()).padStart(2, '0');
+        const month = String(perthTime.getMonth() + 1).padStart(2, '0');
+        const year = perthTime.getFullYear();
+        return `${day}/${month}/${year} at ${hours}:${mins}`;
+      } catch (e) { return ''; }
+    };
+    
+    let metaHtml = '';
+    if (item.status === 'Received' && item.dateReceived) {
+      metaHtml = `<div class="evidence-item-meta">Received ${formatPerthDate(item.dateReceived)}</div>`;
+    } else if (item.requestedOn) {
+      metaHtml = `<div class="evidence-item-meta">Requested by ${item.requestedByName || 'Unknown'} on ${formatPerthDate(item.requestedOn)}</div>`;
+    }
+    
+    const notesHtml = item.notes ? `<div class="evidence-item-notes"><strong>Notes:</strong> ${item.notes}</div>` : '';
+    
+    return `
+      <div class="evidence-item status-${statusClass}" data-item-id="${item.id}">
+        <div class="evidence-item-status ${statusClass}">${statusIcon}</div>
+        <div class="evidence-item-content">
+          <div class="evidence-item-header">
+            <h4 class="evidence-item-name">${item.name || 'Unnamed Item'}</h4>
+          </div>
+          <div class="evidence-item-desc">${item.description || ''}</div>
+          ${notesHtml}
+          ${metaHtml}
+        </div>
+        <div class="evidence-item-actions">
+          <select class="evidence-status-select ${selectClass}" onchange="updateEvidenceItemStatus('${item.id}', this.value)">
+            <option value="Outstanding" ${item.status === 'Outstanding' ? 'selected' : ''}>Outstanding</option>
+            <option value="Received" ${item.status === 'Received' ? 'selected' : ''}>Received</option>
+            <option value="N/A" ${item.status === 'N/A' ? 'selected' : ''}>N/A</option>
+          </select>
+          <button type="button" class="evidence-item-edit-btn" onclick="editEvidenceItem('${item.id}')">✎</button>
+        </div>
+      </div>
+    `;
+  }
+
+  window.toggleEvidenceCategory = function(cat) {
+    const catId = cat.replace(/[^a-zA-Z]/g, '');
+    const items = document.getElementById('evidence-cat-items-' + catId);
+    const toggle = document.getElementById('evidence-cat-toggle-' + catId);
+    if (items && toggle) {
+      const isHidden = items.style.display === 'none';
+      items.style.display = isHidden ? 'block' : 'none';
+      toggle.textContent = isHidden ? '▼' : '▶';
+    }
+  };
+
+  window.filterEvidenceItems = function() {
+    renderEvidenceItems();
+  };
+
+  window.updateEvidenceItemStatus = function(itemId, newStatus) {
+    google.script.run
+      .withSuccessHandler(function() {
+        // Update local state
+        const item = currentEvidenceItems.find(i => i.id === itemId);
+        if (item) {
+          item.status = newStatus;
+          if (newStatus === 'Received') {
+            item.dateReceived = new Date().toISOString();
+          }
+        }
+        renderEvidenceItems();
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error updating evidence item:', err);
+        alert('Error updating status');
+      })
+      .updateEvidenceItem(itemId, { status: newStatus });
+  };
+
+  window.editEvidenceItem = function(itemId) {
+    const item = currentEvidenceItems.find(i => i.id === itemId);
+    if (!item) return;
+    
+    const newNotes = prompt('Internal Notes (not visible to client):', item.notes || '');
+    if (newNotes !== null) {
+      google.script.run
+        .withSuccessHandler(function() {
+          item.notes = newNotes;
+          renderEvidenceItems();
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error updating notes:', err);
+        })
+        .updateEvidenceItem(itemId, { notes: newNotes });
+    }
+  };
+
+  window.populateEvidenceFromTemplates = function() {
+    const emptyState = document.getElementById('evidenceEmptyState');
+    emptyState.innerHTML = '<p>Populating evidence list...</p>';
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          loadEvidenceItems();
+        } else {
+          alert('Error: ' + (result.error || 'Unknown error'));
+          emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error populating evidence:', err);
+        alert('Error populating evidence list');
+        emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
+      })
+      .populateEvidenceForOpportunity(currentEvidenceOpportunityId, currentEvidenceOpportunityType, currentEvidenceLender);
+  };
+
+  window.toggleEvidenceEmailMenu = function() {
+    const menu = document.getElementById('evidenceEmailMenu');
+    menu.classList.toggle('show');
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', closeEvidenceEmailMenuOnOutside, { once: true });
+    }, 10);
+  };
+
+  function closeEvidenceEmailMenuOnOutside(e) {
+    const menu = document.getElementById('evidenceEmailMenu');
+    const btn = document.querySelector('.evidence-email-btn');
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      menu.classList.remove('show');
+    }
+  }
+
+  window.copyEvidenceToClipboard = function() {
+    const outstanding = currentEvidenceItems.filter(i => i.status === 'Outstanding');
+    if (outstanding.length === 0) {
+      alert('No outstanding items to copy!');
+      return;
+    }
+    
+    // Group by category
+    const grouped = {};
+    outstanding.forEach(item => {
+      const cat = item.category || 'Other';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    });
+    
+    let text = '';
+    for (const cat in grouped) {
+      text += `${cat}:\n`;
+      grouped[cat].forEach(item => {
+        text += `  • ${item.name}`;
+        if (item.description) text += ` - ${item.description}`;
+        text += '\n';
+      });
+      text += '\n';
+    }
+    
+    navigator.clipboard.writeText(text.trim()).then(() => {
+      alert('Outstanding items copied to clipboard!');
+    }).catch(err => {
+      console.error('Clipboard error:', err);
+      alert('Failed to copy to clipboard');
+    });
+  };
+
+  window.generateEvidenceEmail = function(type) {
+    document.getElementById('evidenceEmailMenu').classList.remove('show');
+    
+    const outstanding = currentEvidenceItems.filter(i => i.status === 'Outstanding');
+    if (outstanding.length === 0) {
+      alert('No outstanding items to request!');
+      return;
+    }
+    
+    // Get contact info from current opportunity context
+    const contactName = currentContactRecord?.fields?.FirstName || 'there';
+    
+    // Group by category
+    const grouped = {};
+    outstanding.forEach(item => {
+      const cat = item.category || 'Other';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    });
+    
+    let itemsHtml = '';
+    for (const cat in grouped) {
+      itemsHtml += `<p><strong>${cat}</strong></p><ul>`;
+      grouped[cat].forEach(item => {
+        itemsHtml += `<li><strong>${item.name}</strong>`;
+        if (item.description) itemsHtml += ` - <em>${item.description}</em>`;
+        itemsHtml += '</li>';
+      });
+      itemsHtml += '</ul>';
+    }
+    
+    const isInitial = type === 'initial';
+    const subject = isInitial 
+      ? `Documents needed for your ${currentEvidenceOpportunityName}`
+      : `Quick follow-up: Documents still needed for ${currentEvidenceOpportunityName}`;
+    
+    const body = isInitial
+      ? `<p>Hi ${contactName},</p><p>Thank you for choosing Stellaris Finance! To get your application moving, we need the following documents:</p>${itemsHtml}<p>Simply reply to this email with the documents attached. If you have any questions, don't hesitate to reach out!</p><p>Kind regards,</p>`
+      : `<p>Hi ${contactName},</p><p>Just a quick follow-up on your application. We're still waiting on a few items:</p>${itemsHtml}<p>Once we have these, we can move to the next stage. Let me know if you need any help!</p><p>Kind regards,</p>`;
+    
+    // Mark items as requested
+    const itemIds = outstanding.map(i => i.id);
+    google.script.run
+      .withSuccessHandler(function() {
+        outstanding.forEach(item => {
+          item.requestedOn = new Date().toISOString();
+        });
+        renderEvidenceItems();
+      })
+      .markEvidenceItemsAsRequested(itemIds);
+    
+    // Open email composer (you may want to use your existing email modal)
+    // For now, copy to clipboard as HTML
+    const fullEmail = `Subject: ${subject}\n\n${body.replace(/<[^>]*>/g, '')}`;
+    navigator.clipboard.writeText(fullEmail).then(() => {
+      alert(`${isInitial ? 'Initial' : 'Subsequent'} request email copied to clipboard!\n\nItems have been marked as "Requested".`);
+    });
+  };
+
+  // Add Evidence Item Modal
+  window.openAddEvidenceItemModal = function() {
+    document.getElementById('newEvidenceName').value = '';
+    document.getElementById('newEvidenceDescription').value = '';
+    document.getElementById('newEvidenceCategory').value = 'Other';
+    
+    const modal = document.getElementById('addEvidenceItemModal');
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
+  };
+
+  window.closeAddEvidenceItemModal = function() {
+    const modal = document.getElementById('addEvidenceItemModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.classList.remove('visible'), 200);
+  };
+
+  window.submitNewEvidenceItem = function() {
+    const name = document.getElementById('newEvidenceName').value.trim();
+    const description = document.getElementById('newEvidenceDescription').value.trim();
+    const category = document.getElementById('newEvidenceCategory').value;
+    
+    if (!name) {
+      alert('Please enter a name for the item.');
+      return;
+    }
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          closeAddEvidenceItemModal();
+          loadEvidenceItems();
+        } else {
+          alert('Error: ' + (result.error || 'Unknown error'));
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error creating evidence item:', err);
+        alert('Error creating item');
+      })
+      .createEvidenceItem(currentEvidenceOpportunityId, {
+        name: name,
+        description: description,
+        category: category
+      });
+  };
+
+  window.openManageTemplatesModal = function() {
+    alert('Template management coming soon! For now, please manage templates directly in Airtable.');
+  };

@@ -1283,3 +1283,389 @@ export async function createEmailTemplate(fields, userContext = null) {
 export function clearTemplateCache() {
   templateCache.clear();
 }
+
+// ==================== EVIDENCE SYSTEM ====================
+
+// Cache for evidence categories
+const evidenceCategoriesCache = { data: null, timestamp: 0 };
+const EVIDENCE_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+export async function getEvidenceCategories() {
+  if (!base) return [];
+  
+  if (evidenceCategoriesCache.data && (Date.now() - evidenceCategoriesCache.timestamp) < EVIDENCE_CACHE_TTL) {
+    return evidenceCategoriesCache.data;
+  }
+  
+  try {
+    const records = await base("Evidence Categories")
+      .select({ sort: [{ field: "Display Order", direction: "asc" }] })
+      .all();
+    
+    const categories = records.map(r => ({
+      id: r.id,
+      name: r.fields["Name"] || "",
+      displayOrder: r.fields["Display Order"] || 0,
+      color: r.fields["Color"] || null
+    }));
+    
+    evidenceCategoriesCache.data = categories;
+    evidenceCategoriesCache.timestamp = Date.now();
+    return categories;
+  } catch (err) {
+    console.error("getEvidenceCategories error:", err.message);
+    return [];
+  }
+}
+
+export async function getEvidenceTemplates(opportunityType = null, lender = null) {
+  if (!base) return [];
+  
+  try {
+    // Get all active templates
+    const records = await base("Evidence Templates")
+      .select({ sort: [{ field: "Display Order", direction: "asc" }] })
+      .all();
+    
+    // Get lender rules if a lender is specified
+    let lenderRules = [];
+    if (lender) {
+      const rulesRecords = await base("Lender Evidence Rules")
+        .select({ filterByFormula: `LOWER({Lender}) = LOWER("${lender}")` })
+        .all();
+      lenderRules = rulesRecords.map(r => ({
+        templateId: r.fields["Evidence Template"] ? r.fields["Evidence Template"][0] : null,
+        ruleType: r.fields["Rule Type"] || "",
+        customName: r.fields["Custom Name"] || null,
+        customDescription: r.fields["Custom Description"] || null
+      }));
+    }
+    
+    // Build lookup for lender rules by template ID
+    const rulesMap = {};
+    lenderRules.forEach(rule => {
+      if (rule.templateId) rulesMap[rule.templateId] = rule;
+    });
+    
+    // Process templates
+    const templates = [];
+    for (const r of records) {
+      const oppTypes = r.fields["Opportunity Types"] || [];
+      const isLenderSpecific = r.fields["Is Lender Specific"] || false;
+      const categoryIds = r.fields["Category"] || [];
+      
+      // Filter by opportunity type if specified
+      if (opportunityType && oppTypes.length > 0 && !oppTypes.includes(opportunityType)) {
+        continue;
+      }
+      
+      // If lender-specific, only include if we have a rule for this lender
+      if (isLenderSpecific && lender && !rulesMap[r.id]) {
+        continue;
+      }
+      
+      // Check if "Not Required" rule exists for this lender
+      const lenderRule = rulesMap[r.id];
+      if (lenderRule && lenderRule.ruleType === "Not Required") {
+        continue;
+      }
+      
+      templates.push({
+        id: r.id,
+        name: lenderRule?.customName || r.fields["Name"] || "",
+        description: lenderRule?.customDescription || r.fields["Description"] || "",
+        categoryId: categoryIds[0] || null,
+        displayOrder: r.fields["Display Order"] || 0,
+        opportunityTypes: oppTypes,
+        isLenderSpecific: isLenderSpecific,
+        hasLenderOverride: !!lenderRule
+      });
+    }
+    
+    return templates;
+  } catch (err) {
+    console.error("getEvidenceTemplates error:", err.message);
+    return [];
+  }
+}
+
+export async function getEvidenceItemsForOpportunity(opportunityId) {
+  if (!base || !opportunityId) return [];
+  
+  try {
+    const records = await base("Evidence Items")
+      .select({
+        filterByFormula: `FIND("${opportunityId}", ARRAYJOIN({Opportunity}))`,
+        sort: [{ field: "Display Order", direction: "asc" }]
+      })
+      .all();
+    
+    // Collect user IDs for batch lookup
+    const userIds = new Set();
+    records.forEach(r => {
+      const requestedBy = r.fields["Requested By"] || [];
+      const createdBy = r.fields["Created By"] || [];
+      const modifiedBy = r.fields["Modified By"] || [];
+      if (requestedBy[0]) userIds.add(requestedBy[0]);
+      if (createdBy[0]) userIds.add(createdBy[0]);
+      if (modifiedBy[0]) userIds.add(modifiedBy[0]);
+    });
+    
+    // Batch fetch user names
+    const usersMap = {};
+    if (userIds.size > 0) {
+      const userFormula = `OR(${Array.from(userIds).map(id => `RECORD_ID()='${id}'`).join(',')})`;
+      const userRecords = await base("Users").select({ filterByFormula: userFormula }).all();
+      userRecords.forEach(u => {
+        usersMap[u.id] = u.fields["Name"] || u.fields["Email"] || "Unknown";
+      });
+    }
+    
+    return records.map(r => ({
+      id: r.id,
+      name: r.fields["Name"] || "",
+      description: r.fields["Description"] || "",
+      notes: r.fields["Notes"] || "",
+      category: r.fields["Category"] || "",
+      displayOrder: r.fields["Display Order"] || 0,
+      status: r.fields["Status"] || "Outstanding",
+      dateReceived: r.fields["Date Received"] || null,
+      requestedOn: r.fields["Requested On"] || null,
+      requestedByName: usersMap[r.fields["Requested By"]?.[0]] || null,
+      isCustom: r.fields["Is Custom"] || false,
+      createdOn: r.fields["Created On"] || null,
+      createdByName: usersMap[r.fields["Created By"]?.[0]] || null,
+      modifiedOn: r.fields["Modified On"] || null,
+      modifiedByName: usersMap[r.fields["Modified By"]?.[0]] || null
+    }));
+  } catch (err) {
+    console.error("getEvidenceItemsForOpportunity error:", err.message);
+    return [];
+  }
+}
+
+export async function populateEvidenceForOpportunity(opportunityId, opportunityType, lender, userContext = null) {
+  if (!base || !opportunityId) return { success: false, error: "Missing opportunity ID" };
+  
+  try {
+    // Get categories and templates
+    const [categories, templates] = await Promise.all([
+      getEvidenceCategories(),
+      getEvidenceTemplates(opportunityType, lender)
+    ]);
+    
+    // Build category name map
+    const categoryMap = {};
+    categories.forEach(c => { categoryMap[c.id] = c.name; });
+    
+    const perthTime = getPerthTimeISO();
+    
+    // Create evidence items from templates
+    const createPromises = templates.map((template, index) => {
+      const createFields = {
+        "Opportunity": [opportunityId],
+        "Name": template.name,
+        "Description": template.description,
+        "Notes": "",
+        "Category": categoryMap[template.categoryId] || "Other",
+        "Display Order": template.displayOrder || (index + 1),
+        "Status": "Outstanding",
+        "Is Custom": false,
+        "Source Template": [template.id],
+        "Created On": perthTime,
+        "Modified On": perthTime
+      };
+      
+      if (userContext && userContext.id) {
+        createFields["Created By"] = [userContext.id];
+        createFields["Modified By"] = [userContext.id];
+      }
+      
+      return base("Evidence Items").create(createFields);
+    });
+    
+    await Promise.all(createPromises);
+    return { success: true, itemsCreated: templates.length };
+  } catch (err) {
+    console.error("populateEvidenceForOpportunity error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateEvidenceItem(itemId, fields, userContext = null) {
+  if (!base || !itemId) return { success: false, error: "Missing item ID" };
+  
+  try {
+    const updateFields = {
+      "Modified On": getPerthTimeISO()
+    };
+    
+    if (fields.name !== undefined) updateFields["Name"] = fields.name;
+    if (fields.description !== undefined) updateFields["Description"] = fields.description;
+    if (fields.notes !== undefined) updateFields["Notes"] = fields.notes;
+    if (fields.status !== undefined) {
+      updateFields["Status"] = fields.status;
+      if (fields.status === "Received" && !fields.dateReceived) {
+        updateFields["Date Received"] = getPerthTimeISO();
+      }
+    }
+    if (fields.displayOrder !== undefined) updateFields["Display Order"] = fields.displayOrder;
+    if (fields.requestedOn !== undefined) updateFields["Requested On"] = fields.requestedOn;
+    
+    if (userContext && userContext.id) {
+      updateFields["Modified By"] = [userContext.id];
+      if (fields.requestedOn) {
+        updateFields["Requested By"] = [userContext.id];
+      }
+    }
+    
+    await base("Evidence Items").update(itemId, updateFields);
+    return { success: true };
+  } catch (err) {
+    console.error("updateEvidenceItem error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function createEvidenceItem(opportunityId, fields, userContext = null) {
+  if (!base || !opportunityId) return { success: false, error: "Missing opportunity ID" };
+  
+  try {
+    const perthTime = getPerthTimeISO();
+    const createFields = {
+      "Opportunity": [opportunityId],
+      "Name": fields.name || "New Item",
+      "Description": fields.description || "",
+      "Notes": fields.notes || "",
+      "Category": fields.category || "Other",
+      "Display Order": fields.displayOrder || 999,
+      "Status": fields.status || "Outstanding",
+      "Is Custom": true,
+      "Created On": perthTime,
+      "Modified On": perthTime
+    };
+    
+    if (userContext && userContext.id) {
+      createFields["Created By"] = [userContext.id];
+      createFields["Modified By"] = [userContext.id];
+    }
+    
+    const record = await base("Evidence Items").create(createFields);
+    return { success: true, id: record.id };
+  } catch (err) {
+    console.error("createEvidenceItem error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteEvidenceItem(itemId) {
+  if (!base || !itemId) return { success: false, error: "Missing item ID" };
+  
+  try {
+    await base("Evidence Items").destroy(itemId);
+    return { success: true };
+  } catch (err) {
+    console.error("deleteEvidenceItem error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function markEvidenceItemsAsRequested(itemIds, userContext = null) {
+  if (!base || !itemIds || itemIds.length === 0) return { success: false, error: "No items provided" };
+  
+  try {
+    const perthTime = getPerthTimeISO();
+    const updatePromises = itemIds.map(itemId => {
+      const updateFields = {
+        "Requested On": perthTime,
+        "Modified On": perthTime
+      };
+      if (userContext && userContext.id) {
+        updateFields["Requested By"] = [userContext.id];
+        updateFields["Modified By"] = [userContext.id];
+      }
+      return base("Evidence Items").update(itemId, updateFields);
+    });
+    
+    await Promise.all(updatePromises);
+    return { success: true };
+  } catch (err) {
+    console.error("markEvidenceItemsAsRequested error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateEvidenceItemsOrder(items) {
+  if (!base || !items || items.length === 0) return { success: false };
+  
+  try {
+    const updatePromises = items.map(item => 
+      base("Evidence Items").update(item.id, { "Display Order": item.displayOrder })
+    );
+    await Promise.all(updatePromises);
+    return { success: true };
+  } catch (err) {
+    console.error("updateEvidenceItemsOrder error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+// Evidence Template Management
+export async function createEvidenceTemplate(fields, userContext = null) {
+  if (!base) return { success: false, error: "Database not configured" };
+  
+  try {
+    const perthTime = getPerthTimeISO();
+    const createFields = {
+      "Name": fields.name || "New Template",
+      "Description": fields.description || "",
+      "Display Order": fields.displayOrder || 999,
+      "Is Lender Specific": fields.isLenderSpecific || false,
+      "Created On": perthTime,
+      "Modified On": perthTime
+    };
+    
+    if (fields.categoryId) createFields["Category"] = [fields.categoryId];
+    if (fields.opportunityTypes) createFields["Opportunity Types"] = fields.opportunityTypes;
+    
+    const record = await base("Evidence Templates").create(createFields);
+    evidenceCategoriesCache.timestamp = 0; // Invalidate cache
+    return { success: true, id: record.id };
+  } catch (err) {
+    console.error("createEvidenceTemplate error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateEvidenceTemplate(templateId, fields) {
+  if (!base || !templateId) return { success: false, error: "Missing template ID" };
+  
+  try {
+    const updateFields = { "Modified On": getPerthTimeISO() };
+    
+    if (fields.name !== undefined) updateFields["Name"] = fields.name;
+    if (fields.description !== undefined) updateFields["Description"] = fields.description;
+    if (fields.displayOrder !== undefined) updateFields["Display Order"] = fields.displayOrder;
+    if (fields.categoryId !== undefined) updateFields["Category"] = fields.categoryId ? [fields.categoryId] : [];
+    if (fields.opportunityTypes !== undefined) updateFields["Opportunity Types"] = fields.opportunityTypes;
+    if (fields.isLenderSpecific !== undefined) updateFields["Is Lender Specific"] = fields.isLenderSpecific;
+    
+    await base("Evidence Templates").update(templateId, updateFields);
+    return { success: true };
+  } catch (err) {
+    console.error("updateEvidenceTemplate error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteEvidenceTemplate(templateId) {
+  if (!base || !templateId) return { success: false, error: "Missing template ID" };
+  
+  try {
+    await base("Evidence Templates").destroy(templateId);
+    return { success: true };
+  } catch (err) {
+    console.error("deleteEvidenceTemplate error:", err.message);
+    return { success: false, error: err.message };
+  }
+}

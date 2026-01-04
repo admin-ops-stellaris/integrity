@@ -200,6 +200,7 @@
                 <option value="Personal Loans">Personal Loans</option>
                 <option value="Asset Finance">Asset Finance</option>
                 <option value="Tax Depreciation Schedule">Tax Depreciation Schedule</option>
+                <option value="Financial Planning">Financial Planning</option>
               </select>
             </div>
           </div>
@@ -832,11 +833,106 @@
       </div>
     </div>
 
+    <!-- Evidence Modal (Full Screen) -->
+    <div id="evidenceModal" class="evidence-modal">
+      <div class="evidence-modal-content">
+        <div class="evidence-modal-header">
+          <div class="evidence-header-left">
+            <button type="button" class="evidence-close-btn" onclick="closeEvidenceModal()">✕</button>
+            <div class="evidence-header-title">
+              <h2>Evidence & Data Collection</h2>
+              <p id="evidenceOppName" class="evidence-opp-name"></p>
+            </div>
+          </div>
+          <div class="evidence-header-right">
+            <div class="evidence-progress">
+              <div class="evidence-progress-bar">
+                <div id="evidenceProgressFill" class="evidence-progress-fill"></div>
+              </div>
+              <span id="evidenceProgressText" class="evidence-progress-text">0%</span>
+            </div>
+          </div>
+        </div>
+        <div class="evidence-modal-toolbar">
+          <div class="evidence-toolbar-left">
+            <button type="button" class="evidence-btn" onclick="openAddEvidenceItemModal()">+ Add Custom Item</button>
+            <button type="button" class="evidence-btn" onclick="copyEvidenceToClipboard()">📋 Copy to Clipboard</button>
+            <div class="evidence-email-dropdown">
+              <button type="button" class="evidence-btn evidence-email-btn" onclick="toggleEvidenceEmailMenu()">✉️ Email <span class="dropdown-arrow">▾</span></button>
+              <div id="evidenceEmailMenu" class="evidence-dropdown-menu">
+                <button onclick="generateEvidenceEmail('initial')">Initial Request</button>
+                <button onclick="generateEvidenceEmail('subsequent')">Subsequent Request</button>
+              </div>
+            </div>
+          </div>
+          <div class="evidence-toolbar-right">
+            <label class="evidence-filter-label">Filter:</label>
+            <select id="evidenceStatusFilter" onchange="filterEvidenceItems()">
+              <option value="all">All Items</option>
+              <option value="outstanding">Outstanding Only</option>
+              <option value="received">Received Only</option>
+            </select>
+            <label class="evidence-checkbox-label">
+              <input type="checkbox" id="evidenceShowNA" checked onchange="filterEvidenceItems()">
+              <span>Show N/A</span>
+            </label>
+          </div>
+        </div>
+        <div id="evidenceModalBody" class="evidence-modal-body">
+          <div id="evidenceLoading" class="evidence-loading">Loading evidence items...</div>
+          <div id="evidenceEmptyState" class="evidence-empty-state" style="display:none;">
+            <p>No evidence items yet.</p>
+            <button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>
+          </div>
+          <div id="evidenceItemsContainer"></div>
+        </div>
+        <div class="evidence-modal-footer">
+          <button type="button" class="evidence-btn-secondary" onclick="openManageTemplatesModal()">Manage Default Templates</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Evidence Item Modal -->
+    <div id="addEvidenceItemModal" class="modal">
+      <div class="modal-content" style="max-width:500px;">
+        <div class="modal-sidebar" style="background:var(--color-cedar);"><span style="font-size:28px;">📄</span></div>
+        <div class="modal-body">
+          <h3 style="margin-top:0; margin-bottom:15px;">Add Custom Evidence Item</h3>
+          <div class="field-group" style="margin-bottom:12px;">
+            <label>Category</label>
+            <select id="newEvidenceCategory">
+              <option value="Identification">Identification</option>
+              <option value="Income">Income</option>
+              <option value="Assets">Assets</option>
+              <option value="Liabilities">Liabilities</option>
+              <option value="Refinance">Refinance</option>
+              <option value="Purchase & Property">Purchase & Property</option>
+              <option value="Construction">Construction</option>
+              <option value="Expenses">Expenses</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:12px;">
+            <label>Name</label>
+            <input type="text" id="newEvidenceName" placeholder="e.g., Bank Statement">
+          </div>
+          <div class="field-group" style="margin-bottom:12px;">
+            <label>Description</label>
+            <textarea id="newEvidenceDescription" rows="3" placeholder="What exactly do you need?"></textarea>
+          </div>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+            <button type="button" class="btn-secondary" onclick="closeAddEvidenceItemModal()">Cancel</button>
+            <button type="button" class="btn-primary" onclick="submitNewEvidenceItem()">Add Item</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Quill WYSIWYG Editor -->
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=46"></script>
-    <script src="/app.js?v=46"></script>
+    <script src="/api-bridge.js?v=47"></script>
+    <script src="/app.js?v=47"></script>
   </body>
 </html>

@@ -4817,7 +4817,14 @@ Best wishes,
       metaHtml = `<div class="evidence-item-meta">Requested by ${item.requestedByName || 'Unknown'} on ${formatPerthDate(item.requestedOn)}</div>`;
     }
     
-    const notesHtml = item.notes ? `<div class="evidence-item-notes"><strong>Notes:</strong> ${item.notes}</div>` : '';
+    // Notes with who/when metadata
+    let notesHtml = '';
+    if (item.notes) {
+      const notesMeta = item.modifiedByName && item.modifiedOn 
+        ? `<span class="evidence-notes-meta">${item.modifiedByName} - ${formatPerthDate(item.modifiedOn)}</span>`
+        : '';
+      notesHtml = `<div class="evidence-item-notes"><strong>Notes:</strong> ${item.notes}${notesMeta}</div>`;
+    }
     
     return `
       <div class="evidence-item status-${statusClass}" data-item-id="${item.id}">
@@ -4902,7 +4909,12 @@ Best wishes,
     google.script.run
       .withSuccessHandler(function(result) {
         if (result.success) {
-          loadEvidenceItems();
+          if (result.itemsCreated === 0) {
+            alert('No templates found for this opportunity type/lender. You can add custom items using the "+ Add Custom" button, or create templates in Airtable\'s "Evidence Templates" table.');
+            emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
+          } else {
+            loadEvidenceItems();
+          }
         } else {
           alert('Error: ' + (result.error || 'Unknown error'));
           emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
@@ -5046,6 +5058,29 @@ Best wishes,
           toolbar: '#newEvidenceDescToolbar'
         },
         placeholder: 'Describe what you need - supports bold, links, bullet points...'
+      });
+      
+      // Auto-prepend https:// to links without protocol
+      const toolbar = newEvidenceDescQuill.getModule('toolbar');
+      toolbar.addHandler('link', function(value) {
+        if (value) {
+          let href = prompt('Enter the link URL:');
+          if (href) {
+            // Auto-prepend https:// if no protocol specified
+            if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href)) {
+              href = 'https://' + href;
+            }
+            const range = newEvidenceDescQuill.getSelection();
+            if (range && range.length > 0) {
+              newEvidenceDescQuill.format('link', href);
+            } else {
+              // Insert the URL as text if no selection
+              newEvidenceDescQuill.insertText(range ? range.index : 0, href, 'link', href);
+            }
+          }
+        } else {
+          newEvidenceDescQuill.format('link', false);
+        }
       });
     } else {
       newEvidenceDescQuill.setContents([]);

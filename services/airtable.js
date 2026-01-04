@@ -464,6 +464,157 @@ export async function setSpouse(contactId, spouseId, action) {
   }
 }
 
+// ==================== CONNECTIONS ====================
+
+// Valid connection role pairs (Record1Role -> Record2Role)
+const CONNECTION_ROLE_PAIRS = [
+  { role1: "Parent", role2: "Child", label: "Parent / Child" },
+  { role1: "Child", role2: "Parent", label: "Child / Parent" },
+  { role1: "Sibling", role2: "Sibling", label: "Sibling / Sibling" },
+  { role1: "Friend", role2: "Friend", label: "Friend / Friend" },
+  { role1: "Household Representative", role2: "Household Member", label: "Household Representative / Household Member" },
+  { role1: "Household Member", role2: "Household Representative", label: "Household Member / Household Representative" },
+  { role1: "Employer of", role2: "Employee of", label: "Employer / Employee" },
+  { role1: "Employee of", role2: "Employer of", label: "Employee / Employer" },
+  { role1: "Referred by", role2: "Has Referred", label: "Referred by / Has Referred" },
+  { role1: "Has Referred", role2: "Referred by", label: "Has Referred / Referred by" },
+  { role1: "Referred to", role2: "Received Referral", label: "Referred to / Received Referral" },
+  { role1: "Received Referral", role2: "Referred to", label: "Received Referral / Referred to" }
+];
+
+export function getConnectionRoleTypes() {
+  return CONNECTION_ROLE_PAIRS;
+}
+
+export async function getConnectionsForContact(contactId) {
+  if (!base || !contactId) return [];
+  try {
+    // Query connections where Contact 1 OR Contact 2 contains this contact
+    const formula = `OR(FIND("${contactId}", ARRAYJOIN({Contact 1})), FIND("${contactId}", ARRAYJOIN({Contact 2})))`;
+    const records = await base("Connections")
+      .select({
+        filterByFormula: formula
+      })
+      .all();
+    
+    // Format connections with perspective from the given contact
+    const connections = [];
+    for (const record of records) {
+      const f = record.fields;
+      const contact1Ids = f["Contact 1"] || [];
+      const contact2Ids = f["Contact 2"] || [];
+      const isContact1 = contact1Ids.includes(contactId);
+      
+      // Get the "other" contact's info
+      const otherContactId = isContact1 ? contact2Ids[0] : contact1Ids[0];
+      const otherContactName = isContact1 
+        ? (f["Record2IdName"] || "Unknown") 
+        : (f["Record1IdName"] || "Unknown");
+      const myRole = isContact1 ? f["Record1Role"] : f["Record2Role"];
+      const theirRole = isContact1 ? f["Record2Role"] : f["Record1Role"];
+      
+      // If other contact is linked, fetch their current name
+      let displayName = otherContactName;
+      if (otherContactId) {
+        try {
+          const otherContact = await base("Contacts").find(otherContactId);
+          if (otherContact) {
+            const of = otherContact.fields;
+            displayName = `${of.FirstName || ''} ${of.MiddleName || ''} ${of.LastName || ''}`.replace(/\s+/g, ' ').trim() || otherContactName;
+          }
+        } catch (e) {
+          // Use fallback name if contact lookup fails
+        }
+      }
+      
+      connections.push({
+        id: record.id,
+        otherContactId: otherContactId || null,
+        otherContactName: displayName,
+        myRole: myRole,
+        theirRole: theirRole,
+        status: f["Status"] || "Active",
+        createdOn: f["Created On"] || null
+      });
+    }
+    
+    // Filter to active only and sort by name
+    return connections
+      .filter(c => c.status === "Active")
+      .sort((a, b) => (a.otherContactName || "").localeCompare(b.otherContactName || ""));
+  } catch (err) {
+    console.error("getConnectionsForContact error:", err.message);
+    return [];
+  }
+}
+
+export async function createConnection(contact1Id, contact2Id, record1Role, record2Role, userContext = null) {
+  if (!base) return { success: false, error: "Database not configured" };
+  if (!contact1Id || !contact2Id) return { success: false, error: "Both contacts are required" };
+  if (!record1Role || !record2Role) return { success: false, error: "Relationship roles are required" };
+  
+  try {
+    // Fetch contact names for Record1IdName and Record2IdName
+    const [contact1, contact2] = await Promise.all([
+      base("Contacts").find(contact1Id),
+      base("Contacts").find(contact2Id)
+    ]);
+    
+    const contact1Name = contact1 
+      ? `${contact1.fields.FirstName || ''} ${contact1.fields.MiddleName || ''} ${contact1.fields.LastName || ''}`.replace(/\s+/g, ' ').trim()
+      : "";
+    const contact2Name = contact2 
+      ? `${contact2.fields.FirstName || ''} ${contact2.fields.MiddleName || ''} ${contact2.fields.LastName || ''}`.replace(/\s+/g, ' ').trim()
+      : "";
+    
+    const createFields = {
+      "Contact 1": [contact1Id],
+      "Contact 2": [contact2Id],
+      "Record1Role": record1Role,
+      "Record2Role": record2Role,
+      "Record1IdName": contact1Name,
+      "Record2IdName": contact2Name,
+      "Status": "Active",
+      "Created On": new Date().toISOString(),
+      "Modified On": new Date().toISOString()
+    };
+    
+    // Add user audit links if available
+    if (userContext && userContext.id) {
+      createFields["Created By"] = [userContext.id];
+      createFields["Modified By"] = [userContext.id];
+    }
+    
+    const record = await base("Connections").create(createFields);
+    return { success: true, record: formatRecord(record) };
+  } catch (err) {
+    console.error("createConnection error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deactivateConnection(connectionId, userContext = null) {
+  if (!base) return { success: false, error: "Database not configured" };
+  if (!connectionId) return { success: false, error: "Connection ID is required" };
+  
+  try {
+    const updateFields = {
+      "Status": "Inactive",
+      "Modified On": new Date().toISOString()
+    };
+    
+    if (userContext && userContext.id) {
+      updateFields["Modified By"] = [userContext.id];
+    }
+    
+    await base("Connections").update(connectionId, updateFields);
+    return { success: true };
+  } catch (err) {
+    console.error("deactivateConnection error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function deleteContact(contactId) {
   if (!base) return { success: false, error: "Database not configured" };
   try {

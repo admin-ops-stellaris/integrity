@@ -470,7 +470,8 @@
     document.getElementById('formSubtitle').innerText = formatSubtitle(f);
     renderHistory(f);
     loadOpportunities(f);
-    renderSpouseSection(f); 
+    renderSpouseSection(f);
+    loadConnections(record.id);
     closeOppPanel();
   }
   
@@ -2347,6 +2348,254 @@ Best wishes,
      li.innerText = `${entry.displayDate}: ${entry.displayText}`;
      const expandLink = container.querySelector('.expand-link');
      if(expandLink) { container.insertBefore(li, expandLink); } else { container.appendChild(li); }
+  }
+
+  // --- CONNECTIONS LOGIC ---
+  let connectionRoleTypes = [];
+  
+  function loadConnections(contactId) {
+    const list = document.getElementById('connectionsList');
+    if (!list) return;
+    list.innerHTML = '<li class="connections-empty">Loading...</li>';
+    
+    google.script.run.withSuccessHandler(function(connections) {
+      renderConnectionsList(connections);
+    }).withFailureHandler(function(err) {
+      list.innerHTML = '<li class="connections-empty">Error loading connections</li>';
+    }).getConnectionsForContact(contactId);
+  }
+  
+  function renderConnectionsList(connections) {
+    const list = document.getElementById('connectionsList');
+    if (!list) return;
+    list.innerHTML = '';
+    
+    if (!connections || connections.length === 0) {
+      list.innerHTML = '<li class="connections-empty">No connections yet</li>';
+      return;
+    }
+    
+    connections.forEach(conn => {
+      const li = document.createElement('li');
+      li.className = 'connection-item';
+      
+      const badgeClass = getRoleBadgeClass(conn.myRole);
+      const nameClick = conn.otherContactId 
+        ? `onclick="loadPanelRecord('Contacts', '${conn.otherContactId}')"`
+        : '';
+      
+      li.innerHTML = `
+        <div class="connection-info">
+          <span class="connection-role-badge ${badgeClass}">${conn.myRole}</span>
+          <span class="connection-name" ${nameClick}>${conn.otherContactName}</span>
+        </div>
+        <span class="connection-remove" onclick="confirmDeactivateConnection('${conn.id}', '${escapeHtmlForAttr(conn.otherContactName)}')" title="Remove connection">×</span>
+      `;
+      list.appendChild(li);
+    });
+  }
+  
+  function getRoleBadgeClass(role) {
+    if (!role) return '';
+    const r = role.toLowerCase();
+    if (r === 'parent' || r === 'child') return r;
+    if (r === 'sibling') return 'sibling';
+    if (r === 'friend') return 'friend';
+    if (r.includes('employer')) return 'employer';
+    if (r.includes('employee')) return 'employee';
+    if (r.includes('referred') || r.includes('referral')) return 'referred';
+    if (r.includes('household')) return 'household';
+    return '';
+  }
+  
+  function escapeHtmlForAttr(str) {
+    if (!str) return '';
+    return str.replace(/'/g, "&#39;").replace(/"/g, '&quot;');
+  }
+  
+  function unescapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  }
+  
+  function openAddConnectionModal() {
+    if (!currentContactRecord) return;
+    
+    const modal = document.getElementById('addConnectionModal');
+    document.getElementById('connectionStep1').style.display = 'flex';
+    document.getElementById('connectionStep2').style.display = 'none';
+    document.getElementById('connectionSearchInput').value = '';
+    document.getElementById('connectionSearchResults').innerHTML = '';
+    document.getElementById('connectionSearchResults').style.display = 'none';
+    
+    // Load role types if not already loaded
+    if (connectionRoleTypes.length === 0) {
+      google.script.run.withSuccessHandler(function(types) {
+        connectionRoleTypes = types || [];
+        populateConnectionRoleSelect();
+      }).getConnectionRoleTypes();
+    }
+    
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
+    
+    // Pre-load recent contacts
+    loadRecentContactsForConnectionModal();
+  }
+  
+  function closeAddConnectionModal() {
+    const modal = document.getElementById('addConnectionModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.classList.remove('visible'), 250);
+  }
+  
+  function loadRecentContactsForConnectionModal() {
+    const results = document.getElementById('connectionSearchResults');
+    results.innerHTML = '<div class="search-option" style="color:#999; font-style:italic;">Loading recent contacts...</div>';
+    results.style.display = 'block';
+    
+    google.script.run.withSuccessHandler(function(contacts) {
+      renderConnectionSearchResults(contacts);
+    }).getRecentContacts();
+  }
+  
+  function handleConnectionSearch(event) {
+    const query = event.target.value.trim();
+    if (query.length < 2) {
+      loadRecentContactsForConnectionModal();
+      return;
+    }
+    
+    google.script.run.withSuccessHandler(function(contacts) {
+      renderConnectionSearchResults(contacts);
+    }).searchContacts(query);
+  }
+  
+  function renderConnectionSearchResults(contacts) {
+    const results = document.getElementById('connectionSearchResults');
+    results.innerHTML = '';
+    results.style.display = 'block';
+    
+    if (!contacts || contacts.length === 0) {
+      results.innerHTML = '<div class="search-option" style="color:#999;">No contacts found</div>';
+      return;
+    }
+    
+    // Filter out current contact
+    const currentId = currentContactRecord?.id;
+    const filtered = contacts.filter(c => c.id !== currentId);
+    
+    if (filtered.length === 0) {
+      results.innerHTML = '<div class="search-option" style="color:#999;">No other contacts found</div>';
+      return;
+    }
+    
+    filtered.slice(0, 15).forEach(contact => {
+      const f = contact.fields;
+      const name = `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
+      const div = document.createElement('div');
+      div.className = 'search-option';
+      div.innerHTML = `<strong>${name}</strong>${f.EmailAddress1 ? `<br><span style="font-size:11px; color:#666;">${f.EmailAddress1}</span>` : ''}`;
+      div.onclick = function() { selectConnectionTarget(contact.id, name); };
+      results.appendChild(div);
+    });
+  }
+  
+  function selectConnectionTarget(contactId, contactName) {
+    document.getElementById('targetConnectionContactId').value = contactId;
+    document.getElementById('targetContactNameConn').innerText = contactName;
+    
+    // Set current contact name
+    const f = currentContactRecord.fields;
+    const currentName = `${f.FirstName || ''} ${f.LastName || ''}`.trim();
+    document.getElementById('currentContactNameConn').innerText = currentName;
+    
+    // Populate role select and show step 2
+    populateConnectionRoleSelect();
+    
+    document.getElementById('connectionStep1').style.display = 'none';
+    document.getElementById('connectionStep2').style.display = 'flex';
+  }
+  
+  function populateConnectionRoleSelect() {
+    const select = document.getElementById('connectionRoleSelect');
+    select.innerHTML = '<option value="">-- Select relationship --</option>';
+    
+    connectionRoleTypes.forEach((pair, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      option.textContent = `${pair.role1} of this contact`;
+      select.appendChild(option);
+    });
+  }
+  
+  function backToConnectionStep1() {
+    document.getElementById('connectionStep1').style.display = 'flex';
+    document.getElementById('connectionStep2').style.display = 'none';
+  }
+  
+  function executeCreateConnection() {
+    const selectEl = document.getElementById('connectionRoleSelect');
+    const roleIndex = selectEl.value;
+    if (roleIndex === '') {
+      alert('Please select a relationship type');
+      return;
+    }
+    
+    const pair = connectionRoleTypes[parseInt(roleIndex)];
+    const contact1Id = currentContactRecord.id;
+    const contact2Id = document.getElementById('targetConnectionContactId').value;
+    
+    const btn = document.getElementById('confirmConnectionBtn');
+    btn.disabled = true;
+    btn.innerText = 'Creating...';
+    
+    google.script.run.withSuccessHandler(function(result) {
+      btn.disabled = false;
+      btn.innerText = 'Create Connection';
+      
+      if (result.success) {
+        closeAddConnectionModal();
+        loadConnections(currentContactRecord.id);
+      } else {
+        alert('Error: ' + (result.error || 'Failed to create connection'));
+      }
+    }).withFailureHandler(function(err) {
+      btn.disabled = false;
+      btn.innerText = 'Create Connection';
+      alert('Error: ' + err.message);
+    }).createConnection(contact1Id, contact2Id, pair.role1, pair.role2);
+  }
+  
+  function confirmDeactivateConnection(connectionId, contactName) {
+    document.getElementById('deactivateConnectionId').value = connectionId;
+    document.getElementById('deactivateConnectionName').innerText = unescapeHtml(contactName);
+    
+    const modal = document.getElementById('deactivateConnectionModal');
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
+  }
+  
+  function closeDeactivateConnectionModal() {
+    const modal = document.getElementById('deactivateConnectionModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.classList.remove('visible'), 250);
+  }
+  
+  function executeDeactivateConnection() {
+    const connectionId = document.getElementById('deactivateConnectionId').value;
+    
+    google.script.run.withSuccessHandler(function(result) {
+      closeDeactivateConnectionModal();
+      if (result.success) {
+        loadConnections(currentContactRecord.id);
+      } else {
+        alert('Error: ' + (result.error || 'Failed to remove connection'));
+      }
+    }).withFailureHandler(function(err) {
+      closeDeactivateConnectionModal();
+      alert('Error: ' + err.message);
+    }).deactivateConnection(connectionId);
   }
 
   // --- INLINE EDIT LOGIC ---

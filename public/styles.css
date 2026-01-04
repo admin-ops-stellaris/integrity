@@ -314,6 +314,28 @@
   .expand-link { margin-top: 5px; font-size: 10px; font-weight: 700; color: #999; cursor: pointer; text-decoration: underline; }
   .expand-link:hover { color: var(--color-trail); }
 
+  /* CONNECTIONS SECTION */
+  .connections-header { font-size: 13px; font-weight: 400; color: var(--color-trail); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .connections-list { padding-left: 0; list-style: none; margin: 0; }
+  .connection-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #EEE; font-size: 12px; }
+  .connection-item:last-child { border-bottom: none; }
+  .connection-info { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .connection-role-badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; text-transform: uppercase; background: var(--color-sky); color: var(--color-midnight); }
+  .connection-role-badge.parent, .connection-role-badge.child { background: #E8F5E9; color: #2E7D32; }
+  .connection-role-badge.sibling { background: #E3F2FD; color: #1565C0; }
+  .connection-role-badge.friend { background: #FFF3E0; color: #E65100; }
+  .connection-role-badge.employer, .connection-role-badge.employee { background: #F3E5F5; color: #7B1FA2; }
+  .connection-role-badge.referred, .connection-role-badge.referral { background: #FFEBEE; color: #C62828; }
+  .connection-role-badge.household { background: #ECEFF1; color: #455A64; }
+  .connection-name { color: var(--color-trail); cursor: pointer; }
+  .connection-name:hover { color: var(--color-star); text-decoration: underline; }
+  .connection-remove { color: #CCC; cursor: pointer; font-size: 14px; padding: 2px 6px; }
+  .connection-remove:hover { color: #C00; }
+  .connections-empty { font-size: 11px; color: #AAA; font-style: italic; padding: 8px 0; }
+  body.dark-mode .connection-item { border-color: #444; }
+  body.dark-mode .connection-name { color: #E8E6E1; }
+  body.dark-mode .connection-name:hover { color: var(--color-star); }
+
   /* INLINE EDIT STYLES (STACKED) */
   .edit-field-icon { display: none; }
   .edit-wrapper { display: flex; flex-direction: column; margin-top: 5px; width: 100%; background: #F9F9F9; padding: 10px; border-radius: 4px; box-sizing: border-box; }

@@ -557,6 +557,55 @@ app.post("/api/deleteOpportunity", async (req, res) => {
   }
 });
 
+// ==================== CONNECTIONS ====================
+
+app.post("/api/getConnectionsForContact", async (req, res) => {
+  try {
+    const [contactId] = req.body.args || [];
+    const connections = await airtable.getConnectionsForContact(contactId);
+    res.json(connections);
+  } catch (err) {
+    console.error("getConnectionsForContact error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getConnectionRoleTypes", async (req, res) => {
+  try {
+    const roleTypes = airtable.getConnectionRoleTypes();
+    res.json(roleTypes);
+  } catch (err) {
+    console.error("getConnectionRoleTypes error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/createConnection", async (req, res) => {
+  try {
+    const [contact1Id, contact2Id, record1Role, record2Role] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.createConnection(contact1Id, contact2Id, record1Role, record2Role, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("createConnection error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/deactivateConnection", async (req, res) => {
+  try {
+    const [connectionId] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.deactivateConnection(connectionId, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("deactivateConnection error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post("/api/processForm", async (req, res) => {
   try {
     const formData = req.body.args?.[0] || {};

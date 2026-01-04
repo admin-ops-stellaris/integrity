@@ -85,6 +85,15 @@
   .contact-form-grid .span-full { grid-column: 1 / -1; }
   .contact-form-grid .span-2 { grid-column: span 2; }
   .contact-form-grid textarea { height: 50px; resize: vertical; }
+  
+  /* New 60/40 split contact form layout */
+  .contact-form-split { display: flex; gap: 20px; }
+  .contact-form-left { flex: 3; display: flex; flex-direction: column; gap: 8px; }
+  .contact-form-right { flex: 2; display: flex; flex-direction: column; gap: 8px; border-left: 1px dashed var(--color-border); padding-left: 20px; }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .contact-form-left .field-group textarea { height: 60px; resize: vertical; }
+  .contact-form-split .field-group { margin-bottom: 0; }
   #genderOtherGroup.hidden { visibility: hidden; }
 
   /* CLICK-TO-EDIT FORM */
@@ -351,6 +360,98 @@
   body.dark-mode .connection-name:hover { color: var(--color-star); }
   body.dark-mode .connection-date { color: #777; }
   
+  /* Contact Quick-View Card */
+  .contact-quick-view {
+    position: fixed;
+    z-index: 1500;
+    background: var(--color-salt);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    min-width: 280px;
+    max-width: 320px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(5px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .contact-quick-view.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .quick-view-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .quick-view-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #FFF;
+    flex-shrink: 0;
+  }
+  .quick-view-name-section { flex: 1; min-width: 0; }
+  .quick-view-name { font-size: 15px; font-weight: 600; color: var(--color-trail); line-height: 1.3; }
+  .quick-view-preferred { font-size: 11px; color: #888; margin-top: 2px; }
+  .quick-view-details {
+    padding: 12px 15px;
+    font-size: 13px;
+    color: #555;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .quick-view-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .quick-view-detail-icon { font-size: 14px; width: 18px; text-align: center; opacity: 0.7; }
+  .quick-view-detail-value { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .quick-view-no-details { color: #AAA; font-style: italic; font-size: 12px; }
+  .quick-view-action {
+    padding: 0 15px 15px;
+  }
+  .btn-view-profile {
+    width: 100%;
+    padding: 10px 15px;
+    background: var(--color-midnight);
+    color: #FFF;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .btn-view-profile:hover { background: var(--color-trail); }
+  .btn-view-profile .arrow { font-size: 14px; }
+  .quick-view-footer {
+    padding: 8px 15px;
+    background: rgba(0,0,0,0.03);
+    border-top: 1px solid var(--color-border);
+    font-size: 10px;
+    color: #999;
+    border-radius: 0 0 8px 8px;
+  }
+  body.dark-mode .contact-quick-view { background: #2a2a2a; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+  body.dark-mode .quick-view-header { border-color: #444; }
+  body.dark-mode .quick-view-name { color: #E8E6E1; }
+  body.dark-mode .quick-view-details { color: #CCC; }
+  body.dark-mode .quick-view-footer { background: rgba(255,255,255,0.05); border-color: #444; }
+
   /* Connection Modal Styling */
   .conn-modal-btn { padding: 8px 20px !important; min-width: 100px !important; width: auto !important; }
   .connection-modal-remove { display: flex; align-items: center; justify-content: flex-end; gap: 15px; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #ddd; }

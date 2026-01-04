@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="/styles.css?v=27">
+    <link rel="stylesheet" href="/styles.css?v=28">
   </head>
   <body>
     <div class="app-header">
@@ -60,36 +60,50 @@
             <div class="profile-top" id="profileTop" onclick="handleFormClick(event)">
               <div class="edit-hint"><span class="edit-hint-icon">✎</span> Click to edit</div>
               <span id="editBtn" style="display:none;"></span>
-              <div class="contact-form-grid">
-                <div class="field-group"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
-                <div class="field-group"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
-                <div class="field-group"><label>Last Name</label><input type="text" name="lastName" id="lastName" class="locked" readonly required></div>
-                <div class="field-group"><label>Preferred</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
-                <div class="field-group"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
-                <div class="field-group"><label>Date of Birth</label><input type="text" name="dateOfBirth" id="dateOfBirth" class="locked" readonly placeholder="DD/MM/YYYY"></div>
-                <div class="field-group">
-                  <label>Gender</label>
-                  <select name="gender" id="gender" class="locked" disabled onchange="handleGenderChange()">
-                    <option value=""></option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
-                    <option value="Other (specify)">Other (specify)</option>
-                  </select>
+              <div class="contact-form-split">
+                <div class="contact-form-left">
+                  <div class="form-row-3">
+                    <div class="field-group"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
+                    <div class="field-group"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
+                    <div class="field-group"><label>Last Name</label><input type="text" name="lastName" id="lastName" class="locked" readonly required></div>
+                  </div>
+                  <div class="form-row-3">
+                    <div class="field-group"><label>Preferred</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
+                    <div class="field-group">
+                      <label>Gender</label>
+                      <select name="gender" id="gender" class="locked" disabled onchange="handleGenderChange()">
+                        <option value=""></option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                        <option value="Other (specify)">Other (specify)</option>
+                      </select>
+                    </div>
+                    <div class="field-group" id="genderOtherGroup">
+                      <label>Gender - Other</label>
+                      <input type="text" name="genderOther" id="genderOther" class="locked" readonly placeholder="Specify">
+                    </div>
+                  </div>
+                  <div class="field-group"><label>Notes</label><textarea name="notes" id="notes" class="locked" readonly></textarea></div>
                 </div>
-                <div class="field-group hidden" id="genderOtherGroup">
-                  <label>Gender - Other</label>
-                  <input type="text" name="genderOther" id="genderOther" class="locked" readonly placeholder="Specify">
+                <div class="contact-form-right">
+                  <div class="form-row-2">
+                    <div class="field-group"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
+                    <div class="field-group"><label>Date of Birth</label><input type="text" name="dateOfBirth" id="dateOfBirth" class="locked" readonly placeholder="DD/MM/YYYY"></div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="field-group"><label>Email</label><input type="email" name="email1" id="email1" class="locked" readonly></div>
+                    <div class="field-group"><label>Email Note</label><input type="text" name="email1Comment" id="email1Comment" class="locked" readonly></div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="field-group"><label>Email 2</label><input type="email" name="email2" id="email2" class="locked" readonly></div>
+                    <div class="field-group"><label>Email 2 Note</label><input type="text" name="email2Comment" id="email2Comment" class="locked" readonly></div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="field-group"><label>Email 3</label><input type="email" name="email3" id="email3" class="locked" readonly></div>
+                    <div class="field-group"><label>Email 3 Note</label><input type="text" name="email3Comment" id="email3Comment" class="locked" readonly></div>
+                  </div>
                 </div>
-                <div class="field-group"><label>Email</label><input type="email" name="email1" id="email1" class="locked" readonly></div>
-                <div class="field-group"><label>Email 2</label><input type="email" name="email2" id="email2" class="locked" readonly></div>
-                <div class="field-group"><label>Email 3</label><input type="email" name="email3" id="email3" class="locked" readonly></div>
-                <div class="field-group"></div>
-                <div class="field-group"><label>Email Note</label><input type="text" name="email1Comment" id="email1Comment" class="locked" readonly></div>
-                <div class="field-group"><label>Email 2 Note</label><input type="text" name="email2Comment" id="email2Comment" class="locked" readonly></div>
-                <div class="field-group"><label>Email 3 Note</label><input type="text" name="email3Comment" id="email3Comment" class="locked" readonly></div>
-                <div class="field-group"></div>
-                <div class="field-group span-full"><label>Notes</label><textarea name="notes" id="notes" class="locked" readonly></textarea></div>
               </div>
             </div>
             <div id="actionRow" class="save-row">
@@ -300,6 +314,22 @@
 
           </div>
         </div>
+      </div>
+
+      <!-- Contact Quick-View Card -->
+      <div id="contactQuickView" class="contact-quick-view">
+        <div class="quick-view-header">
+          <div class="quick-view-avatar" id="quickViewAvatar"></div>
+          <div class="quick-view-name-section">
+            <div class="quick-view-name" id="quickViewName"></div>
+            <div class="quick-view-preferred" id="quickViewPreferred"></div>
+          </div>
+        </div>
+        <div class="quick-view-details" id="quickViewDetails"></div>
+        <div class="quick-view-action">
+          <button type="button" class="btn-view-profile" onclick="navigateFromQuickView()">View Full Profile <span class="arrow">→</span></button>
+        </div>
+        <div class="quick-view-footer" id="quickViewFooter"></div>
       </div>
 
       <!-- Deactivate Connection Confirm Modal -->
@@ -805,7 +835,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=40"></script>
-    <script src="/app.js?v=40"></script>
+    <script src="/api-bridge.js?v=42"></script>
+    <script src="/app.js?v=42"></script>
   </body>
 </html>

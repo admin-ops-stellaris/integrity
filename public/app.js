@@ -319,6 +319,193 @@
     return colors[Math.abs(hash) % colors.length];
   }
 
+  // --- CONTACT QUICK-VIEW CARD ---
+  let quickViewContactId = null;
+  let quickViewHoverTimeout = null;
+  let isQuickViewHovered = false;
+
+  function showContactQuickView(contactId, triggerElement) {
+    if (!contactId) return;
+    quickViewContactId = contactId;
+    
+    const card = document.getElementById('contactQuickView');
+    const rect = triggerElement.getBoundingClientRect();
+    
+    // Position card below trigger, centered if possible
+    let left = rect.left + (rect.width / 2) - 150;
+    let top = rect.bottom + 8;
+    
+    // Keep within viewport bounds
+    if (left < 10) left = 10;
+    if (left + 320 > window.innerWidth - 10) left = window.innerWidth - 330;
+    if (top + 300 > window.innerHeight) {
+      // Show above instead
+      top = rect.top - 8;
+      card.style.transform = 'translateY(-100%)';
+    } else {
+      card.style.transform = 'translateY(0)';
+    }
+    
+    card.style.left = left + 'px';
+    card.style.top = top + 'px';
+    
+    // Show loading state
+    document.getElementById('quickViewName').textContent = 'Loading...';
+    document.getElementById('quickViewPreferred').textContent = '';
+    document.getElementById('quickViewAvatar').textContent = '...';
+    document.getElementById('quickViewAvatar').style.backgroundColor = '#999';
+    document.getElementById('quickViewDetails').innerHTML = '';
+    document.getElementById('quickViewFooter').textContent = '';
+    
+    card.classList.add('visible');
+    
+    // Fetch contact data
+    google.script.run.withSuccessHandler(function(contact) {
+      if (!contact || !contact.fields || quickViewContactId !== contactId) return;
+      
+      const f = contact.fields;
+      const fullName = f['Calculated Name'] || 
+        `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
+      const initials = getInitials(f.FirstName, f.LastName);
+      const avatarColor = getAvatarColor(fullName);
+      
+      // Update header
+      document.getElementById('quickViewName').textContent = fullName;
+      document.getElementById('quickViewAvatar').textContent = initials;
+      document.getElementById('quickViewAvatar').style.backgroundColor = avatarColor;
+      
+      // Show preferred name if different from first name
+      const preferred = f.PreferredName;
+      if (preferred && preferred.toLowerCase() !== (f.FirstName || '').toLowerCase()) {
+        document.getElementById('quickViewPreferred').textContent = `Preferred: ${preferred}`;
+      } else {
+        document.getElementById('quickViewPreferred').textContent = '';
+      }
+      
+      // Build details
+      let detailsHtml = '';
+      if (f.Mobile) {
+        detailsHtml += `<div class="quick-view-detail-row"><span class="quick-view-detail-icon">📱</span><span class="quick-view-detail-value">${f.Mobile}</span></div>`;
+      }
+      if (f.EmailAddress1) {
+        detailsHtml += `<div class="quick-view-detail-row"><span class="quick-view-detail-icon">✉️</span><span class="quick-view-detail-value">${f.EmailAddress1}</span></div>`;
+      }
+      if (!f.Mobile && !f.EmailAddress1) {
+        detailsHtml = '<div class="quick-view-no-details">No contact details available</div>';
+      }
+      document.getElementById('quickViewDetails').innerHTML = detailsHtml;
+      
+      // Show last modified
+      const modifiedOn = f['Modified On (Web App)'] || f['Last Modified'];
+      if (modifiedOn) {
+        const modDate = new Date(modifiedOn);
+        const now = new Date();
+        const diffMs = now - modDate;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        let relativeTime;
+        if (diffMins < 1) relativeTime = 'Just now';
+        else if (diffMins < 60) relativeTime = `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+        else if (diffHours < 24) relativeTime = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        else if (diffDays === 1) relativeTime = 'Yesterday';
+        else if (diffDays < 7) relativeTime = `${diffDays} days ago`;
+        else {
+          const day = String(modDate.getDate()).padStart(2, '0');
+          const month = modDate.toLocaleString('en', { month: 'short' });
+          const year = modDate.getFullYear();
+          relativeTime = `${day} ${month} ${year}`;
+        }
+        document.getElementById('quickViewFooter').textContent = `Last modified: ${relativeTime}`;
+      } else {
+        document.getElementById('quickViewFooter').textContent = '';
+      }
+    }).getContactById(contactId);
+  }
+
+  function hideContactQuickView() {
+    if (isQuickViewHovered) return;
+    const card = document.getElementById('contactQuickView');
+    card.classList.remove('visible');
+    quickViewContactId = null;
+  }
+
+  window.navigateFromQuickView = function() {
+    if (!quickViewContactId) return;
+    const contactId = quickViewContactId;
+    hideContactQuickView();
+    loadPanelRecord('Contacts', contactId);
+  };
+
+  // Setup hover behavior for quick-view card itself
+  document.addEventListener('DOMContentLoaded', function() {
+    const card = document.getElementById('contactQuickView');
+    if (card) {
+      card.addEventListener('mouseenter', function() {
+        isQuickViewHovered = true;
+        if (quickViewHoverTimeout) clearTimeout(quickViewHoverTimeout);
+      });
+      card.addEventListener('mouseleave', function() {
+        isQuickViewHovered = false;
+        quickViewHoverTimeout = setTimeout(hideContactQuickView, 200);
+      });
+    }
+  });
+
+  // Attach quick-view to elements with data-quick-view-contact attribute
+  function attachQuickViewToElement(element, contactId) {
+    element.setAttribute('data-quick-view-contact', contactId);
+    element.addEventListener('mouseenter', function(e) {
+      if (quickViewHoverTimeout) clearTimeout(quickViewHoverTimeout);
+      quickViewHoverTimeout = setTimeout(function() {
+        showContactQuickView(contactId, element);
+      }, 300);
+    });
+    element.addEventListener('mouseleave', function(e) {
+      if (quickViewHoverTimeout) clearTimeout(quickViewHoverTimeout);
+      quickViewHoverTimeout = setTimeout(hideContactQuickView, 200);
+    });
+  }
+
+  // Close quick-view on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const card = document.getElementById('contactQuickView');
+      if (card && card.classList.contains('visible')) {
+        isQuickViewHovered = false;
+        hideContactQuickView();
+      }
+    }
+  });
+
+  // Close quick-view on click outside
+  document.addEventListener('click', function(e) {
+    const card = document.getElementById('contactQuickView');
+    if (card && card.classList.contains('visible')) {
+      if (!card.contains(e.target) && !e.target.hasAttribute('data-quick-view-contact')) {
+        isQuickViewHovered = false;
+        hideContactQuickView();
+      }
+    }
+  });
+
+  // Event delegation for panel contact links (Primary Applicant, Applicants, Guarantors)
+  document.addEventListener('mouseover', function(e) {
+    const link = e.target.closest('.panel-contact-link');
+    if (link && !link.hasAttribute('data-quick-view-contact')) {
+      const contactId = link.getAttribute('data-contact-id');
+      if (contactId) {
+        attachQuickViewToElement(link, contactId);
+        // Trigger the hover immediately
+        if (quickViewHoverTimeout) clearTimeout(quickViewHoverTimeout);
+        quickViewHoverTimeout = setTimeout(function() {
+          showContactQuickView(contactId, link);
+        }, 300);
+      }
+    }
+  });
+
   function checkUserIdentity() {
     google.script.run.withSuccessHandler(function(email) {
        const display = email ? email : "Unknown";
@@ -2324,8 +2511,11 @@ Best wishes,
      const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
 
      if (spouseName && spouseId) {
-        statusEl.innerHTML = `Spouse: <a class="data-link" onclick="loadPanelRecord('Contacts', '${spouseId}')">${spouseName}</a>`;
-        linkEl.innerText = "Edit"; 
+        statusEl.innerHTML = `Spouse: <span class="data-link spouse-quick-view-link" data-contact-id="${spouseId}">${spouseName}</span>`;
+        linkEl.innerText = "Edit";
+        // Attach quick-view to spouse name
+        const spouseLink = statusEl.querySelector('.spouse-quick-view-link');
+        if (spouseLink) attachQuickViewToElement(spouseLink, spouseId);
      } else {
         statusEl.innerHTML = "Single";
         linkEl.innerText = "Edit"; 
@@ -2543,12 +2733,17 @@ Best wishes,
       li.addEventListener('click', function(e) {
         if (e.target.classList.contains('connection-name')) {
           e.stopPropagation();
-          const contactId = e.target.getAttribute('data-contact-id');
-          if (contactId) loadPanelRecord('Contacts', contactId);
+          // Let quick-view handle navigation
         } else {
           openConnectionDetailsModal(conn);
         }
       });
+      
+      // Attach quick-view to the connection name
+      const nameEl = li.querySelector('.connection-name');
+      if (nameEl && conn.otherContactId) {
+        attachQuickViewToElement(nameEl, conn.otherContactId);
+      }
       
       list.appendChild(li);
     };
@@ -2605,12 +2800,17 @@ Best wishes,
         subLi.addEventListener('click', function(e) {
           if (e.target.classList.contains('connection-name')) {
             e.stopPropagation();
-            const contactId = e.target.getAttribute('data-contact-id');
-            if (contactId) loadPanelRecord('Contacts', contactId);
+            // Let quick-view handle navigation
           } else {
             openConnectionDetailsModal(conn);
           }
         });
+        
+        // Attach quick-view to the connection name
+        const nameEl = subLi.querySelector('.connection-name');
+        if (nameEl && conn.otherContactId) {
+          attachQuickViewToElement(nameEl, conn.otherContactId);
+        }
         
         subList.appendChild(subLi);
       });
@@ -3770,7 +3970,7 @@ Best wishes,
         if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {
           let linkHtml = '';
           if (item.value.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
-          else item.value.forEach(link => { linkHtml += `<a class="data-link" onclick="event.stopPropagation(); loadPanelRecord('${link.table}', '${link.id}')">${link.name}</a>`; });
+          else item.value.forEach(link => { linkHtml += `<span class="data-link panel-contact-link" data-contact-id="${link.id}" data-contact-table="${link.table}">${link.name}</span>`; });
           return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleLinkedEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span>${linkHtml}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><div id="chip_container_${item.key}" class="link-chip-container"></div><input type="text" placeholder="Add contact..." class="link-search-input" onkeyup="handleLinkedSearch(event, '${item.key}')"><div id="error_${item.key}" class="input-error"></div><div id="results_${item.key}" class="link-results"></div><div class="edit-btn-row" style="margin-top:10px;"><button onclick="cancelLinkedEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveLinkedEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
         }
         if (item.type === 'link') {

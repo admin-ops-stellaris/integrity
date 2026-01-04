@@ -2406,9 +2406,33 @@ Best wishes,
       return;
     }
     
+    // Role display names with "of" suffix
+    const roleDisplayMap = {
+      'household representative': 'Household Representative of',
+      'household member': 'Household Member of',
+      'parent': 'Parent of',
+      'child': 'Child of',
+      'sibling': 'Sibling of',
+      'friend': 'Friend of',
+      'employer of': 'Employer of',
+      'employee of': 'Employee of',
+      'referred by': 'Referred by',
+      'has referred': 'Has Referred',
+      'referred to': 'Referred to',
+      'received referral': 'Received Referral from'
+    };
+    
+    const getDisplayRole = (role) => {
+      const r = (role || '').toLowerCase().trim();
+      return roleDisplayMap[r] || role;
+    };
+    
     // Define role ordering for left and right columns
     const leftRoles = ['Referred by', 'Household Representative', 'Household Member', 'Parent', 'Child', 'Sibling', 'Employer of', 'Employee of'];
     const rightRoles = ['Friend', 'Has Referred', 'Referred to', 'Received Referral'];
+    
+    // Roles to group when count > 2
+    const groupableRoles = ['friend', 'has referred'];
     
     // Sort connections into left and right buckets
     const leftConns = [];
@@ -2424,7 +2448,6 @@ Best wishes,
       } else if (isRight) {
         rightConns.push(conn);
       } else {
-        // Default to left for unknown roles
         leftConns.push(conn);
       }
     });
@@ -2444,32 +2467,118 @@ Best wishes,
     sortByRolePriority(leftConns, leftRoles);
     sortByRolePriority(rightConns, rightRoles);
     
-    // Render function
-    const renderToList = (list, conns) => {
-      if (conns.length === 0) return;
+    // Group connections by role for groupable roles
+    const groupByRole = (conns) => {
+      const groups = {};
+      const ungrouped = [];
+      
       conns.forEach(conn => {
-        const li = document.createElement('li');
-        li.className = 'connection-item';
+        const role = (conn.myRole || '').toLowerCase().trim();
+        const isGroupable = groupableRoles.some(g => role === g);
         
-        const badgeClass = getRoleBadgeClass(conn.myRole);
+        if (isGroupable) {
+          if (!groups[role]) groups[role] = [];
+          groups[role].push(conn);
+        } else {
+          ungrouped.push(conn);
+        }
+      });
+      
+      return { groups, ungrouped };
+    };
+    
+    // Render individual connection
+    const renderSingleConnection = (list, conn) => {
+      const li = document.createElement('li');
+      li.className = 'connection-item';
+      
+      const badgeClass = getRoleBadgeClass(conn.myRole);
+      const displayRole = getDisplayRole(conn.myRole);
+      const nameClick = conn.otherContactId 
+        ? `onclick="loadPanelRecord('Contacts', '${conn.otherContactId}')"`
+        : '';
+      
+      li.innerHTML = `
+        <div class="connection-info">
+          <span class="connection-role-badge ${badgeClass}">${displayRole}</span>
+          <span class="connection-name" ${nameClick}>${conn.otherContactName}</span>
+        </div>
+        <span class="connection-remove" onclick="confirmDeactivateConnection('${conn.id}', '${escapeHtmlForAttr(conn.otherContactName)}')" title="Remove connection">×</span>
+      `;
+      list.appendChild(li);
+    };
+    
+    // Render grouped connections
+    const renderGroupedConnections = (list, role, conns) => {
+      if (conns.length === 0) return;
+      
+      const badgeClass = getRoleBadgeClass(role);
+      const groupId = `conn-group-${role.replace(/\s+/g, '-')}`;
+      
+      // Header text
+      const headerText = role === 'friend' 
+        ? `Friend of ${conns.length} Contacts`
+        : `Has Referred ${conns.length} Contacts`;
+      
+      const li = document.createElement('li');
+      li.className = 'connection-group';
+      li.innerHTML = `
+        <div class="connection-group-header" onclick="toggleConnectionGroup('${groupId}')">
+          <span class="connection-role-badge ${badgeClass}">${headerText}</span>
+          <span class="connection-group-toggle" id="${groupId}-toggle">▼</span>
+        </div>
+        <ul class="connection-group-list" id="${groupId}" style="display: none;"></ul>
+      `;
+      list.appendChild(li);
+      
+      const subList = li.querySelector(`#${groupId}`);
+      conns.forEach(conn => {
+        const subLi = document.createElement('li');
+        subLi.className = 'connection-subitem';
         const nameClick = conn.otherContactId 
           ? `onclick="loadPanelRecord('Contacts', '${conn.otherContactId}')"`
           : '';
-        
-        li.innerHTML = `
-          <div class="connection-info">
-            <span class="connection-role-badge ${badgeClass}">${conn.myRole}</span>
-            <span class="connection-name" ${nameClick}>${conn.otherContactName}</span>
-          </div>
-          <span class="connection-remove" onclick="confirmDeactivateConnection('${conn.id}', '${escapeHtmlForAttr(conn.otherContactName)}')" title="Remove connection">×</span>
+        subLi.innerHTML = `
+          <span class="connection-name" ${nameClick}>${conn.otherContactName}</span>
+          <span class="connection-remove" onclick="confirmDeactivateConnection('${conn.id}', '${escapeHtmlForAttr(conn.otherContactName)}')" title="Remove">×</span>
         `;
-        list.appendChild(li);
+        subList.appendChild(subLi);
+      });
+    };
+    
+    // Render function with grouping logic
+    const renderToList = (list, conns) => {
+      if (conns.length === 0) return;
+      
+      const { groups, ungrouped } = groupByRole(conns);
+      
+      // Render ungrouped first
+      ungrouped.forEach(conn => renderSingleConnection(list, conn));
+      
+      // Render grouped (only if more than 2)
+      Object.keys(groups).forEach(role => {
+        const roleConns = groups[role];
+        if (roleConns.length > 2) {
+          renderGroupedConnections(list, role, roleConns);
+        } else {
+          roleConns.forEach(conn => renderSingleConnection(list, conn));
+        }
       });
     };
     
     renderToList(leftList, leftConns);
     renderToList(rightList, rightConns);
   }
+  
+  window.toggleConnectionGroup = function(groupId) {
+    const list = document.getElementById(groupId);
+    const toggle = document.getElementById(groupId + '-toggle');
+    if (list && toggle) {
+      const isHidden = list.style.display === 'none';
+      list.style.display = isHidden ? 'block' : 'none';
+      toggle.textContent = isHidden ? '▲' : '▼';
+    }
+  };
   
   function getRoleBadgeClass(role) {
     if (!role) return '';

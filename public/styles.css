@@ -345,6 +345,18 @@
   body.dark-mode .connection-item { border-color: #444; }
   body.dark-mode .connection-name { color: #E8E6E1; }
   body.dark-mode .connection-name:hover { color: var(--color-star); }
+  
+  /* Connection Groups */
+  .connection-group { padding: 6px 0; border-bottom: 1px dashed #EEE; }
+  .connection-group:last-child { border-bottom: none; }
+  .connection-group-header { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .connection-group-header:hover { opacity: 0.8; }
+  .connection-group-toggle { font-size: 10px; color: #888; }
+  .connection-group-list { padding-left: 12px; margin: 8px 0 0 0; list-style: none; }
+  .connection-subitem { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px dotted #EEE; }
+  .connection-subitem:last-child { border-bottom: none; }
+  body.dark-mode .connection-group { border-color: #444; }
+  body.dark-mode .connection-subitem { border-color: #444; }
 
   /* INLINE EDIT STYLES (STACKED) */
   .edit-field-icon { display: none; }

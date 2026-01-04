@@ -877,9 +877,9 @@
             <div class="evidence-email-dropdown">
               <button type="button" class="evidence-btn evidence-email-btn" onclick="toggleEvidenceEmailMenu()">✉️ Email <span class="dropdown-arrow">▾</span></button>
               <div id="evidenceEmailMenu" class="evidence-dropdown-menu">
+                <button onclick="generateEvidenceEmail('appointment')">Appointment Confirmation</button>
                 <button onclick="generateEvidenceEmail('initial')">Initial Request</button>
                 <button onclick="generateEvidenceEmail('subsequent')">Subsequent Request</button>
-                <button onclick="generateEvidenceEmail('appointment')">Appointment Confirmation</button>
               </div>
             </div>
           </div>
@@ -991,7 +991,7 @@
           <h3 id="evidenceEmailModalTitle">Email Preview</h3>
           <button type="button" class="close-panel" onclick="closeEvidenceEmailModal()">&times;</button>
         </div>
-        <div class="modal-body" style="padding:20px; flex:1; overflow-y:auto;">
+        <div class="modal-body" style="padding:20px; flex:1; overflow-y:auto; background:#FFF;">
           <div class="field-group" style="margin-bottom:15px;">
             <label>To</label>
             <input type="text" id="evidenceEmailTo" style="width:100%; padding:8px; border:1px solid #DDD; border-radius:4px;">
@@ -1008,7 +1008,7 @@
               <button class="ql-link"></button>
               <button class="ql-list" value="bullet"></button>
             </div>
-            <div id="evidenceEmailBody" style="height:300px; border:1px solid #DDD; border-radius:0 0 4px 4px;"></div>
+            <div id="evidenceEmailBody" style="height:300px; border:1px solid #DDD; border-radius:0 0 4px 4px; background:#FFF;"></div>
           </div>
           <p style="font-size:12px; color:#888; margin-top:10px;">
             <span id="evidenceEmailItemCount">0</span> outstanding item(s) will be marked as "Requested" when sent.

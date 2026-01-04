@@ -837,8 +837,8 @@
   .evidence-email-dropdown { position: relative; }
   .evidence-dropdown-menu { display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: #FFF; border: 1px solid var(--color-border); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; min-width: 180px; overflow: hidden; }
   .evidence-dropdown-menu.show { display: block; }
-  .evidence-dropdown-menu button { display: block; width: 100%; padding: 10px 16px; font-size: 13px; text-align: left; border: none; background: none; cursor: pointer; transition: background 0.15s; }
-  .evidence-dropdown-menu button:hover { background: var(--color-salt); }
+  .evidence-dropdown-menu button { display: block; width: 100%; padding: 12px 16px; font-size: 13px; text-align: left; border: none; background: #FFF; color: var(--color-trail); cursor: pointer; transition: background 0.15s, color 0.15s; font-weight: 500; }
+  .evidence-dropdown-menu button:hover { background: var(--color-midnight); color: #FFF; }
   .evidence-filter-label { font-size: 12px; color: #666; font-weight: 500; }
   .evidence-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; cursor: pointer; }
   .evidence-checkbox-label input { width: auto; margin: 0; }

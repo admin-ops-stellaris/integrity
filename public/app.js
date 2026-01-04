@@ -5053,16 +5053,16 @@ Best wishes,
       .withSuccessHandler(function(result) {
         if (result.success) {
           if (result.itemsCreated === 0) {
-            alert('No templates found for this opportunity type/lender. You can add custom items using the "+ Add Custom" button, or create templates in Airtable\'s "Evidence Templates" table.');
+            showAlert('info', 'No Templates Found', 'No templates found for this opportunity type/lender. You can add custom items using the "+ Add Custom" button, or create templates in Airtable\'s "Evidence Templates" table.');
             if (!hasExistingItems) {
               emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
             }
           } else {
-            alert(result.itemsCreated + ' item(s) added from templates.');
+            showAlert('success', 'Templates Added', result.itemsCreated + ' item(s) added from templates.');
             loadEvidenceItems();
           }
         } else {
-          alert('Error: ' + (result.error || 'Unknown error'));
+          showAlert('error', 'Error', result.error || 'Unknown error');
           if (!hasExistingItems) {
             emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
           }
@@ -5070,7 +5070,7 @@ Best wishes,
       })
       .withFailureHandler(function(err) {
         console.error('Error populating evidence:', err);
-        alert('Error populating evidence list');
+        showAlert('error', 'Error', 'Error populating evidence list');
         if (!hasExistingItems) {
           emptyState.innerHTML = '<p>No evidence items yet.</p><button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>';
         }
@@ -5259,43 +5259,40 @@ Best wishes,
     const contactName = currentContactRecord?.fields?.PreferredName || currentContactRecord?.fields?.FirstName || 'there';
     const contactEmail = currentContactRecord?.fields?.EmailAddress1 || '';
     
-    // Group by category - include ALL categories, not just a predefined list
-    const preferredOrder = ['Identification', 'Income', 'Assets', 'Liabilities', 'Refinance', 'Purchase & Property', 'Construction', 'Expenses'];
-    const grouped = {};
-    const allCategories = new Set();
+    // Build rich HTML items list - matching client view format with icons (no category headings)
+    const received = currentEvidenceItems.filter(i => i.status === 'Received');
+    const total = outstanding.length + received.length;
+    const pct = total > 0 ? Math.round((received.length / total) * 100) : 0;
     
+    // Helper to clean descriptions
+    const cleanDesc = (desc) => {
+      if (!desc) return '';
+      return desc.replace(/<p>/gi, '').replace(/<\/p>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<div>/gi, '').replace(/<\/div>/gi, ' ').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    };
+    
+    // Stellaris leaf icon
+    const leafIcon = `<img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" style="width:18px; height:18px; vertical-align:middle;">`;
+    
+    // Build progress bar and items list (matches client view)
+    let progressHtml = '';
+    progressHtml += `<div style="margin:15px 0;">`;
+    progressHtml += `<div style="display:inline-flex; align-items:center; gap:10px;">`;
+    progressHtml += leafIcon;
+    progressHtml += `<div style="width:200px; height:10px; background:#E0E0E0; border-radius:5px; overflow:hidden; display:inline-block; vertical-align:middle;">`;
+    progressHtml += `<div style="width:${pct}%; height:100%; background:#7B8B64; border-radius:5px;"></div>`;
+    progressHtml += `</div>`;
+    progressHtml += `<span style="font-weight:bold; color:#2C2622;">${pct}% (${received.length}/${total})</span>`;
+    progressHtml += `</div></div>`;
+    
+    // Build outstanding items with circle icon (no category headings)
+    let itemsHtml = '<ul style="margin:0; padding-left:0; list-style:none;">';
     outstanding.forEach(item => {
-      const cat = item.category || 'Other';
-      allCategories.add(cat);
-      if (!grouped[cat]) grouped[cat] = [];
-      grouped[cat].push(item);
+      const desc = cleanDesc(item.description);
+      itemsHtml += `<li style="margin-bottom:6px; color:#2C2622;">○ <strong>${item.name}</strong>`;
+      if (desc) itemsHtml += ` – ${desc}`;
+      itemsHtml += '</li>';
     });
-    
-    // Sort categories: preferred order first, then remaining alphabetically, 'Other' last
-    const sortedCategories = Array.from(allCategories).sort((a, b) => {
-      if (a === 'Other') return 1;
-      if (b === 'Other') return -1;
-      const aIdx = preferredOrder.indexOf(a);
-      const bIdx = preferredOrder.indexOf(b);
-      if (aIdx >= 0 && bIdx >= 0) return aIdx - bIdx;
-      if (aIdx >= 0) return -1;
-      if (bIdx >= 0) return 1;
-      return a.localeCompare(b);
-    });
-    
-    let itemsHtml = '';
-    sortedCategories.forEach(cat => {
-      if (!grouped[cat] || grouped[cat].length === 0) return;
-      itemsHtml += `<p><strong>${cat}</strong></p><ul>`;
-      grouped[cat].forEach(item => {
-        // Strip HTML from description for cleaner email
-        const desc = item.description ? item.description.replace(/<[^>]*>/g, '') : '';
-        itemsHtml += `<li><strong>${item.name}</strong>`;
-        if (desc) itemsHtml += ` – ${desc}`;
-        itemsHtml += '</li>';
-      });
-      itemsHtml += '</ul>';
-    });
+    itemsHtml += '</ul>';
     
     // Build email content based on type
     let subject, body, title;
@@ -5305,6 +5302,7 @@ Best wishes,
       subject = `Documents needed for your ${currentEvidenceOpportunityName}`;
       body = `<p>Hi ${contactName},</p>
 <p>Thank you for choosing Stellaris Finance! To get your application moving, we need the following documents:</p>
+${progressHtml}
 ${itemsHtml}
 <p>Simply reply to this email with the documents attached. If you have any questions, don't hesitate to reach out!</p>
 <p>Kind regards,</p>`;
@@ -5313,6 +5311,7 @@ ${itemsHtml}
       subject = `Quick follow-up: Documents still needed for ${currentEvidenceOpportunityName}`;
       body = `<p>Hi ${contactName},</p>
 <p>Just a quick follow-up on your application. We're still waiting on a few items:</p>
+${progressHtml}
 ${itemsHtml}
 <p>Once we have these, we can move to the next stage. Let me know if you need any help!</p>
 <p>Kind regards,</p>`;
@@ -5370,6 +5369,7 @@ ${apptDetails}`;
       
       if (outstanding.length > 0) {
         body += `<p>To make the most of our meeting, please send the following items beforehand if possible:</p>
+${progressHtml}
 ${itemsHtml}`;
       }
       

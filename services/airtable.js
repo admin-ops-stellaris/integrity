@@ -245,7 +245,55 @@ export async function searchContacts(query, statusFilter = null) {
     const records = await base("Contacts")
       .select({ filterByFormula: formula })
       .all();
-    return records.map(formatRecord);
+    
+    // Score and sort results by field priority
+    const scored = records.map(record => {
+      const f = record.fields;
+      let score = 0;
+      
+      // Field weights (higher = more important)
+      const fieldWeights = [
+        { value: f.FirstName, weight: 100, bonus: 50 },
+        { value: f.MiddleName, weight: 80, bonus: 30 },
+        { value: f.LastName, weight: 70, bonus: 25 },
+        { value: f.PreferredName, weight: 60, bonus: 20 },
+        { value: f.EmailAddress1, weight: 40, bonus: 10 },
+        { value: f.EmailAddress2, weight: 35, bonus: 10 },
+        { value: f.EmailAddress3, weight: 30, bonus: 10 },
+        { value: f.Mobile, weight: 25, bonus: 5 },
+        { value: f.Notes, weight: 5, bonus: 0 }
+      ];
+      
+      for (const term of terms) {
+        for (const field of fieldWeights) {
+          const val = (field.value || '').toLowerCase();
+          if (!val) continue;
+          
+          if (val === term) {
+            // Exact match - highest priority
+            score += field.weight + field.bonus + 20;
+          } else if (val.startsWith(term)) {
+            // Starts with match - high priority
+            score += field.weight + field.bonus;
+          } else if (val.includes(term)) {
+            // Contains match - normal priority
+            score += field.weight;
+          }
+        }
+      }
+      
+      return { record: formatRecord(record), score };
+    });
+    
+    // Sort by score descending, then alphabetically by name
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      const nameA = `${a.record.fields.FirstName || ''} ${a.record.fields.LastName || ''}`.toLowerCase();
+      const nameB = `${b.record.fields.FirstName || ''} ${b.record.fields.LastName || ''}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+    
+    return scored.map(s => s.record);
   } catch (err) {
     console.error("searchContacts error:", err.message);
     return [];

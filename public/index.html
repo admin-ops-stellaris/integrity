@@ -950,7 +950,7 @@
 
     <!-- Evidence Client View Modal -->
     <div id="evidenceClientViewModal" class="modal-overlay" style="z-index:1250;">
-      <div class="modal-content" style="width:800px; max-width:95vw; max-height:85vh; display:flex; flex-direction:column;">
+      <div class="modal-content" style="width:800px; max-width:95vw; height:auto; max-height:90vh; display:flex; flex-direction:column;">
         <div class="modal-header">
           <h3>Client View - Evidence List</h3>
           <button type="button" class="close-panel" onclick="closeEvidenceClientView()">&times;</button>
@@ -968,14 +968,14 @@
 
     <!-- Edit Evidence Item Modal -->
     <div id="editEvidenceItemModal" class="modal-overlay" style="z-index:1300;">
-      <div class="modal-content" style="width:750px; max-width:90vw;">
+      <div class="modal-content" style="width:750px; max-width:90vw; height:auto; max-height:90vh; display:flex; flex-direction:column;">
         <div class="modal-header">
           <h3>Edit Evidence Item</h3>
           <button type="button" class="close-panel" onclick="closeEditEvidenceItemModal()">&times;</button>
         </div>
-        <div class="modal-body" style="padding:20px;">
+        <div class="modal-body" style="padding:20px; flex:1; overflow-y:auto;">
           <input type="hidden" id="editEvidenceItemId">
-          <div class="field-group" style="margin-bottom:15px;">
+          <div class="field-group" style="margin-bottom:20px;">
             <label>Category</label>
             <select id="editEvidenceCategory">
               <option value="Identification">Identification</option>
@@ -989,11 +989,11 @@
               <option value="Other">Other</option>
             </select>
           </div>
-          <div class="field-group" style="margin-bottom:15px;">
+          <div class="field-group" style="margin-bottom:20px;">
             <label>Name</label>
             <input type="text" id="editEvidenceName" placeholder="e.g., Bank Statement">
           </div>
-          <div class="field-group" style="margin-bottom:15px;">
+          <div class="field-group" style="margin-bottom:20px;">
             <label>Description</label>
             <div id="editEvidenceDescToolbar">
               <span class="ql-formats">
@@ -1008,11 +1008,11 @@
                 <button class="ql-list" value="bullet"></button>
               </span>
             </div>
-            <div id="editEvidenceDescEditor" style="height:120px; background:#FFF; border:1px solid #DDD; border-top:none; border-radius:0 0 4px 4px;"></div>
+            <div id="editEvidenceDescEditor" style="height:180px; background:#FFF; border:1px solid #DDD; border-top:none; border-radius:0 0 4px 4px;"></div>
           </div>
-          <div class="field-group" style="margin-bottom:15px;">
+          <div class="field-group" style="margin-bottom:10px;">
             <label>Internal Notes (not visible to client)</label>
-            <textarea id="editEvidenceNotes" rows="3" style="width:100%; padding:10px; border:1px solid #DDD; border-radius:4px; font-family:inherit;"></textarea>
+            <textarea id="editEvidenceNotes" rows="4" style="width:100%; padding:10px; border:1px solid #DDD; border-radius:4px; font-family:inherit; box-sizing:border-box;"></textarea>
           </div>
         </div>
         <div class="modal-footer" style="display:flex; justify-content:space-between;">

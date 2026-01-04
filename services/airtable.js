@@ -191,17 +191,25 @@ function parseModifiedDate(modifiedText) {
   return new Date(0);
 }
 
-export async function getRecentContacts() {
+export async function getRecentContacts(statusFilter = null) {
   if (!base) return [];
   try {
+    // Build filter formula based on status
+    let filterFormula = null;
+    if (statusFilter && statusFilter !== 'All') {
+      filterFormula = `{Status} = "${statusFilter}"`;
+    }
+    
     // Fetch contacts sorted by "Modified On (Web App)" descending at Airtable level
-    // This ensures we get the most recently web-modified contacts first
-    const records = await base("Contacts")
-      .select({
-        maxRecords: 50,
-        sort: [{ field: "Modified On (Web App)", direction: "desc" }]
-      })
-      .all();
+    const selectOptions = {
+      maxRecords: 50,
+      sort: [{ field: "Modified On (Web App)", direction: "desc" }]
+    };
+    if (filterFormula) {
+      selectOptions.filterByFormula = filterFormula;
+    }
+    
+    const records = await base("Contacts").select(selectOptions).all();
     const formatted = records.map(formatRecord);
     
     // Secondary sort in JS by Modified formula field for better ordering
@@ -217,16 +225,22 @@ export async function getRecentContacts() {
   }
 }
 
-export async function searchContacts(query) {
+export async function searchContacts(query, statusFilter = null) {
   if (!base) return [];
-  if (!query || query.trim() === "") return getRecentContacts();
+  if (!query || query.trim() === "") return getRecentContacts(statusFilter);
   
   try {
     const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
     const searchConditions = terms.map(term => `SEARCH("${term}", {SEARCH_INDEX})`);
-    const formula = terms.length === 1 
+    
+    // Build formula with optional status filter
+    let formula = terms.length === 1 
       ? searchConditions[0]
       : `AND(${searchConditions.join(", ")})`;
+    
+    if (statusFilter && statusFilter !== 'All') {
+      formula = `AND(${formula}, {Status} = "${statusFilter}")`;
+    }
     
     const records = await base("Contacts")
       .select({ filterByFormula: formula })

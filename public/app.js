@@ -2,6 +2,33 @@
   let spouseSearchTimeout;
   let linkedSearchTimeout;
   let loadingTimer;
+  let contactStatusFilter = localStorage.getItem('contactStatusFilter') || 'Active';
+  
+  // Initialize status toggle on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    const saved = localStorage.getItem('contactStatusFilter') || 'Active';
+    contactStatusFilter = saved;
+    updateStatusToggleUI(saved);
+  });
+  
+  function setContactStatusFilter(status) {
+    contactStatusFilter = status;
+    localStorage.setItem('contactStatusFilter', status);
+    updateStatusToggleUI(status);
+    // Re-trigger search or reload
+    const query = document.getElementById('searchInput')?.value?.trim();
+    if (query && query.length > 0) {
+      handleSearch({ target: { value: query } });
+    } else {
+      loadContacts();
+    }
+  }
+  
+  function updateStatusToggleUI(status) {
+    document.querySelectorAll('.status-toggle-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.status === status);
+    });
+  }
   let pollInterval;
   let pollAttempts = 0;
   let panelHistory = []; 
@@ -2366,33 +2393,80 @@ Best wishes,
   }
   
   function renderConnectionsList(connections) {
-    const list = document.getElementById('connectionsList');
-    if (!list) return;
-    list.innerHTML = '';
+    const leftList = document.getElementById('connectionsListLeft');
+    const rightList = document.getElementById('connectionsListRight');
+    if (!leftList || !rightList) return;
+    leftList.innerHTML = '';
+    rightList.innerHTML = '';
     
     if (!connections || connections.length === 0) {
-      list.innerHTML = '<li class="connections-empty">No connections yet</li>';
+      leftList.innerHTML = '<li class="connections-empty">No connections yet</li>';
       return;
     }
     
+    // Define role ordering for left and right columns
+    const leftRoles = ['Referred by', 'Household Representative', 'Household Member', 'Parent', 'Child', 'Sibling', 'Employer of', 'Employee of'];
+    const rightRoles = ['Friend', 'Has Referred', 'Referred to', 'Received Referral'];
+    
+    // Sort connections into left and right buckets
+    const leftConns = [];
+    const rightConns = [];
+    
     connections.forEach(conn => {
-      const li = document.createElement('li');
-      li.className = 'connection-item';
+      const role = (conn.myRole || '').trim();
+      const isLeft = leftRoles.some(r => role.toLowerCase().includes(r.toLowerCase()));
+      const isRight = rightRoles.some(r => role.toLowerCase().includes(r.toLowerCase()));
       
-      const badgeClass = getRoleBadgeClass(conn.myRole);
-      const nameClick = conn.otherContactId 
-        ? `onclick="loadPanelRecord('Contacts', '${conn.otherContactId}')"`
-        : '';
-      
-      li.innerHTML = `
-        <div class="connection-info">
-          <span class="connection-role-badge ${badgeClass}">${conn.myRole}</span>
-          <span class="connection-name" ${nameClick}>${conn.otherContactName}</span>
-        </div>
-        <span class="connection-remove" onclick="confirmDeactivateConnection('${conn.id}', '${escapeHtmlForAttr(conn.otherContactName)}')" title="Remove connection">×</span>
-      `;
-      list.appendChild(li);
+      if (isLeft) {
+        leftConns.push(conn);
+      } else if (isRight) {
+        rightConns.push(conn);
+      } else {
+        // Default to left for unknown roles
+        leftConns.push(conn);
+      }
     });
+    
+    // Sort each column by role priority then name
+    const sortByRolePriority = (conns, roles) => {
+      return conns.sort((a, b) => {
+        const aRole = (a.myRole || '').toLowerCase();
+        const bRole = (b.myRole || '').toLowerCase();
+        const aIdx = roles.findIndex(r => aRole.includes(r.toLowerCase()));
+        const bIdx = roles.findIndex(r => bRole.includes(r.toLowerCase()));
+        if (aIdx !== bIdx) return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+        return (a.otherContactName || '').localeCompare(b.otherContactName || '');
+      });
+    };
+    
+    sortByRolePriority(leftConns, leftRoles);
+    sortByRolePriority(rightConns, rightRoles);
+    
+    // Render function
+    const renderToList = (list, conns) => {
+      if (conns.length === 0) return;
+      conns.forEach(conn => {
+        const li = document.createElement('li');
+        li.className = 'connection-item';
+        
+        const badgeClass = getRoleBadgeClass(conn.myRole);
+        const nameClick = conn.otherContactId 
+          ? `onclick="loadPanelRecord('Contacts', '${conn.otherContactId}')"`
+          : '';
+        
+        li.innerHTML = `
+          <div class="connection-info">
+            <span class="connection-role-badge ${badgeClass}">${conn.myRole}</span>
+            <span class="connection-name" ${nameClick}>${conn.otherContactName}</span>
+          </div>
+          <span class="connection-remove" onclick="confirmDeactivateConnection('${conn.id}', '${escapeHtmlForAttr(conn.otherContactName)}')" title="Remove connection">×</span>
+        `;
+        list.appendChild(li);
+      });
+    };
+    
+    renderToList(leftList, leftConns);
+    renderToList(rightList, rightConns);
   }
   
   function getRoleBadgeClass(role) {
@@ -3070,16 +3144,17 @@ Best wishes,
     closeOppPanel();
   }
   function handleSearch(event) {
-    const query = event.target.value; const status = document.getElementById('searchStatus');
+    const query = event.target.value; const statusEl = document.getElementById('searchStatus');
     clearTimeout(loadingTimer); 
-    if(query.length === 0) { status.innerText = ""; loadContacts(); return; }
-    clearTimeout(searchTimeout); status.innerText = "Typing...";
+    if(query.length === 0) { statusEl.innerText = ""; loadContacts(); return; }
+    clearTimeout(searchTimeout); statusEl.innerText = "Typing...";
     searchTimeout = setTimeout(() => {
-      status.innerText = "Searching...";
+      statusEl.innerText = "Searching...";
+      const statusFilterToSend = contactStatusFilter === 'All' ? null : contactStatusFilter;
       google.script.run.withSuccessHandler(function(records) {
-         status.innerText = records.length > 0 ? `Found ${records.length} matches` : "No matches found";
+         statusEl.innerText = records.length > 0 ? `Found ${records.length} matches` : "No matches found";
          renderList(records);
-      }).searchContacts(query);
+      }).searchContacts(query, statusFilterToSend);
     }, 500);
   }
   function loadContacts() {
@@ -3097,6 +3172,7 @@ Best wishes,
        `; 
     }, 4000);
 
+    const statusFilterToSend = contactStatusFilter === 'All' ? null : contactStatusFilter;
     google.script.run.withSuccessHandler(function(records) {
          clearTimeout(loadingTimer); document.getElementById('loading').style.display = 'none';
          if (!records || records.length === 0) { 
@@ -3104,7 +3180,7 @@ Best wishes,
            return; 
          }
          renderList(records);
-      }).getRecentContacts();
+      }).getRecentContacts(statusFilterToSend);
   }
   function renderList(records) {
     const list = document.getElementById('contactList'); 
@@ -3319,7 +3395,11 @@ Best wishes,
          const li = document.createElement('li'); li.className = `opp-item ${statusClass}`;
          const statusBadge = status ? `<span class="opp-status-badge ${statusClass}">${status}</span>` : '';
          const typeLabel = oppType ? `<span class="opp-type">${oppType}</span>` : '';
-         li.innerHTML = `<span class="opp-title">${name}${typeLabel}</span><span class="opp-role-wrapper">${statusBadge}<span class="opp-role">${role}</span></span>`;
+         const roleLabel = role ? `<span class="opp-role">${role}</span>` : '';
+         li.innerHTML = `
+           <span class="opp-title">${name}</span>
+           <div class="opp-meta-row">${typeLabel}${statusBadge}${roleLabel}</div>
+         `;
          li.onclick = function() { panelHistory = []; loadPanelRecord('Opportunities', opp.id); }; oppList.appendChild(li);
      });
   }

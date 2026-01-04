@@ -112,7 +112,10 @@
                       <span style="font-weight:500; color:#666;">Connections</span>
                       <span id="addConnectionLink" class="spouse-action-link" onclick="openAddConnectionModal()">+ Add</span>
                    </div>
-                   <ul id="connectionsList" class="connections-list"></ul>
+                   <div class="connections-two-col">
+                     <ul id="connectionsListLeft" class="connections-list connections-col"></ul>
+                     <ul id="connectionsListRight" class="connections-list connections-col"></ul>
+                   </div>
                  </div>
                  <div id="deleteSection" style="margin-top:auto; padding-top:20px; border-top:1px dashed #E0E0E0;">
                    <button type="button" class="btn-delete" onclick="confirmDeleteContact()">Delete Contact</button>
@@ -133,6 +136,11 @@
 
       <div class="column list-section">
         <input type="text" id="searchInput" placeholder="Search Contacts..." onkeyup="handleSearch(event)">
+        <div class="status-toggle-row">
+          <button type="button" class="status-toggle-btn active" data-status="Active" onclick="setContactStatusFilter('Active')">Active</button>
+          <button type="button" class="status-toggle-btn" data-status="Inactive" onclick="setContactStatusFilter('Inactive')">Inactive</button>
+          <button type="button" class="status-toggle-btn" data-status="All" onclick="setContactStatusFilter('All')">All</button>
+        </div>
         <div id="searchStatus" style="font-size:11px; color:#666; height:14px; margin-bottom:2px; text-align:right;"></div>
         <div id="loading">Loading directory...</div>
         <ul id="contactList"></ul>
@@ -803,7 +811,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=33"></script>
-    <script src="/app.js?v=33"></script>
+    <script src="/api-bridge.js?v=34"></script>
+    <script src="/app.js?v=34"></script>
   </body>
 </html>

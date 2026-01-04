@@ -282,7 +282,8 @@ app.post("/api/updateUserSignature", async (req, res) => {
 
 app.post("/api/getRecentContacts", async (req, res) => {
   try {
-    const contacts = await airtable.getRecentContacts();
+    const statusFilter = req.body.args?.[0] || null;
+    const contacts = await airtable.getRecentContacts(statusFilter);
     res.json(contacts);
   } catch (err) {
     console.error("getRecentContacts error:", err);
@@ -293,7 +294,8 @@ app.post("/api/getRecentContacts", async (req, res) => {
 app.post("/api/searchContacts", async (req, res) => {
   try {
     const query = req.body.args?.[0] || "";
-    const contacts = await airtable.searchContacts(query);
+    const statusFilter = req.body.args?.[1] || null;
+    const contacts = await airtable.searchContacts(query, statusFilter);
     res.json(contacts);
   } catch (err) {
     console.error("searchContacts error:", err);

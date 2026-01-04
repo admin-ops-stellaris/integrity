@@ -5106,7 +5106,7 @@ Best wishes,
     });
     
     // Build HTML - flat list without category headings (clients just want the list)
-    let html = '<ul style="margin:0; padding-left:20px; font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
+    let html = '<ul style="margin:0; padding-left:0; list-style:none; font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
     
     categoryOrder.forEach(cat => {
       if (!grouped[cat] || grouped[cat].length === 0) return;

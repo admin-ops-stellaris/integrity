@@ -431,6 +431,15 @@
     quickViewContactId = null;
   }
 
+  // Load a contact by ID into the main view
+  function loadContactById(contactId) {
+    google.script.run.withSuccessHandler(function(record) {
+      if (record && record.fields) {
+        selectContact(record);
+      }
+    }).getContactById(contactId);
+  }
+
   window.navigateFromQuickView = function() {
     if (!quickViewContactId) return;
     const contactId = quickViewContactId;

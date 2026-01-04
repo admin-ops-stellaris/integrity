@@ -18,8 +18,8 @@
   .user-email { font-size: 13px; color: var(--color-midnight); font-weight: 400; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.7; }
   .container { display: flex; gap: 20px; padding: 20px 30px; max-width: 95%; margin: 0 auto; width: 100%; box-sizing: border-box; flex: 1; overflow: hidden; position: relative; }
   .column { background: var(--color-salt); padding: 25px; border-radius: 4px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; overflow-y: auto; }
-  .form-section { flex: 2; display:flex; flex-direction: column; } 
-  .list-section { flex: 0.8; background: rgba(255, 255, 255, 0.95); } 
+  .form-section { flex: 2.15; display:flex; flex-direction: column; } 
+  .list-section { flex: 0.65; background: rgba(255, 255, 255, 0.95); } 
   h2 { margin-top: 0; color: var(--color-trail); font-family: var(--font-heading); font-size: 16px; letter-spacing: -0.3px; margin-bottom: 0; line-height: 1; font-weight: 400; }
   .form-subtitle { font-size: 12px; color: #888; font-style: italic; font-weight: 300; margin-left: 4px; }
 
@@ -456,7 +456,7 @@
   .conn-modal-btn { padding: 8px 20px !important; min-width: 100px !important; width: auto !important; }
   .connection-modal-remove { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
   .connection-modal-remove .remove-label { font-size: 12px; color: #888; }
-  .connection-modal-close { text-align: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid #ddd; }
+  .connection-modal-close { text-align: right; margin-top: 10px; padding-top: 15px; border-top: 1px solid #ddd; }
   body.dark-mode .connection-modal-remove { border-color: #444; }
   body.dark-mode .connection-modal-remove .remove-label { color: #777; }
   body.dark-mode .connection-modal-close { border-color: #444; }

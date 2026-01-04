@@ -5235,19 +5235,28 @@ Best wishes,
     openEvidenceClientView();
   };
 
+  let evidenceEmailQuill = null;
+  let pendingEvidenceEmailItemIds = [];
+  let currentEvidenceEmailType = null;
+  
   window.generateEvidenceEmail = function(type) {
     document.getElementById('evidenceEmailMenu').classList.remove('show');
     
     const outstanding = currentEvidenceItems.filter(i => i.status === 'Outstanding');
-    if (outstanding.length === 0) {
-      alert('No outstanding items to request!');
+    if (outstanding.length === 0 && type !== 'appointment') {
+      showAlert('info', 'No Items', 'No outstanding items to request!');
       return;
     }
     
-    // Get contact info from current opportunity context
-    const contactName = currentContactRecord?.fields?.FirstName || 'there';
+    currentEvidenceEmailType = type;
+    pendingEvidenceEmailItemIds = outstanding.map(i => i.id);
     
-    // Group by category
+    // Get contact info
+    const contactName = currentContactRecord?.fields?.PreferredName || currentContactRecord?.fields?.FirstName || 'there';
+    const contactEmail = currentContactRecord?.fields?.EmailAddress1 || '';
+    
+    // Group by category (maintaining order)
+    const categoryOrder = ['Identification', 'Income', 'Assets', 'Liabilities', 'Refinance', 'Purchase & Property', 'Construction', 'Expenses', 'Other'];
     const grouped = {};
     outstanding.forEach(item => {
       const cat = item.category || 'Other';
@@ -5256,42 +5265,139 @@ Best wishes,
     });
     
     let itemsHtml = '';
-    for (const cat in grouped) {
+    categoryOrder.forEach(cat => {
+      if (!grouped[cat] || grouped[cat].length === 0) return;
       itemsHtml += `<p><strong>${cat}</strong></p><ul>`;
       grouped[cat].forEach(item => {
+        // Strip HTML from description for cleaner email
+        const desc = item.description ? item.description.replace(/<[^>]*>/g, '') : '';
         itemsHtml += `<li><strong>${item.name}</strong>`;
-        if (item.description) itemsHtml += ` - <em>${item.description}</em>`;
+        if (desc) itemsHtml += ` – ${desc}`;
         itemsHtml += '</li>';
       });
       itemsHtml += '</ul>';
+    });
+    
+    // Build email content based on type
+    let subject, body, title;
+    
+    if (type === 'initial') {
+      title = 'Initial Request Email';
+      subject = `Documents needed for your ${currentEvidenceOpportunityName}`;
+      body = `<p>Hi ${contactName},</p>
+<p>Thank you for choosing Stellaris Finance! To get your application moving, we need the following documents:</p>
+${itemsHtml}
+<p>Simply reply to this email with the documents attached. If you have any questions, don't hesitate to reach out!</p>
+<p>Kind regards,</p>`;
+    } else if (type === 'subsequent') {
+      title = 'Subsequent Request Email';
+      subject = `Quick follow-up: Documents still needed for ${currentEvidenceOpportunityName}`;
+      body = `<p>Hi ${contactName},</p>
+<p>Just a quick follow-up on your application. We're still waiting on a few items:</p>
+${itemsHtml}
+<p>Once we have these, we can move to the next stage. Let me know if you need any help!</p>
+<p>Kind regards,</p>`;
+    } else if (type === 'appointment') {
+      title = 'Appointment Confirmation Email';
+      subject = `Your upcoming appointment – ${currentEvidenceOpportunityName}`;
+      
+      // Get appointment details from the opportunity if available
+      let apptDetails = '<p>[Appointment details will be inserted here]</p>';
+      
+      body = `<p>Hi ${contactName},</p>
+<p>This is to confirm your upcoming appointment with Stellaris Finance.</p>
+${apptDetails}`;
+      
+      if (outstanding.length > 0) {
+        body += `<p>To make the most of our meeting, please send the following items beforehand if possible:</p>
+${itemsHtml}`;
+      }
+      
+      body += `<p>We look forward to speaking with you!</p>
+<p>Kind regards,</p>`;
     }
     
-    const isInitial = type === 'initial';
-    const subject = isInitial 
-      ? `Documents needed for your ${currentEvidenceOpportunityName}`
-      : `Quick follow-up: Documents still needed for ${currentEvidenceOpportunityName}`;
+    // Populate modal
+    document.getElementById('evidenceEmailModalTitle').textContent = title;
+    document.getElementById('evidenceEmailTo').value = contactEmail;
+    document.getElementById('evidenceEmailSubject').value = subject;
+    document.getElementById('evidenceEmailItemCount').textContent = outstanding.length;
     
-    const body = isInitial
-      ? `<p>Hi ${contactName},</p><p>Thank you for choosing Stellaris Finance! To get your application moving, we need the following documents:</p>${itemsHtml}<p>Simply reply to this email with the documents attached. If you have any questions, don't hesitate to reach out!</p><p>Kind regards,</p>`
-      : `<p>Hi ${contactName},</p><p>Just a quick follow-up on your application. We're still waiting on a few items:</p>${itemsHtml}<p>Once we have these, we can move to the next stage. Let me know if you need any help!</p><p>Kind regards,</p>`;
+    // Open modal
+    const modal = document.getElementById('evidenceEmailModal');
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
     
-    // Mark items as requested
-    const itemIds = outstanding.map(i => i.id);
+    // Initialize Quill editor if needed
+    if (!evidenceEmailQuill) {
+      evidenceEmailQuill = new Quill('#evidenceEmailBody', {
+        theme: 'snow',
+        modules: {
+          toolbar: '#evidenceEmailToolbar'
+        }
+      });
+    }
+    
+    // Set content
+    evidenceEmailQuill.clipboard.dangerouslyPasteHTML(body);
+  };
+  
+  window.closeEvidenceEmailModal = function() {
+    const modal = document.getElementById('evidenceEmailModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.classList.remove('visible'), 200);
+    pendingEvidenceEmailItemIds = [];
+    currentEvidenceEmailType = null;
+  };
+  
+  window.sendEvidenceEmail = function() {
+    const to = document.getElementById('evidenceEmailTo').value.trim();
+    const subject = document.getElementById('evidenceEmailSubject').value.trim();
+    const body = evidenceEmailQuill ? evidenceEmailQuill.root.innerHTML : '';
+    
+    if (!to) {
+      showAlert('warning', 'Missing Recipient', 'Please enter an email address.');
+      return;
+    }
+    
+    const sendBtn = document.getElementById('evidenceEmailSendBtn');
+    sendBtn.textContent = 'Sending...';
+    sendBtn.disabled = true;
+    
+    // Send the email
     google.script.run
-      .withSuccessHandler(function() {
-        outstanding.forEach(item => {
-          item.requestedOn = new Date().toISOString();
-        });
-        renderEvidenceItems();
+      .withSuccessHandler(function(result) {
+        if (result && result.success) {
+          // Mark items as requested
+          if (pendingEvidenceEmailItemIds.length > 0) {
+            google.script.run
+              .withSuccessHandler(function() {
+                // Update local data
+                pendingEvidenceEmailItemIds.forEach(itemId => {
+                  const item = currentEvidenceItems.find(i => i.id === itemId);
+                  if (item) {
+                    item.requestedOn = new Date().toISOString();
+                  }
+                });
+                renderEvidenceItems();
+              })
+              .markEvidenceItemsAsRequested(pendingEvidenceEmailItemIds);
+          }
+          
+          closeEvidenceEmailModal();
+          showAlert('success', 'Email Sent', 'Email sent successfully! Outstanding items have been marked as requested.');
+        } else {
+          showAlert('error', 'Send Failed', result?.error || 'Failed to send email.');
+        }
+        sendBtn.textContent = 'Send Email';
+        sendBtn.disabled = false;
       })
-      .markEvidenceItemsAsRequested(itemIds);
-    
-    // Open email composer (you may want to use your existing email modal)
-    // For now, copy to clipboard as HTML
-    const fullEmail = `Subject: ${subject}\n\n${body.replace(/<[^>]*>/g, '')}`;
-    navigator.clipboard.writeText(fullEmail).then(() => {
-      alert(`${isInitial ? 'Initial' : 'Subsequent'} request email copied to clipboard!\n\nItems have been marked as "Requested".`);
-    });
+      .withFailureHandler(function(err) {
+        showAlert('error', 'Error', 'Failed to send email: ' + (err.message || 'Unknown error'));
+        sendBtn.textContent = 'Send Email';
+        sendBtn.disabled = false;
+      })
+      .sendEmail(to, subject, body);
   };
 
   // Add Evidence Item Modal

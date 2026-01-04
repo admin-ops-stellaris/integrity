@@ -879,6 +879,7 @@
               <div id="evidenceEmailMenu" class="evidence-dropdown-menu">
                 <button onclick="generateEvidenceEmail('initial')">Initial Request</button>
                 <button onclick="generateEvidenceEmail('subsequent')">Subsequent Request</button>
+                <button onclick="generateEvidenceEmail('appointment')">Appointment Confirmation</button>
               </div>
             </div>
           </div>
@@ -979,6 +980,43 @@
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeEvidenceClientView()">Close</button>
           <button type="button" class="btn-primary" onclick="copyEvidenceClientView()">Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Email Preview Modal -->
+    <div id="evidenceEmailModal" class="modal-overlay" style="z-index:1250;">
+      <div class="modal-content" style="width:700px; max-width:95vw; height:auto; max-height:90vh; display:flex; flex-direction:column;">
+        <div class="modal-header">
+          <h3 id="evidenceEmailModalTitle">Email Preview</h3>
+          <button type="button" class="close-panel" onclick="closeEvidenceEmailModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px; flex:1; overflow-y:auto;">
+          <div class="field-group" style="margin-bottom:15px;">
+            <label>To</label>
+            <input type="text" id="evidenceEmailTo" style="width:100%; padding:8px; border:1px solid #DDD; border-radius:4px;">
+          </div>
+          <div class="field-group" style="margin-bottom:15px;">
+            <label>Subject</label>
+            <input type="text" id="evidenceEmailSubject" style="width:100%; padding:8px; border:1px solid #DDD; border-radius:4px;">
+          </div>
+          <div class="field-group" style="margin-bottom:15px;">
+            <label>Message</label>
+            <div id="evidenceEmailToolbar" style="border:1px solid #DDD; border-bottom:none; border-radius:4px 4px 0 0; background:#F9F9F9;">
+              <button class="ql-bold"></button>
+              <button class="ql-italic"></button>
+              <button class="ql-link"></button>
+              <button class="ql-list" value="bullet"></button>
+            </div>
+            <div id="evidenceEmailBody" style="height:300px; border:1px solid #DDD; border-radius:0 0 4px 4px;"></div>
+          </div>
+          <p style="font-size:12px; color:#888; margin-top:10px;">
+            <span id="evidenceEmailItemCount">0</span> outstanding item(s) will be marked as "Requested" when sent.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeEvidenceEmailModal()">Cancel</button>
+          <button type="button" class="btn-primary" id="evidenceEmailSendBtn" onclick="sendEvidenceEmail()">Send Email</button>
         </div>
       </div>
     </div>

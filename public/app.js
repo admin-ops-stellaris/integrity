@@ -4998,13 +4998,27 @@ Best wishes,
       });
   };
 
+  let pendingDeleteEvidenceItemId = null;
+  
   window.deleteEvidenceItem = function() {
     const itemId = document.getElementById('editEvidenceItemId').value;
     const item = currentEvidenceItems.find(i => i.id === itemId);
     
-    if (!confirm(`Are you sure you want to delete "${item?.name || 'this item'}"?`)) {
-      return;
-    }
+    pendingDeleteEvidenceItemId = itemId;
+    document.getElementById('deleteEvidenceConfirmMessage').innerText = `Are you sure you want to delete "${item?.name || 'this item'}"? This action cannot be undone.`;
+    openModal('deleteEvidenceConfirmModal');
+  };
+  
+  window.closeDeleteEvidenceConfirmModal = function() {
+    closeModal('deleteEvidenceConfirmModal');
+    pendingDeleteEvidenceItemId = null;
+  };
+  
+  window.executeDeleteEvidenceItem = function() {
+    if (!pendingDeleteEvidenceItemId) return;
+    
+    const itemId = pendingDeleteEvidenceItemId;
+    closeDeleteEvidenceConfirmModal();
     
     google.script.run
       .withSuccessHandler(function(result) {
@@ -5012,12 +5026,12 @@ Best wishes,
           closeEditEvidenceItemModal();
           loadEvidenceItems();
         } else {
-          alert('Error: ' + (result.error || 'Unknown error'));
+          showAlert('error', 'Delete Failed', 'Error: ' + (result.error || 'Unknown error'));
         }
       })
       .withFailureHandler(function(err) {
         console.error('Error deleting evidence item:', err);
-        alert('Error deleting item');
+        showAlert('error', 'Error', 'Error deleting item');
       })
       .deleteEvidenceItem(itemId);
   };

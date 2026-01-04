@@ -856,7 +856,7 @@
         <div class="evidence-modal-toolbar">
           <div class="evidence-toolbar-left">
             <button type="button" class="evidence-btn" onclick="openAddEvidenceItemModal()">+ Add Custom Item</button>
-            <button type="button" class="evidence-btn" onclick="copyEvidenceToClipboard()">📋 Copy to Clipboard</button>
+            <button type="button" class="evidence-btn" onclick="openEvidenceClientView()">👁 View Client Version</button>
             <div class="evidence-email-dropdown">
               <button type="button" class="evidence-btn evidence-email-btn" onclick="toggleEvidenceEmailMenu()">✉️ Email <span class="dropdown-arrow">▾</span></button>
               <div id="evidenceEmailMenu" class="evidence-dropdown-menu">
@@ -944,6 +944,24 @@
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="closeAddEvidenceItemModal()">Cancel</button>
           <button type="button" class="btn-primary" onclick="submitNewEvidenceItem()">Add Item</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Client View Modal -->
+    <div id="evidenceClientViewModal" class="modal-overlay" style="z-index:1250;">
+      <div class="modal-content" style="width:800px; max-width:95vw; max-height:85vh; display:flex; flex-direction:column;">
+        <div class="modal-header">
+          <h3>Client View - Evidence List</h3>
+          <button type="button" class="close-panel" onclick="closeEvidenceClientView()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px; flex:1; overflow-y:auto;">
+          <p style="color:#888; font-size:13px; margin-bottom:15px;">This is how the list will appear when pasted into an email. Review and click "Copy to Clipboard" when ready.</p>
+          <div id="evidenceClientViewContent" style="background:#FFF; border:1px solid #DDD; border-radius:8px; padding:20px;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeEvidenceClientView()">Close</button>
+          <button type="button" class="btn-primary" onclick="copyEvidenceClientView()">Copy to Clipboard</button>
         </div>
       </div>
     </div>

@@ -5077,38 +5077,107 @@ Best wishes,
     }
   }
 
-  window.copyEvidenceToClipboard = function() {
-    const outstanding = currentEvidenceItems.filter(i => i.status === 'Outstanding');
-    if (outstanding.length === 0) {
-      alert('No outstanding items to copy!');
-      return;
+  // Build client-facing HTML for evidence list (no internal notes, no meta, no edit buttons)
+  function buildClientEvidenceMarkup() {
+    const filter = document.getElementById('evidenceStatusFilter').value;
+    const showNA = document.getElementById('evidenceShowNA').checked;
+    const outstandingFirst = document.getElementById('evidenceOutstandingFirst').checked;
+    
+    // Apply same filters as renderEvidenceItems
+    let itemsToRender = [...currentEvidenceItems];
+    if (outstandingFirst) {
+      const getPriority = (status) => status === 'Received' ? 2 : status === 'N/A' ? 3 : 1;
+      itemsToRender.sort((a, b) => getPriority(a.status) - getPriority(b.status));
     }
     
     // Group by category
+    const categoryOrder = ['Identification', 'Income', 'Assets', 'Liabilities', 'Refinance', 'Purchase & Property', 'Construction', 'Expenses', 'Other'];
     const grouped = {};
-    outstanding.forEach(item => {
+    
+    itemsToRender.forEach(item => {
+      // Apply filters
+      if (filter === 'outstanding' && item.status !== 'Outstanding') return;
+      if (filter === 'received' && item.status !== 'Received') return;
+      if (!showNA && item.status === 'N/A') return;
+      
       const cat = item.category || 'Other';
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(item);
     });
     
-    let text = '';
-    for (const cat in grouped) {
-      text += `${cat}:\n`;
+    // Build HTML
+    let html = '';
+    categoryOrder.forEach(cat => {
+      if (!grouped[cat] || grouped[cat].length === 0) return;
+      
+      html += `<div style="margin-bottom:20px;">`;
+      html += `<h4 style="margin:0 0 10px 0; font-size:14px; font-weight:bold; color:#19414C; border-bottom:1px solid #DDD; padding-bottom:5px;">${cat}</h4>`;
+      html += `<ul style="margin:0; padding-left:20px;">`;
+      
       grouped[cat].forEach(item => {
-        text += `  • ${item.name}`;
-        if (item.description) text += ` - ${item.description}`;
-        text += '\n';
+        const statusIcon = item.status === 'Received' ? '✓' : item.status === 'N/A' ? '—' : '○';
+        const statusColor = item.status === 'Received' ? '#7B8B64' : item.status === 'N/A' ? '#999' : '#2C2622';
+        const textStyle = item.status === 'N/A' ? 'text-decoration:line-through; color:#999;' : `color:${statusColor};`;
+        
+        let itemText = `<strong>${item.name || 'Item'}</strong>`;
+        if (item.description) {
+          // Keep HTML in description for links
+          itemText += ` – ${item.description}`;
+        }
+        
+        html += `<li style="margin-bottom:8px; ${textStyle}">${statusIcon} ${itemText}</li>`;
       });
-      text += '\n';
-    }
+      
+      html += `</ul></div>`;
+    });
     
-    navigator.clipboard.writeText(text.trim()).then(() => {
-      alert('Outstanding items copied to clipboard!');
+    return html || '<p style="color:#888;">No items to display.</p>';
+  }
+
+  window.openEvidenceClientView = function() {
+    const content = buildClientEvidenceMarkup();
+    document.getElementById('evidenceClientViewContent').innerHTML = content;
+    
+    const modal = document.getElementById('evidenceClientViewModal');
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
+  };
+
+  window.closeEvidenceClientView = function() {
+    const modal = document.getElementById('evidenceClientViewModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.classList.remove('visible'), 200);
+  };
+
+  window.copyEvidenceClientView = function() {
+    const html = buildClientEvidenceMarkup();
+    const plainText = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    
+    // Copy as rich HTML for email clients
+    const blob = new Blob([html], { type: 'text/html' });
+    const clipboardItem = new ClipboardItem({
+      'text/html': blob,
+      'text/plain': new Blob([plainText], { type: 'text/plain' })
+    });
+    
+    navigator.clipboard.write([clipboardItem]).then(() => {
+      alert('Evidence list copied to clipboard! You can now paste it into your email.');
+      closeEvidenceClientView();
     }).catch(err => {
       console.error('Clipboard error:', err);
-      alert('Failed to copy to clipboard');
+      // Fallback to plain text
+      navigator.clipboard.writeText(plainText).then(() => {
+        alert('Copied as plain text (rich HTML not supported in this browser).');
+        closeEvidenceClientView();
+      }).catch(() => {
+        alert('Failed to copy to clipboard.');
+      });
     });
+  };
+
+  window.copyEvidenceToClipboard = function() {
+    // Legacy function - now redirects to client view
+    openEvidenceClientView();
   };
 
   window.generateEvidenceEmail = function(type) {

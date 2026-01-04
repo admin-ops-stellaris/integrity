@@ -5105,14 +5105,11 @@ Best wishes,
       grouped[cat].push(item);
     });
     
-    // Build HTML
-    let html = '';
+    // Build HTML - flat list without category headings (clients just want the list)
+    let html = '<ul style="margin:0; padding-left:20px; font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
+    
     categoryOrder.forEach(cat => {
       if (!grouped[cat] || grouped[cat].length === 0) return;
-      
-      html += `<div style="margin-bottom:20px;">`;
-      html += `<h4 style="margin:0 0 10px 0; font-size:14px; font-weight:bold; color:#19414C; border-bottom:1px solid #DDD; padding-bottom:5px;">${cat}</h4>`;
-      html += `<ul style="margin:0; padding-left:20px;">`;
       
       grouped[cat].forEach(item => {
         const statusIcon = item.status === 'Received' ? '✓' : item.status === 'N/A' ? '—' : '○';
@@ -5139,9 +5136,9 @@ Best wishes,
         
         html += `<li style="margin-bottom:6px; ${textStyle}">${statusIcon} ${itemText}</li>`;
       });
-      
-      html += `</ul></div>`;
     });
+    
+    html += '</ul>';
     
     return html || '<p style="color:#888;">No items to display.</p>';
   }

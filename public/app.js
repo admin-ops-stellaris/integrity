@@ -4740,8 +4740,9 @@ Best wishes,
     // Sort items if "Outstanding First" is checked
     let itemsToRender = [...currentEvidenceItems];
     if (outstandingFirst) {
-      const statusOrder = { 'Outstanding': 0, 'Received': 1, 'N/A': 2 };
-      itemsToRender.sort((a, b) => (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2));
+      // Outstanding (and any other status) = 1, Received = 2, N/A = 3
+      const getPriority = (status) => status === 'Received' ? 2 : status === 'N/A' ? 3 : 1;
+      itemsToRender.sort((a, b) => getPriority(a.status) - getPriority(b.status));
     }
     
     // Group items by category
@@ -4834,10 +4835,17 @@ Best wishes,
       notesHtml = `<div class="evidence-item-notes"><strong>Internal Notes:</strong> ${item.notes}${notesMeta}</div>`;
     }
     
-    // Combine name and description on one line
-    const nameDesc = item.description 
-      ? `${item.name || 'Unnamed Item'} - ${item.description}`
-      : (item.name || 'Unnamed Item');
+    // Helper to strip HTML for inline display
+    const stripHtml = (html) => {
+      if (!html) return '';
+      return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    };
+    
+    // Combine name and description on one line (strip HTML from description)
+    const descText = stripHtml(item.description);
+    const nameDesc = descText 
+      ? `<strong>${item.name || 'Unnamed Item'}</strong> – ${descText}`
+      : `<strong>${item.name || 'Unnamed Item'}</strong>`;
     
     return `
       <div class="evidence-item status-${statusClass}" data-item-id="${item.id}">

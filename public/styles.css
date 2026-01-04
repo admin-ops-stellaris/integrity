@@ -827,7 +827,11 @@
   .evidence-progress-fill { height: 100%; background: var(--color-cedar); border-radius: 5px; transition: width 0.3s ease; }
   .evidence-progress-text { font-size: 14px; font-weight: 600; min-width: 80px; }
   .evidence-modal-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: #F8F7F5; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
-  .evidence-toolbar-left, .evidence-toolbar-right { display: flex; align-items: center; gap: 12px; }
+  .evidence-toolbar-left, .evidence-toolbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; }
+  .evidence-toolbar-right { gap: 16px; }
+  .evidence-checkbox-label { white-space: nowrap; }
+  .evidence-filter-label { white-space: nowrap; }
+  .evidence-btn-text { white-space: nowrap; }
   .evidence-btn { padding: 10px 18px; font-size: 12px; font-weight: 600; border: 1px solid var(--color-border); background: #FFF; color: var(--color-trail); border-radius: 6px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; height: 38px; box-sizing: border-box; }
   .evidence-btn:hover { background: var(--color-salt); border-color: var(--color-trail); }
   .evidence-email-dropdown { position: relative; }
@@ -869,7 +873,8 @@
   .evidence-item-status.outstanding { color: var(--color-trail); }
   .evidence-item-status.na { color: #AAA; font-size: 20px; }
   .evidence-item-content { flex: 1; min-width: 0; }
-  .evidence-item-name-desc { font-size: 14px; color: var(--color-trail); line-height: 1.5; }
+  .evidence-item-name-desc { font-size: 14px; color: var(--color-trail); line-height: 1.6; }
+  .evidence-item-name-desc strong { font-weight: 600; }
   .evidence-item-name-desc a { color: var(--color-midnight); text-decoration: underline; }
   .evidence-item-notes { font-size: 12px; color: #888; background: #F8F7F5; padding: 8px 12px; border-radius: 4px; margin-top: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
   .evidence-item-notes strong { color: #666; }

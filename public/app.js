@@ -5078,7 +5078,8 @@ Best wishes,
   }
 
   // Build client-facing HTML for evidence list (no internal notes, no meta, no edit buttons)
-  function buildClientEvidenceMarkup() {
+  // Returns { display: richHtmlForPreview, clipboard: simpleHtmlForPasting }
+  function buildClientEvidenceMarkup(forClipboard = false) {
     // Split items by status - exclude N/A entirely
     const outstanding = currentEvidenceItems.filter(i => i.status === 'Outstanding');
     const received = currentEvidenceItems.filter(i => i.status === 'Received');
@@ -5087,23 +5088,53 @@ Best wishes,
     const total = outstanding.length + received.length;
     const pct = total > 0 ? Math.round((received.length / total) * 100) : 0;
     
-    // Helper to render an item
+    // Helper to strip block HTML but keep inline formatting
+    const cleanDesc = (desc) => {
+      if (!desc) return '';
+      return desc
+        .replace(/<p>/gi, '')
+        .replace(/<\/p>/gi, ' ')
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<div>/gi, '')
+        .replace(/<\/div>/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+    
+    // For clipboard: use simple, cross-platform HTML that works in Slack/email
+    if (forClipboard) {
+      let html = '';
+      html += `<b>Progress: ${pct}% (${received.length}/${total})</b><br><br>`;
+      
+      if (outstanding.length > 0) {
+        html += `<b>Outstanding</b><br>`;
+        outstanding.forEach(item => {
+          let line = `• <b>${item.name || 'Item'}</b>`;
+          const desc = cleanDesc(item.description);
+          if (desc) line += ` – ${desc}`;
+          html += line + `<br>`;
+        });
+        html += `<br>`;
+      }
+      
+      if (received.length > 0) {
+        html += `<b>Received</b><br>`;
+        received.forEach(item => {
+          let line = `✓ <b>${item.name || 'Item'}</b>`;
+          const desc = cleanDesc(item.description);
+          if (desc) line += ` – ${desc}`;
+          html += line + `<br>`;
+        });
+      }
+      
+      return html || 'No items to display.';
+    }
+    
+    // For display: use styled HTML with progress bar
     const renderItem = (item) => {
       const statusIcon = item.status === 'Received' ? '✓' : '○';
       const statusColor = item.status === 'Received' ? '#7B8B64' : '#2C2622';
-      
-      // Strip block HTML tags but keep inline formatting (links, bold, etc)
-      let descText = '';
-      if (item.description) {
-        descText = item.description
-          .replace(/<p>/gi, '')
-          .replace(/<\/p>/gi, ' ')
-          .replace(/<br\s*\/?>/gi, ' ')
-          .replace(/<div>/gi, '')
-          .replace(/<\/div>/gi, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-      }
+      const descText = cleanDesc(item.description);
       
       let itemText = `<strong>${item.name || 'Item'}</strong>`;
       if (descText) {
@@ -5113,7 +5144,6 @@ Best wishes,
       return `<li style="margin-bottom:6px; color:${statusColor};">${statusIcon} ${itemText}</li>`;
     };
     
-    // Build HTML
     let html = '<div style="font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
     
     // Stellaris leaf icon
@@ -5172,8 +5202,8 @@ Best wishes,
   };
 
   window.copyEvidenceClientView = function() {
-    const html = buildClientEvidenceMarkup();
-    const plainText = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    const html = buildClientEvidenceMarkup(true); // Use simplified clipboard format
+    const plainText = html.replace(/<br>/g, '\n').replace(/<[^>]*>/g, '').trim();
     
     // Copy as rich HTML for email clients
     const blob = new Blob([html], { type: 'text/html' });

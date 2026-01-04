@@ -5259,40 +5259,60 @@ Best wishes,
     const contactName = currentContactRecord?.fields?.PreferredName || currentContactRecord?.fields?.FirstName || 'there';
     const contactEmail = currentContactRecord?.fields?.EmailAddress1 || '';
     
-    // Build rich HTML items list - matching client view format with icons (no category headings)
+    // Build rich HTML items list - matching client view format exactly
     const received = currentEvidenceItems.filter(i => i.status === 'Received');
     const total = outstanding.length + received.length;
     const pct = total > 0 ? Math.round((received.length / total) * 100) : 0;
     
-    // Helper to clean descriptions
+    // Helper to clean descriptions (keep inline links)
     const cleanDesc = (desc) => {
       if (!desc) return '';
-      return desc.replace(/<p>/gi, '').replace(/<\/p>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<div>/gi, '').replace(/<\/div>/gi, ' ').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+      return desc.replace(/<p>/gi, '').replace(/<\/p>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<div>/gi, '').replace(/<\/div>/gi, ' ').replace(/\s+/g, ' ').trim();
     };
     
-    // Stellaris leaf icon - use width/height attributes so Quill preserves sizing
-    const leafIcon = `<img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" width="18" height="18" style="width:18px; height:18px; vertical-align:middle;">`;
+    // Build evidence list HTML matching client view exactly
+    let evidenceListHtml = '<div style="font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
     
-    // Build progress bar and items list (matches client view)
-    let progressHtml = '';
-    progressHtml += `<div style="margin:15px 0;">`;
-    progressHtml += `<div style="display:inline-flex; align-items:center; gap:10px;">`;
-    progressHtml += leafIcon;
-    progressHtml += `<div style="width:200px; height:10px; background:#E0E0E0; border-radius:5px; overflow:hidden; display:inline-block; vertical-align:middle;">`;
-    progressHtml += `<div style="width:${pct}%; height:100%; background:#7B8B64; border-radius:5px;"></div>`;
-    progressHtml += `</div>`;
-    progressHtml += `<span style="font-weight:bold; color:#2C2622;">${pct}% (${received.length}/${total})</span>`;
-    progressHtml += `</div></div>`;
+    // Stellaris leaf icon + progress bar
+    const leafIcon = `<img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" width="18" height="18" style="width:18px; height:18px; flex-shrink:0;">`;
+    evidenceListHtml += `<div style="margin-bottom:15px;">`;
+    evidenceListHtml += `<div style="display:flex; align-items:center; gap:10px; max-width:50%;">`;
+    evidenceListHtml += leafIcon;
+    evidenceListHtml += `<div style="flex:1; height:10px; background:#E0E0E0; border-radius:5px; overflow:hidden;">`;
+    evidenceListHtml += `<div style="width:${pct}%; height:100%; background:#7B8B64; border-radius:5px;"></div>`;
+    evidenceListHtml += `</div>`;
+    evidenceListHtml += `<span style="font-weight:bold; color:#2C2622; white-space:nowrap;">${pct}% (${received.length}/${total})</span>`;
+    evidenceListHtml += `</div></div>`;
     
-    // Build outstanding items with circle icon (no category headings)
-    let itemsHtml = '<ul style="margin:0; padding-left:0; list-style:none;">';
-    outstanding.forEach(item => {
-      const desc = cleanDesc(item.description);
-      itemsHtml += `<li style="margin-bottom:6px; color:#2C2622;">○ <strong>${item.name}</strong>`;
-      if (desc) itemsHtml += ` – ${desc}`;
-      itemsHtml += '</li>';
-    });
-    itemsHtml += '</ul>';
+    // Outstanding section with header
+    if (outstanding.length > 0) {
+      evidenceListHtml += `<div style="margin-bottom:15px;">`;
+      evidenceListHtml += `<h4 style="margin:0 0 8px 0; font-size:13px; font-weight:bold; color:#2C2622;">Outstanding</h4>`;
+      evidenceListHtml += `<ul style="margin:0; padding-left:0; list-style:none;">`;
+      outstanding.forEach(item => {
+        const desc = cleanDesc(item.description);
+        let itemText = `<strong>${item.name || 'Item'}</strong>`;
+        if (desc) itemText += ` – <span style="font-weight:normal;">${desc}</span>`;
+        evidenceListHtml += `<li style="margin-bottom:6px; color:#2C2622;">○ ${itemText}</li>`;
+      });
+      evidenceListHtml += `</ul></div>`;
+    }
+    
+    // Received section with header (for emails, only show if there are items)
+    if (received.length > 0) {
+      evidenceListHtml += `<div style="margin-bottom:15px;">`;
+      evidenceListHtml += `<h4 style="margin:0 0 8px 0; font-size:13px; font-weight:bold; color:#7B8B64;">Received</h4>`;
+      evidenceListHtml += `<ul style="margin:0; padding-left:0; list-style:none;">`;
+      received.forEach(item => {
+        const desc = cleanDesc(item.description);
+        let itemText = `<strong>${item.name || 'Item'}</strong>`;
+        if (desc) itemText += ` – <span style="font-weight:normal;">${desc}</span>`;
+        evidenceListHtml += `<li style="margin-bottom:6px; color:#7B8B64;">✓ ${itemText}</li>`;
+      });
+      evidenceListHtml += `</ul></div>`;
+    }
+    
+    evidenceListHtml += '</div>';
     
     // Build email content based on type
     let subject, body, title;
@@ -5302,8 +5322,7 @@ Best wishes,
       subject = `Documents needed for your ${currentEvidenceOpportunityName}`;
       body = `<p>Hi ${contactName},</p>
 <p>Thank you for choosing Stellaris Finance! To get your application moving, we need the following documents:</p>
-${progressHtml}
-${itemsHtml}
+${evidenceListHtml}
 <p>Simply reply to this email with the documents attached. If you have any questions, don't hesitate to reach out!</p>
 <p>Kind regards,</p>`;
     } else if (type === 'subsequent') {
@@ -5311,8 +5330,7 @@ ${itemsHtml}
       subject = `Quick follow-up: Documents still needed for ${currentEvidenceOpportunityName}`;
       body = `<p>Hi ${contactName},</p>
 <p>Just a quick follow-up on your application. We're still waiting on a few items:</p>
-${progressHtml}
-${itemsHtml}
+${evidenceListHtml}
 <p>Once we have these, we can move to the next stage. Let me know if you need any help!</p>
 <p>Kind regards,</p>`;
     } else if (type === 'appointment') {
@@ -5369,8 +5387,7 @@ ${apptDetails}`;
       
       if (outstanding.length > 0) {
         body += `<p>To make the most of our meeting, please send the following items beforehand if possible:</p>
-${progressHtml}
-${itemsHtml}`;
+${evidenceListHtml}`;
       }
       
       body += `<p>We look forward to speaking with you!</p>

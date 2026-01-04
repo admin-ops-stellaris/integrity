@@ -4826,43 +4826,43 @@ Best wishes,
       metaHtml = `<div class="evidence-item-meta">Requested by ${item.requestedByName || 'Unknown'} on ${formatPerthDate(item.requestedOn)}</div>`;
     }
     
-    // Notes with who/when metadata
+    // Helper to check if rich text has actual content (not just empty tags)
+    const hasRealContent = (html) => {
+      if (!html) return false;
+      const stripped = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+      return stripped.length > 0;
+    };
+    
+    // Notes with who/when metadata - only show if there's actual content
     let notesHtml = '';
-    if (item.notes) {
+    if (hasRealContent(item.notes)) {
       const notesMeta = item.modifiedByName && item.modifiedOn 
         ? `<span class="evidence-notes-meta">${item.modifiedByName} - ${formatPerthDate(item.modifiedOn)}</span>`
         : '';
       notesHtml = `<div class="evidence-item-notes"><strong>Internal Notes:</strong> ${item.notes}${notesMeta}</div>`;
     }
     
-    // Helper to strip HTML for inline display
-    const stripHtml = (html) => {
-      if (!html) return '';
-      return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-    };
-    
-    // Combine name and description on one line (strip HTML from description)
-    const descText = stripHtml(item.description);
-    const nameDesc = descText 
-      ? `<strong>${item.name || 'Unnamed Item'}</strong> – ${descText}`
-      : `<strong>${item.name || 'Unnamed Item'}</strong>`;
+    // Build name and description - keep HTML for links to work
+    const itemName = item.name || 'Unnamed Item';
+    const hasDesc = hasRealContent(item.description);
     
     return `
       <div class="evidence-item status-${statusClass}" data-item-id="${item.id}">
-        <div class="evidence-item-status ${statusClass}">${statusIcon}</div>
-        <div class="evidence-item-content">
-          <div class="evidence-item-name-desc">${nameDesc}</div>
-          ${notesHtml}
-          ${metaHtml}
+        <div class="evidence-item-row">
+          <div class="evidence-item-status ${statusClass}">${statusIcon}</div>
+          <div class="evidence-item-text">
+            <strong>${itemName}</strong>${hasDesc ? ' – ' : ''}<span class="evidence-item-desc-inline">${hasDesc ? item.description : ''}</span>
+          </div>
+          <div class="evidence-item-actions">
+            <select class="evidence-status-select ${selectClass}" onchange="updateEvidenceItemStatus('${item.id}', this.value)">
+              <option value="Outstanding" ${item.status === 'Outstanding' ? 'selected' : ''}>Outstanding</option>
+              <option value="Received" ${item.status === 'Received' ? 'selected' : ''}>Received</option>
+              <option value="N/A" ${item.status === 'N/A' ? 'selected' : ''}>N/A</option>
+            </select>
+            <button type="button" class="evidence-item-edit-btn" onclick="editEvidenceItem('${item.id}')">✎</button>
+          </div>
         </div>
-        <div class="evidence-item-actions">
-          <select class="evidence-status-select ${selectClass}" onchange="updateEvidenceItemStatus('${item.id}', this.value)">
-            <option value="Outstanding" ${item.status === 'Outstanding' ? 'selected' : ''}>Outstanding</option>
-            <option value="Received" ${item.status === 'Received' ? 'selected' : ''}>Received</option>
-            <option value="N/A" ${item.status === 'N/A' ? 'selected' : ''}>N/A</option>
-          </select>
-          <button type="button" class="evidence-item-edit-btn" onclick="editEvidenceItem('${item.id}')">✎</button>
-        </div>
+        ${notesHtml || metaHtml ? `<div class="evidence-item-details">${notesHtml}${metaHtml}</div>` : ''}
       </div>
     `;
   }

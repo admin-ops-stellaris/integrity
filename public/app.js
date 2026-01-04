@@ -5134,7 +5134,7 @@ Best wishes,
     let html = '<div style="font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
     
     // Stellaris leaf icon
-    const leafIcon = `<img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" style="width:18px; height:18px; flex-shrink:0;">`;
+    const leafIcon = `<img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" width="18" height="18" style="width:18px; height:18px; flex-shrink:0;">`;
     
     // Progress bar
     html += `<div style="margin-bottom:15px;">`;
@@ -5270,8 +5270,8 @@ Best wishes,
       return desc.replace(/<p>/gi, '').replace(/<\/p>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<div>/gi, '').replace(/<\/div>/gi, ' ').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
     };
     
-    // Stellaris leaf icon
-    const leafIcon = `<img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" style="width:18px; height:18px; vertical-align:middle;">`;
+    // Stellaris leaf icon - use width/height attributes so Quill preserves sizing
+    const leafIcon = `<img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" width="18" height="18" style="width:18px; height:18px; vertical-align:middle;">`;
     
     // Build progress bar and items list (matches client view)
     let progressHtml = '';

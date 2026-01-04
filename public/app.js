@@ -5011,14 +5011,29 @@ Best wishes,
   };
 
   // Add Evidence Item Modal
+  // Quill editor instance for evidence description
+  let newEvidenceDescQuill = null;
+
   window.openAddEvidenceItemModal = function() {
     document.getElementById('newEvidenceName').value = '';
-    document.getElementById('newEvidenceDescription').value = '';
     document.getElementById('newEvidenceCategory').value = 'Other';
     
     const modal = document.getElementById('addEvidenceItemModal');
     modal.classList.add('visible');
     setTimeout(() => modal.classList.add('showing'), 10);
+    
+    // Initialize Quill editor if not already
+    if (!newEvidenceDescQuill) {
+      newEvidenceDescQuill = new Quill('#newEvidenceDescEditor', {
+        theme: 'snow',
+        modules: {
+          toolbar: '#newEvidenceDescToolbar'
+        },
+        placeholder: 'Describe what you need - supports bold, links, bullet points...'
+      });
+    } else {
+      newEvidenceDescQuill.setContents([]);
+    }
   };
 
   window.closeAddEvidenceItemModal = function() {
@@ -5029,7 +5044,7 @@ Best wishes,
 
   window.submitNewEvidenceItem = function() {
     const name = document.getElementById('newEvidenceName').value.trim();
-    const description = document.getElementById('newEvidenceDescription').value.trim();
+    const description = newEvidenceDescQuill ? newEvidenceDescQuill.root.innerHTML : '';
     const category = document.getElementById('newEvidenceCategory').value;
     
     if (!name) {

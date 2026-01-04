@@ -818,7 +818,7 @@
   .evidence-header-left { display: flex; align-items: center; gap: 20px; }
   .evidence-close-btn { background: rgba(255,255,255,0.1); border: none; color: #FFF; font-size: 18px; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
   .evidence-close-btn:hover { background: rgba(255,255,255,0.2); }
-  .evidence-header-title h2 { margin: 0; font-size: 18px; font-weight: 600; color: #FFF; }
+  .evidence-header-title h2 { margin: 0; font-size: 18px; font-weight: 600; color: var(--color-salt); }
   .evidence-opp-name { margin: 4px 0 0 0; font-size: 13px; opacity: 0.8; }
   .evidence-header-right { display: flex; align-items: center; gap: 20px; }
   .evidence-progress { display: flex; align-items: center; gap: 12px; }

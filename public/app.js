@@ -5279,28 +5279,30 @@ Best wishes,
     
     // Progress bar - simple text format that Quill preserves reliably
     // Quill strips complex HTML/tables, so we use a clean text representation
-    evidenceListHtml += `<p style="margin:8px 0 12px 0;"><strong style="color:#7B8B64;">Progress: ${pct}% (${received.length}/${total})</strong></p>`;
+    evidenceListHtml += `<p style="margin:8px 0 16px 0;"><strong style="color:#7B8B64;">Progress: ${pct}% (${received.length}/${total})</strong></p>`;
     
     // Outstanding section with bold header
     if (outstanding.length > 0) {
-      evidenceListHtml += `<p style="margin:12px 0 6px 0;"><strong style="color:#2C2622;">Outstanding</strong></p>`;
+      evidenceListHtml += `<p style="margin:16px 0 8px 0;"><strong style="color:#2C2622;">Outstanding</strong></p>`;
       outstanding.forEach(item => {
         const desc = cleanDesc(item.description);
         let line = `○ <strong>${item.name || 'Item'}</strong>`;
         if (desc) line += ` – ${desc}`;
-        evidenceListHtml += `<p style="margin:4px 0 4px 12px; color:#2C2622;">${line}</p>`;
+        evidenceListHtml += `<p style="margin:6px 0 6px 12px; color:#2C2622;">${line}</p>`;
       });
+      evidenceListHtml += `<p style="margin:0;"></p>`; // spacer after list
     }
     
     // Received section with bold green header
     if (received.length > 0) {
-      evidenceListHtml += `<p style="margin:12px 0 6px 0;"><strong style="color:#7B8B64;">Received</strong></p>`;
+      evidenceListHtml += `<p style="margin:16px 0 8px 0;"><strong style="color:#7B8B64;">Received</strong></p>`;
       received.forEach(item => {
         const desc = cleanDesc(item.description);
         let line = `✓ <strong>${item.name || 'Item'}</strong>`;
         if (desc) line += ` – ${desc}`;
-        evidenceListHtml += `<p style="margin:4px 0 4px 12px; color:#7B8B64;">${line}</p>`;
+        evidenceListHtml += `<p style="margin:6px 0 6px 12px; color:#7B8B64;">${line}</p>`;
       });
+      evidenceListHtml += `<p style="margin:0;"></p>`; // spacer after list
     }
     
     // Build email content based on type
@@ -5708,11 +5710,22 @@ ${evidenceListHtml}`;
     const container = document.getElementById('evTplEditOppTypes');
     if (!container) return;
     
-    const oppTypes = ['Purchase', 'Refinance', 'Construction', 'Debt Consolidation', 'Investment', 'Pre-Approval'];
+    // Use actual opportunity types from the system
+    const oppTypes = [
+      'Home Loans',
+      'Commercial Loans', 
+      'Deposit Bonds',
+      'Insurance (General)',
+      'Insurance (Life)',
+      'Personal Loans',
+      'Asset Finance',
+      'Tax Depreciation Schedule',
+      'Financial Planning'
+    ];
     let html = '';
     oppTypes.forEach(type => {
       const checked = selectedTypes.includes(type) ? ' checked' : '';
-      html += `<label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;"><input type="checkbox" class="evTplOppType" value="${type}"${checked}> ${type}</label>`;
+      html += `<label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; padding:4px 0;"><input type="checkbox" class="evTplOppType" value="${type}"${checked}> ${type}</label>`;
     });
     container.innerHTML = html;
   }

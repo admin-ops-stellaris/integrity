@@ -489,13 +489,19 @@ export function getConnectionRoleTypes() {
 export async function getConnectionsForContact(contactId) {
   if (!base || !contactId) return [];
   try {
-    // Query connections where Contact 1 OR Contact 2 contains this contact
-    const formula = `OR(FIND("${contactId}", ARRAYJOIN({Contact 1})), FIND("${contactId}", ARRAYJOIN({Contact 2})))`;
-    const records = await base("Connections")
+    // Query all active connections and filter for this contact
+    const allRecords = await base("Connections")
       .select({
-        filterByFormula: formula
+        filterByFormula: `{Status} = "Active"`
       })
       .all();
+    
+    // Filter to connections involving this contact
+    const records = allRecords.filter(record => {
+      const contact1Ids = record.fields["Contact 1"] || [];
+      const contact2Ids = record.fields["Contact 2"] || [];
+      return contact1Ids.includes(contactId) || contact2Ids.includes(contactId);
+    });
     
     // Format connections with perspective from the given contact
     const connections = [];

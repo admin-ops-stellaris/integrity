@@ -4101,12 +4101,12 @@ Best wishes,
         // Appointments section - linked from Appointments table
         html += `<div class="appointments-section" style="margin-top:15px;">`;
         html += `<div id="appointmentsContainer" data-opportunity-id="${id}"><div style="color:#888; padding:10px;">Loading appointments...</div></div>`;
-        html += `<div style="padding:8px 0; display:flex; gap:10px; flex-wrap:nowrap;">`;
-        html += `<button type="button" style="padding:8px 16px; background:#7B8B64; color:#F2F0E9; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0;" onclick="openAppointmentForm('${id}')">+ ADD APPOINTMENT</button>`;
+        html += `<div class="opp-action-buttons">`;
+        html += `<button type="button" onclick="openAppointmentForm('${id}')">+ ADD APPOINTMENT</button>`;
         const oppName = (dataMap['Opportunity Name']?.value || response.title || '').replace(/'/g, "\\'");
         const oppType = (dataMap['Opportunity Type']?.value || '').replace(/'/g, "\\'");
         const lender = (dataMap['Lender']?.value || '').replace(/'/g, "\\'");
-        html += `<button type="button" style="padding:8px 16px; background:#19414C; color:#F2F0E9; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0;" onclick="openEvidenceModal('${id}', '${oppName}', '${oppType}', '${lender}')">📋 EVIDENCE & DATA COLLECTION</button>`;
+        html += `<button type="button" class="btn-evidence" onclick="openEvidenceModal('${id}', '${oppName}', '${oppType}', '${lender}')">📋 EVIDENCE & DATA COLLECTION</button>`;
         html += `</div></div>`;
         
         // Load appointments asynchronously

@@ -900,25 +900,23 @@
           <button type="button" class="close-panel" onclick="closeAddEvidenceItemModal()">&times;</button>
         </div>
         <div class="modal-body" style="padding:20px;">
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
-            <div class="field-group">
-              <label>Category</label>
-              <select id="newEvidenceCategory">
-                <option value="Identification">Identification</option>
-                <option value="Income">Income</option>
-                <option value="Assets">Assets</option>
-                <option value="Liabilities">Liabilities</option>
-                <option value="Refinance">Refinance</option>
-                <option value="Purchase & Property">Purchase & Property</option>
-                <option value="Construction">Construction</option>
-                <option value="Expenses">Expenses</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label>Name</label>
-              <input type="text" id="newEvidenceName" placeholder="e.g., Bank Statement">
-            </div>
+          <div class="field-group" style="margin-bottom:15px;">
+            <label>Category</label>
+            <select id="newEvidenceCategory">
+              <option value="Identification">Identification</option>
+              <option value="Income">Income</option>
+              <option value="Assets">Assets</option>
+              <option value="Liabilities">Liabilities</option>
+              <option value="Refinance">Refinance</option>
+              <option value="Purchase & Property">Purchase & Property</option>
+              <option value="Construction">Construction</option>
+              <option value="Expenses">Expenses</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:15px;">
+            <label>Name</label>
+            <input type="text" id="newEvidenceName" placeholder="e.g., Bank Statement">
           </div>
           <div class="field-group" style="margin-bottom:15px;">
             <label>Description (supports rich text - bold, links, etc.)</label>
@@ -949,7 +947,7 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=51"></script>
-    <script src="/app.js?v=51"></script>
+    <script src="/api-bridge.js?v=52"></script>
+    <script src="/app.js?v=52"></script>
   </body>
 </html>

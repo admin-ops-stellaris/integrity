@@ -4041,16 +4041,36 @@ Best wishes,
       
       let html = '';
       
-      // Audit section
-      if (response.audit && (response.audit.Created || response.audit.Modified)) {
-        let auditHtml = '<div class="panel-audit-section">';
-        if (response.audit.Created) auditHtml += `<div>${response.audit.Created}</div>`;
-        if (response.audit.Modified) auditHtml += `<div>${response.audit.Modified}</div>`;
-        auditHtml += '</div>';
-        html += auditHtml;
+      // For Opportunities, use smart layout
+      if (table === 'Opportunities') {
+        const dataMap = {};
+        response.data.forEach(item => { dataMap[item.key] = item; });
+        
+        // Audit section with Evidence button on right
+        if (response.audit && (response.audit.Created || response.audit.Modified)) {
+          const oppName = (dataMap['Opportunity Name']?.value || response.title || '').replace(/'/g, "\\'");
+          const oppType = (dataMap['Opportunity Type']?.value || '').replace(/'/g, "\\'");
+          const lender = (dataMap['Lender']?.value || '').replace(/'/g, "\\'");
+          html += `<div class="panel-audit-header">`;
+          html += `<div class="panel-audit-section">`;
+          if (response.audit.Created) html += `<div>${response.audit.Created}</div>`;
+          if (response.audit.Modified) html += `<div>${response.audit.Modified}</div>`;
+          html += `</div>`;
+          html += `<button type="button" class="btn-evidence-top" onclick="openEvidenceModal('${id}', '${oppName}', '${oppType}', '${lender}')">📋 EVIDENCE & DATA COLLECTION</button>`;
+          html += `</div>`;
+        }
+      } else {
+        // Audit section for non-Opportunities
+        if (response.audit && (response.audit.Created || response.audit.Modified)) {
+          let auditHtml = '<div class="panel-audit-section">';
+          if (response.audit.Created) auditHtml += `<div>${response.audit.Created}</div>`;
+          if (response.audit.Modified) auditHtml += `<div>${response.audit.Modified}</div>`;
+          auditHtml += '</div>';
+          html += auditHtml;
+        }
       }
       
-      // For Opportunities, use smart layout
+      // Continue Opportunities layout
       if (table === 'Opportunities') {
         const dataMap = {};
         response.data.forEach(item => { dataMap[item.key] = item; });
@@ -4103,10 +4123,6 @@ Best wishes,
         html += `<div id="appointmentsContainer" data-opportunity-id="${id}"><div style="color:#888; padding:10px;">Loading appointments...</div></div>`;
         html += `<div class="opp-action-buttons">`;
         html += `<button type="button" onclick="openAppointmentForm('${id}')">+ ADD APPOINTMENT</button>`;
-        const oppName = (dataMap['Opportunity Name']?.value || response.title || '').replace(/'/g, "\\'");
-        const oppType = (dataMap['Opportunity Type']?.value || '').replace(/'/g, "\\'");
-        const lender = (dataMap['Lender']?.value || '').replace(/'/g, "\\'");
-        html += `<button type="button" class="btn-evidence" onclick="openEvidenceModal('${id}', '${oppName}', '${oppType}', '${lender}')">📋 EVIDENCE & DATA COLLECTION</button>`;
         html += `</div></div>`;
         
         // Load appointments asynchronously

@@ -601,6 +601,10 @@ export async function getConnectionsForContact(contactId) {
         }
       }
       
+      // Get user names from linked fields
+      const createdByName = f["Created By Name"] ? f["Created By Name"][0] : null;
+      const modifiedByName = f["Modified By Name"] ? f["Modified By Name"][0] : null;
+      
       connections.push({
         id: record.id,
         otherContactId: otherContactId || null,
@@ -609,7 +613,9 @@ export async function getConnectionsForContact(contactId) {
         theirRole: theirRole,
         status: f["Status"] || "Active",
         createdOn: f["Created On"] || null,
-        modifiedOn: f["Modified On"] || null
+        modifiedOn: f["Modified On"] || null,
+        createdByName: createdByName,
+        modifiedByName: modifiedByName
       });
     }
     

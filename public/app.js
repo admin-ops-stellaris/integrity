@@ -2645,30 +2645,72 @@ Best wishes,
     const title = modal.querySelector('.modal-title');
     const body = modal.querySelector('.modal-body-content');
     
-    // Format dates
-    const formatDateTime = (dateStr) => {
-      if (!dateStr) return 'Unknown';
+    // Get the current contact's full name
+    const currentContactName = currentContactRecord 
+      ? `${currentContactRecord.FirstName || ''} ${currentContactRecord.MiddleName || ''} ${currentContactRecord.LastName || ''}`.replace(/\s+/g, ' ').trim()
+      : 'Contact';
+    
+    // Get role display with "of" suffix
+    const roleDisplayMap = {
+      'household representative': 'Household Representative of',
+      'household member': 'Household Member of',
+      'parent': 'Parent of',
+      'child': 'Child of',
+      'sibling': 'Sibling of',
+      'friend': 'Friend of',
+      'employer of': 'Employer of',
+      'employee of': 'Employee of',
+      'referred by': 'Referred by',
+      'has referred': 'Has Referred'
+    };
+    const myRoleLower = (conn.myRole || '').toLowerCase().trim();
+    const displayRole = roleDisplayMap[myRoleLower] || conn.myRole;
+    
+    // Format dates in Perth timezone (GMT+8)
+    const formatAuditDateTime = (dateStr) => {
+      if (!dateStr) return '';
       try {
         const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return 'Unknown';
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        const hours = String(d.getHours()).padStart(2, '0');
-        const mins = String(d.getMinutes()).padStart(2, '0');
+        if (isNaN(d.getTime())) return '';
+        // Convert to Perth time (GMT+8)
+        const perthOffset = 8 * 60;
+        const localOffset = d.getTimezoneOffset();
+        const perthTime = new Date(d.getTime() + (perthOffset + localOffset) * 60000);
+        const hours = String(perthTime.getHours()).padStart(2, '0');
+        const mins = String(perthTime.getMinutes()).padStart(2, '0');
+        const day = String(perthTime.getDate()).padStart(2, '0');
+        const month = String(perthTime.getMonth() + 1).padStart(2, '0');
+        const year = perthTime.getFullYear();
         return `${hours}:${mins} ${day}/${month}/${year}`;
       } catch (e) {
-        return 'Unknown';
+        return '';
       }
     };
     
-    title.textContent = `Connection: ${conn.otherContactName}`;
+    const createdDateTime = formatAuditDateTime(conn.createdOn);
+    const modifiedDateTime = formatAuditDateTime(conn.modifiedOn);
+    const createdBy = conn.createdByName || '';
+    const modifiedBy = conn.modifiedByName || '';
+    
+    const createdText = createdDateTime ? `${createdDateTime}${createdBy ? ' by ' + createdBy : ''}` : 'Unknown';
+    const modifiedText = modifiedDateTime ? `${modifiedDateTime}${modifiedBy ? ' by ' + modifiedBy : ''}` : 'Unknown';
+    
+    // Title: "Current Contact: Role of Other Contact"
+    title.textContent = `${currentContactName}: ${displayRole} ${conn.otherContactName}`;
+    
     body.innerHTML = `
-      <div class="connection-details-info">
-        <p><strong>Created:</strong> ${formatDateTime(conn.createdOn)}</p>
-        <p><strong>Modified:</strong> ${formatDateTime(conn.modifiedOn)}</p>
+      <div class="panel-audit-section" style="margin-bottom: 20px;">
+        <div><span class="audit-label">Created</span> <span class="audit-value">${createdText}</span></div>
+        <div><span class="audit-label">Modified</span> <span class="audit-value">${modifiedText}</span></div>
       </div>
-      <p style="margin-top: 15px;">Do you want to remove this connection?</p>
+      <div style="text-align: center; margin-bottom: 10px;">
+        <button type="button" class="btn-secondary" onclick="closeDeactivateConnectionModal()">Close</button>
+      </div>
+      <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
+      <p style="text-align: center; color: #666; font-size: 12px; margin-bottom: 10px;">Remove this connection?</p>
+      <div style="text-align: center;">
+        <button type="button" class="btn-danger" onclick="executeDeactivateConnection()">Remove</button>
+      </div>
     `;
     
     // Store connection info for the confirm action

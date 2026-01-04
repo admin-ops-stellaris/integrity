@@ -2645,10 +2645,13 @@ Best wishes,
     const title = modal.querySelector('.modal-title');
     const body = modal.querySelector('.modal-body-content');
     
-    // Get the current contact's full name
-    const currentContactName = currentContactRecord 
-      ? `${currentContactRecord.FirstName || ''} ${currentContactRecord.MiddleName || ''} ${currentContactRecord.LastName || ''}`.replace(/\s+/g, ' ').trim()
-      : 'Contact';
+    // Get the current contact's full name from fields (use Calculated Name if available)
+    let currentContactName = 'Contact';
+    if (currentContactRecord && currentContactRecord.fields) {
+      const f = currentContactRecord.fields;
+      currentContactName = f['Calculated Name'] || 
+        `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
+    }
     
     // Get role display with "of" suffix
     const roleDisplayMap = {
@@ -2699,17 +2702,16 @@ Best wishes,
     title.textContent = `${currentContactName}: ${displayRole} ${conn.otherContactName}`;
     
     body.innerHTML = `
-      <div class="panel-audit-section" style="margin-bottom: 20px;">
+      <div class="panel-audit-section" style="margin-bottom: 20px; text-align: left;">
         <div><span class="audit-label">Created</span> <span class="audit-value">${createdText}</span></div>
         <div><span class="audit-label">Modified</span> <span class="audit-value">${modifiedText}</span></div>
       </div>
-      <div style="text-align: center; margin-bottom: 10px;">
-        <button type="button" class="btn-secondary" onclick="closeDeactivateConnectionModal()">Close</button>
+      <div class="connection-modal-actions">
+        <button type="button" class="btn-secondary conn-modal-btn" onclick="closeDeactivateConnectionModal()">Close</button>
       </div>
-      <hr style="border: none; border-top: 1px solid #ddd; margin: 15px 0;">
-      <p style="text-align: center; color: #666; font-size: 12px; margin-bottom: 10px;">Remove this connection?</p>
-      <div style="text-align: center;">
-        <button type="button" class="btn-danger" onclick="executeDeactivateConnection()">Remove</button>
+      <div class="connection-modal-remove">
+        <span class="remove-label">Remove this connection?</span>
+        <button type="button" class="btn-danger conn-modal-btn" onclick="executeDeactivateConnection()">Remove</button>
       </div>
     `;
     
@@ -3654,10 +3656,10 @@ Best wishes,
          const li = document.createElement('li'); li.className = `opp-item ${statusClass}`;
          const statusBadge = status ? `<span class="opp-status-badge ${statusClass}">${status}</span>` : '';
          const typeLabel = oppType ? `<span class="opp-type">${oppType}</span>` : '';
-         const roleLabel = role ? `<span class="opp-role">${role}</span>` : '';
+         const roleLabel = role ? `<span class="opp-role-badge">${role}</span>` : '';
          li.innerHTML = `
            <span class="opp-title">${name}</span>
-           <div class="opp-meta-row">${typeLabel}${statusBadge}${roleLabel}</div>
+           <div class="opp-meta-row">${statusBadge}${typeLabel}${roleLabel}</div>
          `;
          li.onclick = function() { panelHistory = []; loadPanelRecord('Opportunities', opp.id); }; oppList.appendChild(li);
      });
@@ -4186,7 +4188,7 @@ Best wishes,
           const phoneStyle = appt.typeOfAppointment === 'Phone' ? '' : 'display:none;';
           const videoStyle = appt.typeOfAppointment === 'Video' ? '' : 'display:none;';
           const otherStyle = appt.howBooked === 'Other' ? '' : 'display:none;';
-          html += `<div id="appt_field_wrap_${appt.id}_phone" style="${phoneStyle}">${renderApptField(appt.id, 'Phone Number', 'phoneNumber', appt.phoneNumber, 'text')}</div>`;
+          html += `<div id="appt_field_wrap_${appt.id}_phone" style="${phoneStyle}">${renderApptFieldNoIcon(appt.id, 'Phone Number', 'phoneNumber', appt.phoneNumber, 'text')}</div>`;
           html += `<div id="appt_field_wrap_${appt.id}_video" style="${videoStyle}">${renderApptFieldNoIcon(appt.id, 'Video Meet URL', 'videoMeetUrl', appt.videoMeetUrl, 'text')}</div>`;
           html += `<div id="appt_field_wrap_${appt.id}_other" style="${otherStyle}">${renderApptField(appt.id, 'How Booked Other', 'howBookedOther', appt.howBookedOther, 'text')}</div>`;
           html += `</div>`;

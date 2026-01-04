@@ -5078,8 +5078,7 @@ Best wishes,
   }
 
   // Build client-facing HTML for evidence list (no internal notes, no meta, no edit buttons)
-  // Returns { display: richHtmlForPreview, clipboard: simpleHtmlForPasting }
-  function buildClientEvidenceMarkup(forClipboard = false) {
+  function buildClientEvidenceMarkup() {
     // Split items by status - exclude N/A entirely
     const outstanding = currentEvidenceItems.filter(i => i.status === 'Outstanding');
     const received = currentEvidenceItems.filter(i => i.status === 'Received');
@@ -5101,36 +5100,6 @@ Best wishes,
         .trim();
     };
     
-    // For clipboard: use simple, cross-platform HTML that works in Slack/email
-    if (forClipboard) {
-      let html = '';
-      html += `<b>Progress: ${pct}% (${received.length}/${total})</b><br><br>`;
-      
-      if (outstanding.length > 0) {
-        html += `<b>Outstanding</b><br>`;
-        outstanding.forEach(item => {
-          let line = `• <b>${item.name || 'Item'}</b>`;
-          const desc = cleanDesc(item.description);
-          if (desc) line += ` – ${desc}`;
-          html += line + `<br>`;
-        });
-        html += `<br>`;
-      }
-      
-      if (received.length > 0) {
-        html += `<b>Received</b><br>`;
-        received.forEach(item => {
-          let line = `✓ <b>${item.name || 'Item'}</b>`;
-          const desc = cleanDesc(item.description);
-          if (desc) line += ` – ${desc}`;
-          html += line + `<br>`;
-        });
-      }
-      
-      return html || 'No items to display.';
-    }
-    
-    // For display: use styled HTML with progress bar
     const renderItem = (item) => {
       const statusIcon = item.status === 'Received' ? '✓' : '○';
       const statusColor = item.status === 'Received' ? '#7B8B64' : '#2C2622';
@@ -5202,8 +5171,8 @@ Best wishes,
   };
 
   window.copyEvidenceClientView = function() {
-    const html = buildClientEvidenceMarkup(true); // Use simplified clipboard format
-    const plainText = html.replace(/<br>/g, '\n').replace(/<[^>]*>/g, '').trim();
+    const html = buildClientEvidenceMarkup(); // Use full rich format for email clients
+    const plainText = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
     
     // Copy as rich HTML for email clients
     const blob = new Blob([html], { type: 'text/html' });

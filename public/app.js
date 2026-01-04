@@ -2706,12 +2706,12 @@ Best wishes,
         <div><span class="audit-label">Created</span> <span class="audit-value">${createdText}</span></div>
         <div><span class="audit-label">Modified</span> <span class="audit-value">${modifiedText}</span></div>
       </div>
-      <div class="connection-modal-actions">
-        <button type="button" class="btn-secondary conn-modal-btn" onclick="closeDeactivateConnectionModal()">Close</button>
-      </div>
       <div class="connection-modal-remove">
         <span class="remove-label">Remove this connection?</span>
         <button type="button" class="btn-danger conn-modal-btn" onclick="executeDeactivateConnection()">Remove</button>
+      </div>
+      <div class="connection-modal-close">
+        <button type="button" class="btn-secondary conn-modal-btn" onclick="closeDeactivateConnectionModal()">Close</button>
       </div>
     `;
     

@@ -560,20 +560,61 @@ export async function getConnectionsForContact(contactId) {
     
     if (allConnectionIds.length === 0) return [];
     
-    // Fetch all connection records in batches (Airtable limits)
-    const records = [];
-    for (const connId of allConnectionIds) {
-      try {
-        const record = await base("Connections").find(connId);
-        if (record) records.push(record);
-      } catch (e) {
-        // Skip if connection record doesn't exist
-      }
+    // BATCH FETCH: Get all connection records in one query using formula
+    const connectionFormula = `OR(${allConnectionIds.map(id => `RECORD_ID()='${id}'`).join(',')})`;
+    const records = await base("Connections").select({
+      filterByFormula: connectionFormula
+    }).all();
+    
+    // Collect all "other" contact IDs and user IDs for batch fetching
+    const otherContactIds = new Set();
+    const userIds = new Set();
+    
+    records.forEach(record => {
+      const f = record.fields;
+      const contact1Ids = f["Contact 1"] || [];
+      const contact2Ids = f["Contact 2"] || [];
+      const isContact1 = contact1Ids.includes(contactId);
+      const otherContactId = isContact1 ? contact2Ids[0] : contact1Ids[0];
+      if (otherContactId) otherContactIds.add(otherContactId);
+      
+      // Collect user IDs from Created By and Modified By linked fields
+      const createdByIds = f["Created By"] || [];
+      const modifiedByIds = f["Modified By"] || [];
+      if (createdByIds[0]) userIds.add(createdByIds[0]);
+      if (modifiedByIds[0]) userIds.add(modifiedByIds[0]);
+    });
+    
+    // BATCH FETCH: Get all other contacts in one query
+    const contactsMap = {};
+    if (otherContactIds.size > 0) {
+      const contactFormula = `OR(${[...otherContactIds].map(id => `RECORD_ID()='${id}'`).join(',')})`;
+      const contactRecords = await base("Contacts").select({
+        filterByFormula: contactFormula,
+        fields: ["FirstName", "MiddleName", "LastName", "Calculated Name"]
+      }).all();
+      contactRecords.forEach(c => {
+        const cf = c.fields;
+        contactsMap[c.id] = cf["Calculated Name"] || 
+          `${cf.FirstName || ''} ${cf.MiddleName || ''} ${cf.LastName || ''}`.replace(/\s+/g, ' ').trim();
+      });
+    }
+    
+    // BATCH FETCH: Get all users in one query for Created By / Modified By names
+    const usersMap = {};
+    if (userIds.size > 0) {
+      const userFormula = `OR(${[...userIds].map(id => `RECORD_ID()='${id}'`).join(',')})`;
+      const userRecords = await base("Users").select({
+        filterByFormula: userFormula,
+        fields: ["Name"]
+      }).all();
+      userRecords.forEach(u => {
+        usersMap[u.id] = u.fields.Name || null;
+      });
     }
     
     // Format connections with perspective from the given contact
-    const connections = [];
-    for (const record of records) {
+    const connections = records.map(record => {
       const f = record.fields;
       const contact1Ids = f["Contact 1"] || [];
       const contact2Ids = f["Contact 2"] || [];
@@ -581,31 +622,24 @@ export async function getConnectionsForContact(contactId) {
       
       // Get the "other" contact's info
       const otherContactId = isContact1 ? contact2Ids[0] : contact1Ids[0];
-      const otherContactName = isContact1 
+      const fallbackName = isContact1 
         ? (f["Record2IdName"] || "Unknown") 
         : (f["Record1IdName"] || "Unknown");
       const myRole = isContact1 ? f["Record1Role"] : f["Record2Role"];
       const theirRole = isContact1 ? f["Record2Role"] : f["Record1Role"];
       
-      // If other contact is linked, fetch their current name
-      let displayName = otherContactName;
-      if (otherContactId) {
-        try {
-          const otherContact = await base("Contacts").find(otherContactId);
-          if (otherContact) {
-            const of = otherContact.fields;
-            displayName = `${of.FirstName || ''} ${of.MiddleName || ''} ${of.LastName || ''}`.replace(/\s+/g, ' ').trim() || otherContactName;
-          }
-        } catch (e) {
-          // Use fallback name if contact lookup fails
-        }
-      }
+      // Use batch-fetched contact name or fallback
+      const displayName = otherContactId && contactsMap[otherContactId] 
+        ? contactsMap[otherContactId] 
+        : fallbackName;
       
-      // Get user names from linked fields
-      const createdByName = f["Created By Name"] ? f["Created By Name"][0] : null;
-      const modifiedByName = f["Modified By Name"] ? f["Modified By Name"][0] : null;
+      // Get user names from batch-fetched Users
+      const createdById = (f["Created By"] || [])[0];
+      const modifiedById = (f["Modified By"] || [])[0];
+      const createdByName = createdById ? usersMap[createdById] : null;
+      const modifiedByName = modifiedById ? usersMap[modifiedById] : null;
       
-      connections.push({
+      return {
         id: record.id,
         otherContactId: otherContactId || null,
         otherContactName: displayName,
@@ -616,8 +650,8 @@ export async function getConnectionsForContact(contactId) {
         modifiedOn: f["Modified On"] || null,
         createdByName: createdByName,
         modifiedByName: modifiedByName
-      });
-    }
+      };
+    });
     
     // Filter to active only and sort by name
     return connections

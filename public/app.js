@@ -2381,14 +2381,16 @@ Best wishes,
   let connectionRoleTypes = [];
   
   function loadConnections(contactId) {
-    const list = document.getElementById('connectionsList');
-    if (!list) return;
-    list.innerHTML = '<li class="connections-empty">Loading...</li>';
+    const leftList = document.getElementById('connectionsListLeft');
+    const rightList = document.getElementById('connectionsListRight');
+    if (!leftList || !rightList) return;
+    leftList.innerHTML = '<li class="connections-empty">Loading...</li>';
+    rightList.innerHTML = '';
     
     google.script.run.withSuccessHandler(function(connections) {
       renderConnectionsList(connections);
     }).withFailureHandler(function(err) {
-      list.innerHTML = '<li class="connections-empty">Error loading connections</li>';
+      leftList.innerHTML = '<li class="connections-empty">Error loading connections</li>';
     }).getConnectionsForContact(contactId);
   }
   

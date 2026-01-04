@@ -1090,12 +1090,12 @@
           <div class="field-group" style="flex:1; display:flex; flex-direction:column; min-height:0;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label style="margin:0;">Message <span style="font-weight:normal; color:#888; font-size:11px;">(click to edit anywhere)</span></label>
-              <div style="display:flex; gap:8px;">
-                <button type="button" onclick="emailEditorCommand('bold')" style="padding:4px 8px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-weight:bold;">B</button>
-                <button type="button" onclick="emailEditorCommand('italic')" style="padding:4px 8px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-style:italic;">I</button>
-                <button type="button" onclick="emailEditorCommand('createLink')" style="padding:4px 8px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer;">🔗</button>
-                <span style="border-left:1px solid #ddd; margin:0 4px;"></span>
-                <button type="button" onclick="resetEmailToTemplate()" style="padding:4px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-size:11px; color:#666;">Reset</button>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <button type="button" onclick="emailEditorCommand('bold')" title="Bold" style="padding:4px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-weight:bold; font-family:Arial,sans-serif; font-size:14px;">Bold</button>
+                <button type="button" onclick="emailEditorCommand('italic')" title="Italic" style="padding:4px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-style:italic; font-family:Arial,sans-serif; font-size:14px;">Italic</button>
+                <button type="button" onclick="emailEditorCommand('createLink')" title="Insert Link" style="padding:4px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-family:Arial,sans-serif; font-size:14px;">Link</button>
+                <span style="border-left:1px solid #ddd; height:20px; margin:0 4px;"></span>
+                <button type="button" onclick="resetEmailToTemplate()" title="Reset to original template" style="padding:4px 10px; border:1px solid #ccc; border-radius:3px; background:#fff; cursor:pointer; font-size:12px; color:#666;">Reset</button>
               </div>
             </div>
             <iframe id="evidenceEmailEditor" style="flex:1; width:100%; border:1px solid #DDD; border-radius:4px; background:#fff; min-height:300px;"></iframe>

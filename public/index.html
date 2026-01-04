@@ -548,6 +548,13 @@
               </div>
               <button type="button" onclick="closeEmailSettings(); openTemplateList();" style="padding:8px 16px; background:var(--color-star); color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:500;">Manage Templates</button>
             </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; background:#f8f8f8; border-radius:6px; margin-bottom:15px;">
+              <div>
+                <div style="font-weight:600; font-size:13px;">Evidence Templates</div>
+                <div style="font-size:11px; color:#666;">Master templates for evidence/document requests</div>
+              </div>
+              <button type="button" onclick="closeEmailSettings(); openEvidenceTemplatesModal();" style="padding:8px 16px; background:var(--color-cedar); color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:500;">Manage Evidence</button>
+            </div>
             <div class="email-settings-form">
               <div class="setting-row">
                 <label>Office Map Link</label>
@@ -738,6 +745,77 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-cancel" onclick="closeTemplateList()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Templates Management Modal -->
+    <div id="evidenceTemplatesModal" class="modal-overlay" style="display:none;">
+      <div class="modal-content" style="max-width:900px; max-height:85vh; display:flex; flex-direction:column;">
+        <div class="modal-header">
+          <h3>Evidence Templates</h3>
+          <button class="close-panel" onclick="closeEvidenceTemplatesModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px; overflow-y:auto; flex:1;">
+          <p style="font-size:13px; color:#666; margin-bottom:15px;">Master templates used when creating evidence lists for new opportunities. Changes here affect future opportunities only.</p>
+          <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="evidenceTemplatesSearch" placeholder="Search templates..." style="flex:1; padding:8px 12px; border:1px solid #ddd; border-radius:4px;">
+            <select id="evidenceTemplatesFilter" style="padding:8px 12px; border:1px solid #ddd; border-radius:4px;">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+          <div id="evidenceTemplatesContainer" style="min-height:200px;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeEvidenceTemplatesModal()">Close</button>
+          <button type="button" class="btn-confirm" onclick="openNewEvidenceTemplateForm()">+ New Template</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Template Edit Modal -->
+    <div id="evidenceTemplateEditModal" class="modal-overlay" style="display:none; z-index:1300;">
+      <div class="modal-content" style="max-width:700px;">
+        <div class="modal-header">
+          <h3 id="evidenceTemplateEditTitle">Edit Template</h3>
+          <button class="close-panel" onclick="closeEvidenceTemplateEditModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+          <div class="form-row">
+            <div class="field-group" style="flex:1;">
+              <label>Name *</label>
+              <input type="text" id="evTplEditName" placeholder="e.g., Payslips (last 2)">
+            </div>
+            <div class="field-group" style="flex:1;">
+              <label>Category</label>
+              <select id="evTplEditCategory"></select>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:15px;">
+            <label>Description (shown to clients)</label>
+            <div id="evTplEditDescEditor" style="height:120px; border:1px solid #ddd; border-radius:4px;"></div>
+          </div>
+          <div class="form-row">
+            <div class="field-group" style="flex:1;">
+              <label>Display Order</label>
+              <input type="number" id="evTplEditOrder" min="0" value="100">
+            </div>
+            <div class="field-group" style="flex:1;">
+              <label style="display:flex; align-items:center; gap:8px; margin-top:22px;">
+                <input type="checkbox" id="evTplEditLenderSpecific">
+                <span>Lender-Specific (requires rules)</span>
+              </label>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Opportunity Types</label>
+            <div id="evTplEditOppTypes" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-danger" id="evTplDeleteBtn" onclick="deleteEvidenceTemplate()" style="margin-right:auto;">Delete</button>
+          <button type="button" class="btn-cancel" onclick="closeEvidenceTemplateEditModal()">Cancel</button>
+          <button type="button" class="btn-confirm" id="evTplSaveBtn" onclick="saveEvidenceTemplate()">Save</button>
         </div>
       </div>
     </div>

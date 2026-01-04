@@ -1619,6 +1619,32 @@ export async function updateEvidenceItemsOrder(items) {
 }
 
 // Evidence Template Management
+export async function getAllEvidenceTemplates() {
+  if (!base) return [];
+  
+  try {
+    const records = await base("Evidence Templates")
+      .select({ sort: [{ field: "Display Order", direction: "asc" }] })
+      .all();
+    
+    return records.map(r => ({
+      id: r.id,
+      name: r.fields["Name"] || "",
+      description: r.fields["Description"] || "",
+      categoryId: (r.fields["Category"] || [])[0] || null,
+      categoryName: r.fields["Category (Name)"] ? r.fields["Category (Name)"][0] : null,
+      displayOrder: r.fields["Display Order"] || 0,
+      opportunityTypes: r.fields["Opportunity Types"] || [],
+      isLenderSpecific: r.fields["Is Lender Specific"] || false,
+      createdOn: r.fields["Created On"] || null,
+      modifiedOn: r.fields["Modified On"] || null
+    }));
+  } catch (err) {
+    console.error("getAllEvidenceTemplates error:", err.message);
+    return [];
+  }
+}
+
 export async function createEvidenceTemplate(fields, userContext = null) {
   if (!base) return { success: false, error: "Database not configured" };
   

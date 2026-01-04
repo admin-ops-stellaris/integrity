@@ -5270,49 +5270,47 @@ Best wishes,
       return desc.replace(/<p>/gi, '').replace(/<\/p>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<div>/gi, '').replace(/<\/div>/gi, ' ').replace(/\s+/g, ' ').trim();
     };
     
-    // Build evidence list HTML matching client view exactly
-    let evidenceListHtml = '<div style="font-size:13px; font-family:Arial,sans-serif; line-height:1.5;">';
+    // Build evidence list HTML using table-based layout for Quill/email compatibility
+    // Note: Quill strips flexbox and many CSS styles, so we use tables with inline styles
+    const barWidth = Math.max(pct * 2, 10); // Scale to reasonable pixel width (max 200px for 100%)
+    const barBgWidth = 200;
     
-    // Stellaris leaf icon + progress bar
-    const leafIcon = `<img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" width="18" height="18" style="width:18px; height:18px; flex-shrink:0;">`;
-    evidenceListHtml += `<div style="margin-bottom:15px;">`;
-    evidenceListHtml += `<div style="display:flex; align-items:center; gap:10px; max-width:50%;">`;
-    evidenceListHtml += leafIcon;
-    evidenceListHtml += `<div style="flex:1; height:10px; background:#E0E0E0; border-radius:5px; overflow:hidden;">`;
-    evidenceListHtml += `<div style="width:${pct}%; height:100%; background:#7B8B64; border-radius:5px;"></div>`;
-    evidenceListHtml += `</div>`;
-    evidenceListHtml += `<span style="font-weight:bold; color:#2C2622; white-space:nowrap;">${pct}% (${received.length}/${total})</span>`;
-    evidenceListHtml += `</div></div>`;
+    let evidenceListHtml = '';
     
-    // Outstanding section with header
+    // Progress bar using table layout (works in Quill and email clients)
+    evidenceListHtml += `<table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px;"><tr>`;
+    evidenceListHtml += `<td style="vertical-align:middle; padding-right:8px;"><img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png" width="18" height="18"></td>`;
+    evidenceListHtml += `<td style="vertical-align:middle; padding-right:8px;">`;
+    evidenceListHtml += `<table cellpadding="0" cellspacing="0" border="0" style="width:${barBgWidth}px; height:10px; background-color:#E0E0E0; border-radius:5px;"><tr>`;
+    evidenceListHtml += `<td style="width:${barWidth}px; height:10px; background-color:#7B8B64; border-radius:5px;"></td>`;
+    evidenceListHtml += `<td></td></tr></table>`;
+    evidenceListHtml += `</td>`;
+    evidenceListHtml += `<td style="vertical-align:middle; font-weight:bold; color:#2C2622; white-space:nowrap;">${pct}% (${received.length}/${total})</td>`;
+    evidenceListHtml += `</tr></table>`;
+    
+    // Outstanding section with colored header
     if (outstanding.length > 0) {
-      evidenceListHtml += `<div style="margin-bottom:15px;">`;
-      evidenceListHtml += `<h4 style="margin:0 0 8px 0; font-size:13px; font-weight:bold; color:#2C2622;">Outstanding</h4>`;
-      evidenceListHtml += `<ul style="margin:0; padding-left:0; list-style:none;">`;
+      evidenceListHtml += `<p style="margin:12px 0 6px 0; font-weight:600; color:#2C2622;">Outstanding</p>`;
       outstanding.forEach(item => {
         const desc = cleanDesc(item.description);
-        let itemText = `<strong>${item.name || 'Item'}</strong>`;
-        if (desc) itemText += ` – <span style="font-weight:normal;">${desc}</span>`;
-        evidenceListHtml += `<li style="margin-bottom:6px; color:#2C2622;">○ ${itemText}</li>`;
+        let line = `<span style="color:#2C2622;">○ <strong>${item.name || 'Item'}</strong>`;
+        if (desc) line += ` – ${desc}`;
+        line += `</span>`;
+        evidenceListHtml += `<p style="margin:4px 0 4px 12px; color:#2C2622;">${line}</p>`;
       });
-      evidenceListHtml += `</ul></div>`;
     }
     
-    // Received section with header (for emails, only show if there are items)
+    // Received section with green header
     if (received.length > 0) {
-      evidenceListHtml += `<div style="margin-bottom:15px;">`;
-      evidenceListHtml += `<h4 style="margin:0 0 8px 0; font-size:13px; font-weight:bold; color:#7B8B64;">Received</h4>`;
-      evidenceListHtml += `<ul style="margin:0; padding-left:0; list-style:none;">`;
+      evidenceListHtml += `<p style="margin:12px 0 6px 0; font-weight:600; color:#7B8B64;">Received</p>`;
       received.forEach(item => {
         const desc = cleanDesc(item.description);
-        let itemText = `<strong>${item.name || 'Item'}</strong>`;
-        if (desc) itemText += ` – <span style="font-weight:normal;">${desc}</span>`;
-        evidenceListHtml += `<li style="margin-bottom:6px; color:#7B8B64;">✓ ${itemText}</li>`;
+        let line = `<span style="color:#7B8B64;">✓ <strong>${item.name || 'Item'}</strong>`;
+        if (desc) line += ` – ${desc}`;
+        line += `</span>`;
+        evidenceListHtml += `<p style="margin:4px 0 4px 12px; color:#7B8B64;">${line}</p>`;
       });
-      evidenceListHtml += `</ul></div>`;
     }
-    
-    evidenceListHtml += '</div>';
     
     // Build email content based on type
     let subject, body, title;
@@ -5562,6 +5560,261 @@ ${evidenceListHtml}`;
       });
   };
 
-  window.openManageTemplatesModal = function() {
-    alert('Template management coming soon! For now, please manage templates directly in Airtable.');
+  // --- EVIDENCE TEMPLATES MANAGEMENT ---
+  let allEvidenceTemplates = [];
+  let editingEvidenceTemplateId = null;
+  let evTplDescQuill = null;
+
+  window.openEvidenceTemplatesModal = function() {
+    const modal = document.getElementById('evidenceTemplatesModal');
+    if (!modal) return;
+    
+    loadAllEvidenceTemplates();
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
+  };
+
+  window.closeEvidenceTemplatesModal = function() {
+    const modal = document.getElementById('evidenceTemplatesModal');
+    if (modal) {
+      modal.classList.remove('showing');
+      setTimeout(() => modal.style.display = 'none', 250);
+    }
+  };
+
+  function loadAllEvidenceTemplates() {
+    const container = document.getElementById('evidenceTemplatesContainer');
+    if (container) container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Loading templates...</div>';
+    
+    google.script.run
+      .withSuccessHandler(function(templates) {
+        allEvidenceTemplates = templates || [];
+        renderEvidenceTemplatesList();
+        populateEvidenceTemplatesFilter();
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error loading evidence templates:', err);
+        if (container) container.innerHTML = '<div style="text-align:center; padding:20px; color:#c44;">Failed to load templates</div>';
+      })
+      .getAllEvidenceTemplates();
+  }
+
+  function populateEvidenceTemplatesFilter() {
+    const filter = document.getElementById('evidenceTemplatesFilter');
+    if (!filter) return;
+    
+    const categories = [...new Set(allEvidenceTemplates.map(t => t.categoryName).filter(Boolean))].sort();
+    let html = '<option value="">All Categories</option>';
+    categories.forEach(cat => {
+      html += `<option value="${cat}">${cat}</option>`;
+    });
+    filter.innerHTML = html;
+    
+    filter.onchange = renderEvidenceTemplatesList;
+    document.getElementById('evidenceTemplatesSearch').oninput = renderEvidenceTemplatesList;
+  }
+
+  function renderEvidenceTemplatesList() {
+    const container = document.getElementById('evidenceTemplatesContainer');
+    if (!container) return;
+    
+    const searchTerm = (document.getElementById('evidenceTemplatesSearch')?.value || '').toLowerCase();
+    const categoryFilter = document.getElementById('evidenceTemplatesFilter')?.value || '';
+    
+    let filtered = allEvidenceTemplates.filter(t => {
+      if (categoryFilter && t.categoryName !== categoryFilter) return false;
+      if (searchTerm && !t.name.toLowerCase().includes(searchTerm) && !(t.description || '').toLowerCase().includes(searchTerm)) return false;
+      return true;
+    });
+    
+    if (filtered.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:#888;">No templates match your search.</div>';
+      return;
+    }
+    
+    const grouped = {};
+    filtered.forEach(t => {
+      const cat = t.categoryName || 'Uncategorized';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(t);
+    });
+    
+    let html = '';
+    Object.keys(grouped).sort().forEach(cat => {
+      html += `<div style="margin-bottom:20px;">`;
+      html += `<h4 style="margin:0 0 10px; color:var(--color-midnight); font-size:13px; border-bottom:1px solid #ddd; padding-bottom:5px;">${cat}</h4>`;
+      grouped[cat].forEach(t => {
+        const desc = (t.description || '').replace(/<[^>]*>/g, '').substring(0, 80);
+        html += `<div class="evidence-template-item" onclick="openEvidenceTemplateEdit('${t.id}')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#fff; border:1px solid #eee; border-radius:4px; margin-bottom:6px; cursor:pointer; transition:background 0.15s;">`;
+        html += `<div><strong style="color:#2C2622;">${t.name}</strong>`;
+        if (desc) html += `<div style="font-size:11px; color:#888; margin-top:2px;">${desc}${t.description && t.description.length > 80 ? '...' : ''}</div>`;
+        html += `</div>`;
+        html += `<span style="font-size:11px; color:#888; flex-shrink:0;">#${t.displayOrder}</span>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    });
+    
+    container.innerHTML = html;
+  }
+
+  window.openNewEvidenceTemplateForm = function() {
+    editingEvidenceTemplateId = null;
+    document.getElementById('evidenceTemplateEditTitle').textContent = 'New Evidence Template';
+    document.getElementById('evTplEditName').value = '';
+    document.getElementById('evTplEditOrder').value = 100;
+    document.getElementById('evTplEditLenderSpecific').checked = false;
+    document.getElementById('evTplDeleteBtn').style.display = 'none';
+    
+    loadCategoriesForTemplateEdit();
+    loadOppTypesForTemplateEdit([]);
+    
+    const modal = document.getElementById('evidenceTemplateEditModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
+    
+    initEvTplQuillEditor('');
+  };
+
+  window.openEvidenceTemplateEdit = function(templateId) {
+    const template = allEvidenceTemplates.find(t => t.id === templateId);
+    if (!template) return;
+    
+    editingEvidenceTemplateId = templateId;
+    document.getElementById('evidenceTemplateEditTitle').textContent = 'Edit Template';
+    document.getElementById('evTplEditName').value = template.name || '';
+    document.getElementById('evTplEditOrder').value = template.displayOrder || 0;
+    document.getElementById('evTplEditLenderSpecific').checked = template.isLenderSpecific || false;
+    document.getElementById('evTplDeleteBtn').style.display = 'block';
+    
+    loadCategoriesForTemplateEdit(template.categoryId);
+    loadOppTypesForTemplateEdit(template.opportunityTypes || []);
+    
+    const modal = document.getElementById('evidenceTemplateEditModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
+    
+    initEvTplQuillEditor(template.description || '');
+  };
+
+  function loadCategoriesForTemplateEdit(selectedId = null) {
+    const select = document.getElementById('evTplEditCategory');
+    if (!select) return;
+    
+    google.script.run
+      .withSuccessHandler(function(categories) {
+        let html = '<option value="">-- Select Category --</option>';
+        (categories || []).forEach(c => {
+          const selected = c.id === selectedId ? ' selected' : '';
+          html += `<option value="${c.id}"${selected}>${c.name}</option>`;
+        });
+        select.innerHTML = html;
+      })
+      .getEvidenceCategories();
+  }
+
+  function loadOppTypesForTemplateEdit(selectedTypes) {
+    const container = document.getElementById('evTplEditOppTypes');
+    if (!container) return;
+    
+    const oppTypes = ['Purchase', 'Refinance', 'Construction', 'Debt Consolidation', 'Investment', 'Pre-Approval'];
+    let html = '';
+    oppTypes.forEach(type => {
+      const checked = selectedTypes.includes(type) ? ' checked' : '';
+      html += `<label style="display:flex; align-items:center; gap:4px; font-size:12px; cursor:pointer;"><input type="checkbox" class="evTplOppType" value="${type}"${checked}> ${type}</label>`;
+    });
+    container.innerHTML = html;
+  }
+
+  function initEvTplQuillEditor(content) {
+    const editorEl = document.getElementById('evTplEditDescEditor');
+    if (!editorEl) return;
+    
+    if (evTplDescQuill) {
+      evTplDescQuill.setText('');
+      evTplDescQuill.clipboard.dangerouslyPasteHTML(content || '');
+    } else {
+      evTplDescQuill = new Quill(editorEl, {
+        theme: 'snow',
+        modules: {
+          toolbar: [['bold', 'italic'], ['link'], [{ 'list': 'bullet' }]]
+        }
+      });
+      evTplDescQuill.clipboard.dangerouslyPasteHTML(content || '');
+    }
+  }
+
+  window.closeEvidenceTemplateEditModal = function() {
+    const modal = document.getElementById('evidenceTemplateEditModal');
+    if (modal) {
+      modal.classList.remove('showing');
+      setTimeout(() => modal.style.display = 'none', 250);
+    }
+    editingEvidenceTemplateId = null;
+  };
+
+  window.saveEvidenceTemplate = function() {
+    const name = document.getElementById('evTplEditName').value.trim();
+    if (!name) {
+      showAlert('Error', 'Please enter a template name', 'error');
+      return;
+    }
+    
+    const fields = {
+      name: name,
+      description: evTplDescQuill ? evTplDescQuill.root.innerHTML : '',
+      categoryId: document.getElementById('evTplEditCategory').value || null,
+      displayOrder: parseInt(document.getElementById('evTplEditOrder').value, 10) || 100,
+      isLenderSpecific: document.getElementById('evTplEditLenderSpecific').checked,
+      opportunityTypes: Array.from(document.querySelectorAll('.evTplOppType:checked')).map(cb => cb.value)
+    };
+    
+    const btn = document.getElementById('evTplSaveBtn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    
+    const handler = function(result) {
+      btn.textContent = 'Save';
+      btn.disabled = false;
+      if (result.success) {
+        showAlert('Success', editingEvidenceTemplateId ? 'Template updated' : 'Template created', 'success');
+        closeEvidenceTemplateEditModal();
+        loadAllEvidenceTemplates();
+      } else {
+        showAlert('Error', result.error || 'Failed to save template', 'error');
+      }
+    };
+    
+    const errorHandler = function(err) {
+      btn.textContent = 'Save';
+      btn.disabled = false;
+      showAlert('Error', 'Failed to save: ' + (err.message || 'Unknown error'), 'error');
+    };
+    
+    if (editingEvidenceTemplateId) {
+      google.script.run.withSuccessHandler(handler).withFailureHandler(errorHandler).updateEvidenceTemplate(editingEvidenceTemplateId, fields);
+    } else {
+      google.script.run.withSuccessHandler(handler).withFailureHandler(errorHandler).createEvidenceTemplate(fields);
+    }
+  };
+
+  window.deleteEvidenceTemplate = function() {
+    if (!editingEvidenceTemplateId) return;
+    
+    showConfirmModal('Delete Template', 'Are you sure you want to delete this template? This cannot be undone.', function() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showAlert('Deleted', 'Template deleted', 'success');
+            closeEvidenceTemplateEditModal();
+            loadAllEvidenceTemplates();
+          } else {
+            showAlert('Error', result.error || 'Failed to delete', 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          showAlert('Error', 'Failed to delete: ' + (err.message || 'Unknown error'), 'error');
+        })
+        .deleteEvidenceTemplate(editingEvidenceTemplateId);
+    });
   };

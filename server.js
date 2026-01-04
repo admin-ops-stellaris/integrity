@@ -1144,6 +1144,51 @@ app.post("/api/updateEvidenceItemsOrder", async (req, res) => {
   }
 });
 
+app.post("/api/getAllEvidenceTemplates", async (req, res) => {
+  try {
+    const templates = await airtable.getAllEvidenceTemplates();
+    res.json(templates);
+  } catch (err) {
+    console.error("getAllEvidenceTemplates error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/createEvidenceTemplate", async (req, res) => {
+  try {
+    const [fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.createEvidenceTemplate(fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("createEvidenceTemplate error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/updateEvidenceTemplate", async (req, res) => {
+  try {
+    const [templateId, fields] = req.body.args || [];
+    const result = await airtable.updateEvidenceTemplate(templateId, fields);
+    res.json(result);
+  } catch (err) {
+    console.error("updateEvidenceTemplate error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/deleteEvidenceTemplate", async (req, res) => {
+  try {
+    const [templateId] = req.body.args || [];
+    const result = await airtable.deleteEvidenceTemplate(templateId);
+    res.json(result);
+  } catch (err) {
+    console.error("deleteEvidenceTemplate error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {

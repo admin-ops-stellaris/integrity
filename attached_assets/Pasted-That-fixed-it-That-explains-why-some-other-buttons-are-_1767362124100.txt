@@ -1,0 +1,15 @@
+That fixed it.
+
+That explains why some other buttons are ridiculously wide too. Please do a full audit on all buttons that might be suffering the same fate and correct them to something more reasonable.
+
+Now that I can see what's in the text field, I'm not sure what to do about it or how to think about it... is the purpose of having it there to enable the user to play with the raw HTML? Now that we've got a bunch of this set up, perhaps it's time to rethink what we're actually trying to achieve here.
+
+What I'm thinking is that when I'm logged in here, ie as Admin Ops, I might have access to the raw HTML, and if I choose (also as Admin Ops) to look directly at the HTML in Airtable, I might modify it there (same thing), but there isn't much point presenting the user with modifiable HTML - if they change it, are they therefore changing what's in Airtable and mucking things up? I think we only want one place where we're going to play with it.
+
+Likewise, we want one place to play with the other links and titles etc, and I guess that needs to be the Settings table in Airtable. That's why we made it. So perhaps it makes sense that the Settings table in Airtable is where the raw signature HTML lies too. As far as I can tell so far, you haven't put it there. I did make those six rows in the Settings table that you recommended - not sure if you've tried to use them or not.
+
+I think there needs to be a primary place that any user can access their settings, and you shouldn't have to generate an email to look at them. Perhaps there needs to be a settings cog in the top right of the app. It would make sense to be able to edit global settings there (like the myGov link), in such a way as to update it for everyone. That is, if myGov for example updates their link, and one of the users updates it in settings, they're global settings so it's the same field that's being updated for any user. Only one person needs to fix it in one place. Email signature settings, on the other hand, are specific to the user and should be stored in Airtable relevant to that user. Global signature settings (like our website and office address) can live in Settings table, but the actual HTML for an individual user's email signature should live in the User's table.
+
+Sorry, I'm still trying to figure out how much of this you've already done and I'm still catching up.
+
+Also, one other thing while I think of it: please make it so that it's possible to delete an Opportunity without having to first delete the Primary Applicant. But the Primary Applicant should be the only thing that's connected to it. All other connections to it must still be first removed.

@@ -1,0 +1,19 @@
+In the Opportunity view, the Send Confirmation Email button (and the Delete Opportunity button for that matter) is the full width of the Opportunity view which is unnecessary (not sure why it wasn't picked up on the previous audit). Please move it to the bottom of the blue Taco fields section (so that it appears and disappears with the other Appointment fields when they're expanded and contracted). So the user experience should be putting all that info in there, setting up the appointment details, then clicking to email the client about it.
+
+Also, sometimes an additional appointment is necessary. If we envisage making a "Create New Appointment" button so that all the appointment fields generate again, does that require creating copies of all the related fields in Airtable, or is there a niftier way to do it? Sometimes we might need to go to five appointments or more, for example, and I wouldn't want to be restricted but the number of Airtable fields that exist.
+
+Again, please do an audit of all modals for their sizes as per my previous prompt. Examples:
+* email settings cog modal is far too thin - extra width would make everything below the text fields much easier to deal with
+* "Regenerated" and "Saved" confirmations are much taller than they need to be.
+* "Copied for Gmail" confirmation could be twice as wide and this would mean far less text wrapping.
+* "Copied for Mercury" confirmation is too short - you can't read all the content. It could be wider too.
+...etc
+
+
+The actual HTML that's coming out (as I can see it in the WYSIWYG editor) is a mess with lots of space, the wrong font, half-parsed HTML, no graphic. Please correct it so it looks precisely as it should based on the HTML I pasted you a while back.
+
+Also, I'd like to show you an email Shae sent recently using Taco, so you can see the format and how it looks. Hopefully that'll allow you to correct a lot of what happened when you made the Appointment Confirmation Email template.
+
+Also, I can't see anywhere that I can edit the actual template? That should come in two forms:
+1) being able to adjust what happens when each of the Appointment Types, Client Types and Pre Handlers are selected
+2) being able to edit the rest of the template too (not just the bits that change when you change those fields).

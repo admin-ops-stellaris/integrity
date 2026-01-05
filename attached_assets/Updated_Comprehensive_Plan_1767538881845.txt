@@ -1,0 +1,221 @@
+Updated Comprehensive Plan
+Data Structure (Airtable Tables)
+1. Evidence Categories
+
+Name (e.g., "Identification", "Income", "Assets")
+Display Order
+Color (optional, for visual grouping)
+2. Evidence Templates (Master list)
+
+Name (rich text)
+Description (rich text)
+Category (linked to Evidence Categories)
+Display Order
+Opportunity Types (multiple select: Home Loans, Commercial, Insurance, etc.)
+Is Lender Specific (checkbox) - if true, only appears when a lender rule exists
+3. Lender Evidence Rules (Junction table for lender variations)
+
+Evidence Template (linked)
+Lender (text or linked if you have a Lenders table)
+Rule Type (single select: "Required", "Not Required", "Custom Description")
+Custom Description (rich text) - overrides the template description for this lender
+Custom Name (rich text, optional) - if the item name differs for this lender
+4. Evidence Items (Per-opportunity instances)
+
+Opportunity (linked)
+Name (rich text)
+Description (rich text)
+Notes (rich text, internal only)
+Category (text, copied from template)
+Display Order
+Status (single select: Outstanding, Received, N/A)
+Date Received (date/time)
+Requested On (date/time) - auto-set when included in Initial/Subsequent email
+Requested By (linked to Users)
+Is Custom (checkbox) - true if manually added, not from template
+Source Template (linked to Evidence Templates, for reference)
+Created On, Created By, Modified On, Modified By (audit)
+5. Email Templates (Enhancement to existing)
+
+Add "Evidence Initial Request" template
+Add "Evidence Subsequent Request" template
+Add "Appointment Confirmation" template (with evidence list option)
+UI Design
+Full-Screen Evidence Modal
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  ✕                                                                           │
+│                                                                              │
+│  EVIDENCE & DATA COLLECTION                                                  │
+│  Smith Family Home Loan - ANZ                     [▓▓▓▓▓▓▓▓▓░░░░] 67% (8/12) │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │ [+ Add Custom Item]  [📋 Copy to Clipboard]  [✉️ Initial Email ▾]      │  │
+│  │                                              └─ Initial Request        │  │
+│  │ Filter: [All ▾]  [Show N/A items ☑]             Subsequent Request     │  │
+│  │                                                 Appointment Confirm    │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌─ IDENTIFICATION ──────────────────────────────────────────────────── ▼ ─┐ │
+│  │                                                                         │ │
+│  │  ┌───────────────────────────────────────────────────────────────────┐  │ │
+│  │  │  ☑ Driver's Licence                              [RECEIVED ▾]    │  │ │
+│  │  │  ─────────────────────────────────────────────────────────────    │  │ │
+│  │  │  Front and back of current licence                                │  │ │
+│  │  │                                                                   │  │ │
+│  │  │  Notes: Verified via video call 02/01/2026                   [✎] │  │ │
+│  │  │  ─────────────────────────────────────────────────────────────    │  │ │
+│  │  │  Received 02/01/2026 at 14:32                                     │  │ │
+│  │  └───────────────────────────────────────────────────────────────────┘  │ │
+│  │                                                                         │ │
+│  │  ┌───────────────────────────────────────────────────────────────────┐  │ │
+│  │  │  ○ Passport                                     [OUTSTANDING ▾]  │  │ │
+│  │  │  ─────────────────────────────────────────────────────────────    │  │ │
+│  │  │  Photographic page (can be up to 2 years expired)                 │  │ │
+│  │  │  ⚠️ ANZ: Both Driver's Licence AND Passport required              │  │ │
+│  │  │                                                                   │  │ │
+│  │  │  Notes: Client travelling, will send when back               [✎] │  │ │
+│  │  │  ─────────────────────────────────────────────────────────────    │  │ │
+│  │  │  Requested by Shae Aiello on 01/01/2026 at 10:15                  │  │ │
+│  │  └───────────────────────────────────────────────────────────────────┘  │ │
+│  │                                                                         │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│  ┌─ INCOME ──────────────────────────────────────────────────────────── ▼ ─┐ │
+│  │                                                                         │ │
+│  │  ┌───────────────────────────────────────────────────────────────────┐  │ │
+│  │  │  ○ Payslips                                     [OUTSTANDING ▾]  │  │ │
+│  │  │  ─────────────────────────────────────────────────────────────    │  │ │
+│  │  │  Most recent payslip AND last 3 months' bank statements          │  │ │
+│  │  │  showing receipt of income (ANZ requirement)                      │  │ │
+│  │  │                                                                   │  │ │
+│  │  │  Notes:                                                      [✎] │  │ │
+│  │  └───────────────────────────────────────────────────────────────────┘  │ │
+│  │                                                                         │ │
+│  │  ┌───────────────────────────────────────────────────────────────────┐  │ │
+│  │  │  ─ Tax Returns                                         [N/A ▾]   │  │ │
+│  │  │  ─────────────────────────────────────────────────────────────    │  │ │
+│  │  │  Last 2 financial years (self-employed only)                      │  │ │
+│  │  └───────────────────────────────────────────────────────────────────┘  │ │
+│  │                                                                         │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│                                          [Manage Default Templates]         │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+Visual Status Indicators:
+
+Received = Cedar (#7B8B64) background tint, filled checkbox ☑
+Outstanding = Trail (#2C2622) border emphasis, hollow circle ○
+N/A = Light grey, reduced opacity, strikethrough on name ─
+Key Interactions:
+
+Click status dropdown to change (Received/Outstanding/N/A)
+Click [✎] to edit Notes inline with rich text (Quill)
+Click item name/description to edit inline with rich text
+Drag handle on left for reordering within category
+[+ Add Custom Item] opens mini-form for custom entries
+Email dropdown shows preview before generating
+Email Output Examples
+Initial Request Email:
+
+Hi [First Name],
+
+Thank you for choosing Stellaris Finance! To get your application moving, we need the following documents:
+
+Identification
+
+Passport - Photographic page (can be up to 2 years expired)
+Income
+
+Payslips - Most recent payslip AND last 3 months' bank statements showing receipt of income
+Assets
+
+Genuine Savings - Evidence of 5% of purchase price held for at least 3 months
+Simply reply to this email with the documents attached. If you have any questions, don't hesitate to reach out!
+
+Kind regards,
+[Signature]
+
+Subsequent Request Email:
+
+Hi [First Name],
+
+Just a quick follow-up on your application. We're still waiting on a few items:
+
+Income
+
+Payslips - Most recent payslip AND last 3 months' bank statements
+Once we have these, we can move to the next stage. Let me know if you need any help!
+
+Kind regards,
+[Signature]
+
+Appointment Confirmation (with evidence):
+
+Hi [First Name],
+
+This is to confirm your appointment:
+📅 [Date] at [Time]
+📍 [Type: Office/Video/Phone]
+
+To make the most of our meeting, please bring/send these items beforehand if possible:
+
+Payslips
+Bank statements
+See you then!
+
+[Signature]
+
+Template Management UI
+A separate modal (accessible from Settings or from "Manage Default Templates" link) where you can:
+
+Manage Categories - Add/edit/reorder categories
+Manage Evidence Templates - Full CRUD with:
+Rich text Name & Description
+Category assignment
+Opportunity Type filter (multiple select)
+Display order (drag-and-drop)
+Manage Lender Rules - Per-template lender overrides:
+Select lender
+Choose rule type
+Provide custom description if needed
+Implementation Phases
+Phase 1: Foundation
+
+Create Airtable tables (Categories, Templates, Items, Lender Rules)
+Seed with the data from your attached file
+Basic API endpoints
+Phase 2: Core UI
+
+Full-screen Evidence Modal
+Display items grouped by category
+Status changes (Received/Outstanding/N/A)
+Progress bar
+Add custom items
+Phase 3: Rich Editing
+
+Quill integration for Name, Description, Notes
+Inline editing
+Drag-and-drop reordering
+Phase 4: Email Integration
+
+Copy to Clipboard (formatted)
+Generate Initial/Subsequent/Appointment emails
+Auto-track "Requested On/By" when emailed
+Email preview before send
+Phase 5: Template Management
+
+Settings UI for managing default templates
+Lender rules configuration
+Category management
+Categories (Based on Your File)
+Identification - Driver's Licence, Passport, Medicare, Birth/Marriage Certificates, Citizenship, Residency
+Income - Payslips, Tax Returns, NOA, Company/Trust docs, BAS, Accountant's Letter, Rental Income, Centrelink, Child Support
+Assets - Genuine Savings, Funds to Complete, Gifted Funds
+Liabilities - BNPL, Credit Cards, Personal Loans, Home Loans, HELP Debt
+Refinance - Credit Cards (payout), Personal Loans (payout), Home Loans (payout)
+Purchase & Property - Contract of Sale, Deposit Receipt, FHOG, Rates Notice
+Construction - Building Contract, Additional Works
+Expenses - Declared Living Expenses
+Ready to proceed when you give the green light! 🚀

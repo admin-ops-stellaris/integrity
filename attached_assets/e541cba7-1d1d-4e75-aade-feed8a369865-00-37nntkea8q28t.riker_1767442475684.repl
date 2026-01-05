@@ -1,0 +1,7 @@
+app.js?v=11:1186 Email templates loaded: 1
+app.js?v=11:2934 Loading appointments for opportunity: recrDcIEoWWMKkUe9
+app.js?v=11:2938 Appointments received: Array(1)
+app.js?v=11:1623 openCurrentTemplateEditor called, templates: 1
+app.js?v=11:1630 Opening confirmation template: recuYVAWGGpsT4wY7
+app.js?v=11:1289 openTemplateEditor called with: recuYVAWGGpsT4wY7
+format.ts:19 Uncaught RangeError: Maximum call stack size exceeded

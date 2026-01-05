@@ -1,0 +1,315 @@
+Template Name: Your Appointment (SFB Office) - Shae
+Subject: Confirmation of Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your appointment with our Mortgage Broker [broker] on [appointment_time] (Perth time) ([appointment_time|days] days from today) at our office - Kingsley Professional Centre, 18 / 56 Creaney Drive, Kingsley.
+
+Click here to meet [broker|first] and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+In preparation for your appointment, please email me the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and your 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+I work part time – please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information. 
+
+Do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Office) - Team
+Subject: Confirmation of Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your appointment with our Mortgage Broker [broker] on [appointment_time] (Perth time) ([appointment_time|days] days from today) at our office - Kingsley Professional Centre, 18 / 56 Creaney Drive, Kingsley.
+
+Click here to meet [broker|first] and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+In preparation for your appointment, please email Shae (shae@stellaris.loans) the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+Please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information. 
+
+Do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Phone) - SA (NEW)(OB)
+Subject: Confirmation of Phone Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your phone appointment with our Mortgage Broker [broker] on [appointment_time] (Perth time) ([appointment_time|days] days from today). [broker|first] will call you on [appoint_phone_number].
+
+Click here to meet [broker|first] and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+You will soon receive invitations to share your information with us via Frollo's Open Banking and Connective's Client Centre. These two systems streamline the collection of your key financial and personal data, including your contact details, employment history, savings and liabilities, to give us a complete picture of your situation.
+
+Do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Phone) - SA (REPEAT)(OB)
+Subject: Confirmation of Phone Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your phone appointment with [broker|first] on [appointment_time] (Perth time) ([appointment_time|days] days from today). [broker|first] will call you on [appoint_phone_number].
+
+Click here to get reacquainted with the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+You will soon receive invitations to share your information with us via Frollo's Open Banking and Connective's Client Centre. These two systems streamline the collection of your key financial and personal data, including your contact details, employment history, savings and liabilities, to give us a complete picture of your situation. I have prefilled as much as I can using the information we previously received from you. 
+
+Do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you again!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Phone) - Shae (NEW)
+Subject: Confirmation of Phone Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your phone appointment with our Mortgage Broker [broker] on [appointment_time] (Perth time) ([appointment_time|days] days from today). [broker|first] will call you on [appoint_phone_number].
+
+Click here to meet [broker|first] and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+In preparation for your appointment, please email me the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+I work part time – please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information. 
+
+Please do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Phone) - Shae (REPEAT)
+Subject: Confirmation of Phone Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your phone appointment with [broker|first] on [appointment_time] (Perth time) ([appointment_time|days] days from today). [broker|first] will call you on [appoint_phone_number].
+
+Click here to get reacquainted with the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+In preparation for your appointment, please email me the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+I work part time – please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information. 
+
+Please do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you again!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Phone) - Team
+Subject: Confirmation of Phone Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your phone appointment with our Mortgage Broker [broker] on [appointment_time] (Perth time) ([appointment_time|days] days from today). [broker|first] will call you on [appoint_phone_number].
+
+Click here to meet [broker|first] and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+In preparation for your appointment, please email Shae (shae@stellaris.loans) the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+Please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information. 
+
+Please do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Video) - SA (NEW)(OB)
+Subject: Confirmation of Google Meet Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your video call appointment with our Mortgage Broker [broker] on [appointment_time] (Perth time) ([appointment_time|days] days from today) using Google Meet URL: [appointment_meet_url]. If you have any trouble logging in, please call or text our team on 0488 839 212.
+
+Click here to meet [broker|first] and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+You will soon receive invitations to share your information with us via Frollo's Open Banking and Connective's Client Centre. These two systems streamline the collection of your key financial and personal data, including your contact details, employment history, savings and liabilities, to give us a complete picture of your situation.
+
+Do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Video) - SA (REPEAT)(OB)
+Subject: Confirmation of Google Meet Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your video call appointment with [broker|first] on [appointment_time] (Perth time) ([appointment_time|days] days from today) using Google Meet URL: [appointment_meet_url]. If you have any trouble logging in, please call or text our team on 0488 839 212.
+
+Click here to get reacquainted with the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+You will soon receive invitations to share your information with us via Frollo's Open Banking and Connective's Client Centre. These two systems streamline the collection of your key financial and personal data, including your contact details, employment history, savings and liabilities, to give us a complete picture of your situation. I have prefilled as much as I can using the information we previously received from you. 
+
+Do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you again!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Video) - Shae (NEW)
+Subject: Confirmation of Google Meet Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your video call appointment with our Mortgage Broker [broker] on [appointment_time] (Perth time) ([appointment_time|days] days from today) using Google Meet URL: [appointment_meet_url]. If you have any trouble logging in, please call or text our team on 0488 839 212.
+
+Click here to meet [broker|first] and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+In preparation for your appointment, please email me the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+I work part time – please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information. 
+
+Do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Video) - Shae (REPEAT)
+Subject: Confirmation of Google Meet Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your video call appointment with [broker|first] on [appointment_time] (Perth time) ([appointment_time|days] days from today) using Google Meet URL: [appointment_meet_url]. If you have any trouble logging in, please call or text our team on 0488 839 212.
+
+Click here to get reacquainted with the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+In preparation for your appointment, please email me the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+I work part time – please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information. 
+
+Do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you again!
+
+Best wishes,
+[sender]
+
+
+
+Template Name: Your Appointment (SFB Video) - Team
+Subject: Confirmation of Google Meet Appointment - [appointment_time]
+Body: Hi [greeting],
+
+I’m writing to confirm your video call appointment with our Mortgage Broker [broker] on [appointment_time] (Perth time) ([appointment_time|days] days from today) using Google Meet URL: [appointment_meet_url]. If you have any trouble logging in, please call or text our team on 0488 839 212.
+
+Click here to meet [broker|first] and the rest of the Team at Stellaris Finance Broking. We will be supporting you each step of the way!
+
+In preparation for your appointment, please email Shae (shae@stellaris.loans) the following information:
+
+Fact Find (please note you cannot access this file directly, you will need to download it to your device and fill it in)
+- Complete with as much detail as possible
+- Include any Buy Now Pay Later services (like Humm, Zip or Afterpay) that you have accounts with under the Personal Loans section at the bottom of Page 3
+
+Income
+a) PAYG Income – Your latest two consecutive payslips and 2024-25 Income Statement (which can be downloaded from myGov. If you need help creating a myGov account, watch this video. For instructions on how to download your Income Statement, click here)
+b) Self Employed Income - From each of the last two financial years, your Tax Return, Financial Statements and Notice of Assessment
+
+Please try to ensure you email the above evidence well ahead of your appointment to allow ample time to process your information. 
+
+Do not hesitate to contact our team on 0488 839 212 if you have any questions.  
+
+We look forward to working with you!
+
+Best wishes,
+[sender]
+
+
+
+
+
+
+
+
+
+

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/styles.css?v=28">
   </head>
   <body>
     <div class="app-header">
@@ -20,6 +20,7 @@
       <div class="header-title">INTEGRITY</div>
       <div class="user-indicator">
         <button class="shortcuts-help" onclick="showShortcutsHelp()" title="Keyboard shortcuts">?</button>
+        <button class="settings-cog" onclick="openGlobalSettings()" title="Settings">⚙</button>
         <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">◐</button>
         <span class="user-email" id="userEmail">Loading...</span>
       </div>
@@ -35,8 +36,9 @@
               <span id="formSubtitle" class="form-subtitle"></span>
               <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
             </div>
+            <button type="button" id="contactBackBtn" class="contact-back-btn" onclick="goBackToContact()" style="display:none;">← Back</button>
           </div>
-          <button type="button" class="new-btn" onclick="resetForm()">+ New Client</button>
+          <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>
         </div>
 
         <div id="duplicateWarningBox">
@@ -46,31 +48,63 @@
            <a class="hide-link" onclick="document.getElementById('duplicateWarningBox').style.display='none';">Hide</a>
         </div>
 
-        <div id="auditSection"></div>
-        <div id="formDivider" style="border-bottom:1px solid var(--color-border); margin-bottom:4px; display:none;"></div>
+        <div id="contactMetaBar" class="contact-meta-bar"></div>
 
         <div id="emptyState">
            <img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:128,h:128,m" style="height:64px; width:64px; margin-bottom:15px; opacity:0.8;">
-           Search for a contact or click '+ New Client' to begin.
+           Search for a contact or click '+ New Contact' to begin.
         </div>
 
         <div id="profileContent" style="display:none; flex:1; flex-direction:column;">
           <form id="contactForm" onsubmit="handleFormSubmit(this)" style="display:flex; flex-direction:column; flex:1;">
             <input type="hidden" name="recordId" id="recordId">
-            <div class="profile-top">
-              <div class="fields-header">
-                <span id="editBtn" class="edit-icon" onclick="enableEditMode()" title="Edit Contact"><span class="edit-pencil">✎</span> Edit</span>
-              </div>
-              <div class="row" style="margin-bottom:10px;">
-                <div class="field-group" style="flex:1;"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
-                <div class="field-group" style="flex:1;"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
-                <div class="field-group" style="flex:1;"><label>Last Name</label><input type="text" name="lastName" id="lastName" class="locked" readonly required></div>
-                <div class="field-group" style="flex:2;"><label>Email</label><input type="email" name="email1" id="email1" class="locked" readonly></div>
-              </div>
-              <div class="row">
-                <div class="field-group" style="flex:1;"><label>Preferred</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
-                <div class="field-group" style="flex:1;"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
-                <div class="field-group" style="flex:3;"><label>Notes</label><textarea name="description" id="description" class="locked" readonly style="height:60px; resize:vertical;"></textarea></div>
+            <div class="profile-top" id="profileTop" onclick="handleFormClick(event)">
+              <div class="edit-hint"><span class="edit-hint-icon">✎</span> Click to edit</div>
+              <span id="editBtn" style="display:none;"></span>
+              <div class="contact-form-split">
+                <div class="contact-form-left">
+                  <div class="form-row-3">
+                    <div class="field-group"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
+                    <div class="field-group"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
+                    <div class="field-group"><label>Last Name</label><input type="text" name="lastName" id="lastName" class="locked" readonly required></div>
+                  </div>
+                  <div class="form-row-3">
+                    <div class="field-group"><label>Preferred</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
+                    <div class="field-group">
+                      <label>Gender</label>
+                      <select name="gender" id="gender" class="locked" disabled onchange="handleGenderChange()">
+                        <option value=""></option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                        <option value="Other (specify)">Other (specify)</option>
+                      </select>
+                    </div>
+                    <div class="field-group" id="genderOtherGroup">
+                      <label>Gender - Other</label>
+                      <input type="text" name="genderOther" id="genderOther" class="locked" readonly placeholder="Specify">
+                    </div>
+                  </div>
+                  <div class="field-group"><label>Notes</label><textarea name="notes" id="notes" class="locked" readonly></textarea></div>
+                </div>
+                <div class="contact-form-right">
+                  <div class="form-row-2">
+                    <div class="field-group"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
+                    <div class="field-group"><label>Date of Birth</label><input type="text" name="dateOfBirth" id="dateOfBirth" class="locked" readonly placeholder="DD/MM/YYYY"></div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="field-group"><label>Email</label><input type="email" name="email1" id="email1" class="locked" readonly></div>
+                    <div class="field-group"><label>Email Note</label><textarea name="email1Comment" id="email1Comment" class="locked auto-resize-textarea" readonly rows="1" oninput="autoResizeTextarea(this)"></textarea></div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="field-group"><label>Email 2</label><input type="email" name="email2" id="email2" class="locked" readonly></div>
+                    <div class="field-group"><label>Email 2 Note</label><textarea name="email2Comment" id="email2Comment" class="locked auto-resize-textarea" readonly rows="1" oninput="autoResizeTextarea(this)"></textarea></div>
+                  </div>
+                  <div class="form-row-2">
+                    <div class="field-group"><label>Email 3</label><input type="email" name="email3" id="email3" class="locked" readonly></div>
+                    <div class="field-group"><label>Email 3 Note</label><textarea name="email3Comment" id="email3Comment" class="locked auto-resize-textarea" readonly rows="1" oninput="autoResizeTextarea(this)"></textarea></div>
+                  </div>
+                </div>
               </div>
             </div>
             <div id="actionRow" class="save-row">
@@ -88,8 +122,15 @@
                    </div>
                    <ul id="spouseHistoryList" class="spouse-history-list"></ul>
                  </div>
-                 <div id="futurePlaceholder" style="color:#CCC; text-align:center; font-size:12px; font-style:italic; padding:20px; border: 2px dashed #E0E0E0; border-radius:10px; margin-bottom:20px;">
-                   Other Connections<br>Coming Soon
+                 <div id="connectionsSection" style="margin-bottom:20px;">
+                   <div class="connections-header">
+                      <span style="font-weight:500; color:#666;">Connections</span>
+                      <span id="addConnectionLink" class="spouse-action-link" onclick="openAddConnectionModal()">+ Add</span>
+                   </div>
+                   <div class="connections-two-col">
+                     <ul id="connectionsListLeft" class="connections-list connections-col"></ul>
+                     <ul id="connectionsListRight" class="connections-list connections-col"></ul>
+                   </div>
                  </div>
                  <div id="deleteSection" style="margin-top:auto; padding-top:20px; border-top:1px dashed #E0E0E0;">
                    <button type="button" class="btn-delete" onclick="confirmDeleteContact()">Delete Contact</button>
@@ -98,7 +139,7 @@
               <div class="profile-bottom-right">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                   <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
-                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New</button>
+                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New Opportunity</button>
                 </div>
                 <div id="oppLoading" style="display:none;">Loading...</div>
                 <ul id="oppList" class="opp-list"></ul>
@@ -110,6 +151,11 @@
 
       <div class="column list-section">
         <input type="text" id="searchInput" placeholder="Search Contacts..." onkeyup="handleSearch(event)">
+        <div class="status-toggle-row">
+          <button type="button" class="status-toggle-btn active" data-status="Active" onclick="setContactStatusFilter('Active')">Active</button>
+          <button type="button" class="status-toggle-btn" data-status="Inactive" onclick="setContactStatusFilter('Inactive')">Inactive</button>
+          <button type="button" class="status-toggle-btn" data-status="All" onclick="setContactStatusFilter('All')">All</button>
+        </div>
         <div id="searchStatus" style="font-size:11px; color:#666; height:14px; margin-bottom:2px; text-align:right;"></div>
         <div id="loading">Loading directory...</div>
         <ul id="contactList"></ul>
@@ -154,20 +200,37 @@
                 <option value="Personal Loans">Personal Loans</option>
                 <option value="Asset Finance">Asset Finance</option>
                 <option value="Tax Depreciation Schedule">Tax Depreciation Schedule</option>
+                <option value="Financial Planning">Financial Planning</option>
               </select>
             </div>
           </div>
           <div class="composer-section">
-            <div class="composer-section-title">Applicants</div>
-            <div class="composer-applicant-card primary">
-              <div class="applicant-role">Primary Applicant</div>
-              <div id="composerPrimaryName" class="applicant-name"></div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:11px; color:#666; min-width:100px;">Primary Applicant:</span>
+                <a id="composerPrimaryName" class="data-link" style="margin:0; padding:4px 8px; font-size:12px;"></a>
+              </div>
+              <div id="composerSpouseSection" style="display:none;">
+                <label class="composer-checkbox-label">
+                  <input type="checkbox" id="composerAddSpouse" onchange="updateComposerSpouseLabel()">
+                  <span id="composerSpouseLabel"><span id="composerSpouseLabelPrefix">Also add </span><strong id="composerSpouseName"></strong><span id="composerSpouseLabelSuffix"> as Applicant</span></span>
+                </label>
+              </div>
             </div>
-            <div id="composerSpouseSection" class="composer-spouse-option" style="display:none;">
-              <label class="composer-checkbox-label">
-                <input type="checkbox" id="composerAddSpouse" onchange="updateComposerSpouseLabel()">
-                <span id="composerSpouseLabel"><span id="composerSpouseLabelPrefix">Also add </span><strong id="composerSpouseName"></strong><span id="composerSpouseLabelSuffix"> as Applicant?</span></span>
-              </label>
+          </div>
+          <div class="composer-section">
+            <div class="composer-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>Import from Taco</span>
+              <span style="font-size:11px; font-weight:normal; color:#999;">(optional)</span>
+            </div>
+            <div id="tacoImportArea">
+              <textarea id="tacoRawInput" placeholder="Paste Taco data here..." rows="4" style="width:100%; font-size:13px; padding:10px; border:1px solid var(--color-border); border-radius:6px; resize:vertical; font-family:inherit;"></textarea>
+              <button type="button" id="tacoParseBtnAction" onclick="parseTacoData()" style="margin-top:8px; padding:6px 14px; font-size:12px; background:var(--color-midnight); color:#FFF; border:none; border-radius:4px; cursor:pointer;">Parse</button>
+            </div>
+            <div id="tacoPreview" style="display:none; margin-top:10px;">
+              <div style="font-size:12px; font-weight:500; margin-bottom:8px; color:var(--color-trail);">Parsed Fields:</div>
+              <div id="tacoPreviewContent" style="font-size:12px; background:var(--color-salt); padding:10px; border-radius:6px; max-height:200px; overflow-y:auto;"></div>
+              <button type="button" onclick="clearTacoImport()" style="margin-top:8px; padding:4px 10px; font-size:11px; background:transparent; color:#999; border:1px solid #CCC; border-radius:4px; cursor:pointer;">Clear Import</button>
             </div>
           </div>
         </div>
@@ -218,6 +281,73 @@
         </div>
       </div>
 
+      <!-- Add Connection Modal -->
+      <div id="addConnectionModal" class="modal">
+        <div class="modal-content" style="max-width:500px; min-height:400px;">
+          <div class="modal-sidebar" style="background:var(--color-cedar);">
+            <span style="font-size:28px;">🔗</span>
+          </div>
+          <div class="modal-body" style="display:flex; flex-direction:column;">
+            
+            <div id="connectionStep1" style="flex:1; display:flex; flex-direction:column;">
+              <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Add Connection</h3>
+              <p style="font-size:13px; margin-bottom:10px; color:#666;">Search for a contact or select from recent:</p>
+              <input type="text" id="connectionSearchInput" placeholder="Start typing name..." onkeyup="handleConnectionSearch(event)" onfocus="loadRecentContactsForConnectionModal()" style="margin-bottom:10px;">
+              <div id="connectionSearchResults" class="search-dropdown" style="max-height:200px; overflow-y:auto;"></div>
+              <div style="margin-top:auto; display:flex; gap:10px; justify-content:flex-end; padding-top:15px;">
+                <button type="button" class="btn-cancel" onclick="closeAddConnectionModal()">Cancel</button>
+              </div>
+            </div>
+
+            <div id="connectionStep2" style="display:none; flex:1; flex-direction:column;">
+              <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Select Relationship</h3>
+              <p style="font-size:13px; color:#666; margin-bottom:15px;">
+                How is <strong id="currentContactNameConn" style="color:var(--color-trail);"></strong> related to <strong id="targetContactNameConn" style="color:var(--color-trail);"></strong>?
+              </p>
+              <input type="hidden" id="targetConnectionContactId">
+              <select id="connectionRoleSelect" style="padding:10px; font-size:14px; border:1px solid #ddd; border-radius:4px; margin-bottom:20px;">
+                <option value="">-- Select relationship --</option>
+              </select>
+              <div style="margin-top:auto; display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" class="btn-cancel" onclick="backToConnectionStep1()">Back</button>
+                <button type="button" class="btn-confirm" id="confirmConnectionBtn" onclick="executeCreateConnection()">Create Connection</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Quick-View Card -->
+      <div id="contactQuickView" class="contact-quick-view">
+        <div class="quick-view-header">
+          <div class="quick-view-avatar" id="quickViewAvatar"></div>
+          <div class="quick-view-name-section">
+            <div class="quick-view-name" id="quickViewName"></div>
+            <div class="quick-view-preferred" id="quickViewPreferred"></div>
+          </div>
+        </div>
+        <div class="quick-view-details" id="quickViewDetails"></div>
+        <div class="quick-view-action">
+          <button type="button" class="btn-view-profile" onclick="navigateFromQuickView()">View Full Profile <span class="arrow">→</span></button>
+        </div>
+        <div class="quick-view-footer" id="quickViewFooter"></div>
+      </div>
+
+      <!-- Deactivate Connection Confirm Modal -->
+      <div id="deactivateConnectionModal" class="modal">
+        <div class="modal-content" style="max-width:480px;">
+          <div class="modal-sidebar" style="background:var(--color-midnight);">
+            <span style="font-size:28px;">🔗</span>
+          </div>
+          <div class="modal-body">
+            <h3 class="modal-title" style="margin-top:0; margin-bottom:15px; font-size:15px; line-height: 1.4;"></h3>
+            <div class="modal-body-content" style="font-size:13px;">
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="deleteConfirmModal" class="modal">
         <div class="modal-content" style="max-width:400px;">
           <div class="modal-sidebar" style="background:#A00;">
@@ -234,14 +364,68 @@
         </div>
       </div>
 
-      <div id="alertModal" class="modal">
+      <div id="unsubscribeModal" class="modal">
         <div class="modal-content" style="max-width:400px;">
-          <div class="modal-sidebar" id="alertModalSidebar">
-            <span id="alertModalIcon" style="font-size:28px;">ℹ</span>
+          <div class="modal-sidebar" style="background:var(--color-midnight);">
+            <span style="font-size:28px;">📧</span>
           </div>
           <div class="modal-body">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Change Marketing Preferences</h3>
+            <div style="margin-bottom:20px;">
+              <label class="checkbox-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                <input type="checkbox" id="unsubscribeCheckbox" style="width:18px; height:18px;">
+                <span>Unsubscribe from Marketing</span>
+              </label>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+              <button type="button" class="btn-cancel" onclick="closeUnsubscribeModal()">Cancel</button>
+              <button type="button" class="btn-primary" onclick="saveUnsubscribePreference()">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="deleteOppConfirmModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+          <div class="modal-sidebar" style="background:#A00;">
+            <span style="font-size:28px;">⚠</span>
+          </div>
+          <div class="modal-body">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Delete Opportunity</h3>
+            <p id="deleteOppConfirmMessage" style="font-size:13px; color:#666; margin-bottom:20px;"></p>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+              <button type="button" class="btn-cancel" onclick="closeDeleteOppConfirmModal()">Cancel</button>
+              <button type="button" class="btn-danger" onclick="executeDeleteOpportunity()">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Evidence Item Confirmation Modal -->
+      <div id="deleteEvidenceConfirmModal" class="modal" style="z-index:1400;">
+        <div class="modal-content" style="max-width:400px;">
+          <div class="modal-sidebar" style="background:#A00;">
+            <span style="font-size:28px;">⚠</span>
+          </div>
+          <div class="modal-body">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Delete Evidence Item</h3>
+            <p id="deleteEvidenceConfirmMessage" style="font-size:13px; color:#666; margin-bottom:20px;"></p>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+              <button type="button" class="btn-cancel" onclick="closeDeleteEvidenceConfirmModal()">Cancel</button>
+              <button type="button" class="btn-danger" onclick="executeDeleteEvidenceItem()">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="alertModal" class="modal">
+        <div class="modal-content" style="width:550px; height:auto; max-height:80vh;">
+          <div class="modal-sidebar" id="alertModalSidebar" style="width:60px; min-width:60px;">
+            <span id="alertModalIcon" style="font-size:28px;">ℹ</span>
+          </div>
+          <div class="modal-body" style="overflow-y:auto;">
             <h3 id="alertModalTitle" style="margin-top:0; margin-bottom:15px; font-size:16px;">Notice</h3>
-            <p id="alertModalMessage" style="font-size:13px; color:#666; margin-bottom:20px;"></p>
+            <p id="alertModalMessage" style="font-size:13px; color:#666; margin-bottom:20px; white-space:pre-line;"></p>
             <div style="display:flex; gap:10px; justify-content:flex-end;">
               <button type="button" class="btn-cancel" onclick="closeAlertModal()">OK</button>
             </div>
@@ -269,13 +453,728 @@
           </div>
         </div>
       </div>
+
+      <div id="emailComposer" class="email-composer-modal">
+        <div class="email-composer-content">
+          <div class="email-composer-header">
+            <h2>Appointment Confirmation Email</h2>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="settings-cog-small" onclick="openEmailSettings()" title="Edit Links & Templates">⚙</button>
+              <button class="close-panel" onclick="closeEmailComposer()">✕</button>
+            </div>
+          </div>
+          <div class="email-composer-body">
+            <div class="email-composer-settings">
+              <div class="email-setting-group">
+                <label>Appointment Type</label>
+                <select id="emailApptType" onchange="updateEmailPreview()">
+                  <option value="Office">Office</option>
+                  <option value="Phone">Phone</option>
+                  <option value="Video">Video</option>
+                </select>
+              </div>
+              <div class="email-setting-group">
+                <label>Client Type</label>
+                <select id="emailClientType" onchange="updateEmailPreview()">
+                  <option value="New">New Client</option>
+                  <option value="Repeat">Repeat Client</option>
+                </select>
+              </div>
+              <div class="email-setting-group">
+                <label>Prep Handler</label>
+                <select id="emailPrepHandler" onchange="updateEmailPreview()">
+                  <option value="Shae">Shae (part-time)</option>
+                  <option value="Team">Team (email Shae)</option>
+                  <option value="OpenBanking">Open Banking (no docs)</option>
+                </select>
+              </div>
+            </div>
+            <div class="email-composer-fields">
+              <div class="email-field-row">
+                <label>To:</label>
+                <input type="text" id="emailTo" readonly>
+              </div>
+              <div class="email-field-row">
+                <label>Subject:</label>
+                <input type="text" id="emailSubject" readonly>
+              </div>
+            </div>
+            <div class="email-preview-container">
+              <div class="email-preview-label" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Email Body (editable)</span>
+                <a href="#" onclick="event.preventDefault(); event.stopPropagation(); openCurrentTemplateEditor();" style="font-size:11px; color:var(--color-star); cursor:pointer;">Edit Template</a>
+              </div>
+              <div id="emailQuillContainer">
+                <div id="emailQuillToolbar">
+                  <span class="ql-formats">
+                    <button class="ql-bold"></button>
+                    <button class="ql-italic"></button>
+                    <button class="ql-underline"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-link"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-list" value="ordered"></button>
+                    <button class="ql-list" value="bullet"></button>
+                  </span>
+                  <span class="ql-formats">
+                    <button class="ql-clean"></button>
+                  </span>
+                </div>
+                <div id="emailPreviewBody" class="email-preview-body"></div>
+              </div>
+            </div>
+          </div>
+          <div class="email-composer-footer">
+            <button type="button" class="btn-cancel" onclick="closeEmailComposer()">Cancel</button>
+            <button type="button" class="btn-confirm" onclick="sendEmail()" id="emailSendBtn">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="emailSettingsModal" class="modal">
+        <div class="modal-content" style="width:700px !important; height:auto !important; max-height:90vh;">
+          <div class="modal-sidebar" style="background:var(--color-cedar); width:60px; min-width:60px;">
+            <span style="font-size:24px;">⚙</span>
+          </div>
+          <div class="modal-body" style="overflow-y:auto; max-height:calc(90vh - 40px); flex:1;">
+            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Settings</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">These settings are shared with the whole team. Changes you make here will update for everyone.</p>
+            <div style="margin-bottom:15px; padding:12px; background:var(--color-sky); border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:600; font-size:13px;">Email Templates</div>
+                <div style="font-size:11px; color:#666;">Manage email templates with conditional content</div>
+              </div>
+              <button type="button" onclick="closeEmailSettings(); openTemplateList();" style="padding:8px 16px; background:var(--color-star); color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:500;">Manage Templates</button>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; background:#f8f8f8; border-radius:6px; margin-bottom:15px;">
+              <div>
+                <div style="font-weight:600; font-size:13px;">Evidence Templates</div>
+                <div style="font-size:11px; color:#666;">Master templates for evidence/document requests</div>
+              </div>
+              <button type="button" onclick="closeEmailSettings(); openEvidenceTemplatesModal();" style="padding:8px 16px; background:var(--color-cedar); color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:500;">Manage Evidence</button>
+            </div>
+            <div class="email-settings-form">
+              <div class="setting-row">
+                <label>Office Map Link</label>
+                <input type="url" id="settingOfficeMap" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>Our Team Page</label>
+                <input type="url" id="settingOurTeam" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>Fact Find Document</label>
+                <input type="url" id="settingFactFind" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>myGov Link</label>
+                <input type="url" id="settingMyGov" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>myGov Help Video</label>
+                <input type="url" id="settingMyGovVideo" placeholder="https://...">
+              </div>
+              <div class="setting-row">
+                <label>Income Statement Instructions</label>
+                <input type="url" id="settingIncomeInstructions" placeholder="https://...">
+              </div>
+              <div style="border-top:1px solid var(--color-border); margin-top:12px; padding-top:12px;">
+                <div class="setting-row">
+                  <label>Your Email Signature</label>
+                  <div style="background:var(--color-sky); padding:8px 12px; border-radius:4px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:11px; color:#555;">
+                      <span id="sigGenName">Loading...</span> · <span id="sigGenTitle"></span>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                      <button type="button" onclick="regenerateSignature()" style="padding:4px 10px; background:var(--color-star); color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px; font-weight:600; width:auto; margin:0;">Regenerate</button>
+                      <button type="button" onclick="copySignatureForGmail()" style="padding:4px 10px; background:#555; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px; font-weight:500; width:auto; margin:0;">Copy for Gmail</button>
+                      <button type="button" onclick="copySignatureForMercury()" style="padding:4px 10px; background:#555; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px; font-weight:500; width:auto; margin:0;">Copy for Mercury</button>
+                    </div>
+                  </div>
+                  <div id="signaturePreviewContainer" style="background:#FFF; border:1px solid var(--color-border); border-radius:6px; padding:15px; min-height:80px; margin-bottom:8px; overflow:auto;"></div>
+                  <span style="font-size:11px; color:#888; display:block;">Your signature is stored in Airtable and syncs across all your devices.</span>
+                  <textarea id="settingSignature" style="display:none;"></textarea>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; padding-bottom:10px;">
+              <button type="button" class="btn-cancel" onclick="closeEmailSettings()">Close</button>
+              <button type="button" class="btn-confirm" onclick="saveEmailSettings()">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- Template Editor Modal -->
+    <div id="templateEditorModal" class="modal-overlay" style="display:none;">
+      <div class="modal-content template-editor-modal">
+        <div class="modal-header">
+          <h3 id="templateEditorTitle">Edit Template</h3>
+          <button class="close-panel" onclick="closeTemplateEditor()">&times;</button>
+        </div>
+        <div class="template-editor-body">
+          <div class="template-editor-grid">
+            <!-- Row 1: Headers -->
+            <div class="template-editor-panel-header">
+              <span>Template Source</span>
+            </div>
+            <div class="template-editor-panel-header">
+              <span>Live Preview</span>
+              <span id="previewDataSource" class="preview-data-badge">Sample Data</span>
+            </div>
+            
+            <!-- Row 2: Template Name (left) / Preview Controls (right) -->
+            <div class="template-editor-cell template-name-cell">
+              <div class="template-editor-field">
+                <label>Template Name</label>
+                <input type="text" id="templateEditorName" placeholder="e.g., Appointment Confirmation">
+              </div>
+            </div>
+            <div class="template-editor-cell template-name-cell preview-controls-cell">
+              <div class="preview-controls">
+                <label>Preview As:</label>
+                <div class="preview-control-row">
+                  <select id="previewApptType" onchange="updateTemplatePreviewFromControls()">
+                    <option value="Office">Office</option>
+                    <option value="Phone">Phone</option>
+                    <option value="Video">Video</option>
+                  </select>
+                  <select id="previewClientType" onchange="updateTemplatePreviewFromControls()">
+                    <option value="New">New Client</option>
+                    <option value="Repeat">Repeat Client</option>
+                  </select>
+                  <select id="previewPrepHandler" onchange="updateTemplatePreviewFromControls()">
+                    <option value="Shae">Prep: Shae</option>
+                    <option value="Team">Prep: Team</option>
+                    <option value="OpenBanking">Prep: Open Banking</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Row 3: Subject -->
+            <div class="template-editor-cell">
+              <div class="template-editor-field template-subject-field">
+                <label>Subject Line</label>
+                <div id="templateEditorSubjectContainer">
+                  <div id="templateEditorSubject" spellcheck="false"></div>
+                </div>
+              </div>
+            </div>
+            <div class="template-editor-cell preview-cell">
+              <label>Subject Line</label>
+              <div id="templatePreviewSubject" class="preview-subject-text"></div>
+            </div>
+            
+            <!-- Row 4: Body -->
+            <div class="template-editor-cell template-body-cell">
+              <div class="template-editor-field template-body-field">
+                <label>Email Body</label>
+                <div id="templateEditorQuillContainer">
+                  <div id="templateEditorToolbar">
+                    <span class="ql-formats">
+                      <button class="ql-bold"></button>
+                      <button class="ql-italic"></button>
+                      <button class="ql-underline"></button>
+                    </span>
+                    <span class="ql-formats">
+                      <button class="ql-link"></button>
+                    </span>
+                    <span class="ql-formats">
+                      <button class="ql-list" value="ordered"></button>
+                      <button class="ql-list" value="bullet"></button>
+                    </span>
+                    <span class="ql-formats">
+                      <button class="ql-clean"></button>
+                    </span>
+                  </div>
+                  <div id="templateEditorBody" spellcheck="false"></div>
+                </div>
+              </div>
+            </div>
+            <div class="template-editor-cell preview-cell template-body-cell">
+              <label>Email Body</label>
+              <div id="templatePreviewBody" class="preview-body-content"></div>
+            </div>
+          </div>
+          <div class="template-editor-sidebar">
+            <div class="sidebar-section">
+              <h4>Insert Variable</h4>
+              <div id="variablePickerList" class="variable-picker-list"></div>
+            </div>
+            <div class="sidebar-section">
+              <h4>Add Condition</h4>
+              <div class="condition-builder">
+                <select id="conditionVariable">
+                  <option value="">Select variable...</option>
+                  <option value="appointmentType">Appointment Type</option>
+                  <option value="clientType">Client Type</option>
+                  <option value="prepHandler">Prep Handler</option>
+                </select>
+                <div id="conditionOptionsContainer" style="display:none;">
+                  <div class="condition-options" id="conditionOptions"></div>
+                  <button type="button" class="btn-insert-condition" onclick="insertConditionBlock()">Insert Condition Block</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeTemplateEditor()">Cancel</button>
+          <button type="button" class="btn-confirm" id="templateEditorSaveBtn" onclick="saveTemplate()">Save Template</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template List Modal (Central Hub) -->
+    <div id="templateListModal" class="modal-overlay" style="display:none;">
+      <div class="modal-content" style="max-width:700px;">
+        <div class="modal-header">
+          <h3>Email Templates</h3>
+          <button class="close-panel" onclick="closeTemplateList()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+          <p style="font-size:13px; color:#666; margin-bottom:15px;">Manage email templates used across the system. Changes apply to everyone.</p>
+          <div id="templateListContainer"></div>
+          <div style="margin-top:15px;">
+            <button type="button" class="btn-confirm" onclick="createNewTemplate()">+ New Template</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeTemplateList()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Templates Management Modal -->
+    <div id="evidenceTemplatesModal" class="modal-overlay" style="display:none;">
+      <div class="modal-content" style="max-width:900px; height:90vh; max-height:90vh; display:flex; flex-direction:column;">
+        <div class="modal-header">
+          <h3>Evidence Templates</h3>
+          <button class="close-panel" onclick="closeEvidenceTemplatesModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px; overflow-y:auto; flex:1; background:#fff;">
+          <p style="font-size:13px; color:#666; margin-bottom:15px;">Master templates used when creating evidence lists for new opportunities. Changes here affect future opportunities only.</p>
+          <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="evidenceTemplatesSearch" placeholder="Search templates..." style="flex:1; padding:8px 12px; border:1px solid #ddd; border-radius:4px; background:#fff;">
+            <select id="evidenceTemplatesFilter" style="padding:8px 12px; border:1px solid #ddd; border-radius:4px; background:#fff;">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+          <div id="evidenceTemplatesContainer" style="min-height:300px; background:#fff;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeEvidenceTemplatesModal()">Close</button>
+          <button type="button" class="btn-confirm" onclick="openNewEvidenceTemplateForm()">+ New Template</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Template Edit Modal -->
+    <div id="evidenceTemplateEditModal" class="modal-overlay" style="display:none; z-index:1300;">
+      <div class="modal-content" style="max-width:950px; width:90%; height:80vh; max-height:80vh; display:flex; flex-direction:column;">
+        <div class="modal-header">
+          <h3 id="evidenceTemplateEditTitle">Edit Template</h3>
+          <button class="close-panel" onclick="closeEvidenceTemplateEditModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px; background:#fff; flex:1; overflow-y:auto;">
+          <div style="display:flex; gap:30px;">
+            <!-- Left column: Main fields -->
+            <div style="flex:1; min-width:0;">
+              <div class="field-group" style="margin-bottom:16px;">
+                <label>Name *</label>
+                <input type="text" id="evTplEditName" placeholder="e.g., Payslips (last 2)" style="background:#fff; width:100%;">
+              </div>
+              <div class="field-group" style="margin-bottom:16px;">
+                <label>Category</label>
+                <select id="evTplEditCategory" style="background:#fff; width:100%;"></select>
+              </div>
+              <div class="field-group" style="margin-bottom:16px;">
+                <label>Description (shown to clients)</label>
+                <div id="evTplEditDescEditor" style="height:150px; border:1px solid #ddd; border-radius:4px; background:#fff;"></div>
+              </div>
+              <div class="form-row" style="display:flex; gap:20px;">
+                <div class="field-group" style="width:120px;">
+                  <label>Display Order</label>
+                  <input type="number" id="evTplEditOrder" min="0" value="100" style="background:#fff; width:100%;">
+                </div>
+                <div class="field-group" style="flex:1; display:flex; align-items:center; padding-top:20px;">
+                  <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0;">
+                    <input type="checkbox" id="evTplEditLenderSpecific">
+                    <span>Lender-Specific <span style="font-size:10px; color:#888;">(requires rules)</span></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <!-- Right column: Opportunity Types -->
+            <div style="width:220px; flex-shrink:0; border-left:1px solid #eee; padding-left:24px;">
+              <div class="field-group">
+                <label style="margin-bottom:8px; display:block;">Opportunity Types</label>
+                <p style="font-size:10px; color:#888; margin:0 0 12px;">Leave all unchecked to apply to all types</p>
+                <div id="evTplEditOppTypes" style="display:flex; flex-direction:column; gap:8px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-danger" id="evTplDeleteBtn" onclick="deleteEvidenceTemplate()" style="margin-right:auto;">Delete</button>
+          <button type="button" class="btn-cancel" onclick="closeEvidenceTemplateEditModal()">Cancel</button>
+          <button type="button" class="btn-confirm" id="evTplSaveBtn" onclick="saveEvidenceTemplate()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    
     <div style="position:fixed; bottom:5px; right:10px; font-size:10px; color:#AAA; z-index:1000; font-family:sans-serif;">
-       User: <span id="debugUser">Loading...</span> | v4.0 (Modular)
+       User: <span id="debugUser">Loading...</span> | <a href="/logout" style="color:#888; text-decoration:underline; cursor:pointer;">Log out</a> | v4.3 (Signature)
     </div>
 
-    <script src="/gas-shim.js?v=4"></script>
-    <script src="/app.js?v=4"></script>
+    <!-- Appointment Form Modal -->
+    <div id="appointmentFormModal" class="modal-overlay">
+      <div class="modal-content" style="max-width:600px;">
+        <div class="modal-header">
+          <h3 id="appointmentFormTitle">New Appointment</h3>
+          <button class="close-panel" onclick="closeAppointmentForm()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+          <div class="form-row">
+            <div class="field-group" style="flex:1;">
+              <label>Appointment Time</label>
+              <input type="datetime-local" id="apptFormTime">
+            </div>
+            <div class="field-group" style="flex:1;">
+              <label>Status</label>
+              <select id="apptFormStatus">
+                <option value="">Not Set</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="No Show">No Show</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field-group" style="flex:1;">
+              <label>Type of Appointment</label>
+              <select id="apptFormType" onchange="updateAppointmentFormVisibility()">
+                <option value="Office">Office</option>
+                <option value="Phone">Phone</option>
+                <option value="Video">Video</option>
+              </select>
+            </div>
+            <div class="field-group" style="flex:1;">
+              <label>How Booked</label>
+              <select id="apptFormHowBooked" onchange="updateAppointmentFormVisibility()">
+                <option value="Calendly">Calendly</option>
+                <option value="Email">Email</option>
+                <option value="Phone">Phone</option>
+                <option value="Podium">Podium</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" id="apptFormHowBookedOtherRow" style="display:none;">
+            <div class="field-group" style="flex:1;">
+              <label>How Booked (Other)</label>
+              <input type="text" id="apptFormHowBookedOther" placeholder="Specify how booked">
+            </div>
+          </div>
+          <div class="form-row" id="apptFormPhoneRow" style="display:none;">
+            <div class="field-group" style="flex:1;">
+              <label>Phone Number</label>
+              <input type="text" id="apptFormPhone" placeholder="Client phone number">
+            </div>
+          </div>
+          <div class="form-row" id="apptFormMeetRow" style="display:none;">
+            <div class="field-group" style="flex:1;">
+              <label>Video Meet URL</label>
+              <input type="text" id="apptFormMeetUrl" placeholder="meet.google.com/xxx-xxxx-xxx">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field-group" style="flex:1;">
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="apptFormNeedEvidence" style="width:auto; margin:0;">
+                Need Evidence in Advance
+              </label>
+            </div>
+            <div class="field-group" style="flex:1;">
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="apptFormNeedReminder" style="width:auto; margin:0;">
+                Need Appointment Reminder
+              </label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field-group" style="flex:1;">
+              <label>Notes</label>
+              <textarea id="apptFormNotes" rows="3" placeholder="Additional notes..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeAppointmentForm()">Cancel</button>
+          <button type="button" id="apptFormSaveBtn" class="btn-confirm" onclick="saveAppointment()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="confirm-modal-overlay" style="display:none;">
+      <div class="confirm-modal">
+        <div class="confirm-modal-body">
+          <p id="confirmModalMessage">Are you sure?</p>
+        </div>
+        <div class="confirm-modal-footer">
+          <button type="button" class="btn-cancel" id="confirmModalCancel">Cancel</button>
+          <button type="button" class="btn-confirm" id="confirmModalOk">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Modal (Full Screen) -->
+    <div id="evidenceModal" class="evidence-modal">
+      <div class="evidence-modal-content">
+        <div class="evidence-modal-header">
+          <div class="evidence-header-left">
+            <button type="button" class="evidence-close-btn" onclick="closeEvidenceModal()">✕</button>
+            <div class="evidence-header-title">
+              <h2>Evidence & Data Collection</h2>
+              <p id="evidenceOppName" class="evidence-opp-name"></p>
+            </div>
+          </div>
+          <div class="evidence-header-right">
+            <div class="evidence-progress">
+              <div class="evidence-progress-bar">
+                <div id="evidenceProgressFill" class="evidence-progress-fill"></div>
+              </div>
+              <span id="evidenceProgressText" class="evidence-progress-text">0%</span>
+            </div>
+          </div>
+        </div>
+        <div class="evidence-modal-toolbar">
+          <div class="evidence-toolbar-left">
+            <button type="button" class="evidence-btn" onclick="openAddEvidenceItemModal()">+ Add Custom Item</button>
+            <button type="button" class="evidence-btn" onclick="openEvidenceClientView()">👁 View Client Version</button>
+            <div class="evidence-email-dropdown">
+              <button type="button" class="evidence-btn evidence-email-btn" onclick="toggleEvidenceEmailMenu()">✉️ Email <span class="dropdown-arrow">▾</span></button>
+              <div id="evidenceEmailMenu" class="evidence-dropdown-menu">
+                <button onclick="generateEvidenceEmail('appointment')">Appointment Confirmation</button>
+                <button onclick="generateEvidenceEmail('initial')">Initial Request</button>
+                <button onclick="generateEvidenceEmail('subsequent')">Subsequent Request</button>
+              </div>
+            </div>
+          </div>
+          <div class="evidence-toolbar-right">
+            <label class="evidence-filter-label">Filter:</label>
+            <select id="evidenceStatusFilter" onchange="filterEvidenceItems()">
+              <option value="all">All Items</option>
+              <option value="outstanding">Outstanding Only</option>
+              <option value="received">Received Only</option>
+            </select>
+            <label class="evidence-checkbox-label">
+              <input type="checkbox" id="evidenceShowNA" checked onchange="filterEvidenceItems()">
+              <span>Show N/A</span>
+            </label>
+            <label class="evidence-checkbox-label">
+              <input type="checkbox" id="evidenceOutstandingFirst" onchange="filterEvidenceItems()">
+              <span>Outstanding First</span>
+            </label>
+            <button type="button" class="evidence-btn-text" onclick="populateEvidenceFromTemplates()">+ Add from Templates</button>
+          </div>
+        </div>
+        <div id="evidenceModalBody" class="evidence-modal-body">
+          <div id="evidenceLoading" class="evidence-loading">Loading evidence items...</div>
+          <div id="evidenceEmptyState" class="evidence-empty-state" style="display:none;">
+            <p>No evidence items yet.</p>
+            <button type="button" class="evidence-btn-primary" onclick="populateEvidenceFromTemplates()">Populate from Templates</button>
+          </div>
+          <div id="evidenceItemsContainer"></div>
+        </div>
+        <div class="evidence-modal-footer">
+          <button type="button" class="evidence-btn-secondary" onclick="openManageTemplatesModal()">Manage Default Templates</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Evidence Item Modal -->
+    <div id="addEvidenceItemModal" class="modal-overlay" style="z-index:1300;">
+      <div class="modal-content" style="width:750px; max-width:90vw; min-height:550px;">
+        <div class="modal-header">
+          <h3>Add Custom Evidence Item</h3>
+          <button type="button" class="close-panel" onclick="closeAddEvidenceItemModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+          <div class="field-group" style="margin-bottom:15px;">
+            <label>Category</label>
+            <select id="newEvidenceCategory">
+              <option value="Identification">Identification</option>
+              <option value="Income">Income</option>
+              <option value="Assets">Assets</option>
+              <option value="Liabilities">Liabilities</option>
+              <option value="Refinance">Refinance</option>
+              <option value="Purchase & Property">Purchase & Property</option>
+              <option value="Construction">Construction</option>
+              <option value="Expenses">Expenses</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:15px;">
+            <label>Name</label>
+            <input type="text" id="newEvidenceName" placeholder="e.g., Bank Statement">
+          </div>
+          <div class="field-group" style="margin-bottom:15px;">
+            <label>Description (supports rich text - bold, links, etc.)</label>
+            <div id="newEvidenceDescToolbar">
+              <span class="ql-formats">
+                <button class="ql-bold"></button>
+                <button class="ql-italic"></button>
+                <button class="ql-underline"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-link"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-list" value="bullet"></button>
+              </span>
+            </div>
+            <div id="newEvidenceDescEditor" style="height:150px; background:#FFF; border:1px solid #DDD; border-top:none; border-radius:0 0 4px 4px;"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeAddEvidenceItemModal()">Cancel</button>
+          <button type="button" class="btn-primary" onclick="submitNewEvidenceItem()">Add Item</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Client View Modal -->
+    <div id="evidenceClientViewModal" class="modal-overlay" style="z-index:1250;">
+      <div class="modal-content" style="width:800px; max-width:95vw; height:auto; max-height:90vh; display:flex; flex-direction:column;">
+        <div class="modal-header">
+          <h3>Client View - Evidence List</h3>
+          <button type="button" class="close-panel" onclick="closeEvidenceClientView()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px; flex:1; overflow-y:auto;">
+          <p style="color:#888; font-size:13px; margin-bottom:15px;">This is how the list will appear when pasted into an email. Review and click "Copy to Clipboard" when ready.</p>
+          <div id="evidenceClientViewContent" style="background:#FFF; border:1px solid #DDD; border-radius:8px; padding:20px; font-size:13px; font-family:Arial,sans-serif; line-height:1.5;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeEvidenceClientView()">Close</button>
+          <button type="button" class="btn-primary" onclick="copyEvidenceClientView()">Copy to Clipboard</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence Email Preview Modal -->
+    <div id="evidenceEmailModal" class="modal-overlay" style="z-index:1250;">
+      <div class="modal-content" style="width:900px; max-width:95vw; height:90vh; max-height:90vh; display:flex; flex-direction:column;">
+        <div class="modal-header">
+          <h3 id="evidenceEmailModalTitle">Compose Email</h3>
+          <button type="button" class="close-panel" onclick="closeEvidenceEmailModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px; flex:1; display:flex; flex-direction:column; min-height:0; background:#f5f5f5;">
+          <div style="display:flex; gap:15px; margin-bottom:15px;">
+            <div class="field-group" style="flex:1;">
+              <label>To</label>
+              <input type="text" id="evidenceEmailTo" style="width:100%; padding:8px; border:1px solid #DDD; border-radius:4px; background:#fff;">
+            </div>
+            <div class="field-group" style="flex:2;">
+              <label>Subject</label>
+              <input type="text" id="evidenceEmailSubject" style="width:100%; padding:8px; border:1px solid #DDD; border-radius:4px; background:#fff;">
+            </div>
+          </div>
+          <div class="field-group" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <label style="margin:0;">Message <span style="font-weight:normal; color:#888; font-size:11px;">(click to edit anywhere)</span></label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <button type="button" onclick="emailEditorCommand('bold')" title="Bold" style="padding:5px 8px; border:1px solid #ddd; border-radius:3px; background:#f8f8f8; cursor:pointer; font-weight:bold; font-family:Georgia,serif; font-size:14px; color:#444; min-width:28px;">B</button>
+                <button type="button" onclick="emailEditorCommand('italic')" title="Italic" style="padding:5px 8px; border:1px solid #ddd; border-radius:3px; background:#f8f8f8; cursor:pointer; font-style:italic; font-family:Georgia,serif; font-size:14px; color:#444; min-width:28px;">I</button>
+                <button type="button" onclick="emailEditorCommand('createLink')" title="Insert Link" style="padding:5px 8px; border:1px solid #ddd; border-radius:3px; background:#f8f8f8; cursor:pointer; font-size:13px; color:#444; min-width:28px;">&#128279;</button>
+                <span style="border-left:1px solid #ddd; height:20px; margin:0 6px;"></span>
+                <button type="button" onclick="resetEmailToTemplate()" title="Reset to original template" style="padding:5px 10px; border:1px solid #ddd; border-radius:3px; background:#f8f8f8; cursor:pointer; font-size:11px; color:#666;">reset</button>
+              </div>
+            </div>
+            <iframe id="evidenceEmailEditor" style="flex:1; width:100%; border:1px solid #DDD; border-radius:4px; background:#fff; min-height:300px;"></iframe>
+          </div>
+          <p style="font-size:12px; color:#666; margin-top:12px; background:#fff; padding:10px; border-radius:4px; border-left:3px solid var(--color-star);">
+            <strong><span id="evidenceEmailItemCount">0</span> outstanding item(s)</strong> will be marked as "Requested" when sent.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeEvidenceEmailModal()">Cancel</button>
+          <button type="button" class="btn-primary" id="evidenceEmailSendBtn" onclick="sendEvidenceEmail()">Send Email</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Evidence Item Modal -->
+    <div id="editEvidenceItemModal" class="modal-overlay" style="z-index:1300;">
+      <div class="modal-content" style="width:750px; max-width:90vw; height:auto; max-height:90vh; display:flex; flex-direction:column;">
+        <div class="modal-header">
+          <h3>Edit Evidence Item</h3>
+          <button type="button" class="close-panel" onclick="closeEditEvidenceItemModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px; flex:1; overflow-y:auto;">
+          <input type="hidden" id="editEvidenceItemId">
+          <div class="field-group" style="margin-bottom:20px;">
+            <label>Category</label>
+            <select id="editEvidenceCategory">
+              <option value="Identification">Identification</option>
+              <option value="Income">Income</option>
+              <option value="Assets">Assets</option>
+              <option value="Liabilities">Liabilities</option>
+              <option value="Refinance">Refinance</option>
+              <option value="Purchase & Property">Purchase & Property</option>
+              <option value="Construction">Construction</option>
+              <option value="Expenses">Expenses</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:20px;">
+            <label>Name</label>
+            <input type="text" id="editEvidenceName" placeholder="e.g., Bank Statement">
+          </div>
+          <div class="field-group" style="margin-bottom:20px;">
+            <label>Description</label>
+            <div id="editEvidenceDescToolbar">
+              <span class="ql-formats">
+                <button class="ql-bold"></button>
+                <button class="ql-italic"></button>
+                <button class="ql-underline"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-link"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-list" value="bullet"></button>
+              </span>
+            </div>
+            <div id="editEvidenceDescEditor" style="height:180px; background:#FFF; border:1px solid #DDD; border-top:none; border-radius:0 0 4px 4px;"></div>
+          </div>
+          <div class="field-group" style="margin-bottom:10px;">
+            <label>Internal Notes (not visible to client)</label>
+            <textarea id="editEvidenceNotes" rows="4" style="width:100%; padding:10px; border:1px solid #DDD; border-radius:4px; font-family:inherit; box-sizing:border-box;"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; gap:15px;">
+          <button type="button" class="btn-danger" style="padding:8px 16px; font-size:13px;" onclick="deleteEvidenceItem()">Delete Item</button>
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="btn-secondary" style="padding:8px 16px;" onclick="closeEditEvidenceItemModal()">Cancel</button>
+            <button type="button" class="btn-primary" style="padding:8px 16px;" onclick="saveEditedEvidenceItem()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quill WYSIWYG Editor -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+    <script src="/api-bridge.js?v=55"></script>
+    <script src="/app.js?v=55"></script>
   </body>
 </html>

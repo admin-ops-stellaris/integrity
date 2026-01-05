@@ -175,11 +175,12 @@ app.get("/auth/google", async (req, res, next) => {
     req.session.oauth = { state, nonce, baseUrl };
 
     const authUrl = client.authorizationUrl({
-      scope: "openid email profile",
+      scope: "openid email profile https://www.googleapis.com/auth/gmail.send",
       state,
       nonce,
       hd: ALLOWED_GOOGLE_DOMAIN,
-      prompt: "select_account",
+      prompt: "consent",
+      access_type: "offline",
     });
 
     res.redirect(authUrl);
@@ -218,6 +219,14 @@ app.get(CALLBACK_PATH, async (req, res, next) => {
       picture: claims.picture,
       hd: claims.hd,
     };
+    
+    // Store Gmail tokens for sending emails
+    req.session.gmailTokens = {
+      access_token: tokenSet.access_token,
+      refresh_token: tokenSet.refresh_token,
+      expires_at: tokenSet.expires_at ? tokenSet.expires_at * 1000 : Date.now() + 3600000,
+    };
+    
     delete req.session.oauth;
 
     res.redirect("/");
@@ -1029,7 +1038,24 @@ app.post("/api/sendEmail", async (req, res) => {
     if (!to || !subject || !body) {
       return res.json({ success: false, error: "Missing required fields: to, subject, or body" });
     }
-    const result = await gmail.sendEmail(to, subject, body);
+    
+    // Get Gmail tokens from session (production) or use Replit connector (development)
+    const gmailTokens = req.session?.gmailTokens;
+    const baseUrl = getBaseUrl(req);
+    
+    // Pass tokens and OAuth client config for token refresh
+    const result = await gmail.sendEmail(to, subject, body, {
+      tokens: gmailTokens,
+      clientId: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      onTokenRefresh: (newTokens) => {
+        // Update session with refreshed tokens
+        if (req.session) {
+          req.session.gmailTokens = newTokens;
+        }
+      }
+    });
+    
     res.json(result);
   } catch (err) {
     console.error("sendEmail error:", err);

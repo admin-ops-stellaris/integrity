@@ -1,8 +1,12 @@
 import { google } from 'googleapis';
 
+// Replit connector settings cache (for development)
 let connectionSettings = null;
 
-async function getAccessToken() {
+// Check if running in Replit environment
+const IS_REPLIT = !!process.env.REPL_ID;
+
+async function getReplitAccessToken() {
   if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
     return connectionSettings.settings.access_token;
   }
@@ -36,8 +40,55 @@ async function getAccessToken() {
   return accessToken;
 }
 
-export async function getGmailClient() {
-  const accessToken = await getAccessToken();
+async function getProductionGmailClient(options) {
+  const { tokens, clientId, clientSecret, onTokenRefresh } = options;
+  
+  if (!tokens?.access_token) {
+    throw new Error('Gmail not authorized. Please log out and log back in to grant email permissions.');
+  }
+  
+  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+  
+  oauth2Client.setCredentials({
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+  });
+  
+  // Check if token is expired or will expire soon (within 5 minutes)
+  const now = Date.now();
+  const expiresAt = tokens.expires_at || 0;
+  
+  if (expiresAt < now + 300000 && tokens.refresh_token) {
+    console.log('Access token expired or expiring soon, refreshing...');
+    try {
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      
+      // Update stored tokens
+      const newTokens = {
+        access_token: credentials.access_token,
+        refresh_token: credentials.refresh_token || tokens.refresh_token,
+        expires_at: credentials.expiry_date || Date.now() + 3600000,
+      };
+      
+      oauth2Client.setCredentials(credentials);
+      
+      // Callback to update session
+      if (onTokenRefresh) {
+        onTokenRefresh(newTokens);
+      }
+      
+      console.log('Token refreshed successfully');
+    } catch (refreshError) {
+      console.error('Failed to refresh token:', refreshError.message);
+      throw new Error('Gmail authorization expired. Please log out and log back in.');
+    }
+  }
+  
+  return google.gmail({ version: 'v1', auth: oauth2Client });
+}
+
+async function getReplitGmailClient() {
+  const accessToken = await getReplitAccessToken();
 
   const oauth2Client = new google.auth.OAuth2();
   oauth2Client.setCredentials({
@@ -47,9 +98,18 @@ export async function getGmailClient() {
   return google.gmail({ version: 'v1', auth: oauth2Client });
 }
 
-export async function sendEmail(to, subject, htmlBody) {
+export async function sendEmail(to, subject, htmlBody, options = {}) {
   try {
-    const gmail = await getGmailClient();
+    let gmail;
+    
+    // Use production OAuth if tokens are provided, otherwise try Replit connector
+    if (options.tokens) {
+      gmail = await getProductionGmailClient(options);
+    } else if (IS_REPLIT) {
+      gmail = await getReplitGmailClient();
+    } else {
+      throw new Error('Gmail not configured. Please log out and log back in to authorize email sending.');
+    }
     
     // Build the email message in MIME format
     const toAddresses = to.split(',').map(e => e.trim()).join(', ');

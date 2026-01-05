@@ -12,5 +12,6 @@ Here's how to take the updated version through to being live for users:
    - Title "Deploy staging to main" (or whatever)
    - Create pull request
    - Merge pull request
+   - Confirm merge
    - can watch the log of it going live at https://fly.io/apps/integrity-prod/monitoring
 5. To view the live version go to https://integrity-prod.fly.dev

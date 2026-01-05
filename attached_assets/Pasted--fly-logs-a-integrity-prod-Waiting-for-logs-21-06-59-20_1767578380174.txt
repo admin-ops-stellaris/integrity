@@ -1,0 +1,202 @@
+$ fly logs -a integrity-prod 
+Waiting for logs...
+21:06:59
+2026-01-04T21:06:59.537681946 [01KDQS17PVPN44P36WZSVGF5F5:main] Running Firecracker v1.12.1
+21:06:59
+2026-01-04T21:06:59.537919110 [01KDQS17PVPN44P36WZSVGF5F5:main] Listening on API socket ("/fc.sock").
+21:07:00
+ INFO Starting init (commit: 6f59af0a)...
+21:07:00
+ INFO Preparing to run: `docker-entrypoint.sh npm start` as root
+21:07:00
+ INFO [fly api proxy] listening at /.fly/api
+21:07:00
+Machine started in 1.208s
+21:07:00
+machine started in 1.287641022s
+21:07:01
+2026/01/04 21:07:01 INFO SSH listening listen_address=[fdaa:3b:6707:a7b:f5:59f3:f369:2]:22
+21:07:01
+> integrity@1.0.0 start
+21:07:01
+> node server.js
+21:07:01
+Server listening on 5000
+21:07:01
+machine became reachable in 1.295528267s
+21:13:17
+App integrity-prod has excess capacity, autostopping machine 18577d1a2dd398. 0 out of 1 machines left running (region=syd, process group=app)
+21:13:17
+ INFO Sending signal SIGINT to main child process w/ PID 640
+21:13:22
+ INFO Sending signal SIGTERM to main child process w/ PID 640
+21:13:22
+ INFO Main child exited with signal (with signal 'SIGTERM', core dumped? false)
+21:13:22
+ INFO Starting clean up.
+21:13:22
+[  383.350832] reboot: Restarting system
+01:56:13
+Starting machine
+01:56:14
+2026-01-05T01:56:14.106639648 [01KDQS17PVPN44P36WZSVGF5F5:main] Running Firecracker v1.12.1
+01:56:14
+2026-01-05T01:56:14.106842011 [01KDQS17PVPN44P36WZSVGF5F5:main] Listening on API socket ("/fc.sock").
+01:56:14
+ INFO Starting init (commit: 6f59af0a)...
+01:56:15
+ INFO Preparing to run: `docker-entrypoint.sh npm start` as root
+01:56:15
+ INFO [fly api proxy] listening at /.fly/api
+01:56:15
+Machine started in 1.185s
+01:56:15
+machine started in 1.299053815s
+01:56:15
+2026/01/05 01:56:15 INFO SSH listening listen_address=[fdaa:3b:6707:a7b:f5:59f3:f369:2]:22
+01:56:15
+> integrity@1.0.0 start
+01:56:15
+> node server.js
+01:56:16
+Server listening on 5000
+01:56:16
+Pulling container image registry.fly.io/integrity-prod@sha256:75ed6f76836b3523c111b5fdb069b5ef894328e30de936892282266b4365b698
+01:56:16
+Container image registry.fly.io/integrity-prod@sha256:75ed6f76836b3523c111b5fdb069b5ef894328e30de936892282266b4365b698 already prepared
+01:56:16
+Configuring firecracker
+01:56:16
+ INFO Sending signal SIGINT to main child process w/ PID 640
+01:56:17
+Pulling container image registry.fly.io/integrity-prod@sha256:75ed6f76836b3523c111b5fdb069b5ef894328e30de936892282266b4365b698
+01:56:17
+Container image registry.fly.io/integrity-prod@sha256:75ed6f76836b3523c111b5fdb069b5ef894328e30de936892282266b4365b698 already prepared
+01:56:18
+Configuring firecracker
+01:56:20
+waiting for machine to be reachable on 0.0.0.0:5000 (waited 5.441176679s so far)
+01:56:21
+ INFO Sending signal SIGTERM to main child process w/ PID 640
+01:56:22
+ INFO Main child exited with signal (with signal 'SIGTERM', core dumped? false)
+01:56:22
+ INFO Starting clean up.
+01:56:22
+[    7.887504] reboot: Restarting system
+01:56:23
+[PM05] failed to connect to machine: gave up after 15 attempts (in 8.446342838s)
+01:56:23
+Starting machine
+01:56:23
+[PM01] machines API returned an error: "machine ID 2860062f976208 lease currently held by c2b5fc86-1ffa-52f5-9eb5-70b2842f28ee@tokens.fly.io, expires at 2026-01-05T01:56:35Z"
+01:56:24
+Starting machine
+01:56:24
+[PM01] machines API returned an error: "machine ID 18577d1a2dd398 lease currently held by c2b5fc86-1ffa-52f5-9eb5-70b2842f28ee@tokens.fly.io, expires at 2026-01-05T01:56:35Z"
+01:56:24
+Pulling container image registry.fly.io/integrity-prod@sha256:75ed6f76836b3523c111b5fdb069b5ef894328e30de936892282266b4365b698
+01:56:24
+Container image registry.fly.io/integrity-prod@sha256:75ed6f76836b3523c111b5fdb069b5ef894328e30de936892282266b4365b698 already prepared
+01:56:24
+Starting machine
+01:56:24
+[PM01] machines API returned an error: "machine ID 2860062f976208 lease currently held by c2b5fc86-1ffa-52f5-9eb5-70b2842f28ee@tokens.fly.io, expires at 2026-01-05T01:56:35Z"
+01:56:24
+Configuring firecracker
+01:56:25
+2026-01-05T01:56:25.351936979 [01KE5XXAD9Z9QWQWP1JP6RFE0T:main] Running Firecracker v1.12.1
+01:56:25
+2026-01-05T01:56:25.352127582 [01KE5XXAD9Z9QWQWP1JP6RFE0T:main] Listening on API socket ("/fc.sock").
+01:56:26
+ INFO Starting init (commit: 6f59af0a)...
+01:56:26
+ INFO Preparing to run: `docker-entrypoint.sh npm start` as root
+01:56:26
+ INFO [fly api proxy] listening at /.fly/api
+01:56:26
+Machine created and started in 2.068s
+01:56:26
+2026/01/05 01:56:26 INFO SSH listening listen_address=[fdaa:3b:6707:a7b:f5:59f3:f369:2]:22
+01:56:26
+> integrity@1.0.0 start
+01:56:26
+> node server.js
+01:56:27
+Starting machine
+01:56:27
+[PM01] machines API returned an error: "machine ID 2860062f976208 lease currently held by c2b5fc86-1ffa-52f5-9eb5-70b2842f28ee@tokens.fly.io, expires at 2026-01-05T01:56:39Z"
+01:56:27
+Server listening on 5000
+01:56:38
+Pulling container image registry.fly.io/integrity-prod@sha256:75ed6f76836b3523c111b5fdb069b5ef894328e30de936892282266b4365b698
+01:56:38
+Container image registry.fly.io/integrity-prod@sha256:75ed6f76836b3523c111b5fdb069b5ef894328e30de936892282266b4365b698 already prepared
+01:56:47
+Pulling container image registry.fly.io/integrity-prod@sha256:d75a58f7f5c7fa06fd16207cb8c0dd6a6383212ea60f89982a2800fc5dbebddb
+01:56:48
+Pulling container image registry.fly.io/integrity-prod@sha256:d75a58f7f5c7fa06fd16207cb8c0dd6a6383212ea60f89982a2800fc5dbebddb
+01:56:49
+[PM08] machine is in a non-startable state: replacing
+01:56:49
+[PM08] machine is in a non-startable state: replacing
+01:56:50
+Successfully prepared image registry.fly.io/integrity-prod@sha256:d75a58f7f5c7fa06fd16207cb8c0dd6a6383212ea60f89982a2800fc5dbebddb (2.590974913s)
+01:56:50
+Successfully prepared image registry.fly.io/integrity-prod@sha256:d75a58f7f5c7fa06fd16207cb8c0dd6a6383212ea60f89982a2800fc5dbebddb (2.75615117s)
+01:56:51
+Configuring firecracker
+01:56:51
+Configuring firecracker
+01:56:51
+ INFO Sending signal SIGINT to main child process w/ PID 642
+01:56:52
+ INFO Sending signal SIGTERM to main child process w/ PID 642
+01:56:53
+ INFO Main child exited with signal (with signal 'SIGTERM', core dumped? false)
+01:56:53
+Starting machine
+01:56:53
+[PM01] machines API returned an error: "machine ID 2860062f976208 lease currently held by c2b5fc86-1ffa-52f5-9eb5-70b2842f28ee@tokens.fly.io, expires at 2026-01-05T01:57:03Z"
+01:56:53
+ INFO Starting clean up.
+01:56:53
+[   27.914442] reboot: Restarting system
+01:56:54
+2026-01-05T01:56:54.089418687 [01KE5XY1KCDGZW6PHFVJAMR9R4:main] Running Firecracker v1.12.1
+01:56:54
+2026-01-05T01:56:54.089612261 [01KE5XY1KCDGZW6PHFVJAMR9R4:main] Listening on API socket ("/fc.sock").
+01:56:54
+ INFO Starting init (commit: 6f59af0a)...
+01:56:55
+ INFO Preparing to run: `docker-entrypoint.sh npm start` as root
+01:56:55
+ INFO [fly api proxy] listening at /.fly/api
+01:56:55
+Machine created and started in 7.078s
+01:56:55
+2026/01/05 01:56:55 INFO SSH listening listen_address=[fdaa:3b:6707:a7b:f5:59f3:f369:2]:22
+01:56:55
+> integrity@1.0.0 start
+01:56:55
+> node server.js
+01:56:56
+[PC01] instance refused connection. is your app listening on 0.0.0.0:5000? make sure it is not only listening on 127.0.0.1 (hint: look at your startup logs, servers often print the address they are listening on)
+01:56:57
+Starting machine
+01:56:57
+[PM01] machines API returned an error: "machine ID 2860062f976208 lease currently held by c2b5fc86-1ffa-52f5-9eb5-70b2842f28ee@tokens.fly.io, expires at 2026-01-05T01:57:08Z"
+01:56:59
+Server listening on 5000
+01:57:00
+Starting machine
+01:57:00
+[PM01] machines API returned an error: "machine ID 2860062f976208 lease currently held by c2b5fc86-1ffa-52f5-9eb5-70b2842f28ee@tokens.fly.io, expires at 2026-01-05T01:57:12Z"
+01:57:03
+Starting machine
+01:57:03
+[PM01] machines API returned an error: "machine ID 2860062f976208 lease currently held by c2b5fc86-1ffa-52f5-9eb5-70b2842f28ee@tokens.fly.io, expires at 2026-01-05T01:57:12Z"
+01:57:06
+Starting machine
+01:57:06
+[PM01] machines API returned an error: "machine ID 2860062f976208 lease currently held by c2b5fc86-1ffa-52f5-9eb5-70b2842f28ee@tokens.fly.io, expires at 2026-01-05T01:57:18Z"

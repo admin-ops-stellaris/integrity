@@ -46,6 +46,7 @@
     initKeyboardShortcuts();
     initDarkMode();
     initScreensaver();
+    initInlineEditing();
   };
 
   // --- KEYBOARD SHORTCUTS ---
@@ -577,13 +578,197 @@
     }
   }
 
-  function handleFormClick(event) {
-    const profileTop = document.getElementById('profileTop');
-    if (profileTop.classList.contains('editing')) return;
+  // Field name to Airtable field mapping
+  const CONTACT_FIELD_MAP = {
+    'firstName': 'FirstName',
+    'middleName': 'MiddleName', 
+    'lastName': 'LastName',
+    'preferredName': 'PreferredName',
+    'mobilePhone': 'Mobile',
+    'dateOfBirth': 'DateOfBirth',
+    'email1': 'EmailAddress1',
+    'email1Comment': 'EmailAddress1Comment',
+    'email2': 'EmailAddress2',
+    'email2Comment': 'EmailAddress2Comment',
+    'email3': 'EmailAddress3',
+    'email3Comment': 'EmailAddress3Comment',
+    'notes': 'Notes',
+    'gender': 'Gender',
+    'genderOther': 'Gender - Other'
+  };
+
+  // Track which field is currently being edited
+  let currentEditingField = null;
+  let originalFieldValue = null;
+
+  // Initialize inline editing for contact form fields
+  function initInlineEditing() {
+    const fields = document.querySelectorAll('#profileTop input, #profileTop textarea, #profileTop select');
+    fields.forEach(field => {
+      // Click to edit
+      field.addEventListener('click', function(e) {
+        const recordId = document.getElementById('recordId').value;
+        if (!recordId) return; // New contact mode - use form submit
+        
+        if (this.classList.contains('locked')) {
+          enableFieldEdit(this);
+          e.stopPropagation();
+        }
+      });
+      
+      // Save on blur
+      field.addEventListener('blur', function(e) {
+        if (currentEditingField === this) {
+          saveFieldInline(this);
+        }
+      });
+      
+      // Save on Enter (for inputs), Tab is handled by blur
+      field.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && this.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          this.blur();
+        }
+        if (e.key === 'Escape') {
+          cancelFieldEdit(this);
+        }
+      });
+    });
+  }
+
+  function enableFieldEdit(field) {
+    // If another field is being edited, save it first
+    if (currentEditingField && currentEditingField !== field) {
+      saveFieldInline(currentEditingField);
+    }
     
-    const actionRow = document.getElementById('actionRow');
-    if (actionRow.style.display !== 'flex') {
-      enableEditMode();
+    currentEditingField = field;
+    originalFieldValue = field.value;
+    
+    field.classList.remove('locked');
+    field.classList.add('inline-editing');
+    
+    if (field.tagName === 'SELECT') {
+      field.disabled = false;
+    } else {
+      field.readOnly = false;
+    }
+    
+    field.focus();
+    if (field.tagName === 'INPUT') {
+      field.select();
+    }
+  }
+
+  function cancelFieldEdit(field) {
+    // Only revert if this is the field we're actually editing
+    if (currentEditingField !== field) return;
+    
+    // Only revert if value was actually changed
+    if (field.value !== originalFieldValue) {
+      field.value = originalFieldValue;
+    }
+    disableFieldEdit(field);
+  }
+
+  function disableFieldEdit(field) {
+    field.classList.add('locked');
+    field.classList.remove('inline-editing');
+    field.classList.remove('saving');
+    
+    if (field.tagName === 'SELECT') {
+      field.disabled = true;
+    } else {
+      field.readOnly = true;
+    }
+    
+    currentEditingField = null;
+    originalFieldValue = null;
+  }
+
+  // Normalize date format for Airtable (DD/MM/YYYY to ISO or keep as-is)
+  function normalizeDateForAirtable(value, fieldName) {
+    if (fieldName !== 'dateOfBirth' || !value) return value;
+    
+    // If already ISO format, return as-is
+    if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
+    
+    // Try DD/MM/YYYY format
+    const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (match) {
+      const [, day, month, year] = match;
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    
+    // Return original if can't parse
+    return value;
+  }
+
+  function saveFieldInline(field) {
+    const recordId = document.getElementById('recordId').value;
+    if (!recordId) return;
+    
+    const fieldName = field.id || field.name;
+    const airtableField = CONTACT_FIELD_MAP[fieldName];
+    if (!airtableField) {
+      console.warn('No Airtable mapping for field:', fieldName);
+      disableFieldEdit(field);
+      return;
+    }
+    
+    let newValue = field.value;
+    
+    // No change - just disable edit mode
+    if (newValue === originalFieldValue) {
+      disableFieldEdit(field);
+      return;
+    }
+    
+    // Normalize date fields
+    newValue = normalizeDateForAirtable(newValue, fieldName);
+    
+    // Show saving state
+    field.classList.add('saving');
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        // Update the local record
+        if (currentContactRecord) {
+          currentContactRecord.fields[airtableField] = newValue;
+        }
+        
+        // Update title if name changed
+        if (['firstName', 'middleName', 'lastName'].includes(fieldName)) {
+          updateHeaderTitle(false);
+        }
+        
+        // Handle gender change
+        if (fieldName === 'gender') {
+          handleGenderChange();
+        }
+        
+        disableFieldEdit(field);
+        
+        // Briefly show success
+        field.classList.add('save-success');
+        setTimeout(() => field.classList.remove('save-success'), 500);
+      })
+      .withFailureHandler(function(err) {
+        console.error('Failed to save field:', err);
+        field.value = originalFieldValue;
+        disableFieldEdit(field);
+        showAlert('Error', 'Failed to save: ' + err.message, 'error');
+      })
+      .updateRecord('Contacts', recordId, airtableField, newValue);
+  }
+
+  // Legacy function - now only used for showing hint on hover
+  function handleFormClick(event) {
+    // For existing contacts, inline editing handles clicks
+    // For new contacts, clicking anywhere enables all fields
+    const recordId = document.getElementById('recordId').value;
+    if (!recordId) {
+      enableNewContactMode();
     }
   }
 
@@ -628,39 +813,43 @@
     cancelBtn.onclick = cleanup;
   }
 
-  function enableEditMode() {
-    const inputs = document.querySelectorAll('#contactForm input, #contactForm textarea');
+  // Enable new contact mode - all fields editable with submit button
+  function enableNewContactMode() {
+    const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
     inputs.forEach(input => { input.classList.remove('locked'); input.readOnly = false; });
-    const selects = document.querySelectorAll('#contactForm select');
+    const selects = document.querySelectorAll('#profileTop select');
     selects.forEach(select => { select.classList.remove('locked'); select.disabled = false; });
     document.getElementById('actionRow').style.display = 'flex';
     document.getElementById('cancelBtn').style.display = 'inline-block';
+    document.getElementById('submitBtn').textContent = 'Create Contact';
     document.getElementById('profileTop').classList.add('editing');
-    updateHeaderTitle(true); 
+    updateHeaderTitle(true);
+    document.getElementById('firstName').focus();
   }
 
-  function disableEditMode() {
-    const inputs = document.querySelectorAll('#contactForm input, #contactForm textarea');
+  // Disable all field editing (for new contact cancel or after save)
+  function disableAllFieldEditing() {
+    const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
     inputs.forEach(input => { input.classList.add('locked'); input.readOnly = true; });
-    const selects = document.querySelectorAll('#contactForm select');
+    const selects = document.querySelectorAll('#profileTop select');
     selects.forEach(select => { select.classList.add('locked'); select.disabled = true; });
     document.getElementById('actionRow').style.display = 'none';
     document.getElementById('cancelBtn').style.display = 'none';
     document.getElementById('profileTop').classList.remove('editing');
-    updateHeaderTitle(false); 
+    updateHeaderTitle(false);
+  }
+
+  // Legacy aliases for compatibility
+  function enableEditMode() { enableNewContactMode(); }
+  function disableEditMode() { disableAllFieldEditing(); }
+  
+  function cancelNewContact() {
+    document.getElementById('contactForm').reset();
+    toggleProfileView(false);
+    disableAllFieldEditing();
   }
   
-  function cancelEditMode() {
-    const recordId = document.getElementById('recordId').value;
-    document.getElementById('cancelBtn').style.display = 'none';
-    if (recordId && currentContactRecord) {
-      selectContact(currentContactRecord);
-    } else {
-      document.getElementById('contactForm').reset();
-      toggleProfileView(false);
-    }
-    disableEditMode();
-  }
+  function cancelEditMode() { cancelNewContact(); }
 
   function selectContact(record) {
     document.getElementById('cancelBtn').style.display = 'none';
@@ -3639,10 +3828,12 @@ Best wishes,
   }
   function resetForm() {
     toggleProfileView(true); document.getElementById('contactForm').reset();
-    document.getElementById('recordId').value = ""; enableEditMode();
+    document.getElementById('recordId').value = "";
+    // Explicitly enable new contact mode
+    enableNewContactMode();
     document.getElementById('formTitle').innerText = "New Contact";
     document.getElementById('formSubtitle').innerText = '';
-    document.getElementById('submitBtn').innerText = "Save Contact";
+    document.getElementById('submitBtn').innerText = "Create Contact";
     document.getElementById('cancelBtn').style.display = 'inline-block';
     document.getElementById('editBtn').style.visibility = 'hidden';
     document.getElementById('oppList').innerHTML = '<li style="color:#CCC; font-size:12px; font-style:italic;">No opportunities linked.</li>';

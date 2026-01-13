@@ -44,6 +44,7 @@
   input:focus, textarea:focus { outline: none; border-color: var(--color-trail); }
   textarea { height: 100px; resize: vertical; }
   input.locked, textarea.locked, select.locked { background: transparent; border: none; border-bottom: 1px dotted #CCC; padding-left: 0; color: var(--color-trail); font-weight: 500; cursor: pointer; }
+  select.locked[disabled] { pointer-events: none; } /* Pass clicks through to parent for inline edit trigger */
   #profileTop input.locked:hover, #profileTop textarea.locked:hover, #profileTop select.locked:hover { border-bottom-color: var(--color-star); background: rgba(187, 153, 52, 0.05); }
   textarea.locked { resize: vertical; }
   input.locked:focus, textarea.locked:focus, select.locked:focus { outline: none; }

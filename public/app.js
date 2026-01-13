@@ -578,7 +578,438 @@
     }
   }
 
-  // Field name to Airtable field mapping
+  // ============================================================
+  // INLINE EDITING MANAGER - Reusable module for click-to-edit fields
+  // ============================================================
+  // Usage: Call InlineEditingManager.init(containerSelector, config) where:
+  //   containerSelector: CSS selector for the container (e.g., '#profileTop')
+  //   config: { fieldMap: {fieldId: 'AirtableField'}, getRecordId: fn, saveCallback: fn, onFieldSave: fn }
+  // ============================================================
+  
+  const InlineEditingManager = (function() {
+    const instances = new Map();
+    
+    // Value normalizers for specific field types
+    const normalizers = {
+      dateOfBirth: function(value) {
+        if (!value) return value;
+        if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
+        const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (match) {
+          const [, day, month, year] = match;
+          return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+        return value;
+      }
+    };
+    
+    function createInstance(container, config) {
+      const state = {
+        container: container,
+        fields: [],
+        currentField: null,
+        pendingSaves: new Map(),  // Per-field save context: field -> {originalValue, fieldName, sessionId}
+        fieldMap: config.fieldMap || {},
+        getRecordId: config.getRecordId || (() => null),
+        saveCallback: config.saveCallback || null,
+        onFieldSave: config.onFieldSave || null,
+        allowEditing: false,  // For bulk edit mode (new contacts)
+        sessionCounter: 0     // Incrementing counter for session IDs
+      };
+      
+      function init() {
+        // Find all editable fields
+        const selectors = 'input:not([type="hidden"]), textarea, select';
+        state.fields = Array.from(container.querySelectorAll(selectors))
+          .filter(f => !f.id.match(/^(recordId|submitBtn|cancelBtn)$/));
+        
+        state.fields.forEach((field, index) => {
+          field.dataset.inlineIndex = index;
+          
+          // For select elements, use a wrapper click since disabled selects don't fire clicks
+          if (field.tagName === 'SELECT') {
+            const parent = field.parentElement;
+            parent.style.cursor = 'pointer';
+            parent.addEventListener('click', function(e) {
+              // Only handle inline edit clicks when not in bulk mode
+              if (!state.allowEditing && field.classList.contains('locked') && canEdit()) {
+                e.preventDefault();
+                e.stopPropagation();
+                enableField(field);
+              }
+            });
+            
+            // Handle change event for selects - only for inline edit mode
+            field.addEventListener('change', function() {
+              if (state.allowEditing) return; // Skip in bulk edit mode
+              if (state.currentField === this) {
+                this.dataset.selectSaved = 'true';
+                saveField(this, false);
+              }
+            });
+          } else {
+            // Regular click for inputs/textareas
+            field.addEventListener('click', function(e) {
+              // Only handle inline edit clicks when not in bulk mode
+              if (!state.allowEditing && this.classList.contains('locked') && canEdit()) {
+                enableField(this);
+                e.stopPropagation();
+              }
+            });
+          }
+          
+          // Blur to save (only when not in bulk edit mode)
+          field.addEventListener('blur', function(e) {
+            if (state.allowEditing) return; // Skip in bulk edit mode
+            if (state.currentField === this) {
+              // Skip if select already saved via change event
+              if (this.dataset.selectSaved === 'true') {
+                delete this.dataset.selectSaved;
+                return;
+              }
+              // Small delay to allow Tab to be processed first
+              setTimeout(() => {
+                if (state.currentField === this) {
+                  saveField(this, false);
+                }
+              }, 10);
+            }
+          });
+          
+          // Keyboard handling (only active when not in bulk edit mode)
+          field.addEventListener('keydown', function(e) {
+            if (state.allowEditing) return; // Skip in bulk edit mode - let form handle Tab
+            if (!state.currentField) return;
+            
+            if (e.key === 'Tab') {
+              e.preventDefault();
+              saveField(this, true, e.shiftKey ? -1 : 1);
+            } else if (e.key === 'Enter' && this.tagName !== 'TEXTAREA') {
+              e.preventDefault();
+              saveField(this, false);
+            } else if (e.key === 'Escape') {
+              cancelEdit(this);
+            }
+          });
+        });
+      }
+      
+      function canEdit() {
+        // Allow editing if we have a record ID (existing record) or bulk edit mode (new record)
+        return !!state.getRecordId() || state.allowEditing;
+      }
+      
+      function enableField(field) {
+        // Save any currently editing field first
+        if (state.currentField && state.currentField !== field) {
+          saveFieldSync(state.currentField);
+        }
+        
+        state.currentField = field;
+        // Assign a new session ID for this edit
+        state.sessionCounter++;
+        field.dataset.editSession = state.sessionCounter;
+        // Store original value per-field for async recovery
+        field.dataset.originalValue = field.value;
+        
+        field.classList.remove('locked');
+        field.classList.add('inline-editing');
+        
+        if (field.tagName === 'SELECT') {
+          field.disabled = false;
+        } else {
+          field.readOnly = false;
+        }
+        
+        field.focus();
+        if (field.tagName === 'INPUT') {
+          field.select();
+        }
+      }
+      
+      function disableField(field, savedValue) {
+        // In bulk edit mode (new contact), don't lock fields
+        if (state.allowEditing) {
+          field.classList.remove('inline-editing', 'saving');
+          delete field.dataset.selectSaved;
+          // Keep originalValue as the current field value for next edit
+          field.dataset.originalValue = field.value;
+          if (state.currentField === field) {
+            state.currentField = null;
+          }
+          return;
+        }
+        
+        field.classList.add('locked');
+        field.classList.remove('inline-editing', 'saving');
+        delete field.dataset.selectSaved;
+        // Update originalValue to the saved value (or current value) for next edit
+        field.dataset.originalValue = savedValue !== undefined ? savedValue : field.value;
+        
+        if (field.tagName === 'SELECT') {
+          field.disabled = true;
+        } else {
+          field.readOnly = true;
+        }
+        
+        if (state.currentField === field) {
+          state.currentField = null;
+        }
+      }
+      
+      function saveFieldSync(field) {
+        // Called when switching between fields - save previous field
+        // Simply delegate to saveField - it handles all the async save logic
+        // The "sync" name is historical - it returns immediately but save is async
+        saveField(field, false);
+      }
+      
+      function saveField(field, moveToNext, direction) {
+        const fieldName = field.id || field.name;
+        let newValue = normalizeValue(field.value, fieldName);
+        // Get per-field original value (stored when field was enabled)
+        const originalVal = field.dataset.originalValue || '';
+        
+        // No change - just close
+        if (newValue === originalVal) {
+          disableField(field);
+          if (moveToNext) focusNextField(field, direction);
+          return;
+        }
+        
+        field.classList.add('saving');
+        
+        // Track this save with its own session ID (captured at save time, not from current field state)
+        const saveSessionId = parseInt(field.dataset.editSession) || 0;
+        // Use composite key: field + sessionId to prevent overwrites
+        const saveKey = `${field.id || field.name}_${saveSessionId}`;
+        state.pendingSaves.set(saveKey, { 
+          field: field,
+          originalValue: originalVal, 
+          fieldName: fieldName, 
+          sessionId: saveSessionId 
+        });
+        
+        performSave(field, fieldName, newValue, function(success) {
+          // Check if this callback's session is still current
+          const currentSessionId = parseInt(field.dataset.editSession) || 0;
+          const isStale = saveSessionId !== currentSessionId;
+          
+          // Get our specific save context using the composite key
+          const saveContext = state.pendingSaves.get(saveKey);
+          state.pendingSaves.delete(saveKey);  // Clean up our entry
+          
+          if (isStale) {
+            // Stale callback - user has started a new edit session
+            // Don't touch field state - the new session owns it now
+            if (!success) {
+              console.warn('Save failed for previous edit session');
+            }
+            return;
+          }
+          
+          const revertVal = saveContext ? saveContext.originalValue : originalVal;
+          
+          if (success) {
+            // Success: lock the field with the NEW saved value as the baseline
+            disableField(field, newValue);  // Pass the saved value
+            field.classList.add('save-success');
+            setTimeout(() => field.classList.remove('save-success'), 500);
+            if (moveToNext) focusNextField(field, direction);
+          } else {
+            // Failure: check if user has already moved to another field
+            const userMovedOn = state.currentField !== null && state.currentField !== field;
+            
+            // Revert the field value using per-field context
+            field.value = revertVal;
+            field.classList.remove('saving');
+            delete field.dataset.selectSaved;
+            
+            if (userMovedOn) {
+              // User is editing a different field - just lock this one
+              field.classList.add('locked');
+              field.classList.remove('inline-editing');
+              field.dataset.originalValue = revertVal;  // Keep for next edit
+              if (field.tagName === 'SELECT') {
+                field.disabled = true;
+              } else {
+                field.readOnly = true;
+              }
+              // Error was already shown by performSave, don't steal focus
+            } else {
+              // User hasn't moved on - keep field editable for retry
+              field.classList.add('inline-editing');
+              field.classList.remove('locked');
+              // Keep originalValue for retry
+              field.dataset.originalValue = revertVal;
+              if (field.tagName === 'SELECT') {
+                field.disabled = false;
+              } else {
+                field.readOnly = false;
+              }
+              state.currentField = field;
+              field.focus();
+            }
+            // Don't move to next field on failure
+          }
+        }, originalVal);
+      }
+      
+      function performSave(field, fieldName, newValue, callback, originalVal) {
+        const airtableField = state.fieldMap[fieldName];
+        if (!airtableField) {
+          console.warn('No Airtable mapping for field:', fieldName);
+          if (callback) callback(true);
+          return;
+        }
+        
+        const recordId = state.getRecordId();
+        
+        // In bulk edit mode (new contact), skip server save - form submit handles it
+        if (!recordId || state.allowEditing) {
+          if (callback) callback(true);
+          return;
+        }
+        
+        // Use passed originalVal or fall back to per-field dataset
+        const revertValue = originalVal !== undefined ? originalVal : (field.dataset.originalValue || '');
+        
+        if (state.saveCallback) {
+          state.saveCallback(recordId, airtableField, newValue, field, fieldName, function(success) {
+            if (success && state.onFieldSave) {
+              state.onFieldSave(fieldName, newValue);
+            }
+            if (callback) callback(success);
+          });
+        } else {
+          // Default save via google.script.run
+          google.script.run
+            .withSuccessHandler(function() {
+              if (state.onFieldSave) {
+                state.onFieldSave(fieldName, newValue);
+              }
+              if (callback) callback(true);
+            })
+            .withFailureHandler(function(err) {
+              console.error('Failed to save:', err);
+              if (revertValue !== undefined) {
+                field.value = revertValue;  // Revert to original
+              }
+              showAlert('Error', 'Failed to save: ' + err.message, 'error');
+              if (callback) callback(false);
+            })
+            .updateRecord('Contacts', recordId, airtableField, newValue);
+        }
+      }
+      
+      function normalizeValue(value, fieldName) {
+        if (normalizers[fieldName]) {
+          return normalizers[fieldName](value);
+        }
+        return value;
+      }
+      
+      function focusNextField(currentField, direction) {
+        const currentIndex = parseInt(currentField.dataset.inlineIndex);
+        let nextIndex = currentIndex + direction;
+        
+        // Wrap around
+        if (nextIndex >= state.fields.length) nextIndex = 0;
+        if (nextIndex < 0) nextIndex = state.fields.length - 1;
+        
+        // Skip hidden fields, but limit attempts to prevent infinite loop
+        let attempts = 0;
+        while (attempts < state.fields.length) {
+          const nextField = state.fields[nextIndex];
+          // Check if field is visible
+          if (nextField && nextField.offsetParent !== null) {
+            enableField(nextField);
+            return;
+          }
+          nextIndex += direction;
+          if (nextIndex >= state.fields.length) nextIndex = 0;
+          if (nextIndex < 0) nextIndex = state.fields.length - 1;
+          attempts++;
+        }
+        
+        // No visible field found - just blur and exit
+        currentField.blur();
+      }
+      
+      function cancelEdit(field) {
+        if (state.currentField !== field) return;
+        // Use per-field original value
+        const originalVal = field.dataset.originalValue || '';
+        if (field.value !== originalVal) {
+          field.value = originalVal;
+        }
+        disableField(field);
+      }
+      
+      function lockAllFields() {
+        state.allowEditing = false;
+        state.fields.forEach(field => {
+          field.classList.add('locked');
+          field.classList.remove('inline-editing', 'saving');
+          delete field.dataset.originalValue;
+          delete field.dataset.selectSaved;
+          if (field.tagName === 'SELECT') {
+            field.disabled = true;
+          } else {
+            field.readOnly = true;
+          }
+        });
+        state.currentField = null;
+        state.pendingSaves.clear();
+      }
+      
+      function unlockAllFields() {
+        state.allowEditing = true;
+        state.fields.forEach(field => {
+          field.classList.remove('locked');
+          delete field.dataset.originalValue;
+          if (field.tagName === 'SELECT') {
+            field.disabled = false;
+          } else {
+            field.readOnly = false;
+          }
+        });
+      }
+      
+      init();
+      
+      return {
+        lockAll: lockAllFields,
+        unlockAll: unlockAllFields,
+        enableField: enableField,
+        getFields: () => state.fields
+      };
+    }
+    
+    return {
+      init: function(containerSelector, config) {
+        const container = document.querySelector(containerSelector);
+        if (!container) {
+          console.warn('InlineEditingManager: Container not found:', containerSelector);
+          return null;
+        }
+        
+        const instance = createInstance(container, config);
+        instances.set(containerSelector, instance);
+        return instance;
+      },
+      
+      get: function(containerSelector) {
+        return instances.get(containerSelector);
+      },
+      
+      addNormalizer: function(fieldName, fn) {
+        normalizers[fieldName] = fn;
+      }
+    };
+  })();
+
+  // Field name to Airtable field mapping for Contacts
   const CONTACT_FIELD_MAP = {
     'firstName': 'FirstName',
     'middleName': 'MiddleName', 
@@ -597,147 +1028,23 @@
     'genderOther': 'Gender - Other'
   };
 
-  // Track which field is currently being edited
-  let currentEditingField = null;
-  let originalFieldValue = null;
-
-  // Initialize inline editing for contact form fields
+  // Initialize inline editing for contact form
+  let contactInlineEditor = null;
+  
   function initInlineEditing() {
-    const fields = document.querySelectorAll('#profileTop input, #profileTop textarea, #profileTop select');
-    fields.forEach(field => {
-      // Click to edit
-      field.addEventListener('click', function(e) {
-        const recordId = document.getElementById('recordId').value;
-        if (!recordId) return; // New contact mode - use form submit
-        
-        if (this.classList.contains('locked')) {
-          enableFieldEdit(this);
-          e.stopPropagation();
-        }
-      });
-      
-      // Save on blur
-      field.addEventListener('blur', function(e) {
-        if (currentEditingField === this) {
-          saveFieldInline(this);
-        }
-      });
-      
-      // Save on Enter (for inputs), Tab is handled by blur
-      field.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && this.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          this.blur();
-        }
-        if (e.key === 'Escape') {
-          cancelFieldEdit(this);
-        }
-      });
-    });
-  }
-
-  function enableFieldEdit(field) {
-    // If another field is being edited, save it first
-    if (currentEditingField && currentEditingField !== field) {
-      saveFieldInline(currentEditingField);
-    }
-    
-    currentEditingField = field;
-    originalFieldValue = field.value;
-    
-    field.classList.remove('locked');
-    field.classList.add('inline-editing');
-    
-    if (field.tagName === 'SELECT') {
-      field.disabled = false;
-    } else {
-      field.readOnly = false;
-    }
-    
-    field.focus();
-    if (field.tagName === 'INPUT') {
-      field.select();
-    }
-  }
-
-  function cancelFieldEdit(field) {
-    // Only revert if this is the field we're actually editing
-    if (currentEditingField !== field) return;
-    
-    // Only revert if value was actually changed
-    if (field.value !== originalFieldValue) {
-      field.value = originalFieldValue;
-    }
-    disableFieldEdit(field);
-  }
-
-  function disableFieldEdit(field) {
-    field.classList.add('locked');
-    field.classList.remove('inline-editing');
-    field.classList.remove('saving');
-    
-    if (field.tagName === 'SELECT') {
-      field.disabled = true;
-    } else {
-      field.readOnly = true;
-    }
-    
-    currentEditingField = null;
-    originalFieldValue = null;
-  }
-
-  // Normalize date format for Airtable (DD/MM/YYYY to ISO or keep as-is)
-  function normalizeDateForAirtable(value, fieldName) {
-    if (fieldName !== 'dateOfBirth' || !value) return value;
-    
-    // If already ISO format, return as-is
-    if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
-    
-    // Try DD/MM/YYYY format
-    const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (match) {
-      const [, day, month, year] = match;
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    }
-    
-    // Return original if can't parse
-    return value;
-  }
-
-  function saveFieldInline(field) {
-    const recordId = document.getElementById('recordId').value;
-    if (!recordId) return;
-    
-    const fieldName = field.id || field.name;
-    const airtableField = CONTACT_FIELD_MAP[fieldName];
-    if (!airtableField) {
-      console.warn('No Airtable mapping for field:', fieldName);
-      disableFieldEdit(field);
-      return;
-    }
-    
-    let newValue = field.value;
-    
-    // No change - just disable edit mode
-    if (newValue === originalFieldValue) {
-      disableFieldEdit(field);
-      return;
-    }
-    
-    // Normalize date fields
-    newValue = normalizeDateForAirtable(newValue, fieldName);
-    
-    // Show saving state
-    field.classList.add('saving');
-    
-    google.script.run
-      .withSuccessHandler(function(result) {
-        // Update the local record
+    contactInlineEditor = InlineEditingManager.init('#profileTop', {
+      fieldMap: CONTACT_FIELD_MAP,
+      getRecordId: () => document.getElementById('recordId').value,
+      onFieldSave: function(fieldName, newValue) {
+        // Update local record cache
         if (currentContactRecord) {
-          currentContactRecord.fields[airtableField] = newValue;
+          const airtableField = CONTACT_FIELD_MAP[fieldName];
+          if (airtableField) {
+            currentContactRecord.fields[airtableField] = newValue;
+          }
         }
         
-        // Update title if name changed
+        // Update header title if name changed
         if (['firstName', 'middleName', 'lastName'].includes(fieldName)) {
           updateHeaderTitle(false);
         }
@@ -746,20 +1053,8 @@
         if (fieldName === 'gender') {
           handleGenderChange();
         }
-        
-        disableFieldEdit(field);
-        
-        // Briefly show success
-        field.classList.add('save-success');
-        setTimeout(() => field.classList.remove('save-success'), 500);
-      })
-      .withFailureHandler(function(err) {
-        console.error('Failed to save field:', err);
-        field.value = originalFieldValue;
-        disableFieldEdit(field);
-        showAlert('Error', 'Failed to save: ' + err.message, 'error');
-      })
-      .updateRecord('Contacts', recordId, airtableField, newValue);
+      }
+    });
   }
 
   // Legacy function - now only used for showing hint on hover
@@ -815,10 +1110,16 @@
 
   // Enable new contact mode - all fields editable with submit button
   function enableNewContactMode() {
-    const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
-    inputs.forEach(input => { input.classList.remove('locked'); input.readOnly = false; });
-    const selects = document.querySelectorAll('#profileTop select');
-    selects.forEach(select => { select.classList.remove('locked'); select.disabled = false; });
+    // Use InlineEditingManager to unlock all fields
+    if (contactInlineEditor) {
+      contactInlineEditor.unlockAll();
+    } else {
+      // Fallback if manager not initialized yet
+      const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
+      inputs.forEach(input => { input.classList.remove('locked'); input.readOnly = false; });
+      const selects = document.querySelectorAll('#profileTop select');
+      selects.forEach(select => { select.classList.remove('locked'); select.disabled = false; });
+    }
     document.getElementById('actionRow').style.display = 'flex';
     document.getElementById('cancelBtn').style.display = 'inline-block';
     document.getElementById('submitBtn').textContent = 'Create Contact';
@@ -829,10 +1130,16 @@
 
   // Disable all field editing (for new contact cancel or after save)
   function disableAllFieldEditing() {
-    const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
-    inputs.forEach(input => { input.classList.add('locked'); input.readOnly = true; });
-    const selects = document.querySelectorAll('#profileTop select');
-    selects.forEach(select => { select.classList.add('locked'); select.disabled = true; });
+    // Use InlineEditingManager to lock all fields
+    if (contactInlineEditor) {
+      contactInlineEditor.lockAll();
+    } else {
+      // Fallback if manager not initialized yet
+      const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
+      inputs.forEach(input => { input.classList.add('locked'); input.readOnly = true; });
+      const selects = document.querySelectorAll('#profileTop select');
+      selects.forEach(select => { select.classList.add('locked'); select.disabled = true; });
+    }
     document.getElementById('actionRow').style.display = 'none';
     document.getElementById('cancelBtn').style.display = 'none';
     document.getElementById('profileTop').classList.remove('editing');

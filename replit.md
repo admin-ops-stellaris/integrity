@@ -23,6 +23,7 @@ Integrity is built on a Node.js/Express backend, serving a static frontend.
     - **Authentication**: Google OAuth 2.0 is used for secure access, restricted to a specified Google Workspace domain. Session management is handled via encrypted cookies.
     - **API Layer**: A unified API uses POST requests with JSON bodies for all CRUD operations and specific functionalities like contact search, spouse management, and opportunity handling. An `api-bridge.js` layer ensures compatibility by converting `google.script.run` calls to standard fetch API requests.
     - **Email Composition**: Rich text email composition is supported via Quill.js WYSIWYG editor.
+    - **InlineEditingManager**: Reusable IIFE module for click-to-edit form fields. Features include: per-field state tracking, composite key session tracking (field+sessionId) for async race condition handling, Tab key navigation between fields, select element support via parent click handlers, and bulk edit mode for new record creation. Located in `public/app.js`.
     - **Data Parsing**: The system includes a parser for Taco data, mapping key-value pairs from an external system to Airtable fields during opportunity creation.
 - **Feature Specifications**:
     - **Contact Management**: CRUD operations for contacts, including linking/unlinking spouse relationships and retrieving linked opportunities.

@@ -547,6 +547,7 @@ const CONNECTION_ROLE_PAIRS = [
   { role1: "Parent", role2: "Child", label: "Parent / Child" },
   { role1: "Child", role2: "Parent", label: "Child / Parent" },
   { role1: "Sibling", role2: "Sibling", label: "Sibling / Sibling" },
+  { role1: "Family", role2: "Family", label: "Family / Family" },
   { role1: "Friend", role2: "Friend", label: "Friend / Friend" },
   { role1: "Household Representative", role2: "Household Member", label: "Household Representative / Household Member" },
   { role1: "Household Member", role2: "Household Representative", label: "Household Member / Household Representative" },

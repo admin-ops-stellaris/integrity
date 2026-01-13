@@ -179,7 +179,6 @@ app.get("/auth/google", async (req, res, next) => {
       state,
       nonce,
       hd: ALLOWED_GOOGLE_DOMAIN,
-      prompt: "consent",
       access_type: "offline",
     });
 

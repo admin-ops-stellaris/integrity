@@ -4929,17 +4929,26 @@ Best wishes,
       return;
     }
     
-    // Save to Airtable
+    // Save to Airtable using the same API as InlineEditingManager
+    const saveSessionId = Date.now();
+    activeNotePopover.saveSessionId = saveSessionId;
+    
     google.script.run
       .withSuccessHandler(function() {
-        if (status && activeNotePopover) {
+        // Ignore stale callbacks
+        if (!activeNotePopover || activeNotePopover.saveSessionId !== saveSessionId) return;
+        
+        if (status) {
           status.textContent = 'Saved';
           status.className = 'note-popover-status saved';
-          activeNotePopover.originalValue = newValue;
         }
+        activeNotePopover.originalValue = newValue;
         if (andClose) closeNotePopover();
       })
       .withFailureHandler(function(err) {
+        // Ignore stale callbacks
+        if (!activeNotePopover || activeNotePopover.saveSessionId !== saveSessionId) return;
+        
         console.error('Error saving note:', err);
         if (status) {
           status.textContent = 'Error saving';
@@ -4947,7 +4956,7 @@ Best wishes,
           status.style.color = '#A00';
         }
       })
-      .updateContactField(recordId, airtableField, newValue);
+      .updateRecord('Contacts', recordId, airtableField, newValue);
   }
   
   window.closeNotePopover = function() {

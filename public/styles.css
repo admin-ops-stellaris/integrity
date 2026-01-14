@@ -91,14 +91,15 @@
     flex-shrink: 0;
   }
   .note-icon::before {
-    content: '📝';
-    font-size: 12px;
-    opacity: 0.3;
-    transition: opacity 0.2s;
+    content: '✎';
+    font-size: 13px;
+    color: #bbb;
+    font-style: normal;
+    transition: color 0.2s;
   }
   .note-icon:hover { background: rgba(187, 153, 52, 0.1); }
-  .note-icon:hover::before { opacity: 0.7; }
-  .note-icon.has-note::before { opacity: 1; }
+  .note-icon:hover::before { color: #888; }
+  .note-icon.has-note::before { color: var(--color-star); }
   .note-icon.has-note { background: rgba(187, 153, 52, 0.15); }
 
   /* Note popover */

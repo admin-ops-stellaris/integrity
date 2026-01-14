@@ -4919,59 +4919,44 @@ Best wishes,
     
     const newValue = textarea.value;
     const recordId = currentContactRecord?.id;
+    const originalValue = activeNotePopover.originalValue;
+    const airtableField = NOTE_FIELD_MAP[activeNotePopover.fieldId];
+    const iconBtn = activeNotePopover.iconBtn;
     
     // Update hidden field immediately
     hiddenField.value = newValue;
     
     // Update icon state
-    updateNoteIconState(activeNotePopover.iconBtn, newValue);
+    updateNoteIconState(iconBtn, newValue);
+    
+    // Close immediately if requested (user trusts it will save)
+    if (andClose) {
+      // Clear any pending debounce
+      if (noteSaveTimeout) {
+        clearTimeout(noteSaveTimeout);
+        noteSaveTimeout = null;
+      }
+      closeNotePopover();
+    }
     
     // Skip save if no record (new contact) or value unchanged
-    if (!recordId || newValue === activeNotePopover.originalValue) {
-      if (andClose) closeNotePopover();
+    if (!recordId || newValue === originalValue || !airtableField) {
       return;
     }
     
-    // Show saving status
-    if (status) {
+    // Show saving status (only if popover still open)
+    if (status && !andClose) {
       status.textContent = 'Saving...';
       status.className = 'note-popover-status saving';
     }
     
-    // Get Airtable field name
-    const airtableField = NOTE_FIELD_MAP[activeNotePopover.fieldId];
-    if (!airtableField) {
-      console.error('Unknown note field:', activeNotePopover.fieldId);
-      if (andClose) closeNotePopover();
-      return;
-    }
-    
-    // Save to Airtable using the same API as InlineEditingManager
-    const saveSessionId = Date.now();
-    activeNotePopover.saveSessionId = saveSessionId;
-    
+    // Save to Airtable in background
     google.script.run
       .withSuccessHandler(function() {
-        // Ignore stale callbacks
-        if (!activeNotePopover || activeNotePopover.saveSessionId !== saveSessionId) return;
-        
-        if (status) {
-          status.textContent = 'Saved';
-          status.className = 'note-popover-status saved';
-        }
-        activeNotePopover.originalValue = newValue;
-        if (andClose) closeNotePopover();
+        console.log('Note saved successfully');
       })
       .withFailureHandler(function(err) {
-        // Ignore stale callbacks
-        if (!activeNotePopover || activeNotePopover.saveSessionId !== saveSessionId) return;
-        
         console.error('Error saving note:', err);
-        if (status) {
-          status.textContent = 'Error saving';
-          status.className = 'note-popover-status';
-          status.style.color = '#A00';
-        }
       })
       .updateRecord('Contacts', recordId, airtableField, newValue);
   }

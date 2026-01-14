@@ -260,6 +260,41 @@
   .contact-form-right { flex: 1; display: flex; flex-direction: column; gap: 8px; border-left: 1px dashed var(--color-border); padding-left: 20px; }
   .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* Collapsible Section Pattern */
+  .collapsible-section { margin: 4px 0; }
+  .collapsible-header { 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    cursor: pointer; 
+    user-select: none;
+    padding: 4px 0;
+  }
+  .collapsible-header:hover .collapsible-title { color: var(--color-star); }
+  .collapsible-icon { 
+    width: 12px; 
+    height: 12px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    font-size: 10px;
+    color: #999;
+    transition: transform 0.2s ease;
+  }
+  .collapsible-section.expanded .collapsible-icon { transform: rotate(90deg); }
+  .collapsible-title { 
+    font-size: 9px; 
+    font-weight: 500; 
+    color: #999; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+  }
+  .collapsible-content { 
+    display: none; 
+    padding-top: 4px;
+  }
+  .collapsible-section.expanded .collapsible-content { display: block; }
   .contact-form-left .field-group textarea { height: 60px; resize: vertical; }
   .contact-form-split .field-group { margin-bottom: 0; }
 

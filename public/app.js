@@ -1228,6 +1228,14 @@
     closeOppPanel();
   }
   
+  // Collapsible section pattern - reusable for any collapsible field groups
+  window.toggleCollapsible = function(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.classList.toggle('expanded');
+    }
+  };
+
   // Gender field handling (Gender - Other is now a note popover)
   function handleGenderChange() {
     // Only show the Gender - Other note icon when "Other (specify)" is selected
@@ -4307,10 +4315,14 @@ Best wishes,
   }
   function formatSubtitle(f) {
     const preferredName = f.PreferredName || '';
+    const doesNotLike = f['Does Not Like Being Called'] || '';
     const tenure = calculateTenure(f.Created);
-    if (!preferredName && !tenure) return '';
+    if (!preferredName && !doesNotLike && !tenure) return '';
     const parts = [];
-    if (preferredName) parts.push(`prefers ${preferredName}`);
+    const namePrefParts = [];
+    if (preferredName) namePrefParts.push(`prefers ${preferredName}`);
+    if (doesNotLike) namePrefParts.push(`doesn't like being called ${doesNotLike}`);
+    if (namePrefParts.length) parts.push(namePrefParts.join(', '));
     if (tenure === 'just added today') parts.push(tenure);
     else if (tenure) parts.push(`in our database for ${tenure}`);
     return parts.join(' · ');

@@ -1235,7 +1235,14 @@
     
     if (noteIcon) {
       const isOther = genderSelect.value === 'Other (specify)';
-      noteIcon.style.display = isOther ? '' : 'none';
+      if (isOther) {
+        // Delay showing icon until dropdown has closed
+        setTimeout(() => {
+          noteIcon.style.display = '';
+        }, 150);
+      } else {
+        noteIcon.style.display = 'none';
+      }
     }
   }
   

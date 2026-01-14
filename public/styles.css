@@ -103,7 +103,7 @@
   .note-icon::before {
     content: '';
     width: 9px;
-    height: 11px;
+    height: 10px;
     border: 1.5px solid #bbb;
     border-radius: 1.5px;
     display: block;
@@ -114,9 +114,9 @@
   .note-icon::after {
     content: '';
     position: absolute;
-    top: 3px;
+    top: 4px;
     width: 5px;
-    height: 4px;
+    height: 3px;
     background: #fff;
     border: 1.5px solid #bbb;
     border-radius: 1px 1px 0 0;

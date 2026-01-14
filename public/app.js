@@ -4995,9 +4995,18 @@ Best wishes,
     });
   }
   
-  // Close popover when clicking outside
+  // Close popover when clicking outside (but not during text selection)
   document.addEventListener('click', function(e) {
     if (activeNotePopover && !activeNotePopover.element.contains(e.target) && !e.target.classList.contains('note-icon')) {
+      // Don't close if user was selecting text (selection extends outside popover)
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        // Check if selection started inside the popover textarea
+        const textarea = document.getElementById('notePopoverTextarea');
+        if (textarea && (document.activeElement === textarea || selection.anchorNode?.parentElement?.closest('.note-popover'))) {
+          return; // Don't close - user is selecting text
+        }
+      }
       saveNoteFromPopover(true);
     }
   });

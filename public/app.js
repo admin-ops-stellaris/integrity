@@ -1183,10 +1183,11 @@
     // Notes field (renamed from Description in Airtable)
     document.getElementById('notes').value = f.Notes || "";
     
-    // Gender fields
+    // Gender field
     document.getElementById('gender').value = f.Gender || "";
+    // Ensure Gender - Other note value is set (populateNoteFields should handle this, but be explicit)
     document.getElementById('genderOther').value = f["Gender - Other"] || "";
-    updateGenderOtherVisibility();
+    updateAllNoteIcons();
     
     // Date of Birth - convert from ISO to DD/MM/YYYY display format
     const dob = f["Date of Birth"] || "";
@@ -1224,19 +1225,10 @@
     closeOppPanel();
   }
   
-  // Gender field handling
+  // Gender field handling (Gender - Other is now a note popover)
   function handleGenderChange() {
-    updateGenderOtherVisibility();
-  }
-  
-  function updateGenderOtherVisibility() {
-    const genderValue = document.getElementById('gender').value;
-    const genderOtherGroup = document.getElementById('genderOtherGroup');
-    if (genderValue === 'Other (specify)') {
-      genderOtherGroup.classList.remove('hidden');
-    } else {
-      genderOtherGroup.classList.add('hidden');
-    }
+    // Gender - Other is now handled as a note field
+    // No visibility toggle needed - the note icon appears on the Gender field
   }
   
   // Unsubscribe handling
@@ -3249,12 +3241,14 @@ Best wishes,
       li.setAttribute('data-conn-name', conn.otherContactName || '');
       li.setAttribute('data-conn-created', conn.createdOn || '');
       li.setAttribute('data-conn-modified', conn.modifiedOn || '');
+      li.setAttribute('data-conn-note', conn.note || '');
       
       const badgeClass = getRoleBadgeClass(conn.myRole);
       const displayRole = getDisplayRole(conn.myRole);
       const role = (conn.myRole || '').toLowerCase().trim();
       const showDate = rolesWithDate.includes(role);
       const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
+      const hasNote = conn.note && conn.note.trim();
       
       li.innerHTML = `
         <div class="connection-info">
@@ -3262,13 +3256,23 @@ Best wishes,
           <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
           ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
         </div>
+        <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
       `;
       
-      // Click handler for the whole item (except the name)
-      li.addEventListener('click', function(e) {
-        if (e.target.classList.contains('connection-name')) {
+      // Note icon click handler
+      const noteIcon = li.querySelector('.conn-note-icon');
+      if (noteIcon) {
+        noteIcon.addEventListener('click', function(e) {
           e.stopPropagation();
-          // Let quick-view handle navigation
+          openConnectionNotePopover(this, conn.id, conn.note || '');
+        });
+      }
+      
+      // Click handler for the whole item (except the name and note icon)
+      li.addEventListener('click', function(e) {
+        if (e.target.classList.contains('connection-name') || e.target.classList.contains('conn-note-icon')) {
+          e.stopPropagation();
+          // Let quick-view or note handle it
         } else {
           openConnectionDetailsModal(conn);
         }
@@ -3324,18 +3328,32 @@ Best wishes,
         subLi.setAttribute('data-conn-name', conn.otherContactName || '');
         subLi.setAttribute('data-conn-created', conn.createdOn || '');
         subLi.setAttribute('data-conn-modified', conn.modifiedOn || '');
+        subLi.setAttribute('data-conn-note', conn.note || '');
         
         const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
+        const hasNote = conn.note && conn.note.trim();
         
         subLi.innerHTML = `
-          <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
-          ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
+          <div class="connection-subitem-content">
+            <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
+            ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
+          </div>
+          <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
         `;
         
-        subLi.addEventListener('click', function(e) {
-          if (e.target.classList.contains('connection-name')) {
+        // Note icon click handler
+        const noteIcon = subLi.querySelector('.conn-note-icon');
+        if (noteIcon) {
+          noteIcon.addEventListener('click', function(e) {
             e.stopPropagation();
-            // Let quick-view handle navigation
+            openConnectionNotePopover(this, conn.id, conn.note || '');
+          });
+        }
+        
+        subLi.addEventListener('click', function(e) {
+          if (e.target.classList.contains('connection-name') || e.target.classList.contains('conn-note-icon')) {
+            e.stopPropagation();
+            // Let quick-view or note handle it
           } else {
             openConnectionDetailsModal(conn);
           }
@@ -4145,7 +4163,6 @@ Best wishes,
     document.getElementById('spouseHistoryList').innerHTML = "";
     document.getElementById('spouseEditLink').style.display = 'inline';
     document.getElementById('refreshBtn').style.display = 'none';
-    updateGenderOtherVisibility();
     closeOppPanel();
   }
   function handleSearch(event) {
@@ -4809,7 +4826,8 @@ Best wishes,
   const NOTE_FIELDS = [
     { fieldId: 'email1Comment', airtableField: 'EmailAddress1Comment', inputId: 'email1' },
     { fieldId: 'email2Comment', airtableField: 'EmailAddress2Comment', inputId: 'email2' },
-    { fieldId: 'email3Comment', airtableField: 'EmailAddress3Comment', inputId: 'email3' }
+    { fieldId: 'email3Comment', airtableField: 'EmailAddress3Comment', inputId: 'email3' },
+    { fieldId: 'genderOther', airtableField: 'Gender - Other', inputId: 'gender' }
   ];
 
   // Build lookup map from config (for backward compatibility)
@@ -5055,6 +5073,189 @@ Best wishes,
       activeNotePopover = null;
     }
   };
+  
+  // ==================== CONNECTION NOTE POPOVER ====================
+  
+  let activeConnNotePopover = null;
+  let connNoteSaveTimeout = null;
+  
+  window.openConnectionNotePopover = function(iconBtn, connectionId, currentNote) {
+    // Close any existing popover
+    closeConnectionNotePopover();
+    closeNotePopover();
+    
+    const rect = iconBtn.getBoundingClientRect();
+    
+    // Create popover
+    const popover = document.createElement('div');
+    popover.className = 'note-popover conn-note-popover';
+    popover.id = 'activeConnNotePopover';
+    popover.innerHTML = `
+      <div class="note-popover-header">
+        <span class="note-popover-title">Connection Note</span>
+        <button type="button" class="note-popover-close" onclick="closeConnectionNotePopover()">×</button>
+      </div>
+      <textarea id="connNotePopoverTextarea" placeholder="Add a note about this connection...">${currentNote || ''}</textarea>
+      <div class="note-popover-footer">
+        <span class="note-popover-status" id="connNotePopoverStatus"></span>
+        <button type="button" class="note-popover-done" id="connNotePopoverDone">Done</button>
+      </div>
+    `;
+    
+    // Position the popover
+    document.body.appendChild(popover);
+    
+    // Calculate position - below and to the left of the icon
+    const popoverRect = popover.getBoundingClientRect();
+    let top = rect.bottom + 5;
+    let left = rect.right - popoverRect.width;
+    
+    // Keep within viewport
+    if (left < 10) left = 10;
+    if (top + popoverRect.height > window.innerHeight - 10) {
+      top = rect.top - popoverRect.height - 5;
+    }
+    
+    popover.style.position = 'fixed';
+    popover.style.top = top + 'px';
+    popover.style.left = left + 'px';
+    popover.style.zIndex = '10000';
+    
+    // Store state
+    activeConnNotePopover = {
+      element: popover,
+      connectionId: connectionId,
+      originalValue: currentNote || '',
+      iconBtn: iconBtn
+    };
+    
+    // Focus textarea
+    const textarea = document.getElementById('connNotePopoverTextarea');
+    textarea.focus();
+    
+    // Auto-save on input with debounce
+    textarea.addEventListener('input', function() {
+      if (connNoteSaveTimeout) clearTimeout(connNoteSaveTimeout);
+      connNoteSaveTimeout = setTimeout(() => saveConnNoteFromPopover(false), 800);
+    });
+    
+    // Done button handler
+    const doneBtn = document.getElementById('connNotePopoverDone');
+    doneBtn.addEventListener('click', function() {
+      saveConnNoteFromPopover(true);
+    });
+    
+    // Keyboard handling
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Tab' && !e.shiftKey) {
+        e.preventDefault();
+        doneBtn.focus();
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        saveConnNoteFromPopover(true);
+      } else if (e.key === 'Escape') {
+        saveConnNoteFromPopover(true);
+      }
+    });
+    
+    doneBtn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+        e.preventDefault();
+        saveConnNoteFromPopover(true);
+      }
+    });
+  };
+  
+  function saveConnNoteFromPopover(andClose = false) {
+    if (!activeConnNotePopover) return;
+    
+    const textarea = document.getElementById('connNotePopoverTextarea');
+    const status = document.getElementById('connNotePopoverStatus');
+    
+    if (!textarea) return;
+    
+    const newValue = textarea.value;
+    const connectionId = activeConnNotePopover.connectionId;
+    const originalValue = activeConnNotePopover.originalValue;
+    const iconBtn = activeConnNotePopover.iconBtn;
+    
+    // Update icon state
+    if (iconBtn) {
+      if (newValue && newValue.trim()) {
+        iconBtn.classList.add('has-note');
+      } else {
+        iconBtn.classList.remove('has-note');
+      }
+    }
+    
+    // Update data attribute on parent element
+    const parentEl = iconBtn?.closest('[data-conn-note]');
+    if (parentEl) {
+      parentEl.setAttribute('data-conn-note', newValue);
+    }
+    
+    // Close immediately if requested
+    if (andClose) {
+      if (connNoteSaveTimeout) {
+        clearTimeout(connNoteSaveTimeout);
+        connNoteSaveTimeout = null;
+      }
+      closeConnectionNotePopover();
+    }
+    
+    // Skip save if value unchanged
+    if (newValue === originalValue) {
+      return;
+    }
+    
+    // Update original value to prevent duplicate saves
+    if (activeConnNotePopover) {
+      activeConnNotePopover.originalValue = newValue;
+    }
+    
+    // Show saving status (only if popover still open)
+    if (status && !andClose) {
+      status.textContent = 'Saving...';
+      status.className = 'note-popover-status saving';
+    }
+    
+    // Save to Airtable
+    google.script.run
+      .withSuccessHandler(function() {
+        console.log('Connection note saved successfully');
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error saving connection note:', err);
+      })
+      .updateConnectionNote(connectionId, newValue);
+  }
+  
+  window.closeConnectionNotePopover = function() {
+    if (connNoteSaveTimeout) {
+      clearTimeout(connNoteSaveTimeout);
+      connNoteSaveTimeout = null;
+    }
+    
+    if (activeConnNotePopover) {
+      activeConnNotePopover.element.remove();
+      activeConnNotePopover = null;
+    }
+  };
+  
+  // Close connection note popover when clicking outside
+  document.addEventListener('click', function(e) {
+    if (activeConnNotePopover && !activeConnNotePopover.element.contains(e.target) && !e.target.classList.contains('conn-note-icon')) {
+      // Don't close if user was selecting text
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        const textarea = document.getElementById('connNotePopoverTextarea');
+        if (textarea && (document.activeElement === textarea || selection.anchorNode?.parentElement?.closest('.conn-note-popover'))) {
+          return;
+        }
+      }
+      saveConnNoteFromPopover(true);
+    }
+  });
   
   function updateNoteIconState(iconBtn, value) {
     if (!iconBtn) return;

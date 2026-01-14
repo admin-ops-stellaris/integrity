@@ -675,7 +675,8 @@ export async function getConnectionsForContact(contactId, bypassCache = false) {
         createdOn: f["Created On"] || null,
         modifiedOn: f["Modified On"] || null,
         createdByName: createdByName,
-        modifiedByName: modifiedByName
+        modifiedByName: modifiedByName,
+        note: f["Note"] || null
       };
     });
     
@@ -770,6 +771,37 @@ export async function deactivateConnection(connectionId, userContext = null) {
     return { success: true };
   } catch (err) {
     console.error("deactivateConnection error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateConnectionNote(connectionId, note, userContext = null) {
+  if (!base) return { success: false, error: "Database not configured" };
+  if (!connectionId) return { success: false, error: "Connection ID is required" };
+  
+  try {
+    const updateFields = {
+      "Note": note || "",
+      "Modified On": new Date().toISOString()
+    };
+    
+    if (userContext && userContext.id) {
+      updateFields["Modified By"] = [userContext.id];
+    }
+    
+    // Fetch the connection to get both contact IDs for cache invalidation
+    const conn = await base("Connections").find(connectionId);
+    const contact1Ids = conn?.fields["Contact 1"] || [];
+    const contact2Ids = conn?.fields["Contact 2"] || [];
+    
+    await base("Connections").update(connectionId, updateFields);
+    
+    // Invalidate cache for both contacts
+    invalidateAllConnectionsCacheForContacts([...contact1Ids, ...contact2Ids]);
+    
+    return { success: true };
+  } catch (err) {
+    console.error("updateConnectionNote error:", err.message);
     return { success: false, error: err.message };
   }
 }

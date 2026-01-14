@@ -70,19 +70,18 @@
                   </div>
                   <div class="form-row-3">
                     <div class="field-group"><label>Preferred</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
-                    <div class="field-group">
+                    <div class="field-group field-with-note">
                       <label>Gender</label>
-                      <select name="gender" id="gender" class="locked" disabled onchange="handleGenderChange()">
-                        <option value=""></option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                        <option value="Other (specify)">Other (specify)</option>
-                      </select>
-                    </div>
-                    <div class="field-group" id="genderOtherGroup">
-                      <label>Gender - Other</label>
-                      <input type="text" name="genderOther" id="genderOther" class="locked" readonly placeholder="Specify">
+                      <input type="hidden" name="genderOther" id="genderOther">
+                      <div class="input-with-note select-with-note">
+                        <select name="gender" id="gender" class="locked" disabled onchange="handleGenderChange()">
+                          <option value=""></option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Prefer not to say">Prefer not to say</option>
+                          <option value="Other (specify)">Other (specify)</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <div class="field-group"><label>Notes</label><textarea name="notes" id="notes" class="locked" readonly></textarea></div>

@@ -616,6 +616,19 @@ app.post("/api/deactivateConnection", async (req, res) => {
   }
 });
 
+app.post("/api/updateConnectionNote", async (req, res) => {
+  try {
+    const [connectionId, note] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.updateConnectionNote(connectionId, note, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("updateConnectionNote error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post("/api/processForm", async (req, res) => {
   try {
     const formData = req.body.args?.[0] || {};

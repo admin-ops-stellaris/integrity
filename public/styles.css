@@ -74,7 +74,7 @@
   .input-with-note { position: relative; display: flex; align-items: center; }
   .input-with-note input { flex: 1; padding-right: 22px; }
   .select-with-note select { flex: 1; padding-right: 22px; }
-  .select-with-note .note-icon { top: 50%; transform: translateY(-50%); }
+  .select-with-note .note-icon { top: 50%; transform: translateY(-50%); right: 24px; }
   .note-hidden-field { display: none; }
   .note-icon {
     position: absolute;

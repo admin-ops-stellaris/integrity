@@ -1188,6 +1188,7 @@
     // Ensure Gender - Other note value is set (populateNoteFields should handle this, but be explicit)
     document.getElementById('genderOther').value = f["Gender - Other"] || "";
     updateAllNoteIcons();
+    handleGenderChange(); // Show/hide note icon based on gender value
     
     // Date of Birth - convert from ISO to DD/MM/YYYY display format
     const dob = f["Date of Birth"] || "";
@@ -1227,8 +1228,15 @@
   
   // Gender field handling (Gender - Other is now a note popover)
   function handleGenderChange() {
-    // Gender - Other is now handled as a note field
-    // No visibility toggle needed - the note icon appears on the Gender field
+    // Only show the Gender - Other note icon when "Other (specify)" is selected
+    const genderSelect = document.getElementById('gender');
+    const genderWrapper = genderSelect?.closest('.input-with-note');
+    const noteIcon = genderWrapper?.querySelector('.note-icon');
+    
+    if (noteIcon) {
+      const isOther = genderSelect.value === 'Other (specify)';
+      noteIcon.style.display = isOther ? '' : 'none';
+    }
   }
   
   // Unsubscribe handling

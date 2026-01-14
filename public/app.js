@@ -4827,7 +4827,10 @@ Best wishes,
         <button type="button" class="note-popover-close" onclick="closeNotePopover()">×</button>
       </div>
       <textarea id="notePopoverTextarea" placeholder="Add a note...">${currentValue}</textarea>
-      <div class="note-popover-status" id="notePopoverStatus"></div>
+      <div class="note-popover-footer">
+        <span class="note-popover-status" id="notePopoverStatus"></span>
+        <button type="button" class="note-popover-done" id="notePopoverDone">Done</button>
+      </div>
     `;
     
     // Position the popover
@@ -4883,10 +4886,24 @@ Best wishes,
       }, 100);
     });
     
-    // Close on Escape
+    // Keyboard handling for textarea
     textarea.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        closeNotePopover();
+        saveNoteFromPopover(true);
+      }
+    });
+    
+    // Done button handling
+    const doneBtn = popover.querySelector('#notePopoverDone');
+    doneBtn.addEventListener('click', function() {
+      saveNoteFromPopover(true);
+    });
+    doneBtn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        saveNoteFromPopover(true);
+      } else if (e.key === 'Escape') {
+        saveNoteFromPopover(true);
       }
     });
   };

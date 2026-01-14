@@ -3259,12 +3259,13 @@ Best wishes,
         <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
       `;
       
-      // Note icon click handler
+      // Note icon click handler - read from data attribute for updated values
       const noteIcon = li.querySelector('.conn-note-icon');
       if (noteIcon) {
         noteIcon.addEventListener('click', function(e) {
           e.stopPropagation();
-          openConnectionNotePopover(this, conn.id, conn.note || '');
+          const currentNote = li.getAttribute('data-conn-note') || '';
+          openConnectionNotePopover(this, conn.id, currentNote);
         });
       }
       
@@ -3341,12 +3342,13 @@ Best wishes,
           <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
         `;
         
-        // Note icon click handler
+        // Note icon click handler - read from data attribute for updated values
         const noteIcon = subLi.querySelector('.conn-note-icon');
         if (noteIcon) {
           noteIcon.addEventListener('click', function(e) {
             e.stopPropagation();
-            openConnectionNotePopover(this, conn.id, conn.note || '');
+            const currentNote = subLi.getAttribute('data-conn-note') || '';
+            openConnectionNotePopover(this, conn.id, currentNote);
           });
         }
         

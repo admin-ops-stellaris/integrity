@@ -4275,7 +4275,7 @@ Best wishes,
     return modDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
   }
   function formatSubtitle(f) {
-    const preferredName = f.PreferredName || f.FirstName || '';
+    const preferredName = f.PreferredName || '';
     const tenure = calculateTenure(f.Created);
     if (!preferredName && !tenure) return '';
     const parts = [];

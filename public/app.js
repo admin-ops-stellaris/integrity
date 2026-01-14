@@ -1179,11 +1179,8 @@
     document.getElementById('email3').value = f.EmailAddress3 || "";
     document.getElementById('email3Comment').value = f.EmailAddress3Comment || "";
     
-    // Auto-resize email note textareas
-    ['email1Comment', 'email2Comment', 'email3Comment'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el && typeof autoResizeTextarea === 'function') autoResizeTextarea(el);
-    });
+    // Update note icon states for email comments
+    if (typeof updateAllNoteIcons === 'function') updateAllNoteIcons();
     
     // Notes field (renamed from Description in Airtable)
     document.getElementById('notes').value = f.Notes || "";
@@ -4796,6 +4793,203 @@ Best wishes,
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
   }
+  
+  // ==================== NOTE POPOVER SYSTEM ====================
+  
+  let activeNotePopover = null;
+  let noteSaveTimeout = null;
+  
+  // Field mapping for note fields to Airtable
+  const NOTE_FIELD_MAP = {
+    'email1Comment': 'EmailAddress1Comment',
+    'email2Comment': 'EmailAddress2Comment',
+    'email3Comment': 'EmailAddress3Comment'
+  };
+  
+  window.openNotePopover = function(iconBtn, fieldId) {
+    // Close any existing popover
+    closeNotePopover();
+    
+    const hiddenField = document.getElementById(fieldId);
+    if (!hiddenField) return;
+    
+    const currentValue = hiddenField.value || '';
+    const rect = iconBtn.getBoundingClientRect();
+    const containerRect = iconBtn.closest('.field-with-note').getBoundingClientRect();
+    
+    // Create popover
+    const popover = document.createElement('div');
+    popover.className = 'note-popover';
+    popover.id = 'activeNotePopover';
+    popover.innerHTML = `
+      <div class="note-popover-header">
+        <span class="note-popover-title">Note</span>
+        <button type="button" class="note-popover-close" onclick="closeNotePopover()">×</button>
+      </div>
+      <textarea id="notePopoverTextarea" placeholder="Add a note...">${currentValue}</textarea>
+      <div class="note-popover-status" id="notePopoverStatus"></div>
+    `;
+    
+    // Position the popover
+    document.body.appendChild(popover);
+    
+    // Calculate position - below and to the left of the icon
+    const popoverRect = popover.getBoundingClientRect();
+    let top = rect.bottom + 5;
+    let left = rect.right - popoverRect.width;
+    
+    // Keep within viewport
+    if (left < 10) left = 10;
+    if (top + popoverRect.height > window.innerHeight - 10) {
+      top = rect.top - popoverRect.height - 5;
+    }
+    
+    popover.style.position = 'fixed';
+    popover.style.top = top + 'px';
+    popover.style.left = left + 'px';
+    
+    // Store reference
+    activeNotePopover = {
+      element: popover,
+      fieldId: fieldId,
+      iconBtn: iconBtn,
+      originalValue: currentValue
+    };
+    
+    // Focus textarea
+    const textarea = popover.querySelector('textarea');
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    
+    // Auto-save on input (debounced)
+    textarea.addEventListener('input', function() {
+      if (noteSaveTimeout) clearTimeout(noteSaveTimeout);
+      const status = document.getElementById('notePopoverStatus');
+      status.textContent = '';
+      status.className = 'note-popover-status';
+      
+      noteSaveTimeout = setTimeout(() => {
+        saveNoteFromPopover();
+      }, 800);
+    });
+    
+    // Save on blur (if clicking outside)
+    textarea.addEventListener('blur', function(e) {
+      // Small delay to check if clicking on close button
+      setTimeout(() => {
+        if (activeNotePopover && !activeNotePopover.element.contains(document.activeElement)) {
+          saveNoteFromPopover(true);
+        }
+      }, 100);
+    });
+    
+    // Close on Escape
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeNotePopover();
+      }
+    });
+  };
+  
+  function saveNoteFromPopover(andClose = false) {
+    if (!activeNotePopover) return;
+    
+    const textarea = document.getElementById('notePopoverTextarea');
+    const status = document.getElementById('notePopoverStatus');
+    const hiddenField = document.getElementById(activeNotePopover.fieldId);
+    
+    if (!textarea || !hiddenField) return;
+    
+    const newValue = textarea.value;
+    const recordId = currentContactRecord?.id;
+    
+    // Update hidden field immediately
+    hiddenField.value = newValue;
+    
+    // Update icon state
+    updateNoteIconState(activeNotePopover.iconBtn, newValue);
+    
+    // Skip save if no record (new contact) or value unchanged
+    if (!recordId || newValue === activeNotePopover.originalValue) {
+      if (andClose) closeNotePopover();
+      return;
+    }
+    
+    // Show saving status
+    if (status) {
+      status.textContent = 'Saving...';
+      status.className = 'note-popover-status saving';
+    }
+    
+    // Get Airtable field name
+    const airtableField = NOTE_FIELD_MAP[activeNotePopover.fieldId];
+    if (!airtableField) {
+      console.error('Unknown note field:', activeNotePopover.fieldId);
+      if (andClose) closeNotePopover();
+      return;
+    }
+    
+    // Save to Airtable
+    google.script.run
+      .withSuccessHandler(function() {
+        if (status && activeNotePopover) {
+          status.textContent = 'Saved';
+          status.className = 'note-popover-status saved';
+          activeNotePopover.originalValue = newValue;
+        }
+        if (andClose) closeNotePopover();
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error saving note:', err);
+        if (status) {
+          status.textContent = 'Error saving';
+          status.className = 'note-popover-status';
+          status.style.color = '#A00';
+        }
+      })
+      .updateContactField(recordId, airtableField, newValue);
+  }
+  
+  window.closeNotePopover = function() {
+    if (noteSaveTimeout) {
+      clearTimeout(noteSaveTimeout);
+      noteSaveTimeout = null;
+    }
+    
+    if (activeNotePopover) {
+      activeNotePopover.element.remove();
+      activeNotePopover = null;
+    }
+  };
+  
+  function updateNoteIconState(iconBtn, value) {
+    if (!iconBtn) return;
+    if (value && value.trim()) {
+      iconBtn.classList.add('has-note');
+    } else {
+      iconBtn.classList.remove('has-note');
+    }
+  }
+  
+  // Update all note icons when contact is loaded
+  function updateAllNoteIcons() {
+    document.querySelectorAll('.note-icon').forEach(icon => {
+      const fieldId = icon.dataset.noteField;
+      if (fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+          updateNoteIconState(icon, field.value);
+        }
+      }
+    });
+  }
+  
+  // Close popover when clicking outside
+  document.addEventListener('click', function(e) {
+    if (activeNotePopover && !activeNotePopover.element.contains(e.target) && !e.target.classList.contains('note-icon')) {
+      saveNoteFromPopover(true);
+    }
+  });
   
   // Cancel appointment edit
   function cancelApptEdit(apptId, fieldKey) {

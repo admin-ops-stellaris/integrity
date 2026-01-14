@@ -92,17 +92,29 @@
                     <div class="field-group"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
                     <div class="field-group"><label>Date of Birth</label><input type="text" name="dateOfBirth" id="dateOfBirth" class="locked" readonly placeholder="DD/MM/YYYY"></div>
                   </div>
-                  <div class="form-row-2">
-                    <div class="field-group"><label>Email</label><input type="email" name="email1" id="email1" class="locked" readonly></div>
-                    <div class="field-group"><label>Email Note</label><textarea name="email1Comment" id="email1Comment" class="locked auto-resize-textarea" readonly rows="1" oninput="autoResizeTextarea(this)"></textarea></div>
+                  <div class="field-group field-with-note">
+                    <label>Email</label>
+                    <div class="input-with-note">
+                      <input type="email" name="email1" id="email1" class="locked" readonly>
+                      <button type="button" class="note-icon" data-note-field="email1Comment" onclick="openNotePopover(this, 'email1Comment')" title="Add/view note"></button>
+                    </div>
+                    <textarea name="email1Comment" id="email1Comment" class="note-hidden-field" rows="1"></textarea>
                   </div>
-                  <div class="form-row-2">
-                    <div class="field-group"><label>Email 2</label><input type="email" name="email2" id="email2" class="locked" readonly></div>
-                    <div class="field-group"><label>Email 2 Note</label><textarea name="email2Comment" id="email2Comment" class="locked auto-resize-textarea" readonly rows="1" oninput="autoResizeTextarea(this)"></textarea></div>
+                  <div class="field-group field-with-note">
+                    <label>Email 2</label>
+                    <div class="input-with-note">
+                      <input type="email" name="email2" id="email2" class="locked" readonly>
+                      <button type="button" class="note-icon" data-note-field="email2Comment" onclick="openNotePopover(this, 'email2Comment')" title="Add/view note"></button>
+                    </div>
+                    <textarea name="email2Comment" id="email2Comment" class="note-hidden-field" rows="1"></textarea>
                   </div>
-                  <div class="form-row-2">
-                    <div class="field-group"><label>Email 3</label><input type="email" name="email3" id="email3" class="locked" readonly></div>
-                    <div class="field-group"><label>Email 3 Note</label><textarea name="email3Comment" id="email3Comment" class="locked auto-resize-textarea" readonly rows="1" oninput="autoResizeTextarea(this)"></textarea></div>
+                  <div class="field-group field-with-note">
+                    <label>Email 3</label>
+                    <div class="input-with-note">
+                      <input type="email" name="email3" id="email3" class="locked" readonly>
+                      <button type="button" class="note-icon" data-note-field="email3Comment" onclick="openNotePopover(this, 'email3Comment')" title="Add/view note"></button>
+                    </div>
+                    <textarea name="email3Comment" id="email3Comment" class="note-hidden-field" rows="1"></textarea>
                   </div>
                 </div>
               </div>

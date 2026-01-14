@@ -69,6 +69,102 @@
     transition: background 0.3s, border-color 0.3s;
   }
 
+  /* Note icon for inline notes */
+  .field-with-note { position: relative; }
+  .input-with-note { display: flex; align-items: center; gap: 6px; }
+  .input-with-note input { flex: 1; }
+  .note-hidden-field { display: none; }
+  .note-icon {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .note-icon::before {
+    content: '📝';
+    font-size: 12px;
+    opacity: 0.3;
+    transition: opacity 0.2s;
+  }
+  .note-icon:hover { background: rgba(187, 153, 52, 0.1); }
+  .note-icon:hover::before { opacity: 0.7; }
+  .note-icon.has-note::before { opacity: 1; }
+  .note-icon.has-note { background: rgba(187, 153, 52, 0.15); }
+
+  /* Note popover */
+  .note-popover {
+    position: absolute;
+    z-index: 1000;
+    background: #fff;
+    border: 1px solid var(--color-star);
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 10px;
+    min-width: 250px;
+    max-width: 350px;
+  }
+  .note-popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+  }
+  .note-popover-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .note-popover-close {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #999;
+    line-height: 1;
+    border-radius: 3px;
+  }
+  .note-popover-close:hover { background: #f0f0f0; color: #666; }
+  .note-popover textarea {
+    width: 100%;
+    min-height: 60px;
+    max-height: 150px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 13px;
+    font-family: var(--font-body);
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .note-popover textarea:focus { outline: none; border-color: var(--color-star); }
+  .note-popover-status {
+    font-size: 10px;
+    color: #999;
+    margin-top: 6px;
+    min-height: 14px;
+  }
+  .note-popover-status.saving { color: var(--color-star); }
+  .note-popover-status.saved { color: var(--color-cedar); }
+
   .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px; }
   .fields-header { display: flex; justify-content: flex-end; margin-bottom: 2px; }
   .edit-icon { cursor: pointer; color: #888; font-size: 12px; transition: color 0.2s; visibility: hidden; }

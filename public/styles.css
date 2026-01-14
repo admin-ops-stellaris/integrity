@@ -71,53 +71,63 @@
 
   /* Note icon for inline notes */
   .field-with-note { position: relative; }
-  .input-with-note { display: flex; align-items: center; gap: 6px; }
-  .input-with-note input { flex: 1; }
+  .input-with-note { position: relative; }
+  .input-with-note input { width: 100%; padding-right: 24px; }
   .note-hidden-field { display: none; }
   .note-icon {
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
     padding: 0;
     margin: 0;
     border: none;
     background: transparent;
     cursor: pointer;
-    border-radius: 3px;
+    border-radius: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
-    flex-shrink: 0;
+    opacity: 0;
   }
+  /* Show grey icon on field hover/focus */
+  .input-with-note:hover .note-icon,
+  .input-with-note input:focus ~ .note-icon { opacity: 1; }
+  /* Always show gold icon when has note */
+  .note-icon.has-note { opacity: 1; }
+  
+  /* Clipboard icon using SVG-like CSS shapes */
   .note-icon::before {
     content: '';
-    width: 10px;
-    height: 12px;
+    width: 9px;
+    height: 11px;
     border: 1.5px solid #bbb;
-    border-radius: 1px;
+    border-radius: 1.5px;
     display: block;
-    position: relative;
+    position: absolute;
+    top: 5px;
     transition: border-color 0.2s;
   }
   .note-icon::after {
     content: '';
     position: absolute;
-    top: 2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 6px;
-    height: 3px;
-    background: #bbb;
-    border-radius: 1px;
-    transition: background 0.2s;
+    top: 3px;
+    width: 5px;
+    height: 4px;
+    background: #fff;
+    border: 1.5px solid #bbb;
+    border-radius: 1px 1px 0 0;
+    transition: border-color 0.2s, background 0.2s;
   }
   .note-icon:hover { background: rgba(187, 153, 52, 0.1); }
-  .note-icon:hover::before { border-color: #888; }
-  .note-icon:hover::after { background: #888; }
+  .note-icon:hover::before { border-color: #777; }
+  .note-icon:hover::after { border-color: #777; }
   .note-icon.has-note::before { border-color: var(--color-star); }
-  .note-icon.has-note::after { background: var(--color-star); }
-  .note-icon.has-note { background: rgba(187, 153, 52, 0.15); }
+  .note-icon.has-note::after { border-color: var(--color-star); background: rgba(187, 153, 52, 0.1); }
+  .note-icon.has-note { background: transparent; }
 
   /* Note popover */
   .note-popover {

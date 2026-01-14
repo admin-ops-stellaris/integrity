@@ -71,14 +71,13 @@
 
   /* Note icon for inline notes */
   .field-with-note { position: relative; }
-  .input-with-note { position: relative; }
-  .input-with-note input { width: 100%; padding-right: 24px; }
+  .input-with-note { position: relative; display: flex; align-items: center; }
+  .input-with-note input { flex: 1; padding-right: 22px; }
   .note-hidden-field { display: none; }
   .note-icon {
     position: absolute;
-    top: 50%;
     right: 2px;
-    transform: translateY(-50%);
+    top: 4px;
     width: 18px;
     height: 18px;
     padding: 0;
@@ -90,14 +89,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.15s, background 0.15s;
     opacity: 0;
+    pointer-events: none;
   }
   /* Show grey icon on field hover/focus */
   .input-with-note:hover .note-icon,
-  .input-with-note input:focus ~ .note-icon { opacity: 1; }
+  .input-with-note input:focus ~ .note-icon { opacity: 1; pointer-events: auto; }
   /* Always show gold icon when has note */
-  .note-icon.has-note { opacity: 1; }
+  .note-icon.has-note { opacity: 1; pointer-events: auto; }
   
   /* Clipboard icon using SVG-like CSS shapes */
   .note-icon::before {

@@ -91,15 +91,32 @@
     flex-shrink: 0;
   }
   .note-icon::before {
-    content: '✎';
-    font-size: 13px;
-    color: #bbb;
-    font-style: normal;
-    transition: color 0.2s;
+    content: '';
+    width: 10px;
+    height: 12px;
+    border: 1.5px solid #bbb;
+    border-radius: 1px;
+    display: block;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .note-icon::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 3px;
+    background: #bbb;
+    border-radius: 1px;
+    transition: background 0.2s;
   }
   .note-icon:hover { background: rgba(187, 153, 52, 0.1); }
-  .note-icon:hover::before { color: #888; }
-  .note-icon.has-note::before { color: var(--color-star); }
+  .note-icon:hover::before { border-color: #888; }
+  .note-icon:hover::after { background: #888; }
+  .note-icon.has-note::before { border-color: var(--color-star); }
+  .note-icon.has-note::after { background: var(--color-star); }
   .note-icon.has-note { background: rgba(187, 153, 52, 0.15); }
 
   /* Note popover */
@@ -189,6 +206,7 @@
   .fields-header { display: flex; justify-content: flex-end; margin-bottom: 2px; }
   .edit-icon { cursor: pointer; color: #888; font-size: 12px; transition: color 0.2s; visibility: hidden; }
   .edit-pencil { display: inline-block; transform: scaleX(-1); }
+  .edit-pencil-left { display: inline-block; transform: scaleX(-1); }
   .edit-icon:hover { color: var(--color-star); }
   .refresh-icon { cursor: pointer; color: #BBB; font-size: 18px; transition: color 0.2s; margin-left: 8px; margin-top: -2px; display: none; }
   .refresh-icon:hover { color: var(--color-trail); }

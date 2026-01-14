@@ -21,7 +21,8 @@
   .form-section { flex: 2.15; display:flex; flex-direction: column; } 
   .list-section { flex: 0.65; background: rgba(255, 255, 255, 0.95); } 
   h2 { margin-top: 0; color: var(--color-trail); font-family: var(--font-heading); font-size: 16px; letter-spacing: -0.3px; margin-bottom: 0; line-height: 1; font-weight: 400; }
-  .form-subtitle { font-size: 12px; color: #888; font-style: italic; font-weight: 300; margin-left: 4px; }
+  .form-subtitle { font-size: 11px; color: #999; font-weight: 400; line-height: 1.3; min-height: 0; }
+  .form-subtitle:empty { display: none; }
 
   /* COMPONENTS */
   #emptyState { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #999; font-style: italic; font-size: 14px; border: 2px dashed #DDD; border-radius: 10px; margin-top: 20px; }

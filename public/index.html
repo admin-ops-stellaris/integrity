@@ -31,11 +31,11 @@
       <div class="column form-section">
         <div class="header-row">
           <div style="display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
               <h2 id="formTitle">Contact</h2>
-              <span id="formSubtitle" class="form-subtitle"></span>
               <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
             </div>
+            <div id="formSubtitle" class="form-subtitle"></div>
             <button type="button" id="contactBackBtn" class="contact-back-btn" onclick="goBackToContact()" style="display:none;">← Back</button>
           </div>
           <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>

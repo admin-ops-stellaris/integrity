@@ -47,6 +47,7 @@
     initDarkMode();
     initScreensaver();
     initInlineEditing();
+    initAllNoteFields();
   };
 
   // --- KEYBOARD SHORTCUTS ---
@@ -578,7 +579,438 @@
     }
   }
 
-  // Field name to Airtable field mapping
+  // ============================================================
+  // INLINE EDITING MANAGER - Reusable module for click-to-edit fields
+  // ============================================================
+  // Usage: Call InlineEditingManager.init(containerSelector, config) where:
+  //   containerSelector: CSS selector for the container (e.g., '#profileTop')
+  //   config: { fieldMap: {fieldId: 'AirtableField'}, getRecordId: fn, saveCallback: fn, onFieldSave: fn }
+  // ============================================================
+  
+  const InlineEditingManager = (function() {
+    const instances = new Map();
+    
+    // Value normalizers for specific field types
+    const normalizers = {
+      dateOfBirth: function(value) {
+        if (!value) return value;
+        if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
+        const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (match) {
+          const [, day, month, year] = match;
+          return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+        return value;
+      }
+    };
+    
+    function createInstance(container, config) {
+      const state = {
+        container: container,
+        fields: [],
+        currentField: null,
+        pendingSaves: new Map(),  // Per-field save context: field -> {originalValue, fieldName, sessionId}
+        fieldMap: config.fieldMap || {},
+        getRecordId: config.getRecordId || (() => null),
+        saveCallback: config.saveCallback || null,
+        onFieldSave: config.onFieldSave || null,
+        allowEditing: false,  // For bulk edit mode (new contacts)
+        sessionCounter: 0     // Incrementing counter for session IDs
+      };
+      
+      function init() {
+        // Find all editable fields
+        const selectors = 'input:not([type="hidden"]), textarea, select';
+        state.fields = Array.from(container.querySelectorAll(selectors))
+          .filter(f => !f.id.match(/^(recordId|submitBtn|cancelBtn)$/));
+        
+        state.fields.forEach((field, index) => {
+          field.dataset.inlineIndex = index;
+          
+          // For select elements, use a wrapper click since disabled selects don't fire clicks
+          if (field.tagName === 'SELECT') {
+            const parent = field.parentElement;
+            parent.style.cursor = 'pointer';
+            parent.addEventListener('click', function(e) {
+              // Only handle inline edit clicks when not in bulk mode
+              if (!state.allowEditing && field.classList.contains('locked') && canEdit()) {
+                e.preventDefault();
+                e.stopPropagation();
+                enableField(field);
+              }
+            });
+            
+            // Handle change event for selects - only for inline edit mode
+            field.addEventListener('change', function() {
+              if (state.allowEditing) return; // Skip in bulk edit mode
+              if (state.currentField === this) {
+                this.dataset.selectSaved = 'true';
+                saveField(this, false);
+              }
+            });
+          } else {
+            // Regular click for inputs/textareas
+            field.addEventListener('click', function(e) {
+              // Only handle inline edit clicks when not in bulk mode
+              if (!state.allowEditing && this.classList.contains('locked') && canEdit()) {
+                enableField(this);
+                e.stopPropagation();
+              }
+            });
+          }
+          
+          // Blur to save (only when not in bulk edit mode)
+          field.addEventListener('blur', function(e) {
+            if (state.allowEditing) return; // Skip in bulk edit mode
+            if (state.currentField === this) {
+              // Skip if select already saved via change event
+              if (this.dataset.selectSaved === 'true') {
+                delete this.dataset.selectSaved;
+                return;
+              }
+              // Small delay to allow Tab to be processed first
+              setTimeout(() => {
+                if (state.currentField === this) {
+                  saveField(this, false);
+                }
+              }, 10);
+            }
+          });
+          
+          // Keyboard handling (only active when not in bulk edit mode)
+          field.addEventListener('keydown', function(e) {
+            if (state.allowEditing) return; // Skip in bulk edit mode - let form handle Tab
+            if (!state.currentField) return;
+            
+            if (e.key === 'Tab') {
+              e.preventDefault();
+              saveField(this, true, e.shiftKey ? -1 : 1);
+            } else if (e.key === 'Enter' && this.tagName !== 'TEXTAREA') {
+              e.preventDefault();
+              saveField(this, false);
+            } else if (e.key === 'Escape') {
+              cancelEdit(this);
+            }
+          });
+        });
+      }
+      
+      function canEdit() {
+        // Allow editing if we have a record ID (existing record) or bulk edit mode (new record)
+        return !!state.getRecordId() || state.allowEditing;
+      }
+      
+      function enableField(field) {
+        // Save any currently editing field first
+        if (state.currentField && state.currentField !== field) {
+          saveFieldSync(state.currentField);
+        }
+        
+        state.currentField = field;
+        // Assign a new session ID for this edit
+        state.sessionCounter++;
+        field.dataset.editSession = state.sessionCounter;
+        // Store original value per-field for async recovery
+        field.dataset.originalValue = field.value;
+        
+        field.classList.remove('locked');
+        field.classList.add('inline-editing');
+        
+        if (field.tagName === 'SELECT') {
+          field.disabled = false;
+        } else {
+          field.readOnly = false;
+        }
+        
+        field.focus();
+        if (field.tagName === 'INPUT') {
+          field.select();
+        }
+      }
+      
+      function disableField(field, savedValue) {
+        // In bulk edit mode (new contact), don't lock fields
+        if (state.allowEditing) {
+          field.classList.remove('inline-editing', 'saving');
+          delete field.dataset.selectSaved;
+          // Keep originalValue as the current field value for next edit
+          field.dataset.originalValue = field.value;
+          if (state.currentField === field) {
+            state.currentField = null;
+          }
+          return;
+        }
+        
+        field.classList.add('locked');
+        field.classList.remove('inline-editing', 'saving');
+        delete field.dataset.selectSaved;
+        // Update originalValue to the saved value (or current value) for next edit
+        field.dataset.originalValue = savedValue !== undefined ? savedValue : field.value;
+        
+        if (field.tagName === 'SELECT') {
+          field.disabled = true;
+        } else {
+          field.readOnly = true;
+        }
+        
+        if (state.currentField === field) {
+          state.currentField = null;
+        }
+      }
+      
+      function saveFieldSync(field) {
+        // Called when switching between fields - save previous field
+        // Simply delegate to saveField - it handles all the async save logic
+        // The "sync" name is historical - it returns immediately but save is async
+        saveField(field, false);
+      }
+      
+      function saveField(field, moveToNext, direction) {
+        const fieldName = field.id || field.name;
+        let newValue = normalizeValue(field.value, fieldName);
+        // Get per-field original value (stored when field was enabled)
+        const originalVal = field.dataset.originalValue || '';
+        
+        // No change - just close
+        if (newValue === originalVal) {
+          disableField(field);
+          if (moveToNext) focusNextField(field, direction);
+          return;
+        }
+        
+        field.classList.add('saving');
+        
+        // Track this save with its own session ID (captured at save time, not from current field state)
+        const saveSessionId = parseInt(field.dataset.editSession) || 0;
+        // Use composite key: field + sessionId to prevent overwrites
+        const saveKey = `${field.id || field.name}_${saveSessionId}`;
+        state.pendingSaves.set(saveKey, { 
+          field: field,
+          originalValue: originalVal, 
+          fieldName: fieldName, 
+          sessionId: saveSessionId 
+        });
+        
+        performSave(field, fieldName, newValue, function(success) {
+          // Check if this callback's session is still current
+          const currentSessionId = parseInt(field.dataset.editSession) || 0;
+          const isStale = saveSessionId !== currentSessionId;
+          
+          // Get our specific save context using the composite key
+          const saveContext = state.pendingSaves.get(saveKey);
+          state.pendingSaves.delete(saveKey);  // Clean up our entry
+          
+          if (isStale) {
+            // Stale callback - user has started a new edit session
+            // Don't touch field state - the new session owns it now
+            if (!success) {
+              console.warn('Save failed for previous edit session');
+            }
+            return;
+          }
+          
+          const revertVal = saveContext ? saveContext.originalValue : originalVal;
+          
+          if (success) {
+            // Success: lock the field with the NEW saved value as the baseline
+            disableField(field, newValue);  // Pass the saved value
+            field.classList.add('save-success');
+            setTimeout(() => field.classList.remove('save-success'), 500);
+            if (moveToNext) focusNextField(field, direction);
+          } else {
+            // Failure: check if user has already moved to another field
+            const userMovedOn = state.currentField !== null && state.currentField !== field;
+            
+            // Revert the field value using per-field context
+            field.value = revertVal;
+            field.classList.remove('saving');
+            delete field.dataset.selectSaved;
+            
+            if (userMovedOn) {
+              // User is editing a different field - just lock this one
+              field.classList.add('locked');
+              field.classList.remove('inline-editing');
+              field.dataset.originalValue = revertVal;  // Keep for next edit
+              if (field.tagName === 'SELECT') {
+                field.disabled = true;
+              } else {
+                field.readOnly = true;
+              }
+              // Error was already shown by performSave, don't steal focus
+            } else {
+              // User hasn't moved on - keep field editable for retry
+              field.classList.add('inline-editing');
+              field.classList.remove('locked');
+              // Keep originalValue for retry
+              field.dataset.originalValue = revertVal;
+              if (field.tagName === 'SELECT') {
+                field.disabled = false;
+              } else {
+                field.readOnly = false;
+              }
+              state.currentField = field;
+              field.focus();
+            }
+            // Don't move to next field on failure
+          }
+        }, originalVal);
+      }
+      
+      function performSave(field, fieldName, newValue, callback, originalVal) {
+        const airtableField = state.fieldMap[fieldName];
+        if (!airtableField) {
+          console.warn('No Airtable mapping for field:', fieldName);
+          if (callback) callback(true);
+          return;
+        }
+        
+        const recordId = state.getRecordId();
+        
+        // In bulk edit mode (new contact), skip server save - form submit handles it
+        if (!recordId || state.allowEditing) {
+          if (callback) callback(true);
+          return;
+        }
+        
+        // Use passed originalVal or fall back to per-field dataset
+        const revertValue = originalVal !== undefined ? originalVal : (field.dataset.originalValue || '');
+        
+        if (state.saveCallback) {
+          state.saveCallback(recordId, airtableField, newValue, field, fieldName, function(success) {
+            if (success && state.onFieldSave) {
+              state.onFieldSave(fieldName, newValue);
+            }
+            if (callback) callback(success);
+          });
+        } else {
+          // Default save via google.script.run
+          google.script.run
+            .withSuccessHandler(function() {
+              if (state.onFieldSave) {
+                state.onFieldSave(fieldName, newValue);
+              }
+              if (callback) callback(true);
+            })
+            .withFailureHandler(function(err) {
+              console.error('Failed to save:', err);
+              if (revertValue !== undefined) {
+                field.value = revertValue;  // Revert to original
+              }
+              showAlert('Error', 'Failed to save: ' + err.message, 'error');
+              if (callback) callback(false);
+            })
+            .updateRecord('Contacts', recordId, airtableField, newValue);
+        }
+      }
+      
+      function normalizeValue(value, fieldName) {
+        if (normalizers[fieldName]) {
+          return normalizers[fieldName](value);
+        }
+        return value;
+      }
+      
+      function focusNextField(currentField, direction) {
+        const currentIndex = parseInt(currentField.dataset.inlineIndex);
+        let nextIndex = currentIndex + direction;
+        
+        // Wrap around
+        if (nextIndex >= state.fields.length) nextIndex = 0;
+        if (nextIndex < 0) nextIndex = state.fields.length - 1;
+        
+        // Skip hidden fields, but limit attempts to prevent infinite loop
+        let attempts = 0;
+        while (attempts < state.fields.length) {
+          const nextField = state.fields[nextIndex];
+          // Check if field is visible
+          if (nextField && nextField.offsetParent !== null) {
+            enableField(nextField);
+            return;
+          }
+          nextIndex += direction;
+          if (nextIndex >= state.fields.length) nextIndex = 0;
+          if (nextIndex < 0) nextIndex = state.fields.length - 1;
+          attempts++;
+        }
+        
+        // No visible field found - just blur and exit
+        currentField.blur();
+      }
+      
+      function cancelEdit(field) {
+        if (state.currentField !== field) return;
+        // Use per-field original value
+        const originalVal = field.dataset.originalValue || '';
+        if (field.value !== originalVal) {
+          field.value = originalVal;
+        }
+        disableField(field);
+      }
+      
+      function lockAllFields() {
+        state.allowEditing = false;
+        state.fields.forEach(field => {
+          field.classList.add('locked');
+          field.classList.remove('inline-editing', 'saving');
+          delete field.dataset.originalValue;
+          delete field.dataset.selectSaved;
+          if (field.tagName === 'SELECT') {
+            field.disabled = true;
+          } else {
+            field.readOnly = true;
+          }
+        });
+        state.currentField = null;
+        state.pendingSaves.clear();
+      }
+      
+      function unlockAllFields() {
+        state.allowEditing = true;
+        state.fields.forEach(field => {
+          field.classList.remove('locked');
+          delete field.dataset.originalValue;
+          if (field.tagName === 'SELECT') {
+            field.disabled = false;
+          } else {
+            field.readOnly = false;
+          }
+        });
+      }
+      
+      init();
+      
+      return {
+        lockAll: lockAllFields,
+        unlockAll: unlockAllFields,
+        enableField: enableField,
+        getFields: () => state.fields
+      };
+    }
+    
+    return {
+      init: function(containerSelector, config) {
+        const container = document.querySelector(containerSelector);
+        if (!container) {
+          console.warn('InlineEditingManager: Container not found:', containerSelector);
+          return null;
+        }
+        
+        const instance = createInstance(container, config);
+        instances.set(containerSelector, instance);
+        return instance;
+      },
+      
+      get: function(containerSelector) {
+        return instances.get(containerSelector);
+      },
+      
+      addNormalizer: function(fieldName, fn) {
+        normalizers[fieldName] = fn;
+      }
+    };
+  })();
+
+  // Field name to Airtable field mapping for Contacts
   const CONTACT_FIELD_MAP = {
     'firstName': 'FirstName',
     'middleName': 'MiddleName', 
@@ -597,147 +1029,23 @@
     'genderOther': 'Gender - Other'
   };
 
-  // Track which field is currently being edited
-  let currentEditingField = null;
-  let originalFieldValue = null;
-
-  // Initialize inline editing for contact form fields
+  // Initialize inline editing for contact form
+  let contactInlineEditor = null;
+  
   function initInlineEditing() {
-    const fields = document.querySelectorAll('#profileTop input, #profileTop textarea, #profileTop select');
-    fields.forEach(field => {
-      // Click to edit
-      field.addEventListener('click', function(e) {
-        const recordId = document.getElementById('recordId').value;
-        if (!recordId) return; // New contact mode - use form submit
-        
-        if (this.classList.contains('locked')) {
-          enableFieldEdit(this);
-          e.stopPropagation();
-        }
-      });
-      
-      // Save on blur
-      field.addEventListener('blur', function(e) {
-        if (currentEditingField === this) {
-          saveFieldInline(this);
-        }
-      });
-      
-      // Save on Enter (for inputs), Tab is handled by blur
-      field.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && this.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          this.blur();
-        }
-        if (e.key === 'Escape') {
-          cancelFieldEdit(this);
-        }
-      });
-    });
-  }
-
-  function enableFieldEdit(field) {
-    // If another field is being edited, save it first
-    if (currentEditingField && currentEditingField !== field) {
-      saveFieldInline(currentEditingField);
-    }
-    
-    currentEditingField = field;
-    originalFieldValue = field.value;
-    
-    field.classList.remove('locked');
-    field.classList.add('inline-editing');
-    
-    if (field.tagName === 'SELECT') {
-      field.disabled = false;
-    } else {
-      field.readOnly = false;
-    }
-    
-    field.focus();
-    if (field.tagName === 'INPUT') {
-      field.select();
-    }
-  }
-
-  function cancelFieldEdit(field) {
-    // Only revert if this is the field we're actually editing
-    if (currentEditingField !== field) return;
-    
-    // Only revert if value was actually changed
-    if (field.value !== originalFieldValue) {
-      field.value = originalFieldValue;
-    }
-    disableFieldEdit(field);
-  }
-
-  function disableFieldEdit(field) {
-    field.classList.add('locked');
-    field.classList.remove('inline-editing');
-    field.classList.remove('saving');
-    
-    if (field.tagName === 'SELECT') {
-      field.disabled = true;
-    } else {
-      field.readOnly = true;
-    }
-    
-    currentEditingField = null;
-    originalFieldValue = null;
-  }
-
-  // Normalize date format for Airtable (DD/MM/YYYY to ISO or keep as-is)
-  function normalizeDateForAirtable(value, fieldName) {
-    if (fieldName !== 'dateOfBirth' || !value) return value;
-    
-    // If already ISO format, return as-is
-    if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
-    
-    // Try DD/MM/YYYY format
-    const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (match) {
-      const [, day, month, year] = match;
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    }
-    
-    // Return original if can't parse
-    return value;
-  }
-
-  function saveFieldInline(field) {
-    const recordId = document.getElementById('recordId').value;
-    if (!recordId) return;
-    
-    const fieldName = field.id || field.name;
-    const airtableField = CONTACT_FIELD_MAP[fieldName];
-    if (!airtableField) {
-      console.warn('No Airtable mapping for field:', fieldName);
-      disableFieldEdit(field);
-      return;
-    }
-    
-    let newValue = field.value;
-    
-    // No change - just disable edit mode
-    if (newValue === originalFieldValue) {
-      disableFieldEdit(field);
-      return;
-    }
-    
-    // Normalize date fields
-    newValue = normalizeDateForAirtable(newValue, fieldName);
-    
-    // Show saving state
-    field.classList.add('saving');
-    
-    google.script.run
-      .withSuccessHandler(function(result) {
-        // Update the local record
+    contactInlineEditor = InlineEditingManager.init('#profileTop', {
+      fieldMap: CONTACT_FIELD_MAP,
+      getRecordId: () => document.getElementById('recordId').value,
+      onFieldSave: function(fieldName, newValue) {
+        // Update local record cache
         if (currentContactRecord) {
-          currentContactRecord.fields[airtableField] = newValue;
+          const airtableField = CONTACT_FIELD_MAP[fieldName];
+          if (airtableField) {
+            currentContactRecord.fields[airtableField] = newValue;
+          }
         }
         
-        // Update title if name changed
+        // Update header title if name changed
         if (['firstName', 'middleName', 'lastName'].includes(fieldName)) {
           updateHeaderTitle(false);
         }
@@ -746,20 +1054,8 @@
         if (fieldName === 'gender') {
           handleGenderChange();
         }
-        
-        disableFieldEdit(field);
-        
-        // Briefly show success
-        field.classList.add('save-success');
-        setTimeout(() => field.classList.remove('save-success'), 500);
-      })
-      .withFailureHandler(function(err) {
-        console.error('Failed to save field:', err);
-        field.value = originalFieldValue;
-        disableFieldEdit(field);
-        showAlert('Error', 'Failed to save: ' + err.message, 'error');
-      })
-      .updateRecord('Contacts', recordId, airtableField, newValue);
+      }
+    });
   }
 
   // Legacy function - now only used for showing hint on hover
@@ -815,10 +1111,16 @@
 
   // Enable new contact mode - all fields editable with submit button
   function enableNewContactMode() {
-    const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
-    inputs.forEach(input => { input.classList.remove('locked'); input.readOnly = false; });
-    const selects = document.querySelectorAll('#profileTop select');
-    selects.forEach(select => { select.classList.remove('locked'); select.disabled = false; });
+    // Use InlineEditingManager to unlock all fields
+    if (contactInlineEditor) {
+      contactInlineEditor.unlockAll();
+    } else {
+      // Fallback if manager not initialized yet
+      const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
+      inputs.forEach(input => { input.classList.remove('locked'); input.readOnly = false; });
+      const selects = document.querySelectorAll('#profileTop select');
+      selects.forEach(select => { select.classList.remove('locked'); select.disabled = false; });
+    }
     document.getElementById('actionRow').style.display = 'flex';
     document.getElementById('cancelBtn').style.display = 'inline-block';
     document.getElementById('submitBtn').textContent = 'Create Contact';
@@ -829,10 +1131,16 @@
 
   // Disable all field editing (for new contact cancel or after save)
   function disableAllFieldEditing() {
-    const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
-    inputs.forEach(input => { input.classList.add('locked'); input.readOnly = true; });
-    const selects = document.querySelectorAll('#profileTop select');
-    selects.forEach(select => { select.classList.add('locked'); select.disabled = true; });
+    // Use InlineEditingManager to lock all fields
+    if (contactInlineEditor) {
+      contactInlineEditor.lockAll();
+    } else {
+      // Fallback if manager not initialized yet
+      const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
+      inputs.forEach(input => { input.classList.add('locked'); input.readOnly = true; });
+      const selects = document.querySelectorAll('#profileTop select');
+      selects.forEach(select => { select.classList.add('locked'); select.disabled = true; });
+    }
     document.getElementById('actionRow').style.display = 'none';
     document.getElementById('cancelBtn').style.display = 'none';
     document.getElementById('profileTop').classList.remove('editing');
@@ -864,27 +1172,23 @@
     document.getElementById('preferredName').value = f.PreferredName || "";
     document.getElementById('mobilePhone').value = f.Mobile || "";
     
-    // Email fields (3 emails + comments)
+    // Email fields
     document.getElementById('email1').value = f.EmailAddress1 || "";
-    document.getElementById('email1Comment').value = f.EmailAddress1Comment || "";
     document.getElementById('email2').value = f.EmailAddress2 || "";
-    document.getElementById('email2Comment').value = f.EmailAddress2Comment || "";
     document.getElementById('email3').value = f.EmailAddress3 || "";
-    document.getElementById('email3Comment').value = f.EmailAddress3Comment || "";
     
-    // Auto-resize email note textareas
-    ['email1Comment', 'email2Comment', 'email3Comment'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el && typeof autoResizeTextarea === 'function') autoResizeTextarea(el);
-    });
+    // Note fields (uses NOTE_FIELDS config for automatic handling)
+    populateNoteFields(f);
     
     // Notes field (renamed from Description in Airtable)
     document.getElementById('notes').value = f.Notes || "";
     
-    // Gender fields
+    // Gender field
     document.getElementById('gender').value = f.Gender || "";
+    // Ensure Gender - Other note value is set (populateNoteFields should handle this, but be explicit)
     document.getElementById('genderOther').value = f["Gender - Other"] || "";
-    updateGenderOtherVisibility();
+    updateAllNoteIcons();
+    handleGenderChange(); // Show/hide note icon based on gender value
     
     // Date of Birth - convert from ISO to DD/MM/YYYY display format
     const dob = f["Date of Birth"] || "";
@@ -922,18 +1226,23 @@
     closeOppPanel();
   }
   
-  // Gender field handling
+  // Gender field handling (Gender - Other is now a note popover)
   function handleGenderChange() {
-    updateGenderOtherVisibility();
-  }
-  
-  function updateGenderOtherVisibility() {
-    const genderValue = document.getElementById('gender').value;
-    const genderOtherGroup = document.getElementById('genderOtherGroup');
-    if (genderValue === 'Other (specify)') {
-      genderOtherGroup.classList.remove('hidden');
-    } else {
-      genderOtherGroup.classList.add('hidden');
+    // Only show the Gender - Other note icon when "Other (specify)" is selected
+    const genderSelect = document.getElementById('gender');
+    const genderWrapper = genderSelect?.closest('.input-with-note');
+    const noteIcon = genderWrapper?.querySelector('.note-icon');
+    
+    if (noteIcon) {
+      const isOther = genderSelect.value === 'Other (specify)';
+      if (isOther) {
+        // Delay showing icon until dropdown has closed
+        setTimeout(() => {
+          noteIcon.style.display = '';
+        }, 150);
+      } else {
+        noteIcon.style.display = 'none';
+      }
     }
   }
   
@@ -2947,12 +3256,14 @@ Best wishes,
       li.setAttribute('data-conn-name', conn.otherContactName || '');
       li.setAttribute('data-conn-created', conn.createdOn || '');
       li.setAttribute('data-conn-modified', conn.modifiedOn || '');
+      li.setAttribute('data-conn-note', conn.note || '');
       
       const badgeClass = getRoleBadgeClass(conn.myRole);
       const displayRole = getDisplayRole(conn.myRole);
       const role = (conn.myRole || '').toLowerCase().trim();
       const showDate = rolesWithDate.includes(role);
       const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
+      const hasNote = conn.note && conn.note.trim();
       
       li.innerHTML = `
         <div class="connection-info">
@@ -2960,13 +3271,24 @@ Best wishes,
           <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
           ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
         </div>
+        <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
       `;
       
-      // Click handler for the whole item (except the name)
-      li.addEventListener('click', function(e) {
-        if (e.target.classList.contains('connection-name')) {
+      // Note icon click handler - read from data attribute for updated values
+      const noteIcon = li.querySelector('.conn-note-icon');
+      if (noteIcon) {
+        noteIcon.addEventListener('click', function(e) {
           e.stopPropagation();
-          // Let quick-view handle navigation
+          const currentNote = li.getAttribute('data-conn-note') || '';
+          openConnectionNotePopover(this, conn.id, currentNote);
+        });
+      }
+      
+      // Click handler for the whole item (except the name and note icon)
+      li.addEventListener('click', function(e) {
+        if (e.target.classList.contains('connection-name') || e.target.classList.contains('conn-note-icon')) {
+          e.stopPropagation();
+          // Let quick-view or note handle it
         } else {
           openConnectionDetailsModal(conn);
         }
@@ -3022,18 +3344,33 @@ Best wishes,
         subLi.setAttribute('data-conn-name', conn.otherContactName || '');
         subLi.setAttribute('data-conn-created', conn.createdOn || '');
         subLi.setAttribute('data-conn-modified', conn.modifiedOn || '');
+        subLi.setAttribute('data-conn-note', conn.note || '');
         
         const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
+        const hasNote = conn.note && conn.note.trim();
         
         subLi.innerHTML = `
-          <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
-          ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
+          <div class="connection-subitem-content">
+            <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
+            ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
+          </div>
+          <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
         `;
         
-        subLi.addEventListener('click', function(e) {
-          if (e.target.classList.contains('connection-name')) {
+        // Note icon click handler - read from data attribute for updated values
+        const noteIcon = subLi.querySelector('.conn-note-icon');
+        if (noteIcon) {
+          noteIcon.addEventListener('click', function(e) {
             e.stopPropagation();
-            // Let quick-view handle navigation
+            const currentNote = subLi.getAttribute('data-conn-note') || '';
+            openConnectionNotePopover(this, conn.id, currentNote);
+          });
+        }
+        
+        subLi.addEventListener('click', function(e) {
+          if (e.target.classList.contains('connection-name') || e.target.classList.contains('conn-note-icon')) {
+            e.stopPropagation();
+            // Let quick-view or note handle it
           } else {
             openConnectionDetailsModal(conn);
           }
@@ -3843,7 +4180,6 @@ Best wishes,
     document.getElementById('spouseHistoryList').innerHTML = "";
     document.getElementById('spouseEditLink').style.display = 'inline';
     document.getElementById('refreshBtn').style.display = 'none';
-    updateGenderOtherVisibility();
     closeOppPanel();
   }
   function handleSearch(event) {
@@ -3968,7 +4304,7 @@ Best wishes,
     return modDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
   }
   function formatSubtitle(f) {
-    const preferredName = f.PreferredName || f.FirstName || '';
+    const preferredName = f.PreferredName || '';
     const tenure = calculateTenure(f.Created);
     if (!preferredName && !tenure) return '';
     const parts = [];
@@ -4489,6 +4825,492 @@ Best wishes,
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
   }
+  
+  // ==================== NOTE POPOVER SYSTEM ====================
+  
+  let activeNotePopover = null;
+  let noteSaveTimeout = null;
+  
+  /**
+   * NOTE_FIELDS Configuration
+   * Add new note fields here - all logic (popover, save, icons) is handled automatically.
+   * 
+   * Each entry requires:
+   *   - fieldId: The HTML hidden field ID (used for form submission)
+   *   - airtableField: The corresponding Airtable field name
+   *   - inputId: The visible input field this note is attached to
+   */
+  const NOTE_FIELDS = [
+    { fieldId: 'email1Comment', airtableField: 'EmailAddress1Comment', inputId: 'email1' },
+    { fieldId: 'email2Comment', airtableField: 'EmailAddress2Comment', inputId: 'email2' },
+    { fieldId: 'email3Comment', airtableField: 'EmailAddress3Comment', inputId: 'email3' },
+    { fieldId: 'genderOther', airtableField: 'Gender - Other', inputId: 'gender' }
+  ];
+
+  // Build lookup map from config (for backward compatibility)
+  const NOTE_FIELD_MAP = NOTE_FIELDS.reduce((map, f) => {
+    map[f.fieldId] = f.airtableField;
+    return map;
+  }, {});
+
+  /**
+   * Initialize note icon on a field wrapper
+   * Call this to attach note functionality to any .input-with-note wrapper
+   */
+  function initNoteIcon(wrapper, fieldId) {
+    // Check if already initialized
+    if (wrapper.querySelector('.note-icon')) return;
+    
+    // Create the icon button
+    const iconBtn = document.createElement('button');
+    iconBtn.type = 'button';
+    iconBtn.className = 'note-icon';
+    iconBtn.dataset.noteField = fieldId;
+    iconBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openNotePopover(this, fieldId);
+    };
+    
+    wrapper.appendChild(iconBtn);
+    
+    // Set initial state based on hidden field value
+    const hiddenField = document.getElementById(fieldId);
+    if (hiddenField) {
+      updateNoteIconState(iconBtn, hiddenField.value);
+    }
+  }
+
+  /**
+   * Initialize all configured note fields
+   * Called on page load to set up note icons on all configured fields
+   */
+  function initAllNoteFields() {
+    NOTE_FIELDS.forEach(config => {
+      const input = document.getElementById(config.inputId);
+      if (input) {
+        const wrapper = input.closest('.input-with-note');
+        if (wrapper) {
+          initNoteIcon(wrapper, config.fieldId);
+        }
+      }
+    });
+  }
+
+  /**
+   * Populate note field values from contact data
+   * @param {Object} contact - The contact record from Airtable
+   */
+  function populateNoteFields(contact) {
+    NOTE_FIELDS.forEach(config => {
+      const field = document.getElementById(config.fieldId);
+      if (field) {
+        field.value = contact[config.airtableField] || '';
+      }
+    });
+    updateAllNoteIcons();
+  }
+
+  /**
+   * Get note field values for form submission
+   * @returns {Object} Object with fieldId: value pairs
+   */
+  function getNoteFieldValues() {
+    const values = {};
+    NOTE_FIELDS.forEach(config => {
+      const field = document.getElementById(config.fieldId);
+      values[config.fieldId] = field ? field.value : '';
+    });
+    return values;
+  }
+  
+  window.openNotePopover = function(iconBtn, fieldId) {
+    // Close any existing popover
+    closeNotePopover();
+    
+    const hiddenField = document.getElementById(fieldId);
+    if (!hiddenField) return;
+    
+    const currentValue = hiddenField.value || '';
+    const rect = iconBtn.getBoundingClientRect();
+    const containerRect = iconBtn.closest('.field-with-note').getBoundingClientRect();
+    
+    // Create popover
+    const popover = document.createElement('div');
+    popover.className = 'note-popover';
+    popover.id = 'activeNotePopover';
+    popover.innerHTML = `
+      <div class="note-popover-header">
+        <span class="note-popover-title">Note</span>
+        <button type="button" class="note-popover-close" onclick="closeNotePopover()">×</button>
+      </div>
+      <textarea id="notePopoverTextarea" placeholder="Add a note...">${currentValue}</textarea>
+      <div class="note-popover-footer">
+        <span class="note-popover-status" id="notePopoverStatus"></span>
+        <button type="button" class="note-popover-done" id="notePopoverDone">Done</button>
+      </div>
+    `;
+    
+    // Position the popover
+    document.body.appendChild(popover);
+    
+    // Calculate position - below and to the left of the icon
+    const popoverRect = popover.getBoundingClientRect();
+    let top = rect.bottom + 5;
+    let left = rect.right - popoverRect.width;
+    
+    // Keep within viewport
+    if (left < 10) left = 10;
+    if (top + popoverRect.height > window.innerHeight - 10) {
+      top = rect.top - popoverRect.height - 5;
+    }
+    
+    popover.style.position = 'fixed';
+    popover.style.top = top + 'px';
+    popover.style.left = left + 'px';
+    
+    // Store reference
+    activeNotePopover = {
+      element: popover,
+      fieldId: fieldId,
+      iconBtn: iconBtn,
+      originalValue: currentValue
+    };
+    
+    // Focus textarea
+    const textarea = popover.querySelector('textarea');
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    
+    // Auto-save on input (debounced)
+    textarea.addEventListener('input', function() {
+      if (noteSaveTimeout) clearTimeout(noteSaveTimeout);
+      const status = document.getElementById('notePopoverStatus');
+      status.textContent = '';
+      status.className = 'note-popover-status';
+      
+      noteSaveTimeout = setTimeout(() => {
+        saveNoteFromPopover();
+      }, 800);
+    });
+    
+    // Save on blur (if clicking outside)
+    textarea.addEventListener('blur', function(e) {
+      // Small delay to check if clicking on close button
+      setTimeout(() => {
+        if (activeNotePopover && !activeNotePopover.element.contains(document.activeElement)) {
+          saveNoteFromPopover(true);
+        }
+      }, 100);
+    });
+    
+    // Keyboard handling for textarea
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        saveNoteFromPopover(true);
+      }
+    });
+    
+    // Done button handling
+    const doneBtn = popover.querySelector('#notePopoverDone');
+    doneBtn.addEventListener('click', function() {
+      saveNoteFromPopover(true);
+    });
+    doneBtn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        saveNoteFromPopover(true);
+      } else if (e.key === 'Escape') {
+        saveNoteFromPopover(true);
+      }
+    });
+  };
+  
+  function saveNoteFromPopover(andClose = false) {
+    if (!activeNotePopover) return;
+    
+    const textarea = document.getElementById('notePopoverTextarea');
+    const status = document.getElementById('notePopoverStatus');
+    const hiddenField = document.getElementById(activeNotePopover.fieldId);
+    
+    if (!textarea || !hiddenField) return;
+    
+    const newValue = textarea.value;
+    const recordId = currentContactRecord?.id;
+    const originalValue = activeNotePopover.originalValue;
+    const airtableField = NOTE_FIELD_MAP[activeNotePopover.fieldId];
+    const iconBtn = activeNotePopover.iconBtn;
+    
+    // Update hidden field immediately
+    hiddenField.value = newValue;
+    
+    // Update icon state
+    updateNoteIconState(iconBtn, newValue);
+    
+    // Close immediately if requested (user trusts it will save)
+    if (andClose) {
+      // Clear any pending debounce
+      if (noteSaveTimeout) {
+        clearTimeout(noteSaveTimeout);
+        noteSaveTimeout = null;
+      }
+      closeNotePopover();
+    }
+    
+    // Skip save if no record (new contact) or value unchanged
+    if (!recordId || newValue === originalValue || !airtableField) {
+      return;
+    }
+    
+    // Show saving status (only if popover still open)
+    if (status && !andClose) {
+      status.textContent = 'Saving...';
+      status.className = 'note-popover-status saving';
+    }
+    
+    // Save to Airtable in background
+    google.script.run
+      .withSuccessHandler(function() {
+        console.log('Note saved successfully');
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error saving note:', err);
+      })
+      .updateRecord('Contacts', recordId, airtableField, newValue);
+  }
+  
+  window.closeNotePopover = function() {
+    if (noteSaveTimeout) {
+      clearTimeout(noteSaveTimeout);
+      noteSaveTimeout = null;
+    }
+    
+    if (activeNotePopover) {
+      activeNotePopover.element.remove();
+      activeNotePopover = null;
+    }
+  };
+  
+  // ==================== CONNECTION NOTE POPOVER ====================
+  
+  let activeConnNotePopover = null;
+  let connNoteSaveTimeout = null;
+  
+  window.openConnectionNotePopover = function(iconBtn, connectionId, currentNote) {
+    // Close any existing popover
+    closeConnectionNotePopover();
+    closeNotePopover();
+    
+    const rect = iconBtn.getBoundingClientRect();
+    
+    // Create popover
+    const popover = document.createElement('div');
+    popover.className = 'note-popover conn-note-popover';
+    popover.id = 'activeConnNotePopover';
+    popover.innerHTML = `
+      <div class="note-popover-header">
+        <span class="note-popover-title">Connection Note</span>
+        <button type="button" class="note-popover-close" onclick="closeConnectionNotePopover()">×</button>
+      </div>
+      <textarea id="connNotePopoverTextarea" placeholder="Add a note about this connection...">${currentNote || ''}</textarea>
+      <div class="note-popover-footer">
+        <span class="note-popover-status" id="connNotePopoverStatus"></span>
+        <button type="button" class="note-popover-done" id="connNotePopoverDone">Done</button>
+      </div>
+    `;
+    
+    // Position the popover
+    document.body.appendChild(popover);
+    
+    // Calculate position - below and to the left of the icon
+    const popoverRect = popover.getBoundingClientRect();
+    let top = rect.bottom + 5;
+    let left = rect.right - popoverRect.width;
+    
+    // Keep within viewport
+    if (left < 10) left = 10;
+    if (top + popoverRect.height > window.innerHeight - 10) {
+      top = rect.top - popoverRect.height - 5;
+    }
+    
+    popover.style.position = 'fixed';
+    popover.style.top = top + 'px';
+    popover.style.left = left + 'px';
+    popover.style.zIndex = '10000';
+    
+    // Store state
+    activeConnNotePopover = {
+      element: popover,
+      connectionId: connectionId,
+      originalValue: currentNote || '',
+      iconBtn: iconBtn
+    };
+    
+    // Focus textarea
+    const textarea = document.getElementById('connNotePopoverTextarea');
+    textarea.focus();
+    
+    // Auto-save on input with debounce
+    textarea.addEventListener('input', function() {
+      if (connNoteSaveTimeout) clearTimeout(connNoteSaveTimeout);
+      connNoteSaveTimeout = setTimeout(() => saveConnNoteFromPopover(false), 800);
+    });
+    
+    // Done button handler
+    const doneBtn = document.getElementById('connNotePopoverDone');
+    doneBtn.addEventListener('click', function() {
+      saveConnNoteFromPopover(true);
+    });
+    
+    // Keyboard handling
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Tab' && !e.shiftKey) {
+        e.preventDefault();
+        doneBtn.focus();
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        saveConnNoteFromPopover(true);
+      } else if (e.key === 'Escape') {
+        saveConnNoteFromPopover(true);
+      }
+    });
+    
+    doneBtn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+        e.preventDefault();
+        saveConnNoteFromPopover(true);
+      }
+    });
+  };
+  
+  function saveConnNoteFromPopover(andClose = false) {
+    if (!activeConnNotePopover) return;
+    
+    const textarea = document.getElementById('connNotePopoverTextarea');
+    const status = document.getElementById('connNotePopoverStatus');
+    
+    if (!textarea) return;
+    
+    const newValue = textarea.value;
+    const connectionId = activeConnNotePopover.connectionId;
+    const originalValue = activeConnNotePopover.originalValue;
+    const iconBtn = activeConnNotePopover.iconBtn;
+    
+    // Update icon state
+    if (iconBtn) {
+      if (newValue && newValue.trim()) {
+        iconBtn.classList.add('has-note');
+      } else {
+        iconBtn.classList.remove('has-note');
+      }
+    }
+    
+    // Update data attribute on parent element
+    const parentEl = iconBtn?.closest('[data-conn-note]');
+    if (parentEl) {
+      parentEl.setAttribute('data-conn-note', newValue);
+    }
+    
+    // Close immediately if requested
+    if (andClose) {
+      if (connNoteSaveTimeout) {
+        clearTimeout(connNoteSaveTimeout);
+        connNoteSaveTimeout = null;
+      }
+      closeConnectionNotePopover();
+    }
+    
+    // Skip save if value unchanged
+    if (newValue === originalValue) {
+      return;
+    }
+    
+    // Update original value to prevent duplicate saves
+    if (activeConnNotePopover) {
+      activeConnNotePopover.originalValue = newValue;
+    }
+    
+    // Show saving status (only if popover still open)
+    if (status && !andClose) {
+      status.textContent = 'Saving...';
+      status.className = 'note-popover-status saving';
+    }
+    
+    // Save to Airtable
+    google.script.run
+      .withSuccessHandler(function() {
+        console.log('Connection note saved successfully');
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error saving connection note:', err);
+      })
+      .updateConnectionNote(connectionId, newValue);
+  }
+  
+  window.closeConnectionNotePopover = function() {
+    if (connNoteSaveTimeout) {
+      clearTimeout(connNoteSaveTimeout);
+      connNoteSaveTimeout = null;
+    }
+    
+    if (activeConnNotePopover) {
+      activeConnNotePopover.element.remove();
+      activeConnNotePopover = null;
+    }
+  };
+  
+  // Close connection note popover when clicking outside
+  document.addEventListener('click', function(e) {
+    if (activeConnNotePopover && !activeConnNotePopover.element.contains(e.target) && !e.target.classList.contains('conn-note-icon')) {
+      // Don't close if user was selecting text
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        const textarea = document.getElementById('connNotePopoverTextarea');
+        if (textarea && (document.activeElement === textarea || selection.anchorNode?.parentElement?.closest('.conn-note-popover'))) {
+          return;
+        }
+      }
+      saveConnNoteFromPopover(true);
+    }
+  });
+  
+  function updateNoteIconState(iconBtn, value) {
+    if (!iconBtn) return;
+    if (value && value.trim()) {
+      iconBtn.classList.add('has-note');
+    } else {
+      iconBtn.classList.remove('has-note');
+    }
+  }
+  
+  // Update all note icons when contact is loaded
+  function updateAllNoteIcons() {
+    document.querySelectorAll('.note-icon').forEach(icon => {
+      const fieldId = icon.dataset.noteField;
+      if (fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+          updateNoteIconState(icon, field.value);
+        }
+      }
+    });
+  }
+  
+  // Close popover when clicking outside (but not during text selection)
+  document.addEventListener('click', function(e) {
+    if (activeNotePopover && !activeNotePopover.element.contains(e.target) && !e.target.classList.contains('note-icon')) {
+      // Don't close if user was selecting text (selection extends outside popover)
+      const selection = window.getSelection();
+      if (selection && selection.toString().length > 0) {
+        // Check if selection started inside the popover textarea
+        const textarea = document.getElementById('notePopoverTextarea');
+        if (textarea && (document.activeElement === textarea || selection.anchorNode?.parentElement?.closest('.note-popover'))) {
+          return; // Don't close - user is selecting text
+        }
+      }
+      saveNoteFromPopover(true);
+    }
+  });
   
   // Cancel appointment edit
   function cancelApptEdit(apptId, fieldKey) {

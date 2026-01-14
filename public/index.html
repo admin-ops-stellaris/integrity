@@ -59,7 +59,7 @@
           <form id="contactForm" onsubmit="handleFormSubmit(this)" style="display:flex; flex-direction:column; flex:1;">
             <input type="hidden" name="recordId" id="recordId">
             <div class="profile-top" id="profileTop">
-              <div class="edit-hint"><span class="edit-hint-icon">✎</span> Click any field to edit</div>
+              <div class="edit-hint"><span class="edit-hint-icon edit-pencil-left">✎</span> Click any field to edit</div>
               <span id="editBtn" style="display:none;"></span>
               <div class="contact-form-split">
                 <div class="contact-form-left">
@@ -70,19 +70,18 @@
                   </div>
                   <div class="form-row-3">
                     <div class="field-group"><label>Preferred</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
-                    <div class="field-group">
+                    <div class="field-group field-with-note">
                       <label>Gender</label>
-                      <select name="gender" id="gender" class="locked" disabled onchange="handleGenderChange()">
-                        <option value=""></option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                        <option value="Other (specify)">Other (specify)</option>
-                      </select>
-                    </div>
-                    <div class="field-group" id="genderOtherGroup">
-                      <label>Gender - Other</label>
-                      <input type="text" name="genderOther" id="genderOther" class="locked" readonly placeholder="Specify">
+                      <input type="hidden" name="genderOther" id="genderOther">
+                      <div class="input-with-note select-with-note">
+                        <select name="gender" id="gender" class="locked" disabled onchange="handleGenderChange()">
+                          <option value=""></option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Prefer not to say">Prefer not to say</option>
+                          <option value="Other (specify)">Other (specify)</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <div class="field-group"><label>Notes</label><textarea name="notes" id="notes" class="locked" readonly></textarea></div>
@@ -92,17 +91,29 @@
                     <div class="field-group"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
                     <div class="field-group"><label>Date of Birth</label><input type="text" name="dateOfBirth" id="dateOfBirth" class="locked" readonly placeholder="DD/MM/YYYY"></div>
                   </div>
-                  <div class="form-row-2">
-                    <div class="field-group"><label>Email</label><input type="email" name="email1" id="email1" class="locked" readonly></div>
-                    <div class="field-group"><label>Email Note</label><textarea name="email1Comment" id="email1Comment" class="locked auto-resize-textarea" readonly rows="1" oninput="autoResizeTextarea(this)"></textarea></div>
+                  <div class="field-group field-with-note">
+                    <label>Email</label>
+                    <div class="input-with-note">
+                      <input type="email" name="email1" id="email1" class="locked" readonly>
+                      <button type="button" class="note-icon" data-note-field="email1Comment" onclick="openNotePopover(this, 'email1Comment')" title="Add/view note"></button>
+                    </div>
+                    <textarea name="email1Comment" id="email1Comment" class="note-hidden-field" rows="1"></textarea>
                   </div>
-                  <div class="form-row-2">
-                    <div class="field-group"><label>Email 2</label><input type="email" name="email2" id="email2" class="locked" readonly></div>
-                    <div class="field-group"><label>Email 2 Note</label><textarea name="email2Comment" id="email2Comment" class="locked auto-resize-textarea" readonly rows="1" oninput="autoResizeTextarea(this)"></textarea></div>
+                  <div class="field-group field-with-note">
+                    <label>Email 2</label>
+                    <div class="input-with-note">
+                      <input type="email" name="email2" id="email2" class="locked" readonly>
+                      <button type="button" class="note-icon" data-note-field="email2Comment" onclick="openNotePopover(this, 'email2Comment')" title="Add/view note"></button>
+                    </div>
+                    <textarea name="email2Comment" id="email2Comment" class="note-hidden-field" rows="1"></textarea>
                   </div>
-                  <div class="form-row-2">
-                    <div class="field-group"><label>Email 3</label><input type="email" name="email3" id="email3" class="locked" readonly></div>
-                    <div class="field-group"><label>Email 3 Note</label><textarea name="email3Comment" id="email3Comment" class="locked auto-resize-textarea" readonly rows="1" oninput="autoResizeTextarea(this)"></textarea></div>
+                  <div class="field-group field-with-note">
+                    <label>Email 3</label>
+                    <div class="input-with-note">
+                      <input type="email" name="email3" id="email3" class="locked" readonly>
+                      <button type="button" class="note-icon" data-note-field="email3Comment" onclick="openNotePopover(this, 'email3Comment')" title="Add/view note"></button>
+                    </div>
+                    <textarea name="email3Comment" id="email3Comment" class="note-hidden-field" rows="1"></textarea>
                   </div>
                 </div>
               </div>

@@ -44,6 +44,7 @@
   input:focus, textarea:focus { outline: none; border-color: var(--color-trail); }
   textarea { height: 100px; resize: vertical; }
   input.locked, textarea.locked, select.locked { background: transparent; border: none; border-bottom: 1px dotted #CCC; padding-left: 0; color: var(--color-trail); font-weight: 500; cursor: pointer; }
+  select.locked[disabled] { pointer-events: none; } /* Pass clicks through to parent for inline edit trigger */
   #profileTop input.locked:hover, #profileTop textarea.locked:hover, #profileTop select.locked:hover { border-bottom-color: var(--color-star); background: rgba(187, 153, 52, 0.05); }
   textarea.locked { resize: vertical; }
   input.locked:focus, textarea.locked:focus, select.locked:focus { outline: none; }
@@ -68,10 +69,155 @@
     transition: background 0.3s, border-color 0.3s;
   }
 
+  /* Note icon for inline notes */
+  .field-with-note { position: relative; }
+  .input-with-note { position: relative; display: flex; align-items: center; }
+  .input-with-note input { flex: 1; padding-right: 22px; }
+  .select-with-note select { flex: 1; padding-right: 22px; }
+  .select-with-note .note-icon { top: 50%; transform: translateY(-50%); right: 24px; }
+  .note-hidden-field { display: none; }
+  .note-icon {
+    position: absolute;
+    right: 2px;
+    top: 4px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* Show grey icon on field hover/focus */
+  .input-with-note:hover .note-icon,
+  .input-with-note input:focus ~ .note-icon { opacity: 1; pointer-events: auto; }
+  /* Always show gold icon when has note */
+  .note-icon.has-note { opacity: 1; pointer-events: auto; }
+  
+  /* Clipboard icon using SVG-like CSS shapes */
+  .note-icon::before {
+    content: '';
+    width: 9px;
+    height: 10px;
+    border: 1.5px solid #bbb;
+    border-radius: 1.5px;
+    display: block;
+    position: absolute;
+    top: 5px;
+    transition: border-color 0.2s;
+  }
+  .note-icon::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    width: 5px;
+    height: 3px;
+    background: #fff;
+    border: 1.5px solid #bbb;
+    border-radius: 1px 1px 0 0;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .note-icon:hover { background: rgba(187, 153, 52, 0.1); }
+  .note-icon:hover::before { border-color: #777; }
+  .note-icon:hover::after { border-color: #777; }
+  .note-icon.has-note::before { border-color: var(--color-star); }
+  .note-icon.has-note::after { border-color: var(--color-star); background: rgba(187, 153, 52, 0.1); }
+  .note-icon.has-note { background: transparent; }
+
+  /* Note popover */
+  .note-popover {
+    position: absolute;
+    z-index: 1000;
+    background: #fff;
+    border: 1px solid var(--color-star);
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 10px;
+    min-width: 250px;
+    max-width: 350px;
+  }
+  .note-popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+  }
+  .note-popover-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .note-popover-close {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #999;
+    line-height: 1;
+    border-radius: 3px;
+  }
+  .note-popover-close:hover { background: #f0f0f0; color: #666; }
+  .note-popover textarea {
+    width: 100%;
+    min-height: 60px;
+    max-height: 150px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 13px;
+    font-family: var(--font-body);
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .note-popover textarea:focus { outline: none; border-color: var(--color-star); }
+  .note-popover-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .note-popover-status {
+    font-size: 10px;
+    color: #999;
+    min-height: 14px;
+  }
+  .note-popover-status.saving { color: var(--color-star); }
+  .note-popover-status.saved { color: var(--color-cedar); }
+  .note-popover-done {
+    width: auto;
+    margin: 0;
+    padding: 5px 14px;
+    font-size: 11px;
+    background: var(--color-trail);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .note-popover-done:hover { opacity: 0.85; }
+  .note-popover-done:focus { outline: 2px solid var(--color-star); outline-offset: 2px; }
+
   .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px; }
   .fields-header { display: flex; justify-content: flex-end; margin-bottom: 2px; }
   .edit-icon { cursor: pointer; color: #888; font-size: 12px; transition: color 0.2s; visibility: hidden; }
   .edit-pencil { display: inline-block; transform: scaleX(-1); }
+  .edit-pencil-left { display: inline-block; transform: scaleX(-1); }
   .edit-icon:hover { color: var(--color-star); }
   .refresh-icon { cursor: pointer; color: #BBB; font-size: 18px; transition: color 0.2s; margin-left: 8px; margin-top: -2px; display: none; }
   .refresh-icon:hover { color: var(--color-trail); }
@@ -116,7 +262,6 @@
   .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
   .contact-form-left .field-group textarea { height: 60px; resize: vertical; }
   .contact-form-split .field-group { margin-bottom: 0; }
-  #genderOtherGroup.hidden { visibility: hidden; }
 
   /* CLICK-TO-EDIT FORM */
   .profile-top { position: relative; cursor: pointer; border-radius: 8px; padding: 12px; margin: -12px; transition: background 0.2s; }
@@ -365,9 +510,53 @@
   .connections-two-col { display: flex; gap: 15px; }
   .connections-col { flex: 1; min-width: 0; }
   .connections-list { padding-left: 0; list-style: none; margin: 0; }
-  .connection-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #EEE; font-size: 12px; }
+  .connection-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #EEE; font-size: 12px; gap: 4px; }
   .connection-item:last-child { border-bottom: none; }
   .connection-info { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .connection-subitem { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+  .connection-subitem-content { display: flex; align-items: center; gap: 8px; flex: 1; }
+  
+  /* Connection note icon */
+  .conn-note-icon {
+    position: relative;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    flex-shrink: 0;
+  }
+  .connection-item:hover .conn-note-icon,
+  .connection-subitem:hover .conn-note-icon { opacity: 1; }
+  .conn-note-icon.has-note { opacity: 1; }
+  .conn-note-icon::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 10px;
+    border: 1.5px solid #bbb;
+    border-radius: 1px;
+    top: 4px;
+  }
+  .conn-note-icon::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 3px;
+    border: 1.5px solid #bbb;
+    border-bottom: none;
+    border-radius: 2px 2px 0 0;
+    top: 2px;
+  }
+  .conn-note-icon.has-note::before,
+  .conn-note-icon.has-note::after { border-color: var(--color-star); }
   .connection-role-badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 500; text-transform: uppercase; background: var(--color-sky); color: var(--color-midnight); }
   .connection-role-badge.parent, .connection-role-badge.child { background: #E8F5E9; color: #2E7D32; }
   .connection-role-badge.sibling { background: #E3F2FD; color: #1565C0; }

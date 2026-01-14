@@ -47,6 +47,7 @@
     initDarkMode();
     initScreensaver();
     initInlineEditing();
+    initAllNoteFields();
   };
 
   // --- KEYBOARD SHORTCUTS ---
@@ -1171,16 +1172,13 @@
     document.getElementById('preferredName').value = f.PreferredName || "";
     document.getElementById('mobilePhone').value = f.Mobile || "";
     
-    // Email fields (3 emails + comments)
+    // Email fields
     document.getElementById('email1').value = f.EmailAddress1 || "";
-    document.getElementById('email1Comment').value = f.EmailAddress1Comment || "";
     document.getElementById('email2').value = f.EmailAddress2 || "";
-    document.getElementById('email2Comment').value = f.EmailAddress2Comment || "";
     document.getElementById('email3').value = f.EmailAddress3 || "";
-    document.getElementById('email3Comment').value = f.EmailAddress3Comment || "";
     
-    // Update note icon states for email comments
-    if (typeof updateAllNoteIcons === 'function') updateAllNoteIcons();
+    // Note fields (uses NOTE_FIELDS config for automatic handling)
+    populateNoteFields(f);
     
     // Notes field (renamed from Description in Airtable)
     document.getElementById('notes').value = f.Notes || "";
@@ -4799,12 +4797,97 @@ Best wishes,
   let activeNotePopover = null;
   let noteSaveTimeout = null;
   
-  // Field mapping for note fields to Airtable
-  const NOTE_FIELD_MAP = {
-    'email1Comment': 'EmailAddress1Comment',
-    'email2Comment': 'EmailAddress2Comment',
-    'email3Comment': 'EmailAddress3Comment'
-  };
+  /**
+   * NOTE_FIELDS Configuration
+   * Add new note fields here - all logic (popover, save, icons) is handled automatically.
+   * 
+   * Each entry requires:
+   *   - fieldId: The HTML hidden field ID (used for form submission)
+   *   - airtableField: The corresponding Airtable field name
+   *   - inputId: The visible input field this note is attached to
+   */
+  const NOTE_FIELDS = [
+    { fieldId: 'email1Comment', airtableField: 'EmailAddress1Comment', inputId: 'email1' },
+    { fieldId: 'email2Comment', airtableField: 'EmailAddress2Comment', inputId: 'email2' },
+    { fieldId: 'email3Comment', airtableField: 'EmailAddress3Comment', inputId: 'email3' }
+  ];
+
+  // Build lookup map from config (for backward compatibility)
+  const NOTE_FIELD_MAP = NOTE_FIELDS.reduce((map, f) => {
+    map[f.fieldId] = f.airtableField;
+    return map;
+  }, {});
+
+  /**
+   * Initialize note icon on a field wrapper
+   * Call this to attach note functionality to any .input-with-note wrapper
+   */
+  function initNoteIcon(wrapper, fieldId) {
+    // Check if already initialized
+    if (wrapper.querySelector('.note-icon')) return;
+    
+    // Create the icon button
+    const iconBtn = document.createElement('button');
+    iconBtn.type = 'button';
+    iconBtn.className = 'note-icon';
+    iconBtn.dataset.noteField = fieldId;
+    iconBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openNotePopover(this, fieldId);
+    };
+    
+    wrapper.appendChild(iconBtn);
+    
+    // Set initial state based on hidden field value
+    const hiddenField = document.getElementById(fieldId);
+    if (hiddenField) {
+      updateNoteIconState(iconBtn, hiddenField.value);
+    }
+  }
+
+  /**
+   * Initialize all configured note fields
+   * Called on page load to set up note icons on all configured fields
+   */
+  function initAllNoteFields() {
+    NOTE_FIELDS.forEach(config => {
+      const input = document.getElementById(config.inputId);
+      if (input) {
+        const wrapper = input.closest('.input-with-note');
+        if (wrapper) {
+          initNoteIcon(wrapper, config.fieldId);
+        }
+      }
+    });
+  }
+
+  /**
+   * Populate note field values from contact data
+   * @param {Object} contact - The contact record from Airtable
+   */
+  function populateNoteFields(contact) {
+    NOTE_FIELDS.forEach(config => {
+      const field = document.getElementById(config.fieldId);
+      if (field) {
+        field.value = contact[config.airtableField] || '';
+      }
+    });
+    updateAllNoteIcons();
+  }
+
+  /**
+   * Get note field values for form submission
+   * @returns {Object} Object with fieldId: value pairs
+   */
+  function getNoteFieldValues() {
+    const values = {};
+    NOTE_FIELDS.forEach(config => {
+      const field = document.getElementById(config.fieldId);
+      values[config.fieldId] = field ? field.value : '';
+    });
+    return values;
+  }
   
   window.openNotePopover = function(iconBtn, fieldId) {
     // Close any existing popover

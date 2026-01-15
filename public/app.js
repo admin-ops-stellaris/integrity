@@ -1223,7 +1223,7 @@
        warnBox.style.display = 'none';
     }
 
-    document.getElementById('formSubtitle').innerText = formatSubtitle(f);
+    document.getElementById('formSubtitle').innerHTML = formatSubtitle(f);
     renderHistory(f);
     loadOpportunities(f);
     renderSpouseSection(f);

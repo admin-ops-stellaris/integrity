@@ -56,7 +56,7 @@
   h2 { margin-top: 0; color: var(--color-trail); font-family: var(--font-heading); font-size: 16px; letter-spacing: -0.3px; margin-bottom: 0; line-height: 1; font-weight: 400; }
   .form-subtitle { font-size: 11px; color: #999; font-weight: 400; line-height: 1.6; min-height: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .form-subtitle:empty { display: none; }
-  .name-pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 500; }
+  .name-pill { display: inline-block; padding: 3px 12px; border-radius: 14px; font-size: 11px; font-weight: 500; }
   .pill-prefers { background: rgba(123, 139, 100, 0.15); color: var(--color-cedar); }
   .pill-doesnt-like { background: rgba(170, 0, 0, 0.1); color: #A00; }
   body.dark-mode .pill-prefers { background: rgba(123, 139, 100, 0.25); color: #9AB07F; }

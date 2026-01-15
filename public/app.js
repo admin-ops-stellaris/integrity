@@ -4341,13 +4341,11 @@ Best wishes,
     const tenure = calculateTenure(f.Created);
     if (!preferredName && !doesNotLike && !tenure) return '';
     const parts = [];
-    const namePrefParts = [];
-    if (preferredName) namePrefParts.push(`prefers ${preferredName}`);
-    if (doesNotLike) namePrefParts.push(`doesn't like being called ${doesNotLike}`);
-    if (namePrefParts.length) parts.push(namePrefParts.join(', '));
+    if (preferredName) parts.push(`<span class="name-pill pill-prefers">prefers "${preferredName}"</span>`);
+    if (doesNotLike) parts.push(`<span class="name-pill pill-doesnt-like">doesn't like "${doesNotLike}"</span>`);
     if (tenure === 'just added today') parts.push(tenure);
     else if (tenure) parts.push(`in our database for ${tenure}`);
-    return parts.join(' · ');
+    return parts.join(' ');
   }
   function calculateTenure(createdStr) {
     if (!createdStr) return null;

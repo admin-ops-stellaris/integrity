@@ -346,10 +346,6 @@
   .profile-col-left:hover { background: rgba(187, 153, 52, 0.03); }
   .profile-columns.editing .profile-col-left { cursor: default; background: transparent; }
   .profile-columns.editing .profile-col-left:hover { background: transparent; }
-  .edit-hint { position: absolute; top: 8px; right: 12px; font-size: 11px; color: var(--color-star); opacity: 0; transition: opacity 0.2s; pointer-events: none; display: flex; align-items: center; gap: 4px; }
-  .profile-col-left:hover .edit-hint { opacity: 1; }
-  .profile-columns.editing .edit-hint { display: none; }
-  .edit-hint-icon { font-size: 12px; }
   body.dark-mode .profile-col-left:hover { background: rgba(187, 153, 52, 0.08); }
 
   /* CONFIRMATION MODAL */

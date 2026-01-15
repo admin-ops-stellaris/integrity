@@ -3216,8 +3216,6 @@ Best wishes,
     
     // Short role labels for pills
     const pillRoleLabels = {
-      'household representative': 'HH Rep',
-      'household member': 'HH Member',
       'parent': 'Parent',
       'child': 'Child',
       'sibling': 'Sibling',
@@ -3247,7 +3245,7 @@ Best wishes,
     };
     
     // Sort connections: Referrer first, then family roles, then friends/referred
-    const roleOrder = ['referred by', 'household representative', 'household member', 'parent', 'child', 'sibling', 'employer of', 'employee of', 'family', 'friend', 'has referred'];
+    const roleOrder = ['referred by', 'parent', 'child', 'sibling', 'employer of', 'employee of', 'family', 'friend', 'has referred'];
     connections.sort((a, b) => {
       const aRole = (a.myRole || '').toLowerCase();
       const bRole = (b.myRole || '').toLowerCase();
@@ -3300,8 +3298,6 @@ Best wishes,
     
     // Role display names with "of" suffix
     const roleDisplayMap = {
-      'household representative': 'Household Representative of',
-      'household member': 'Household Member of',
       'parent': 'Parent of',
       'child': 'Child of',
       'sibling': 'Sibling of',
@@ -3336,7 +3332,7 @@ Best wishes,
     const rolesWithDate = ['referred by', 'has referred'];
     
     // Define role ordering for left and right columns
-    const leftRoles = ['Referred by', 'Household Representative', 'Household Member', 'Parent', 'Child', 'Sibling', 'Employer of', 'Employee of'];
+    const leftRoles = ['Referred by', 'Parent', 'Child', 'Sibling', 'Employer of', 'Employee of'];
     const rightRoles = ['Friend', 'Has Referred'];
     
     // Roles to group when count > 2
@@ -3587,8 +3583,6 @@ Best wishes,
     
     // Get role display with "of" suffix
     const roleDisplayMap = {
-      'household representative': 'Household Representative of',
-      'household member': 'Household Member of',
       'parent': 'Parent of',
       'child': 'Child of',
       'sibling': 'Sibling of',

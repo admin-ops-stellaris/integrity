@@ -587,7 +587,8 @@
   }
   .spouse-left-col { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
   .spouse-left-col .connection-date { margin-left: 0; }
-  .spouse-right-col { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+  .spouse-right-col { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; }
+  .spouse-right-col-content { display: flex; flex-direction: column; gap: 4px; }
   .spouse-right-col .spouse-action-link { margin-left: auto; }
   .spouse-history-accordion { display: inline-flex; align-items: center; }
   .spouse-history-toggle { cursor: pointer; color: #666; font-size: 11px; display: flex; align-items: center; gap: 4px; }

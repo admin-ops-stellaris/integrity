@@ -4223,6 +4223,7 @@ Best wishes,
     const query = event.target.value; const statusEl = document.getElementById('searchStatus');
     clearTimeout(loadingTimer);
     searchHighlightIndex = -1; // Reset keyboard navigation when typing
+    showSearchDropdown(); // Reopen dropdown when typing
     if(query.length === 0) { statusEl.innerText = ""; loadContacts(); return; }
     clearTimeout(searchTimeout); statusEl.innerText = "Typing...";
     searchTimeout = setTimeout(() => {

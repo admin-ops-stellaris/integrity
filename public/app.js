@@ -3156,16 +3156,29 @@ Best wishes,
   // --- CONNECTIONS LOGIC ---
   let connectionRoleTypes = [];
   
+  let allConnectionsData = [];
+  let connectionsExpanded = false;
+  const CONNECTIONS_COLLAPSED_LIMIT = 8;
+  
   function loadConnections(contactId) {
-    const container = document.getElementById('connectionsPillContainer');
-    if (!container) return;
-    container.innerHTML = '<span class="connections-empty">Loading...</span>';
+    const leftList = document.getElementById('connectionsListLeft');
+    const rightList = document.getElementById('connectionsListRight');
+    if (!leftList || !rightList) return;
+    leftList.innerHTML = '<li class="connections-empty">Loading...</li>';
+    rightList.innerHTML = '';
     
     google.script.run.withSuccessHandler(function(connections) {
-      renderConnectionsPills(connections);
+      allConnectionsData = connections || [];
+      connectionsExpanded = false;
+      renderConnectionsList(allConnectionsData);
     }).withFailureHandler(function(err) {
-      container.innerHTML = '<span class="connections-empty">Error loading connections</span>';
+      leftList.innerHTML = '<li class="connections-empty">Error loading connections</li>';
     }).getConnectionsForContact(contactId);
+  }
+  
+  function toggleConnectionsExpand() {
+    connectionsExpanded = !connectionsExpanded;
+    renderConnectionsList(allConnectionsData);
   }
   
   function renderConnectionsPills(connections) {
@@ -3249,13 +3262,10 @@ Best wishes,
     });
   }
   
-  // Keep old function for backwards compatibility but redirect to new one
   function renderConnectionsList(connections) {
-    renderConnectionsPills(connections);
-    return;
-    // Legacy code below - kept for reference
     const leftList = document.getElementById('connectionsListLeft');
     const rightList = document.getElementById('connectionsListRight');
+    const expandLink = document.getElementById('connectionsExpandLink');
     if (!leftList || !rightList) return;
     leftList.innerHTML = '';
     rightList.innerHTML = '';
@@ -3533,8 +3543,49 @@ Best wishes,
       });
     };
     
-    renderToList(leftList, leftConns);
-    renderToList(rightList, rightConns);
+    // Apply collapsed limit if not expanded
+    const totalCount = connections.length;
+    let leftToRender = leftConns;
+    let rightToRender = rightConns;
+    
+    if (!connectionsExpanded && totalCount > CONNECTIONS_COLLAPSED_LIMIT) {
+      // Limit total connections shown across both columns
+      const allSorted = [...leftConns, ...rightConns];
+      // Re-sort by priority for limiting
+      const priorityRoles = ['referred by', 'household representative', 'household member', 'parent', 'child', 'sibling', 'employer of', 'employee of', 'family', 'friend', 'has referred'];
+      allSorted.sort((a, b) => {
+        const aRole = (a.myRole || '').toLowerCase();
+        const bRole = (b.myRole || '').toLowerCase();
+        const aIdx = priorityRoles.findIndex(r => aRole.includes(r));
+        const bIdx = priorityRoles.findIndex(r => bRole.includes(r));
+        if (aIdx !== bIdx) return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+        return (a.otherContactName || '').localeCompare(b.otherContactName || '');
+      });
+      
+      const limited = allSorted.slice(0, CONNECTIONS_COLLAPSED_LIMIT);
+      // Re-split into left/right
+      leftToRender = limited.filter(c => leftConns.includes(c));
+      rightToRender = limited.filter(c => rightConns.includes(c));
+    }
+    
+    renderToList(leftList, leftToRender);
+    renderToList(rightList, rightToRender);
+    
+    // Show/hide expand link
+    if (expandLink) {
+      if (totalCount > CONNECTIONS_COLLAPSED_LIMIT) {
+        const hiddenCount = totalCount - CONNECTIONS_COLLAPSED_LIMIT;
+        if (connectionsExpanded) {
+          expandLink.textContent = 'Show fewer';
+          expandLink.style.display = 'block';
+        } else {
+          expandLink.textContent = `Show all (${totalCount})`;
+          expandLink.style.display = 'block';
+        }
+      } else {
+        expandLink.style.display = 'none';
+      }
+    }
   }
   
   function openConnectionDetailsModal(conn) {

@@ -588,6 +588,7 @@
   .spouse-left-col { display: flex; align-items: center; gap: 8px; flex: 1; }
   .spouse-left-col .connection-date { margin-left: 0; }
   .spouse-right-col { display: flex; align-items: center; gap: 12px; }
+  .spouse-right-col .spouse-action-link { margin-left: auto; }
   .spouse-history-accordion { display: inline-flex; align-items: center; }
   .spouse-history-toggle { cursor: pointer; color: #666; font-size: 11px; display: flex; align-items: center; gap: 4px; }
   .spouse-history-toggle:hover { color: var(--color-star); }

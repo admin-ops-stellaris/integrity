@@ -4217,6 +4217,9 @@ Best wishes,
     closeOppPanel();
   }
   function handleSearch(event) {
+    // Ignore navigation keys - don't reset highlight or search on arrow/enter
+    if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(event.key)) return;
+    
     const query = event.target.value; const statusEl = document.getElementById('searchStatus');
     clearTimeout(loadingTimer);
     searchHighlightIndex = -1; // Reset keyboard navigation when typing

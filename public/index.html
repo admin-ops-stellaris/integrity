@@ -18,6 +18,19 @@
         <img class="logo-dark" src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/WEB_Stellaris_Primary%20Logo_Horizontal_Reversed.png/:/rs=w:309,h:100,cg:true,m/cr=w:309,h:100/qt=q:26" alt="Stellaris">
       </div>
       <div class="header-title">INTEGRITY</div>
+      <div class="header-search-wrapper">
+        <input type="text" id="searchInput" class="header-search" placeholder="Search Contacts..." onkeyup="handleSearch(event)" onkeydown="handleSearchKeydown(event)" onfocus="showSearchDropdown()" autocomplete="off">
+        <div id="searchDropdown" class="search-dropdown">
+          <div class="status-toggle-row">
+            <button type="button" class="status-toggle-btn active" data-status="Active" onclick="setContactStatusFilter('Active')">Active</button>
+            <button type="button" class="status-toggle-btn" data-status="Inactive" onclick="setContactStatusFilter('Inactive')">Inactive</button>
+            <button type="button" class="status-toggle-btn" data-status="All" onclick="setContactStatusFilter('All')">All</button>
+          </div>
+          <div id="searchStatus" style="font-size:11px; color:#666; height:14px; margin-bottom:2px; text-align:right;"></div>
+          <div id="loading">Loading directory...</div>
+          <ul id="contactList"></ul>
+        </div>
+      </div>
       <div class="user-indicator">
         <button class="shortcuts-help" onclick="showShortcutsHelp()" title="Keyboard shortcuts">?</button>
         <button class="settings-cog" onclick="openGlobalSettings()" title="Settings">⚙</button>
@@ -31,11 +44,11 @@
       <div class="column form-section">
         <div class="header-row">
           <div style="display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
               <h2 id="formTitle">Contact</h2>
-              <span id="formSubtitle" class="form-subtitle"></span>
               <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
             </div>
+            <div id="formSubtitle" class="form-subtitle"></div>
             <button type="button" id="contactBackBtn" class="contact-back-btn" onclick="goBackToContact()" style="display:none;">← Back</button>
           </div>
           <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>
@@ -58,64 +71,146 @@
         <div id="profileContent" style="display:none; flex:1; flex-direction:column;">
           <form id="contactForm" onsubmit="handleFormSubmit(this)" style="display:flex; flex-direction:column; flex:1;">
             <input type="hidden" name="recordId" id="recordId">
-            <div class="profile-top" id="profileTop">
-              <div class="edit-hint"><span class="edit-hint-icon edit-pencil-left">✎</span> Click any field to edit</div>
-              <span id="editBtn" style="display:none;"></span>
-              <div class="contact-form-split">
-                <div class="contact-form-left">
-                  <div class="form-row-3">
-                    <div class="field-group"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
-                    <div class="field-group"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
-                    <div class="field-group"><label>Last Name</label><input type="text" name="lastName" id="lastName" class="locked" readonly required></div>
+            <div class="profile-columns" id="profileColumns">
+              <div class="profile-col profile-col-left">
+                <span id="editBtn" style="display:none;"></span>
+                
+                <div class="collapsible-section" id="nameSection">
+                  <div class="collapsible-header" onclick="toggleCollapsible('nameSection')">
+                    <span class="collapsible-icon">&#9654;</span>
+                    <span class="collapsible-title">Name</span>
                   </div>
-                  <div class="form-row-3">
-                    <div class="field-group"><label>Preferred</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
+                  <div class="collapsible-content">
+                    <div class="form-row-3">
+                      <div class="field-group"><label>First Name</label><input type="text" name="firstName" id="firstName" class="locked" readonly required></div>
+                      <div class="field-group"><label>Middle Name</label><input type="text" name="middleName" id="middleName" class="locked" readonly></div>
+                      <div class="field-group"><label>Last Name</label><input type="text" name="lastName" id="lastName" class="locked" readonly required></div>
+                    </div>
+                    <div class="form-row-2">
+                      <div class="field-group"><label>Prefers to be called</label><input type="text" name="preferredName" id="preferredName" class="locked" readonly></div>
+                      <div class="field-group"><label>Doesn't like to be called</label><input type="text" name="doesNotLike" id="doesNotLike" class="locked" readonly></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="collapsible-section" id="contactInfoSection">
+                  <div class="collapsible-header" onclick="toggleCollapsible('contactInfoSection')">
+                    <span class="collapsible-icon">&#9654;</span>
+                    <span class="collapsible-title">Contact Info</span>
+                  </div>
+                  <div class="collapsible-content">
+                    <div class="field-group"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
                     <div class="field-group field-with-note">
-                      <label>Gender</label>
-                      <input type="hidden" name="genderOther" id="genderOther">
-                      <div class="input-with-note select-with-note">
-                        <select name="gender" id="gender" class="locked" disabled onchange="handleGenderChange()">
-                          <option value=""></option>
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Prefer not to say">Prefer not to say</option>
-                          <option value="Other (specify)">Other (specify)</option>
-                        </select>
+                      <label>Email</label>
+                      <div class="input-with-note">
+                        <input type="email" name="email1" id="email1" class="locked" readonly>
+                        <button type="button" class="note-icon" data-note-field="email1Comment" onclick="openNotePopover(this, 'email1Comment')" title="Add/view note"></button>
+                      </div>
+                      <textarea name="email1Comment" id="email1Comment" class="note-hidden-field" rows="1"></textarea>
+                    </div>
+                    <div class="field-group field-with-note">
+                      <label>Email 2</label>
+                      <div class="input-with-note">
+                        <input type="email" name="email2" id="email2" class="locked" readonly>
+                        <button type="button" class="note-icon" data-note-field="email2Comment" onclick="openNotePopover(this, 'email2Comment')" title="Add/view note"></button>
+                      </div>
+                      <textarea name="email2Comment" id="email2Comment" class="note-hidden-field" rows="1"></textarea>
+                    </div>
+                    <div class="field-group field-with-note">
+                      <label>Email 3</label>
+                      <div class="input-with-note">
+                        <input type="email" name="email3" id="email3" class="locked" readonly>
+                        <button type="button" class="note-icon" data-note-field="email3Comment" onclick="openNotePopover(this, 'email3Comment')" title="Add/view note"></button>
+                      </div>
+                      <textarea name="email3Comment" id="email3Comment" class="note-hidden-field" rows="1"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="collapsible-section" id="personalSection">
+                  <div class="collapsible-header" onclick="toggleCollapsible('personalSection')">
+                    <span class="collapsible-icon">&#9654;</span>
+                    <span class="collapsible-title">Personal Details</span>
+                  </div>
+                  <div class="collapsible-content">
+                    <div class="form-row-2">
+                      <div class="field-group"><label>Date of Birth</label><input type="text" name="dateOfBirth" id="dateOfBirth" class="locked" readonly placeholder="DD/MM/YYYY"></div>
+                      <div class="field-group field-with-note">
+                        <label>Gender</label>
+                        <input type="hidden" name="genderOther" id="genderOther">
+                        <div class="input-with-note select-with-note">
+                          <select name="gender" id="gender" class="locked" disabled onchange="handleGenderChange()">
+                            <option value=""></option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Prefer not to say">Prefer not to say</option>
+                            <option value="Other (specify)">Other (specify)</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div class="field-group"><label>Notes</label><textarea name="notes" id="notes" class="locked" readonly></textarea></div>
                 </div>
-                <div class="contact-form-right">
-                  <div class="form-row-2">
-                    <div class="field-group"><label>Mobile</label><input type="text" name="mobilePhone" id="mobilePhone" class="locked" readonly></div>
-                    <div class="field-group"><label>Date of Birth</label><input type="text" name="dateOfBirth" id="dateOfBirth" class="locked" readonly placeholder="DD/MM/YYYY"></div>
+
+                <div class="collapsible-section" id="notesSection">
+                  <div class="collapsible-header" onclick="toggleCollapsible('notesSection')">
+                    <span class="collapsible-icon">&#9654;</span>
+                    <span class="collapsible-title">Notes</span>
                   </div>
-                  <div class="field-group field-with-note">
-                    <label>Email</label>
-                    <div class="input-with-note">
-                      <input type="email" name="email1" id="email1" class="locked" readonly>
-                      <button type="button" class="note-icon" data-note-field="email1Comment" onclick="openNotePopover(this, 'email1Comment')" title="Add/view note"></button>
-                    </div>
-                    <textarea name="email1Comment" id="email1Comment" class="note-hidden-field" rows="1"></textarea>
-                  </div>
-                  <div class="field-group field-with-note">
-                    <label>Email 2</label>
-                    <div class="input-with-note">
-                      <input type="email" name="email2" id="email2" class="locked" readonly>
-                      <button type="button" class="note-icon" data-note-field="email2Comment" onclick="openNotePopover(this, 'email2Comment')" title="Add/view note"></button>
-                    </div>
-                    <textarea name="email2Comment" id="email2Comment" class="note-hidden-field" rows="1"></textarea>
-                  </div>
-                  <div class="field-group field-with-note">
-                    <label>Email 3</label>
-                    <div class="input-with-note">
-                      <input type="email" name="email3" id="email3" class="locked" readonly>
-                      <button type="button" class="note-icon" data-note-field="email3Comment" onclick="openNotePopover(this, 'email3Comment')" title="Add/view note"></button>
-                    </div>
-                    <textarea name="email3Comment" id="email3Comment" class="note-hidden-field" rows="1"></textarea>
+                  <div class="collapsible-content">
+                    <div class="field-group"><textarea name="notes" id="notes" class="locked" readonly></textarea></div>
                   </div>
                 </div>
+
+                <div id="deleteSection" style="margin-top:auto; padding-top:20px;">
+                  <button type="button" class="btn-delete" onclick="confirmDeleteContact()">Delete Contact</button>
+                </div>
+              </div>
+
+              <div class="profile-col profile-col-middle">
+                <div id="spouseSection" class="spouse-two-col-row">
+                  <div class="spouse-left-col">
+                    <span id="spouseBadge" class="connection-role-badge spouse">Spouse</span>
+                    <span id="spouseStatusText" class="connection-name">Single</span>
+                    <span id="spouseHistoryDate" class="connection-date"></span>
+                  </div>
+                  <div class="spouse-right-col">
+                    <div class="spouse-right-col-content">
+                      <div id="spouseHistoryAccordion" class="collapsible-header" style="display:none;" onclick="toggleSpouseHistory()">
+                        <span id="spouseHistoryArrow" class="collapsible-icon">&#9654;</span>
+                        <span class="collapsible-title">History</span>
+                      </div>
+                      <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
+                    </div>
+                    <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()">Edit</span>
+                  </div>
+                </div>
+                <div id="connectionsSection" class="connections-section-scrollable">
+                  <div id="connectionsAccordionWrapper" style="display:none;">
+                    <div class="collapsible-header connections-accordion-header" onclick="toggleConnectionsAccordion()">
+                      <span id="connectionsAccordionArrow" class="collapsible-icon expanded">&#9654;</span>
+                      <span class="collapsible-title">Connections</span>
+                      <span id="addConnectionLink" class="spouse-action-link" onclick="event.stopPropagation(); openAddConnectionModal()">+ Add</span>
+                    </div>
+                  </div>
+                  <div id="connectionsNoAccordionAdd" class="connections-add-row">
+                    <span class="spouse-action-link" onclick="openAddConnectionModal()">+ Add</span>
+                  </div>
+                  <div id="connectionsContent" class="connections-two-col">
+                    <ul id="connectionsListLeft" class="connections-list connections-col"></ul>
+                    <ul id="connectionsListRight" class="connections-list connections-col"></ul>
+                  </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
+                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New Opportunity</button>
+                </div>
+                <div id="oppLoading" style="display:none;">Loading...</div>
+                <ul id="oppList" class="opp-list"></ul>
+              </div>
+
+              <div class="profile-col profile-col-right">
+                <!-- Future: Tasks and Notes -->
               </div>
             </div>
             <div id="actionRow" class="save-row" style="display:none;">
@@ -124,53 +219,10 @@
             </div>
             <div id="status" style="text-align:center; margin-bottom:15px; min-height:18px;"></div>
 
-            <div class="profile-bottom">
-              <div class="profile-bottom-left">
-                 <div id="spouseSection" style="margin-bottom:20px;">
-                   <div class="spouse-header">
-                      <span id="spouseStatusText">Single</span>
-                      <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()">Edit</span>
-                   </div>
-                   <ul id="spouseHistoryList" class="spouse-history-list"></ul>
-                 </div>
-                 <div id="connectionsSection" style="margin-bottom:20px;">
-                   <div class="connections-header">
-                      <span style="font-weight:500; color:#666;">Connections</span>
-                      <span id="addConnectionLink" class="spouse-action-link" onclick="openAddConnectionModal()">+ Add</span>
-                   </div>
-                   <div class="connections-two-col">
-                     <ul id="connectionsListLeft" class="connections-list connections-col"></ul>
-                     <ul id="connectionsListRight" class="connections-list connections-col"></ul>
-                   </div>
-                 </div>
-                 <div id="deleteSection" style="margin-top:auto; padding-top:20px; border-top:1px dashed #E0E0E0;">
-                   <button type="button" class="btn-delete" onclick="confirmDeleteContact()">Delete Contact</button>
-                 </div>
-              </div>
-              <div class="profile-bottom-right">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                  <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
-                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New Opportunity</button>
-                </div>
-                <div id="oppLoading" style="display:none;">Loading...</div>
-                <ul id="oppList" class="opp-list"></ul>
-              </div>
-            </div>
           </form>
         </div>
       </div>
 
-      <div class="column list-section">
-        <input type="text" id="searchInput" placeholder="Search Contacts..." onkeyup="handleSearch(event)">
-        <div class="status-toggle-row">
-          <button type="button" class="status-toggle-btn active" data-status="Active" onclick="setContactStatusFilter('Active')">Active</button>
-          <button type="button" class="status-toggle-btn" data-status="Inactive" onclick="setContactStatusFilter('Inactive')">Inactive</button>
-          <button type="button" class="status-toggle-btn" data-status="All" onclick="setContactStatusFilter('All')">All</button>
-        </div>
-        <div id="searchStatus" style="font-size:11px; color:#666; height:14px; margin-bottom:2px; text-align:right;"></div>
-        <div id="loading">Loading directory...</div>
-        <ul id="contactList"></ul>
-      </div>
 
       <div id="oppDetailPanel" class="slide-panel">
         <div class="panel-header">

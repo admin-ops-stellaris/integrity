@@ -38,7 +38,9 @@
   let currentOppSortDirection = 'desc'; 
   let pendingLinkedEdits = {}; 
   let currentPanelData = {}; 
-  let pendingRemovals = {}; 
+  let pendingRemovals = {};
+  let searchHighlightIndex = -1;
+  let currentSearchRecords = []; 
 
   window.onload = function() { 
     loadContacts(); 
@@ -57,6 +59,7 @@
       const isTyping = activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable;
       
       if (e.key === 'Escape') {
+        hideSearchDropdown();
         closeOppPanel();
         closeSpouseModal();
         closeNewOppModal();
@@ -78,6 +81,7 @@
       if (e.key === '/') {
         e.preventDefault();
         document.getElementById('searchInput').focus();
+        showSearchDropdown();
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         resetForm();
@@ -1016,6 +1020,7 @@
     'middleName': 'MiddleName', 
     'lastName': 'LastName',
     'preferredName': 'PreferredName',
+    'doesNotLike': 'Does Not Like Being Called',
     'mobilePhone': 'Mobile',
     'dateOfBirth': 'DateOfBirth',
     'email1': 'EmailAddress1',
@@ -1033,7 +1038,7 @@
   let contactInlineEditor = null;
   
   function initInlineEditing() {
-    contactInlineEditor = InlineEditingManager.init('#profileTop', {
+    contactInlineEditor = InlineEditingManager.init('#profileColumns', {
       fieldMap: CONTACT_FIELD_MAP,
       getRecordId: () => document.getElementById('recordId').value,
       onFieldSave: function(fieldName, newValue) {
@@ -1116,15 +1121,15 @@
       contactInlineEditor.unlockAll();
     } else {
       // Fallback if manager not initialized yet
-      const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
+      const inputs = document.querySelectorAll('#profileColumns input, #profileColumns textarea');
       inputs.forEach(input => { input.classList.remove('locked'); input.readOnly = false; });
-      const selects = document.querySelectorAll('#profileTop select');
+      const selects = document.querySelectorAll('#profileColumns select');
       selects.forEach(select => { select.classList.remove('locked'); select.disabled = false; });
     }
     document.getElementById('actionRow').style.display = 'flex';
     document.getElementById('cancelBtn').style.display = 'inline-block';
     document.getElementById('submitBtn').textContent = 'Create Contact';
-    document.getElementById('profileTop').classList.add('editing');
+    document.getElementById('profileColumns').classList.add('editing');
     updateHeaderTitle(true);
     document.getElementById('firstName').focus();
   }
@@ -1136,14 +1141,14 @@
       contactInlineEditor.lockAll();
     } else {
       // Fallback if manager not initialized yet
-      const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
+      const inputs = document.querySelectorAll('#profileColumns input, #profileColumns textarea');
       inputs.forEach(input => { input.classList.add('locked'); input.readOnly = true; });
-      const selects = document.querySelectorAll('#profileTop select');
+      const selects = document.querySelectorAll('#profileColumns select');
       selects.forEach(select => { select.classList.add('locked'); select.disabled = true; });
     }
     document.getElementById('actionRow').style.display = 'none';
     document.getElementById('cancelBtn').style.display = 'none';
-    document.getElementById('profileTop').classList.remove('editing');
+    document.getElementById('profileColumns').classList.remove('editing');
     updateHeaderTitle(false);
   }
 
@@ -1162,6 +1167,7 @@
   function selectContact(record) {
     document.getElementById('cancelBtn').style.display = 'none';
     toggleProfileView(true);
+    hideSearchDropdown(); // Close search dropdown when contact selected
     currentContactRecord = record; 
     const f = record.fields;
 
@@ -1170,6 +1176,7 @@
     document.getElementById('middleName').value = f.MiddleName || "";
     document.getElementById('lastName').value = f.LastName || "";
     document.getElementById('preferredName').value = f.PreferredName || "";
+    document.getElementById('doesNotLike').value = f["Does Not Like Being Called"] || "";
     document.getElementById('mobilePhone').value = f.Mobile || "";
     
     // Email fields
@@ -1218,7 +1225,17 @@
        warnBox.style.display = 'none';
     }
 
-    document.getElementById('formSubtitle').innerText = formatSubtitle(f);
+    document.getElementById('formSubtitle').innerHTML = formatSubtitle(f);
+    
+    // Set title with tenure info
+    const fullName = formatName(f);
+    const tenureText = formatTenureText(f);
+    if (tenureText) {
+      document.getElementById('formTitle').innerHTML = `${fullName} <span class="tenure-text">${tenureText}</span>`;
+    } else {
+      document.getElementById('formTitle').innerText = fullName;
+    }
+    
     renderHistory(f);
     loadOpportunities(f);
     renderSpouseSection(f);
@@ -1226,6 +1243,33 @@
     closeOppPanel();
   }
   
+  // Collapsible section pattern - reusable for any collapsible field groups
+  window.toggleCollapsible = function(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.classList.toggle('expanded');
+    }
+  };
+
+  // Search dropdown behavior
+  window.showSearchDropdown = function() {
+    const dropdown = document.getElementById('searchDropdown');
+    if (dropdown) dropdown.classList.add('open');
+  };
+  
+  window.hideSearchDropdown = function() {
+    const dropdown = document.getElementById('searchDropdown');
+    if (dropdown) dropdown.classList.remove('open');
+  };
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const wrapper = document.querySelector('.header-search-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      hideSearchDropdown();
+    }
+  });
+
   // Gender field handling (Gender - Other is now a note popover)
   function handleGenderChange() {
     // Only show the Gender - Other note icon when "Other (specify)" is selected
@@ -3045,49 +3089,74 @@ Best wishes,
 
   // --- SPOUSE LOGIC ---
   function renderSpouseSection(f) {
+     const badgeEl = document.getElementById('spouseBadge');
      const statusEl = document.getElementById('spouseStatusText');
+     const dateEl = document.getElementById('spouseHistoryDate');
+     const accordionEl = document.getElementById('spouseHistoryAccordion');
      const historyList = document.getElementById('spouseHistoryList');
-     const linkEl = document.getElementById('spouseEditLink');
+     const arrowEl = document.getElementById('spouseHistoryArrow');
 
      const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
      const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
 
-     if (spouseName && spouseId) {
-        statusEl.innerHTML = `Spouse: <span class="data-link spouse-quick-view-link" data-contact-id="${spouseId}">${spouseName}</span>`;
-        linkEl.innerText = "Edit";
-        // Attach quick-view to spouse name
-        const spouseLink = statusEl.querySelector('.spouse-quick-view-link');
-        if (spouseLink) attachQuickViewToElement(spouseLink, spouseId);
-     } else {
-        statusEl.innerHTML = "Single";
-        linkEl.innerText = "Edit"; 
+     // Reset accordion
+     if (accordionEl) accordionEl.style.display = 'none';
+     if (historyList) { historyList.innerHTML = ''; historyList.style.display = 'none'; }
+     if (arrowEl) arrowEl.classList.remove('expanded');
+
+     // Get connection date from history
+     let connectionDate = '';
+     const rawLogs = f['Spouse History Text']; 
+     let parsedLogs = [];
+     if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
+        parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
+        parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
+        const connLog = parsedLogs.find(e => e.displayText.toLowerCase().includes('connected to'));
+        if (connLog) connectionDate = connLog.displayDate;
      }
 
-     linkEl.style.display = 'inline'; 
-
-     historyList.innerHTML = '';
-     const rawLogs = f['Spouse History Text']; 
-
-     if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
-        const parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
-        parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
+     if (spouseName && spouseId) {
+        if (badgeEl) badgeEl.style.display = 'inline-block';
+        statusEl.innerHTML = spouseName;
+        statusEl.className = 'connection-name';
+        statusEl.setAttribute('data-contact-id', spouseId);
+        // Attach quick-view to spouse name
+        attachQuickViewToElement(statusEl, spouseId);
         
-        const showLimit = 3;
-        const initialSet = parsedLogs.slice(0, showLimit);
-        initialSet.forEach(entry => { renderHistoryItem(entry, historyList); });
-        if (parsedLogs.length > showLimit) {
-           const remaining = parsedLogs.slice(showLimit);
-           const expandLink = document.createElement('div');
-           expandLink.className = 'expand-link';
-           expandLink.innerText = `Show ${remaining.length} older records...`;
-           expandLink.onclick = function() {
-              remaining.forEach(entry => { renderHistoryItem(entry, historyList); });
-              expandLink.style.display = 'none'; 
-           };
-           historyList.appendChild(expandLink);
+        // Show history accordion if more than one entry, otherwise show date in left column
+        if (parsedLogs.length > 1 && accordionEl && historyList) {
+           if (dateEl) dateEl.textContent = '';
+           accordionEl.style.display = 'inline-flex';
+           parsedLogs.forEach(entry => { renderHistoryItem(entry, historyList); });
+        } else {
+           if (dateEl) dateEl.textContent = connectionDate;
         }
      } else {
-        historyList.innerHTML = '<li class="spouse-history-item" style="border:none;">No history recorded.</li>';
+        if (badgeEl) badgeEl.style.display = 'none';
+        statusEl.innerHTML = "Single";
+        statusEl.className = 'connection-name single';
+        statusEl.removeAttribute('data-contact-id');
+        if (dateEl) dateEl.textContent = '';
+     }
+  }
+  
+  function toggleSpouseHistory() {
+     const historyList = document.getElementById('spouseHistoryList');
+     const arrowEl = document.getElementById('spouseHistoryArrow');
+     if (historyList && arrowEl) {
+        const isExpanded = arrowEl.classList.contains('expanded');
+        historyList.style.display = isExpanded ? 'none' : 'block';
+        arrowEl.classList.toggle('expanded');
+     }
+  }
+  
+  function toggleConnectionsAccordion() {
+     const content = document.getElementById('connectionsContent');
+     const arrowEl = document.getElementById('connectionsAccordionArrow');
+     if (content && arrowEl) {
+        const isExpanded = arrowEl.classList.contains('expanded');
+        content.style.display = isExpanded ? 'none' : 'flex';
+        arrowEl.classList.toggle('expanded');
      }
   }
   
@@ -3097,7 +3166,8 @@ Best wishes,
      const [, year, month, day, hours, mins, secs, action, spouseName] = match;
      const timestamp = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(mins), parseInt(secs));
      const displayDate = `${day}/${month}/${year}`;
-     const displayText = `${action} ${spouseName}`;
+     const shortAction = action.replace(' as spouse', '');
+     const displayText = `${shortAction} ${spouseName}`;
      return { timestamp, displayDate, displayText };
   }
 
@@ -3112,6 +3182,10 @@ Best wishes,
   // --- CONNECTIONS LOGIC ---
   let connectionRoleTypes = [];
   
+  let allConnectionsData = [];
+  let connectionsExpanded = false;
+  const CONNECTIONS_COLLAPSED_LIMIT = 8;
+  
   function loadConnections(contactId) {
     const leftList = document.getElementById('connectionsListLeft');
     const rightList = document.getElementById('connectionsListRight');
@@ -3120,18 +3194,131 @@ Best wishes,
     rightList.innerHTML = '';
     
     google.script.run.withSuccessHandler(function(connections) {
-      renderConnectionsList(connections);
+      allConnectionsData = connections || [];
+      connectionsExpanded = false;
+      renderConnectionsList(allConnectionsData);
     }).withFailureHandler(function(err) {
       leftList.innerHTML = '<li class="connections-empty">Error loading connections</li>';
     }).getConnectionsForContact(contactId);
   }
   
+  function toggleConnectionsExpand() {
+    connectionsExpanded = !connectionsExpanded;
+    renderConnectionsList(allConnectionsData);
+  }
+  
+  function renderConnectionsPills(connections) {
+    const container = document.getElementById('connectionsPillContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (!connections || connections.length === 0) {
+      container.innerHTML = '<span class="connections-empty">No connections yet</span>';
+      return;
+    }
+    
+    // Short role labels for pills
+    const pillRoleLabels = {
+      'parent': 'Parent',
+      'child': 'Child',
+      'sibling': 'Sibling',
+      'friend': 'Friend',
+      'employer of': 'Employer',
+      'employee of': 'Employee',
+      'referred by': 'Referrer',
+      'has referred': 'Referred',
+      'family': 'Family'
+    };
+    
+    const getPillRoleLabel = (role) => {
+      const r = (role || '').toLowerCase().trim();
+      return pillRoleLabels[r] || role;
+    };
+    
+    const getPillRoleClass = (role) => {
+      const r = (role || '').toLowerCase();
+      if (r.includes('parent') || r.includes('child')) return 'parent';
+      if (r.includes('sibling')) return 'sibling';
+      if (r.includes('friend')) return 'friend';
+      if (r.includes('employer') || r.includes('employee')) return 'employer';
+      if (r.includes('referred') || r.includes('referral')) return 'referred';
+      if (r.includes('household')) return 'household';
+      if (r.includes('family')) return 'family';
+      return '';
+    };
+    
+    // Sort connections: Referrer first, then family roles, then friends/referred
+    const roleOrder = ['referred by', 'parent', 'child', 'sibling', 'employer of', 'employee of', 'family', 'friend', 'has referred'];
+    connections.sort((a, b) => {
+      const aRole = (a.myRole || '').toLowerCase();
+      const bRole = (b.myRole || '').toLowerCase();
+      const aIdx = roleOrder.findIndex(r => aRole.includes(r));
+      const bIdx = roleOrder.findIndex(r => bRole.includes(r));
+      if (aIdx !== bIdx) return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+      return (a.otherContactName || '').localeCompare(b.otherContactName || '');
+    });
+    
+    connections.forEach(conn => {
+      const pill = document.createElement('div');
+      pill.className = 'connection-pill' + (conn.note && conn.note.trim() ? ' has-note' : '');
+      pill.setAttribute('data-conn-id', conn.id);
+      pill.setAttribute('data-contact-id', conn.otherContactId || '');
+      
+      const roleClass = getPillRoleClass(conn.myRole);
+      const roleLabel = getPillRoleLabel(conn.myRole);
+      
+      pill.innerHTML = `
+        <span class="pill-role ${roleClass}">${roleLabel}</span>
+        <span class="pill-name">${conn.otherContactName || 'Unknown'}</span>
+      `;
+      
+      // Click to open connection details modal
+      pill.addEventListener('click', function(e) {
+        openConnectionDetailsModal(conn);
+      });
+      
+      // Attach quick-view on hover for the name
+      if (conn.otherContactId) {
+        attachQuickViewToElement(pill, conn.otherContactId);
+      }
+      
+      container.appendChild(pill);
+    });
+  }
+  
   function renderConnectionsList(connections) {
     const leftList = document.getElementById('connectionsListLeft');
     const rightList = document.getElementById('connectionsListRight');
+    const accordionWrapper = document.getElementById('connectionsAccordionWrapper');
+    const noAccordionAdd = document.getElementById('connectionsNoAccordionAdd');
+    const connectionsContent = document.getElementById('connectionsContent');
+    const accordionArrow = document.getElementById('connectionsAccordionArrow');
     if (!leftList || !rightList) return;
     leftList.innerHTML = '';
     rightList.innerHTML = '';
+    
+    // Count friends and refers to determine if accordion needed
+    let friendCount = 0;
+    let refersCount = 0;
+    if (connections && connections.length > 0) {
+      connections.forEach(conn => {
+        const role = (conn.myRole || '').toLowerCase().trim();
+        if (role === 'friend') friendCount++;
+        if (role === 'has referred') refersCount++;
+      });
+    }
+    const needsAccordion = friendCount >= 6 || refersCount >= 6;
+    
+    // Toggle accordion vs simple add row
+    if (accordionWrapper) accordionWrapper.style.display = needsAccordion ? 'block' : 'none';
+    if (noAccordionAdd) noAccordionAdd.style.display = needsAccordion ? 'none' : 'flex';
+    
+    // Ensure accordion is expanded by default and content visible
+    if (needsAccordion && connectionsContent && accordionArrow) {
+      connectionsAccordionExpanded = true;
+      connectionsContent.style.display = 'flex';
+      accordionArrow.classList.add('expanded');
+    }
     
     if (!connections || connections.length === 0) {
       leftList.innerHTML = '<li class="connections-empty">No connections yet</li>';
@@ -3140,8 +3327,6 @@ Best wishes,
     
     // Role display names with "of" suffix
     const roleDisplayMap = {
-      'household representative': 'Household Representative of',
-      'household member': 'Household Member of',
       'parent': 'Parent of',
       'child': 'Child of',
       'sibling': 'Sibling of',
@@ -3176,7 +3361,7 @@ Best wishes,
     const rolesWithDate = ['referred by', 'has referred'];
     
     // Define role ordering for left and right columns
-    const leftRoles = ['Referred by', 'Household Representative', 'Household Member', 'Parent', 'Child', 'Sibling', 'Employer of', 'Employee of'];
+    const leftRoles = ['Referred by', 'Parent', 'Child', 'Sibling', 'Employer of', 'Employee of'];
     const rightRoles = ['Friend', 'Has Referred'];
     
     // Roles to group when count > 2
@@ -3406,8 +3591,10 @@ Best wishes,
       });
     };
     
-    renderToList(leftList, leftConns);
-    renderToList(rightList, rightConns);
+    // Render all connections (scrollable container handles overflow)
+    // Render each connection individually (no grouping)
+    leftConns.forEach(conn => renderSingleConnection(leftList, conn));
+    rightConns.forEach(conn => renderSingleConnection(rightList, conn));
   }
   
   function openConnectionDetailsModal(conn) {
@@ -3425,8 +3612,6 @@ Best wishes,
     
     // Get role display with "of" suffix
     const roleDisplayMap = {
-      'household representative': 'Household Representative of',
-      'household member': 'Household Member of',
       'parent': 'Parent of',
       'child': 'Child of',
       'sibling': 'Sibling of',
@@ -4183,8 +4368,13 @@ Best wishes,
     closeOppPanel();
   }
   function handleSearch(event) {
+    // Ignore navigation keys - don't reset highlight or search on arrow/enter
+    if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(event.key)) return;
+    
     const query = event.target.value; const statusEl = document.getElementById('searchStatus');
-    clearTimeout(loadingTimer); 
+    clearTimeout(loadingTimer);
+    searchHighlightIndex = -1; // Reset keyboard navigation when typing
+    showSearchDropdown(); // Reopen dropdown when typing
     if(query.length === 0) { statusEl.innerText = ""; loadContacts(); return; }
     clearTimeout(searchTimeout); statusEl.innerText = "Typing...";
     searchTimeout = setTimeout(() => {
@@ -4225,8 +4415,14 @@ Best wishes,
     const list = document.getElementById('contactList'); 
     document.getElementById('loading').style.display = 'none'; 
     list.innerHTML = '';
-    records.forEach(record => {
+    currentSearchRecords = records;
+    // Preserve highlight if valid, otherwise reset
+    if (searchHighlightIndex >= records.length) {
+      searchHighlightIndex = records.length > 0 ? records.length - 1 : -1;
+    }
+    records.forEach((record, index) => {
       const f = record.fields; const item = document.createElement('li'); item.className = 'contact-item';
+      item.dataset.index = index;
       const fullName = formatName(f);
       const initials = getInitials(f.FirstName, f.LastName);
       const avatarColor = getAvatarColor(fullName);
@@ -4235,6 +4431,57 @@ Best wishes,
       item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>${modifiedShort ? `<span class="contact-modified" title="${modifiedTooltip || ''}">${modifiedShort}</span>` : ''}`;
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
+    // Re-apply highlight if one was preserved
+    if (searchHighlightIndex >= 0) {
+      updateSearchHighlight();
+    }
+  }
+  
+  function updateSearchHighlight() {
+    const items = document.querySelectorAll('#contactList .contact-item');
+    items.forEach((item, i) => {
+      item.classList.toggle('keyboard-highlight', i === searchHighlightIndex);
+    });
+    if (searchHighlightIndex >= 0 && items[searchHighlightIndex]) {
+      items[searchHighlightIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+  
+  function handleSearchKeydown(e) {
+    const dropdown = document.getElementById('searchDropdown');
+    if (!dropdown || !dropdown.classList.contains('open')) return;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (currentSearchRecords.length > 0) {
+        searchHighlightIndex = Math.min(searchHighlightIndex + 1, currentSearchRecords.length - 1);
+        updateSearchHighlight();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (currentSearchRecords.length > 0) {
+        searchHighlightIndex = Math.max(searchHighlightIndex - 1, 0);
+        updateSearchHighlight();
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (searchHighlightIndex >= 0 && currentSearchRecords[searchHighlightIndex]) {
+        selectContact(currentSearchRecords[searchHighlightIndex]);
+      } else {
+        // No item highlighted - trigger search immediately
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value.trim()) {
+          clearTimeout(searchTimeout);
+          const statusEl = document.getElementById('searchStatus');
+          statusEl.innerText = "Searching...";
+          const statusFilterToSend = contactStatusFilter === 'All' ? null : contactStatusFilter;
+          google.script.run.withSuccessHandler(function(records) {
+            statusEl.innerText = records.length > 0 ? `Found ${records.length} matches` : "No matches found";
+            renderList(records);
+          }).searchContacts(searchInput.value.trim(), statusFilterToSend);
+        }
+      }
+    }
   }
   function formatName(f) {
     return `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
@@ -4305,13 +4552,18 @@ Best wishes,
   }
   function formatSubtitle(f) {
     const preferredName = f.PreferredName || '';
-    const tenure = calculateTenure(f.Created);
-    if (!preferredName && !tenure) return '';
+    const doesNotLike = f['Does Not Like Being Called'] || '';
+    if (!preferredName && !doesNotLike) return '';
     const parts = [];
-    if (preferredName) parts.push(`prefers ${preferredName}`);
-    if (tenure === 'just added today') parts.push(tenure);
-    else if (tenure) parts.push(`in our database for ${tenure}`);
-    return parts.join(' · ');
+    if (preferredName) parts.push(`<span class="name-pill pill-prefers">prefers "${preferredName}"</span>`);
+    if (doesNotLike) parts.push(`<span class="name-pill pill-doesnt-like">doesn't like "${doesNotLike}"</span>`);
+    return parts.join(' ');
+  }
+  function formatTenureText(f) {
+    const tenure = calculateTenure(f.Created);
+    if (!tenure) return '';
+    if (tenure === 'just added today') return tenure;
+    return `in our database for ${tenure}`;
   }
   function calculateTenure(createdStr) {
     if (!createdStr) return null;
@@ -4452,6 +4704,7 @@ Best wishes,
       middleName: formObject.middleName.value,
       lastName: formObject.lastName.value,
       preferredName: formObject.preferredName.value,
+      doesNotLike: formObject.doesNotLike.value,
       mobilePhone: formObject.mobilePhone.value,
       email1: formObject.email1.value,
       email1Comment: formObject.email1Comment.value,

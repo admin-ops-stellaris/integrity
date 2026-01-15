@@ -57,6 +57,7 @@
       const isTyping = activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable;
       
       if (e.key === 'Escape') {
+        hideSearchDropdown();
         closeOppPanel();
         closeSpouseModal();
         closeNewOppModal();
@@ -78,6 +79,7 @@
       if (e.key === '/') {
         e.preventDefault();
         document.getElementById('searchInput').focus();
+        showSearchDropdown();
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         resetForm();
@@ -1163,6 +1165,7 @@
   function selectContact(record) {
     document.getElementById('cancelBtn').style.display = 'none';
     toggleProfileView(true);
+    hideSearchDropdown(); // Close search dropdown when contact selected
     currentContactRecord = record; 
     const f = record.fields;
 
@@ -1235,6 +1238,25 @@
       section.classList.toggle('expanded');
     }
   };
+
+  // Search dropdown behavior
+  window.showSearchDropdown = function() {
+    const dropdown = document.getElementById('searchDropdown');
+    if (dropdown) dropdown.classList.add('open');
+  };
+  
+  window.hideSearchDropdown = function() {
+    const dropdown = document.getElementById('searchDropdown');
+    if (dropdown) dropdown.classList.remove('open');
+  };
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const wrapper = document.querySelector('.header-search-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      hideSearchDropdown();
+    }
+  });
 
   // Gender field handling (Gender - Other is now a note popover)
   function handleGenderChange() {

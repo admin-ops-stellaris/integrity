@@ -14,12 +14,45 @@
   body.dark-mode .logo-container .logo-light { display: none; }
   body.dark-mode .logo-container .logo-dark { display: block; } 
   .header-title { font-family: var(--font-heading); font-size: 26px; color: var(--color-midnight); letter-spacing: 8px; font-weight: 700; text-transform: uppercase; }
+  
+  /* Header Search */
+  .header-search-wrapper { position: relative; flex: 0 0 280px; }
+  .header-search { 
+    width: 100%; 
+    padding: 10px 14px; 
+    border: 1px solid #D1D1D1; 
+    border-radius: 4px; 
+    font-size: 13px; 
+    font-family: var(--font-body);
+    background: #FFF;
+    box-sizing: border-box;
+  }
+  .header-search:focus { outline: none; border-color: var(--color-star); box-shadow: 0 0 0 3px rgba(187, 153, 52, 0.15); }
+  .search-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #FFF;
+    border: 1px solid #D1D1D1;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+  .search-dropdown.open { display: block; }
+  .search-dropdown .status-toggle-row { padding: 8px 10px; border-bottom: 1px solid #EEE; }
+  .search-dropdown #loading { padding: 15px; text-align: center; color: #999; }
+  .search-dropdown #contactList { margin: 0; padding: 0; list-style: none; }
+  
   .user-indicator { display: flex; align-items: center; gap: 12px; }
   .user-email { font-size: 13px; color: var(--color-midnight); font-weight: 400; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.7; }
   .container { display: flex; gap: 20px; padding: 20px 30px; max-width: 95%; margin: 0 auto; width: 100%; box-sizing: border-box; flex: 1; overflow: hidden; position: relative; }
   .column { background: var(--color-salt); padding: 25px; border-radius: 4px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; overflow-y: auto; }
-  .form-section { flex: 2.15; display:flex; flex-direction: column; } 
-  .list-section { flex: 0.65; background: rgba(255, 255, 255, 0.95); } 
+  .form-section { flex: 1; display:flex; flex-direction: column; } 
   h2 { margin-top: 0; color: var(--color-trail); font-family: var(--font-heading); font-size: 16px; letter-spacing: -0.3px; margin-bottom: 0; line-height: 1; font-weight: 400; }
   .form-subtitle { font-size: 11px; color: #999; font-weight: 400; line-height: 1.3; min-height: 0; }
   .form-subtitle:empty { display: none; }
@@ -32,11 +65,14 @@
   .hide-link:hover { color: var(--color-trail); border-color: var(--color-trail); }
 
   /* FORM */
-  .profile-top { width: 100%; display: flex; flex-direction: column; gap: 4px; border-bottom: 2px solid var(--color-border); padding-bottom: 15px; margin-bottom: 0; } 
   .save-row { width: 100%; display: none; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; margin-bottom: 25px; }
-  .profile-bottom { display: flex; gap: 20px; flex: 1; min-height: 0; }
-  .profile-bottom-left { flex: 1; display: flex; flex-direction: column; }
-  .profile-bottom-right { flex: 1; border-left: 1px dashed var(--color-border); padding-left: 20px; display: flex; flex-direction: column; }
+  
+  /* 3-Column Profile Layout */
+  .profile-columns { display: flex; gap: 25px; flex: 1; min-height: 0; }
+  .profile-col { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+  .profile-col-left { }
+  .profile-col-middle { border-left: 1px dashed var(--color-border); padding-left: 25px; }
+  .profile-col-right { border-left: 1px dashed var(--color-border); padding-left: 25px; min-height: 100px; }
   .row { display: flex; gap: 15px; }
   .field-group { flex: 1; }
   label { font-size: 9px; font-weight: 500; color: #AAA; display: block; margin-top: 4px; margin-bottom: 1px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -813,7 +849,8 @@
   body.dark-mode .header-title { color: var(--color-star); }
   body.dark-mode .user-email { color: #AAA; }
   body.dark-mode .column { background: #242424; }
-  body.dark-mode .list-section { background: rgba(30, 30, 30, 0.95); }
+  body.dark-mode .header-search { background: #333; border-color: #555; color: #E8E6E1; }
+  body.dark-mode .header-search::placeholder { color: #888; }
   body.dark-mode input, body.dark-mode textarea, body.dark-mode select { background: #333; border-color: #555; color: #E8E6E1; }
   body.dark-mode input.locked, body.dark-mode textarea.locked { background: transparent; border-bottom-color: #555; color: #E8E6E1; }
   body.dark-mode .opp-item { background: #333; border-color: #444; }

@@ -1036,7 +1036,7 @@
   let contactInlineEditor = null;
   
   function initInlineEditing() {
-    contactInlineEditor = InlineEditingManager.init('#profileTop', {
+    contactInlineEditor = InlineEditingManager.init('#profileColumns', {
       fieldMap: CONTACT_FIELD_MAP,
       getRecordId: () => document.getElementById('recordId').value,
       onFieldSave: function(fieldName, newValue) {
@@ -1119,15 +1119,15 @@
       contactInlineEditor.unlockAll();
     } else {
       // Fallback if manager not initialized yet
-      const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
+      const inputs = document.querySelectorAll('#profileColumns input, #profileColumns textarea');
       inputs.forEach(input => { input.classList.remove('locked'); input.readOnly = false; });
-      const selects = document.querySelectorAll('#profileTop select');
+      const selects = document.querySelectorAll('#profileColumns select');
       selects.forEach(select => { select.classList.remove('locked'); select.disabled = false; });
     }
     document.getElementById('actionRow').style.display = 'flex';
     document.getElementById('cancelBtn').style.display = 'inline-block';
     document.getElementById('submitBtn').textContent = 'Create Contact';
-    document.getElementById('profileTop').classList.add('editing');
+    document.getElementById('profileColumns').classList.add('editing');
     updateHeaderTitle(true);
     document.getElementById('firstName').focus();
   }
@@ -1139,14 +1139,14 @@
       contactInlineEditor.lockAll();
     } else {
       // Fallback if manager not initialized yet
-      const inputs = document.querySelectorAll('#profileTop input, #profileTop textarea');
+      const inputs = document.querySelectorAll('#profileColumns input, #profileColumns textarea');
       inputs.forEach(input => { input.classList.add('locked'); input.readOnly = true; });
-      const selects = document.querySelectorAll('#profileTop select');
+      const selects = document.querySelectorAll('#profileColumns select');
       selects.forEach(select => { select.classList.add('locked'); select.disabled = true; });
     }
     document.getElementById('actionRow').style.display = 'none';
     document.getElementById('cancelBtn').style.display = 'none';
-    document.getElementById('profileTop').classList.remove('editing');
+    document.getElementById('profileColumns').classList.remove('editing');
     updateHeaderTitle(false);
   }
 

@@ -76,13 +76,13 @@
   .row { display: flex; gap: 15px; }
   .field-group { flex: 1; }
   label { font-size: 9px; font-weight: 500; color: #AAA; display: block; margin-top: 4px; margin-bottom: 1px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .profile-top > .row:first-of-type label { margin-top: 0; }
+  .profile-columns > .row:first-of-type label { margin-top: 0; }
   input, textarea { width: 100%; padding: 8px; border: 1px solid #CCC; border-radius: 2px; box-sizing: border-box; font-size: 13px; font-family: var(--font-body); background: #FFF; color: var(--color-trail); transition: all 0.2s; }
   input:focus, textarea:focus { outline: none; border-color: var(--color-trail); }
   textarea { height: 100px; resize: vertical; }
   input.locked, textarea.locked, select.locked { background: transparent; border: none; border-bottom: 1px dotted #CCC; padding-left: 0; color: var(--color-trail); font-weight: 500; cursor: pointer; }
   select.locked[disabled] { pointer-events: none; } /* Pass clicks through to parent for inline edit trigger */
-  #profileTop input.locked:hover, #profileTop textarea.locked:hover, #profileTop select.locked:hover { border-bottom-color: var(--color-star); background: rgba(187, 153, 52, 0.05); }
+  #profileColumns input.locked:hover, #profileColumns textarea.locked:hover, #profileColumns select.locked:hover { border-bottom-color: var(--color-star); background: rgba(187, 153, 52, 0.05); }
   textarea.locked { resize: vertical; }
   input.locked:focus, textarea.locked:focus, select.locked:focus { outline: none; }
   
@@ -336,15 +336,15 @@
   .contact-form-split .field-group { margin-bottom: 0; }
 
   /* CLICK-TO-EDIT FORM */
-  .profile-top { position: relative; cursor: pointer; border-radius: 8px; padding: 12px; margin: -12px; transition: background 0.2s; }
-  .profile-top:hover { background: rgba(187, 153, 52, 0.03); }
-  .profile-top.editing { cursor: default; background: transparent; }
-  .profile-top.editing:hover { background: transparent; }
+  .profile-col-left { position: relative; cursor: pointer; border-radius: 8px; padding: 12px; margin: -12px; transition: background 0.2s; }
+  .profile-col-left:hover { background: rgba(187, 153, 52, 0.03); }
+  .profile-columns.editing .profile-col-left { cursor: default; background: transparent; }
+  .profile-columns.editing .profile-col-left:hover { background: transparent; }
   .edit-hint { position: absolute; top: 8px; right: 12px; font-size: 11px; color: var(--color-star); opacity: 0; transition: opacity 0.2s; pointer-events: none; display: flex; align-items: center; gap: 4px; }
-  .profile-top:hover .edit-hint { opacity: 1; }
-  .profile-top.editing .edit-hint { display: none; }
+  .profile-col-left:hover .edit-hint { opacity: 1; }
+  .profile-columns.editing .edit-hint { display: none; }
   .edit-hint-icon { font-size: 12px; }
-  body.dark-mode .profile-top:hover { background: rgba(187, 153, 52, 0.08); }
+  body.dark-mode .profile-col-left:hover { background: rgba(187, 153, 52, 0.08); }
 
   /* CONFIRMATION MODAL */
   .confirm-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 10000; }

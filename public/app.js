@@ -3120,14 +3120,16 @@ Best wishes,
         statusEl.innerHTML = spouseName;
         statusEl.className = 'connection-name';
         statusEl.setAttribute('data-contact-id', spouseId);
-        if (dateEl) dateEl.textContent = connectionDate;
         // Attach quick-view to spouse name
         attachQuickViewToElement(statusEl, spouseId);
         
-        // Show history accordion if more than one entry
+        // Show history accordion if more than one entry, otherwise show date in left column
         if (parsedLogs.length > 1 && accordionEl && historyList) {
+           if (dateEl) dateEl.textContent = '';
            accordionEl.style.display = 'inline-flex';
            parsedLogs.forEach(entry => { renderHistoryItem(entry, historyList); });
+        } else {
+           if (dateEl) dateEl.textContent = connectionDate;
         }
      } else {
         if (badgeEl) badgeEl.style.display = 'none';

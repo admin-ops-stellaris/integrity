@@ -583,10 +583,49 @@
   .expand-link { margin-top: 5px; font-size: 10px; font-weight: 700; color: #999; cursor: pointer; text-decoration: underline; }
   .expand-link:hover { color: var(--color-trail); }
 
-  /* CONNECTIONS SECTION */
+  /* CONNECTIONS SECTION - Pill Layout */
   .connections-header { font-size: 13px; font-weight: 400; color: var(--color-trail); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-  .connections-two-col { display: flex; gap: 15px; }
-  .connections-col { flex: 1; min-width: 0; }
+  .connections-pill-container { display: flex; flex-wrap: wrap; gap: 6px; }
+  .connection-pill { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 6px; 
+    padding: 4px 10px 4px 6px; 
+    background: #FFF; 
+    border: 1px solid #E0E0E0; 
+    border-radius: 20px; 
+    font-size: 11px; 
+    cursor: pointer; 
+    transition: all 0.15s ease;
+  }
+  .connection-pill:hover { border-color: var(--color-star); background: rgba(187, 153, 52, 0.05); }
+  .connection-pill .pill-role { 
+    font-size: 8px; 
+    font-weight: 600; 
+    text-transform: uppercase; 
+    padding: 2px 5px; 
+    border-radius: 10px; 
+    letter-spacing: 0.3px;
+  }
+  .connection-pill .pill-name { color: var(--color-trail); font-weight: 500; }
+  .connection-pill.has-note::after { content: ''; width: 5px; height: 5px; background: var(--color-star); border-radius: 50%; margin-left: 2px; }
+  
+  /* Pill role colors */
+  .pill-role.parent, .pill-role.child { background: #E8F5E9; color: #2E7D32; }
+  .pill-role.sibling { background: #E3F2FD; color: #1565C0; }
+  .pill-role.friend { background: #FFF3E0; color: #E65100; }
+  .pill-role.employer, .pill-role.employee { background: #F3E5F5; color: #7B1FA2; }
+  .pill-role.referred, .pill-role.referral { background: #FFEBEE; color: #C62828; }
+  .pill-role.household { background: #ECEFF1; color: #455A64; }
+  .pill-role.family { background: #E8F5E9; color: #2E7D32; }
+  
+  body.dark-mode .connection-pill { background: #333; border-color: #555; }
+  body.dark-mode .connection-pill:hover { background: #3a3a3a; border-color: var(--color-star); }
+  body.dark-mode .connection-pill .pill-name { color: #E8E6E1; }
+  
+  .connections-empty { font-size: 11px; color: #AAA; font-style: italic; padding: 8px 0; }
+  
+  /* Legacy styles for grouped connections - keeping for backwards compat */
   .connections-list { padding-left: 0; list-style: none; margin: 0; }
   .connection-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #EEE; font-size: 12px; gap: 4px; }
   .connection-item:last-child { border-bottom: none; }

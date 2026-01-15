@@ -3157,20 +3157,103 @@ Best wishes,
   let connectionRoleTypes = [];
   
   function loadConnections(contactId) {
-    const leftList = document.getElementById('connectionsListLeft');
-    const rightList = document.getElementById('connectionsListRight');
-    if (!leftList || !rightList) return;
-    leftList.innerHTML = '<li class="connections-empty">Loading...</li>';
-    rightList.innerHTML = '';
+    const container = document.getElementById('connectionsPillContainer');
+    if (!container) return;
+    container.innerHTML = '<span class="connections-empty">Loading...</span>';
     
     google.script.run.withSuccessHandler(function(connections) {
-      renderConnectionsList(connections);
+      renderConnectionsPills(connections);
     }).withFailureHandler(function(err) {
-      leftList.innerHTML = '<li class="connections-empty">Error loading connections</li>';
+      container.innerHTML = '<span class="connections-empty">Error loading connections</span>';
     }).getConnectionsForContact(contactId);
   }
   
+  function renderConnectionsPills(connections) {
+    const container = document.getElementById('connectionsPillContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (!connections || connections.length === 0) {
+      container.innerHTML = '<span class="connections-empty">No connections yet</span>';
+      return;
+    }
+    
+    // Short role labels for pills
+    const pillRoleLabels = {
+      'household representative': 'HH Rep',
+      'household member': 'HH Member',
+      'parent': 'Parent',
+      'child': 'Child',
+      'sibling': 'Sibling',
+      'friend': 'Friend',
+      'employer of': 'Employer',
+      'employee of': 'Employee',
+      'referred by': 'Referrer',
+      'has referred': 'Referred',
+      'family': 'Family'
+    };
+    
+    const getPillRoleLabel = (role) => {
+      const r = (role || '').toLowerCase().trim();
+      return pillRoleLabels[r] || role;
+    };
+    
+    const getPillRoleClass = (role) => {
+      const r = (role || '').toLowerCase();
+      if (r.includes('parent') || r.includes('child')) return 'parent';
+      if (r.includes('sibling')) return 'sibling';
+      if (r.includes('friend')) return 'friend';
+      if (r.includes('employer') || r.includes('employee')) return 'employer';
+      if (r.includes('referred') || r.includes('referral')) return 'referred';
+      if (r.includes('household')) return 'household';
+      if (r.includes('family')) return 'family';
+      return '';
+    };
+    
+    // Sort connections: Referrer first, then family roles, then friends/referred
+    const roleOrder = ['referred by', 'household representative', 'household member', 'parent', 'child', 'sibling', 'employer of', 'employee of', 'family', 'friend', 'has referred'];
+    connections.sort((a, b) => {
+      const aRole = (a.myRole || '').toLowerCase();
+      const bRole = (b.myRole || '').toLowerCase();
+      const aIdx = roleOrder.findIndex(r => aRole.includes(r));
+      const bIdx = roleOrder.findIndex(r => bRole.includes(r));
+      if (aIdx !== bIdx) return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+      return (a.otherContactName || '').localeCompare(b.otherContactName || '');
+    });
+    
+    connections.forEach(conn => {
+      const pill = document.createElement('div');
+      pill.className = 'connection-pill' + (conn.note && conn.note.trim() ? ' has-note' : '');
+      pill.setAttribute('data-conn-id', conn.id);
+      pill.setAttribute('data-contact-id', conn.otherContactId || '');
+      
+      const roleClass = getPillRoleClass(conn.myRole);
+      const roleLabel = getPillRoleLabel(conn.myRole);
+      
+      pill.innerHTML = `
+        <span class="pill-role ${roleClass}">${roleLabel}</span>
+        <span class="pill-name">${conn.otherContactName || 'Unknown'}</span>
+      `;
+      
+      // Click to open connection details modal
+      pill.addEventListener('click', function(e) {
+        openConnectionDetailsModal(conn);
+      });
+      
+      // Attach quick-view on hover for the name
+      if (conn.otherContactId) {
+        attachQuickViewToElement(pill, conn.otherContactId);
+      }
+      
+      container.appendChild(pill);
+    });
+  }
+  
+  // Keep old function for backwards compatibility but redirect to new one
   function renderConnectionsList(connections) {
+    renderConnectionsPills(connections);
+    return;
+    // Legacy code below - kept for reference
     const leftList = document.getElementById('connectionsListLeft');
     const rightList = document.getElementById('connectionsListRight');
     if (!leftList || !rightList) return;

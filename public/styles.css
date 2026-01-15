@@ -574,9 +574,10 @@
   #loading a { color: var(--color-star); font-weight: 700; text-decoration: none; border-bottom: 1px solid var(--color-star); }
   #loading a:hover { color: var(--color-trail); border-color: var(--color-trail); }
 
-  /* SPOUSE STYLES - Connection row format */
-  .spouse-connection-row { 
+  /* SPOUSE STYLES - Two column layout */
+  .spouse-two-col-row { 
     display: flex; 
+    flex-wrap: wrap;
     align-items: center; 
     justify-content: space-between;
     padding: 6px 0; 
@@ -584,17 +585,18 @@
     padding-bottom: 10px;
     border-bottom: 1px solid #DDD;
   }
-  .spouse-connection-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .spouse-history-accordion { display: inline-flex; align-items: center; margin-left: 8px; }
+  .spouse-left-col { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .spouse-right-col { display: flex; align-items: center; gap: 12px; }
+  .spouse-history-accordion { display: inline-flex; align-items: center; }
   .spouse-history-toggle { cursor: pointer; color: #666; font-size: 11px; display: flex; align-items: center; gap: 4px; }
   .spouse-history-toggle:hover { color: var(--color-star); }
   .spouse-history-arrow { font-size: 8px; display: inline-block; transition: transform 0.2s; }
   .spouse-history-arrow.expanded { transform: rotate(90deg); }
   .spouse-history-list { width: 100%; font-size: 11px; color: #888; margin-top: 6px; padding-left: 0; list-style: none; }
   .spouse-history-item { padding: 3px 0; }
-  .spouse-connection-row .connection-name { cursor: pointer; font-size: 12px; }
-  .spouse-connection-row .connection-name.single { color: #888; cursor: default; }
-  body.dark-mode .spouse-connection-row { border-color: #444; }
+  .spouse-two-col-row .connection-name { cursor: pointer; font-size: 12px; }
+  .spouse-two-col-row .connection-name.single { color: #888; cursor: default; }
+  body.dark-mode .spouse-two-col-row { border-color: #444; }
   .spouse-action-link { font-size: 11px; text-transform: uppercase; color: var(--color-star); cursor: pointer; border-bottom: 1px solid transparent; }
   .spouse-action-link:hover { border-bottom-color: var(--color-star); }
   .expand-link { margin-top: 5px; font-size: 10px; font-weight: 700; color: #999; cursor: pointer; text-decoration: underline; }
@@ -603,6 +605,16 @@
   /* CONNECTIONS SECTION - Scrollable two-column */
   .connections-section-scrollable { margin-bottom: 20px; }
   .connections-add-row { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+  .connections-accordion-header { 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    cursor: pointer; 
+    padding: 4px 0 8px 0;
+  }
+  .connections-accordion-header:hover .connections-accordion-title { color: var(--color-star); }
+  .connections-accordion-title { font-size: 12px; color: #666; flex: 1; }
+  .connections-accordion-header .spouse-action-link { margin-left: auto; }
   .connections-two-col { display: flex; gap: 15px; max-height: 200px; overflow-y: auto; }
   .connections-col { flex: 1; min-width: 0; }
   .connection-pill { 

@@ -3148,6 +3148,17 @@ Best wishes,
      }
   }
   
+  let connectionsAccordionExpanded = true;
+  function toggleConnectionsAccordion() {
+     const content = document.getElementById('connectionsContent');
+     const arrowEl = document.getElementById('connectionsAccordionArrow');
+     if (content && arrowEl) {
+        connectionsAccordionExpanded = !connectionsAccordionExpanded;
+        content.style.display = connectionsAccordionExpanded ? 'flex' : 'none';
+        arrowEl.classList.toggle('expanded', connectionsAccordionExpanded);
+     }
+  }
+  
   function parseSpouseHistoryEntry(logString) {
      const match = logString.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2}):\s*(connected as spouse to|disconnected as spouse from)\s+(.+)$/);
      if (!match) return null;
@@ -3276,10 +3287,36 @@ Best wishes,
   function renderConnectionsList(connections) {
     const leftList = document.getElementById('connectionsListLeft');
     const rightList = document.getElementById('connectionsListRight');
-    const expandLink = document.getElementById('connectionsExpandLink');
+    const accordionWrapper = document.getElementById('connectionsAccordionWrapper');
+    const noAccordionAdd = document.getElementById('connectionsNoAccordionAdd');
+    const connectionsContent = document.getElementById('connectionsContent');
+    const accordionArrow = document.getElementById('connectionsAccordionArrow');
     if (!leftList || !rightList) return;
     leftList.innerHTML = '';
     rightList.innerHTML = '';
+    
+    // Count friends and refers to determine if accordion needed
+    let friendCount = 0;
+    let refersCount = 0;
+    if (connections && connections.length > 0) {
+      connections.forEach(conn => {
+        const role = (conn.myRole || '').toLowerCase().trim();
+        if (role === 'friend') friendCount++;
+        if (role === 'has referred') refersCount++;
+      });
+    }
+    const needsAccordion = friendCount >= 6 || refersCount >= 6;
+    
+    // Toggle accordion vs simple add row
+    if (accordionWrapper) accordionWrapper.style.display = needsAccordion ? 'block' : 'none';
+    if (noAccordionAdd) noAccordionAdd.style.display = needsAccordion ? 'none' : 'flex';
+    
+    // Ensure accordion is expanded by default and content visible
+    if (needsAccordion && connectionsContent && accordionArrow) {
+      connectionsAccordionExpanded = true;
+      connectionsContent.style.display = 'flex';
+      accordionArrow.classList.add('expanded');
+    }
     
     if (!connections || connections.length === 0) {
       leftList.innerHTML = '<li class="connections-empty">No connections yet</li>';

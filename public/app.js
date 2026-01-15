@@ -3144,20 +3144,19 @@ Best wishes,
      const historyList = document.getElementById('spouseHistoryList');
      const arrowEl = document.getElementById('spouseHistoryArrow');
      if (historyList && arrowEl) {
-        const isVisible = historyList.style.display !== 'none';
-        historyList.style.display = isVisible ? 'none' : 'block';
-        arrowEl.classList.toggle('expanded', !isVisible);
+        const isExpanded = arrowEl.classList.contains('expanded');
+        historyList.style.display = isExpanded ? 'none' : 'block';
+        arrowEl.classList.toggle('expanded');
      }
   }
   
-  let connectionsAccordionExpanded = true;
   function toggleConnectionsAccordion() {
      const content = document.getElementById('connectionsContent');
      const arrowEl = document.getElementById('connectionsAccordionArrow');
      if (content && arrowEl) {
-        connectionsAccordionExpanded = !connectionsAccordionExpanded;
-        content.style.display = connectionsAccordionExpanded ? 'flex' : 'none';
-        arrowEl.classList.toggle('expanded', connectionsAccordionExpanded);
+        const isExpanded = arrowEl.classList.contains('expanded');
+        content.style.display = isExpanded ? 'none' : 'flex';
+        arrowEl.classList.toggle('expanded');
      }
   }
   

@@ -325,7 +325,7 @@
     color: #999;
     transition: transform 0.2s ease;
   }
-  .collapsible-section.expanded .collapsible-icon { transform: rotate(90deg); }
+  .collapsible-section.expanded .collapsible-icon, .collapsible-icon.expanded { transform: rotate(90deg); }
   .collapsible-title { 
     font-size: 9px; 
     font-weight: 500; 

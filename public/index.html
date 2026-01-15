@@ -177,8 +177,9 @@
                   </div>
                   <div class="spouse-right-col">
                     <div class="spouse-right-col-content">
-                      <div id="spouseHistoryAccordion" class="spouse-history-accordion" style="display:none;">
-                        <span class="spouse-history-toggle" onclick="toggleSpouseHistory()"><span id="spouseHistoryArrow" class="spouse-history-arrow">&#9654;</span> History</span>
+                      <div id="spouseHistoryAccordion" class="collapsible-header" style="display:none;" onclick="toggleSpouseHistory()">
+                        <span id="spouseHistoryArrow" class="collapsible-icon">&#9654;</span>
+                        <span class="collapsible-title">History</span>
                       </div>
                       <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
                     </div>
@@ -187,9 +188,9 @@
                 </div>
                 <div id="connectionsSection" class="connections-section-scrollable">
                   <div id="connectionsAccordionWrapper" style="display:none;">
-                    <div class="connections-accordion-header" onclick="toggleConnectionsAccordion()">
-                      <span id="connectionsAccordionArrow" class="spouse-history-arrow expanded">&#9654;</span>
-                      <span class="connections-accordion-title">Connections to other Contacts</span>
+                    <div class="collapsible-header connections-accordion-header" onclick="toggleConnectionsAccordion()">
+                      <span id="connectionsAccordionArrow" class="collapsible-icon expanded">&#9654;</span>
+                      <span class="collapsible-title">Connections</span>
                       <span id="addConnectionLink" class="spouse-action-link" onclick="event.stopPropagation(); openAddConnectionModal()">+ Add</span>
                     </div>
                   </div>

@@ -578,7 +578,7 @@
   .spouse-two-col-row { 
     display: flex; 
     flex-wrap: wrap;
-    align-items: center; 
+    align-items: flex-start; 
     justify-content: space-between;
     padding: 6px 0; 
     margin-bottom: 10px;

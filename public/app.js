@@ -3167,7 +3167,8 @@ Best wishes,
      const [, year, month, day, hours, mins, secs, action, spouseName] = match;
      const timestamp = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(mins), parseInt(secs));
      const displayDate = `${day}/${month}/${year}`;
-     const displayText = `${action} ${spouseName}`;
+     const shortAction = action.replace(' as spouse', '');
+     const displayText = `${shortAction} ${spouseName}`;
      return { timestamp, displayDate, displayText };
   }
 

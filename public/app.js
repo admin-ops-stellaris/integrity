@@ -1226,6 +1226,16 @@
     }
 
     document.getElementById('formSubtitle').innerHTML = formatSubtitle(f);
+    
+    // Set title with tenure info
+    const fullName = formatName(f);
+    const tenureText = formatTenureText(f);
+    if (tenureText) {
+      document.getElementById('formTitle').innerHTML = `${fullName} <span class="tenure-text">${tenureText}</span>`;
+    } else {
+      document.getElementById('formTitle').innerText = fullName;
+    }
+    
     renderHistory(f);
     loadOpportunities(f);
     renderSpouseSection(f);
@@ -4402,14 +4412,17 @@ Best wishes,
   function formatSubtitle(f) {
     const preferredName = f.PreferredName || '';
     const doesNotLike = f['Does Not Like Being Called'] || '';
-    const tenure = calculateTenure(f.Created);
-    if (!preferredName && !doesNotLike && !tenure) return '';
+    if (!preferredName && !doesNotLike) return '';
     const parts = [];
     if (preferredName) parts.push(`<span class="name-pill pill-prefers">prefers "${preferredName}"</span>`);
     if (doesNotLike) parts.push(`<span class="name-pill pill-doesnt-like">doesn't like "${doesNotLike}"</span>`);
-    if (tenure === 'just added today') parts.push(tenure);
-    else if (tenure) parts.push(`in our database for ${tenure}`);
     return parts.join(' ');
+  }
+  function formatTenureText(f) {
+    const tenure = calculateTenure(f.Created);
+    if (!tenure) return '';
+    if (tenure === 'just added today') return tenure;
+    return `in our database for ${tenure}`;
   }
   function calculateTenure(createdStr) {
     if (!createdStr) return null;

@@ -4260,7 +4260,10 @@ Best wishes,
     document.getElementById('loading').style.display = 'none'; 
     list.innerHTML = '';
     currentSearchRecords = records;
-    searchHighlightIndex = -1;
+    // Preserve highlight if valid, otherwise reset
+    if (searchHighlightIndex >= records.length) {
+      searchHighlightIndex = records.length > 0 ? records.length - 1 : -1;
+    }
     records.forEach((record, index) => {
       const f = record.fields; const item = document.createElement('li'); item.className = 'contact-item';
       item.dataset.index = index;
@@ -4272,6 +4275,10 @@ Best wishes,
       item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>${modifiedShort ? `<span class="contact-modified" title="${modifiedTooltip || ''}">${modifiedShort}</span>` : ''}`;
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
+    // Re-apply highlight if one was preserved
+    if (searchHighlightIndex >= 0) {
+      updateSearchHighlight();
+    }
   }
   
   function updateSearchHighlight() {
@@ -4304,6 +4311,19 @@ Best wishes,
       e.preventDefault();
       if (searchHighlightIndex >= 0 && currentSearchRecords[searchHighlightIndex]) {
         selectContact(currentSearchRecords[searchHighlightIndex]);
+      } else {
+        // No item highlighted - trigger search immediately
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value.trim()) {
+          clearTimeout(searchTimeout);
+          const statusEl = document.getElementById('searchStatus');
+          statusEl.innerText = "Searching...";
+          const statusFilterToSend = contactStatusFilter === 'All' ? null : contactStatusFilter;
+          google.script.run.withSuccessHandler(function(records) {
+            statusEl.innerText = records.length > 0 ? `Found ${records.length} matches` : "No matches found";
+            renderList(records);
+          }).searchContacts(searchInput.value.trim(), statusFilterToSend);
+        }
       }
     }
   }

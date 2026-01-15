@@ -707,7 +707,7 @@
   .connection-role-badge.sibling { background: #E3F2FD; color: #1565C0; }
   .connection-role-badge.friend { background: #FFF3E0; color: #E65100; }
   .connection-role-badge.employer, .connection-role-badge.employee { background: #F3E5F5; color: #7B1FA2; }
-  .connection-role-badge.referred, .connection-role-badge.referral { background: #FFEBEE; color: #C62828; }
+  .connection-role-badge.referred, .connection-role-badge.referral, .connection-role-badge.spouse { background: var(--color-sky); color: var(--color-midnight); }
   .connection-role-badge.household { background: #ECEFF1; color: #455A64; }
   .connection-name { color: var(--color-trail); cursor: pointer; }
   .connection-name:hover { color: var(--color-star); text-decoration: underline; }

@@ -169,25 +169,13 @@
               </div>
 
               <div class="profile-col profile-col-middle">
-                <div id="spouseSection" class="spouse-section-twocol">
-                  <div class="spouse-col-left">
-                    <span class="spouse-label">Spouse:</span>
-                    <span id="spouseStatusText" class="spouse-pill">Single</span>
-                    <span id="spouseEditLink" class="spouse-edit-link" onclick="openSpouseModal()">Edit</span>
-                  </div>
-                  <div class="spouse-col-right">
-                    <span id="spouseHistorySummary" class="spouse-history-summary"></span>
-                    <div id="spouseHistoryAccordion" class="spouse-history-accordion" style="display:none;">
-                      <span class="spouse-history-toggle" onclick="toggleSpouseHistory()"><span id="spouseHistoryArrow" class="spouse-history-arrow">&#9654;</span> History</span>
-                      <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
-                    </div>
-                  </div>
-                </div>
                 <div id="connectionsSection" class="connections-section-scrollable">
                   <div class="connections-add-row">
+                    <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()" style="margin-right:10px;">Spouse</span>
                     <span id="addConnectionLink" class="spouse-action-link" onclick="openAddConnectionModal()">+ Add</span>
                   </div>
                   <div class="connections-two-col">
+                    <ul id="spouseConnectionList" class="connections-list connections-col" style="display:none;"></ul>
                     <ul id="connectionsListLeft" class="connections-list connections-col"></ul>
                     <ul id="connectionsListRight" class="connections-list connections-col"></ul>
                   </div>

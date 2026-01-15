@@ -3111,7 +3111,7 @@ Best wishes,
      if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
         parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
         parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
-        const connLog = parsedLogs.find(e => e.displayText.toLowerCase().includes('connected as spouse to'));
+        const connLog = parsedLogs.find(e => e.displayText.toLowerCase().includes('connected to'));
         if (connLog) connectionDate = connLog.displayDate;
      }
 

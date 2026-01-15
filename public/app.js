@@ -3090,71 +3090,33 @@ Best wishes,
   // --- SPOUSE LOGIC ---
   function renderSpouseSection(f) {
      const statusEl = document.getElementById('spouseStatusText');
-     const linkEl = document.getElementById('spouseEditLink');
+     const dateEl = document.getElementById('spouseHistoryDate');
 
      const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
      const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
 
-     if (spouseName && spouseId) {
-        statusEl.innerHTML = `<span class="spouse-quick-view-link" data-contact-id="${spouseId}">${spouseName}</span>`;
-        statusEl.className = 'spouse-pill';
-        linkEl.innerText = "Edit";
-        // Attach quick-view to spouse name
-        const spouseLink = statusEl.querySelector('.spouse-quick-view-link');
-        if (spouseLink) attachQuickViewToElement(spouseLink, spouseId);
-     } else {
-        statusEl.innerHTML = "Single";
-        statusEl.className = 'spouse-pill single';
-        linkEl.innerText = "Edit"; 
-     }
-
-     linkEl.style.display = 'inline'; 
-
-     // Handle spouse history display
-     const summaryEl = document.getElementById('spouseHistorySummary');
-     const accordionEl = document.getElementById('spouseHistoryAccordion');
-     const historyList = document.getElementById('spouseHistoryList');
-     const arrowEl = document.getElementById('spouseHistoryArrow');
-     
-     if (summaryEl) summaryEl.textContent = '';
-     if (accordionEl) accordionEl.style.display = 'none';
-     if (historyList) historyList.innerHTML = '';
-     if (arrowEl) arrowEl.classList.remove('expanded');
-     
+     // Get connection date from history
+     let connectionDate = '';
      const rawLogs = f['Spouse History Text']; 
-
      if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
         const parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
         parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
-        
-        if (parsedLogs.length === 1) {
-           // Single entry - check if it's a connection
-           const entry = parsedLogs[0];
-           if (entry.displayText.toLowerCase().includes('connected as spouse to')) {
-              // Show simple "connected on DD/MM/YYYY"
-              if (summaryEl) summaryEl.textContent = `connected on ${entry.displayDate}`;
-           } else {
-              // It's a disconnection or other, show full text
-              if (summaryEl) summaryEl.textContent = entry.displayText;
-           }
-        } else {
-           // Multiple entries - show accordion
-           if (accordionEl) accordionEl.style.display = 'block';
-           if (historyList) {
-              historyList.style.display = 'none'; // Start collapsed
-              parsedLogs.forEach(entry => { renderHistoryItem(entry, historyList); });
-           }
-        }
+        const connLog = parsedLogs.find(e => e.displayText.toLowerCase().includes('connected as spouse to'));
+        if (connLog) connectionDate = connLog.displayDate;
      }
-  }
-  
-  function toggleSpouseHistory() {
-     const historyList = document.getElementById('spouseHistoryList');
-     const arrowEl = document.getElementById('spouseHistoryArrow');
-     if (historyList && arrowEl) {
-        const isVisible = historyList.style.display !== 'none';
-        historyList.style.display = isVisible ? 'none' : 'block';
-        arrowEl.classList.toggle('expanded', !isVisible);
+
+     if (spouseName && spouseId) {
+        statusEl.innerHTML = spouseName;
+        statusEl.className = 'connection-name';
+        statusEl.setAttribute('data-contact-id', spouseId);
+        if (dateEl) dateEl.textContent = connectionDate;
+        // Attach quick-view to spouse name
+        attachQuickViewToElement(statusEl, spouseId);
+     } else {
+        statusEl.innerHTML = "Single";
+        statusEl.className = 'connection-name single';
+        statusEl.removeAttribute('data-contact-id');
+        if (dateEl) dateEl.textContent = '';
      }
   }
   

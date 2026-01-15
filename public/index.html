@@ -19,7 +19,7 @@
       </div>
       <div class="header-title">INTEGRITY</div>
       <div class="header-search-wrapper">
-        <input type="text" id="searchInput" class="header-search" placeholder="Search Contacts..." onkeyup="handleSearch(event)" onfocus="showSearchDropdown()" autocomplete="off">
+        <input type="text" id="searchInput" class="header-search" placeholder="Search Contacts..." onkeyup="handleSearch(event)" onkeydown="handleSearchKeydown(event)" onfocus="showSearchDropdown()" autocomplete="off">
         <div id="searchDropdown" class="search-dropdown">
           <div class="status-toggle-row">
             <button type="button" class="status-toggle-btn active" data-status="Active" onclick="setContactStatusFilter('Active')">Active</button>

@@ -38,7 +38,9 @@
   let currentOppSortDirection = 'desc'; 
   let pendingLinkedEdits = {}; 
   let currentPanelData = {}; 
-  let pendingRemovals = {}; 
+  let pendingRemovals = {};
+  let searchHighlightIndex = -1;
+  let currentSearchRecords = []; 
 
   window.onload = function() { 
     loadContacts(); 
@@ -4257,8 +4259,11 @@ Best wishes,
     const list = document.getElementById('contactList'); 
     document.getElementById('loading').style.display = 'none'; 
     list.innerHTML = '';
-    records.forEach(record => {
+    currentSearchRecords = records;
+    searchHighlightIndex = -1;
+    records.forEach((record, index) => {
       const f = record.fields; const item = document.createElement('li'); item.className = 'contact-item';
+      item.dataset.index = index;
       const fullName = formatName(f);
       const initials = getInitials(f.FirstName, f.LastName);
       const avatarColor = getAvatarColor(fullName);
@@ -4267,6 +4272,40 @@ Best wishes,
       item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>${modifiedShort ? `<span class="contact-modified" title="${modifiedTooltip || ''}">${modifiedShort}</span>` : ''}`;
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
+  }
+  
+  function updateSearchHighlight() {
+    const items = document.querySelectorAll('#contactList .contact-item');
+    items.forEach((item, i) => {
+      item.classList.toggle('keyboard-highlight', i === searchHighlightIndex);
+    });
+    if (searchHighlightIndex >= 0 && items[searchHighlightIndex]) {
+      items[searchHighlightIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+  
+  function handleSearchKeydown(e) {
+    const dropdown = document.getElementById('searchDropdown');
+    if (!dropdown || !dropdown.classList.contains('open')) return;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (currentSearchRecords.length > 0) {
+        searchHighlightIndex = Math.min(searchHighlightIndex + 1, currentSearchRecords.length - 1);
+        updateSearchHighlight();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (currentSearchRecords.length > 0) {
+        searchHighlightIndex = Math.max(searchHighlightIndex - 1, 0);
+        updateSearchHighlight();
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (searchHighlightIndex >= 0 && currentSearchRecords[searchHighlightIndex]) {
+        selectContact(currentSearchRecords[searchHighlightIndex]);
+      }
+    }
   }
   function formatName(f) {
     return `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();

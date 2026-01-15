@@ -816,6 +816,8 @@
 
   /* AVATAR INITIALS */
   .contact-item { display: flex; align-items: center; gap: 12px; position: relative; cursor: pointer; }
+  .contact-item.keyboard-highlight { background: rgba(187, 153, 52, 0.15); border-left: 3px solid var(--color-star); padding-left: 10px; }
+  body.dark-mode .contact-item.keyboard-highlight { background: rgba(187, 153, 52, 0.25); }
   .contact-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #FFF; font-size: 12px; font-weight: 600; flex-shrink: 0; letter-spacing: 0.5px; }
   .contact-info { flex: 1; min-width: 0; }
   .contact-modified { font-size: 10px; color: #AAA; white-space: nowrap; flex-shrink: 0; cursor: help; padding: 8px; margin-right: 8px; }

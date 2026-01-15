@@ -580,11 +580,12 @@
     align-items: center; 
     justify-content: space-between;
     padding: 6px 0; 
-    margin-bottom: 12px;
-    border-bottom: 1px dashed #EEE;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #DDD;
   }
   .spouse-connection-info { display: flex; align-items: center; gap: 8px; }
-  .spouse-connection-row .connection-name { cursor: pointer; }
+  .spouse-connection-row .connection-name { cursor: pointer; font-size: 12px; }
   .spouse-connection-row .connection-name.single { color: #888; cursor: default; }
   body.dark-mode .spouse-connection-row { border-color: #444; }
   .spouse-action-link { font-size: 11px; text-transform: uppercase; color: var(--color-star); cursor: pointer; border-bottom: 1px solid transparent; }

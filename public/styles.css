@@ -16,7 +16,7 @@
   .header-title { font-family: var(--font-heading); font-size: 26px; color: var(--color-midnight); letter-spacing: 8px; font-weight: 700; text-transform: uppercase; }
   
   /* Header Search */
-  .header-search-wrapper { position: relative; flex: 0 0 280px; }
+  .header-search-wrapper { position: relative; flex: 0 0 300px; }
   .header-search { 
     width: 100%; 
     padding: 10px 14px; 
@@ -46,7 +46,7 @@
   .search-dropdown.open { display: block; }
   .search-dropdown .status-toggle-row { padding: 8px 10px; border-bottom: 1px solid #EEE; }
   .search-dropdown #loading { padding: 15px; text-align: center; color: #999; }
-  .search-dropdown #contactList { margin: 0; padding: 0; list-style: none; }
+  .search-dropdown #contactList { margin: 0; padding: 8px; list-style: none; }
   
   .user-indicator { display: flex; align-items: center; gap: 12px; }
   .user-email { font-size: 13px; color: var(--color-midnight); font-weight: 400; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.7; }

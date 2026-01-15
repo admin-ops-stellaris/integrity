@@ -3097,13 +3097,15 @@ Best wishes,
      const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
 
      if (spouseName && spouseId) {
-        statusEl.innerHTML = `Spouse: <span class="data-link spouse-quick-view-link" data-contact-id="${spouseId}">${spouseName}</span>`;
+        statusEl.innerHTML = `<span class="spouse-quick-view-link" data-contact-id="${spouseId}">${spouseName}</span>`;
+        statusEl.className = 'spouse-pill';
         linkEl.innerText = "Edit";
         // Attach quick-view to spouse name
         const spouseLink = statusEl.querySelector('.spouse-quick-view-link');
         if (spouseLink) attachQuickViewToElement(spouseLink, spouseId);
      } else {
         statusEl.innerHTML = "Single";
+        statusEl.className = 'spouse-pill single';
         linkEl.innerText = "Edit"; 
      }
 
@@ -3543,49 +3545,10 @@ Best wishes,
       });
     };
     
-    // Apply collapsed limit if not expanded
-    const totalCount = connections.length;
-    let leftToRender = leftConns;
-    let rightToRender = rightConns;
-    
-    if (!connectionsExpanded && totalCount > CONNECTIONS_COLLAPSED_LIMIT) {
-      // Limit total connections shown across both columns
-      const allSorted = [...leftConns, ...rightConns];
-      // Re-sort by priority for limiting
-      const priorityRoles = ['referred by', 'household representative', 'household member', 'parent', 'child', 'sibling', 'employer of', 'employee of', 'family', 'friend', 'has referred'];
-      allSorted.sort((a, b) => {
-        const aRole = (a.myRole || '').toLowerCase();
-        const bRole = (b.myRole || '').toLowerCase();
-        const aIdx = priorityRoles.findIndex(r => aRole.includes(r));
-        const bIdx = priorityRoles.findIndex(r => bRole.includes(r));
-        if (aIdx !== bIdx) return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
-        return (a.otherContactName || '').localeCompare(b.otherContactName || '');
-      });
-      
-      const limited = allSorted.slice(0, CONNECTIONS_COLLAPSED_LIMIT);
-      // Re-split into left/right
-      leftToRender = limited.filter(c => leftConns.includes(c));
-      rightToRender = limited.filter(c => rightConns.includes(c));
-    }
-    
-    renderToList(leftList, leftToRender);
-    renderToList(rightList, rightToRender);
-    
-    // Show/hide expand link
-    if (expandLink) {
-      if (totalCount > CONNECTIONS_COLLAPSED_LIMIT) {
-        const hiddenCount = totalCount - CONNECTIONS_COLLAPSED_LIMIT;
-        if (connectionsExpanded) {
-          expandLink.textContent = 'Show fewer';
-          expandLink.style.display = 'block';
-        } else {
-          expandLink.textContent = `Show all (${totalCount})`;
-          expandLink.style.display = 'block';
-        }
-      } else {
-        expandLink.style.display = 'none';
-      }
-    }
+    // Render all connections (scrollable container handles overflow)
+    // Render each connection individually (no grouping)
+    leftConns.forEach(conn => renderSingleConnection(leftList, conn));
+    rightConns.forEach(conn => renderSingleConnection(rightList, conn));
   }
   
   function openConnectionDetailsModal(conn) {

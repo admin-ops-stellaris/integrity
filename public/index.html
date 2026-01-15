@@ -171,9 +171,13 @@
               <div class="profile-col profile-col-middle">
                 <div id="spouseSection" class="spouse-connection-row">
                   <div class="spouse-connection-info">
-                    <span class="connection-role-badge spouse">Spouse</span>
+                    <span id="spouseBadge" class="connection-role-badge spouse">Spouse</span>
                     <span id="spouseStatusText" class="connection-name">Single</span>
                     <span id="spouseHistoryDate" class="connection-date"></span>
+                    <div id="spouseHistoryAccordion" class="spouse-history-accordion" style="display:none;">
+                      <span class="spouse-history-toggle" onclick="toggleSpouseHistory()"><span id="spouseHistoryArrow" class="spouse-history-arrow">&#9654;</span> History</span>
+                      <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
+                    </div>
                   </div>
                   <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()">Edit</span>
                 </div>

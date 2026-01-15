@@ -3089,34 +3089,62 @@ Best wishes,
 
   // --- SPOUSE LOGIC ---
   function renderSpouseSection(f) {
+     const badgeEl = document.getElementById('spouseBadge');
      const statusEl = document.getElementById('spouseStatusText');
      const dateEl = document.getElementById('spouseHistoryDate');
+     const accordionEl = document.getElementById('spouseHistoryAccordion');
+     const historyList = document.getElementById('spouseHistoryList');
+     const arrowEl = document.getElementById('spouseHistoryArrow');
 
      const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
      const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
 
+     // Reset accordion
+     if (accordionEl) accordionEl.style.display = 'none';
+     if (historyList) { historyList.innerHTML = ''; historyList.style.display = 'none'; }
+     if (arrowEl) arrowEl.classList.remove('expanded');
+
      // Get connection date from history
      let connectionDate = '';
      const rawLogs = f['Spouse History Text']; 
+     let parsedLogs = [];
      if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
-        const parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
+        parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
         parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
         const connLog = parsedLogs.find(e => e.displayText.toLowerCase().includes('connected as spouse to'));
         if (connLog) connectionDate = connLog.displayDate;
      }
 
      if (spouseName && spouseId) {
+        if (badgeEl) badgeEl.style.display = 'inline-block';
         statusEl.innerHTML = spouseName;
         statusEl.className = 'connection-name';
         statusEl.setAttribute('data-contact-id', spouseId);
         if (dateEl) dateEl.textContent = connectionDate;
         // Attach quick-view to spouse name
         attachQuickViewToElement(statusEl, spouseId);
+        
+        // Show history accordion if more than one entry
+        if (parsedLogs.length > 1 && accordionEl && historyList) {
+           accordionEl.style.display = 'inline-flex';
+           parsedLogs.forEach(entry => { renderHistoryItem(entry, historyList); });
+        }
      } else {
+        if (badgeEl) badgeEl.style.display = 'none';
         statusEl.innerHTML = "Single";
         statusEl.className = 'connection-name single';
         statusEl.removeAttribute('data-contact-id');
         if (dateEl) dateEl.textContent = '';
+     }
+  }
+  
+  function toggleSpouseHistory() {
+     const historyList = document.getElementById('spouseHistoryList');
+     const arrowEl = document.getElementById('spouseHistoryArrow');
+     if (historyList && arrowEl) {
+        const isVisible = historyList.style.display !== 'none';
+        historyList.style.display = isVisible ? 'none' : 'block';
+        arrowEl.classList.toggle('expanded', !isVisible);
      }
   }
   

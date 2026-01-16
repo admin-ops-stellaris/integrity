@@ -1022,7 +1022,7 @@
     'preferredName': 'PreferredName',
     'doesNotLike': 'Does Not Like Being Called',
     'mobilePhone': 'Mobile',
-    'dateOfBirth': 'DateOfBirth',
+    'dateOfBirth': 'Date of Birth',
     'email1': 'EmailAddress1',
     'email1Comment': 'EmailAddress1Comment',
     'email2': 'EmailAddress2',

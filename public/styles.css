@@ -16,7 +16,7 @@
   .header-title { font-family: var(--font-heading); font-size: 26px; color: var(--color-midnight); letter-spacing: 8px; font-weight: 700; text-transform: uppercase; }
   
   /* Header Search */
-  .header-search-wrapper { position: relative; flex: 0 0 300px; }
+  .header-search-wrapper { position: relative; flex: 0 0 300px; margin-left: auto; }
   .header-search { 
     width: 100%; 
     padding: 10px 14px; 

@@ -1077,6 +1077,8 @@
     'lastName': 'LastName',
     'preferredName': 'PreferredName',
     'doesNotLike': 'Does Not Like Being Called',
+    'mothersMaidenName': "Mother's Maiden Name",
+    'previousNames': 'Previous Names',
     'mobilePhone': 'Mobile',
     'dateOfBirth': 'Date of Birth',
     'email1': 'EmailAddress1',
@@ -1233,6 +1235,8 @@
     document.getElementById('lastName').value = f.LastName || "";
     document.getElementById('preferredName').value = f.PreferredName || "";
     document.getElementById('doesNotLike').value = f["Does Not Like Being Called"] || "";
+    document.getElementById('mothersMaidenName').value = f["Mother's Maiden Name"] || "";
+    document.getElementById('previousNames').value = f["Previous Names"] || "";
     document.getElementById('mobilePhone').value = f.Mobile || "";
     
     // Email fields

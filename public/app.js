@@ -1357,6 +1357,7 @@
   // Unsubscribe handling
   function updateUnsubscribeDisplay(isUnsubscribed) {
     const statusEl = document.getElementById('unsubscribeStatus');
+    if (!statusEl) return;
     if (isUnsubscribed) {
       statusEl.textContent = 'Unsubscribed';
       statusEl.className = 'unsubscribe-status-unsubscribed';

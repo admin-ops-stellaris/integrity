@@ -358,6 +358,27 @@ export async function createContact(fields, userContext = null) {
   }
 }
 
+export async function updateContactMultipleFields(id, fields, userContext = null) {
+  if (!base) return null;
+  try {
+    const updateFields = { ...fields };
+    if (userContext) {
+      if (userContext.name) {
+        updateFields["Modified By (Web App User)"] = userContext.name;
+      }
+      if (userContext.email) {
+        updateFields["Modified By (Web App User Email)"] = userContext.email;
+      }
+      updateFields["Modified On (Web App)"] = getPerthTimeISO();
+    }
+    const record = await base("Contacts").update(id, updateFields);
+    return formatRecord(record);
+  } catch (err) {
+    console.error("updateContactMultipleFields error:", err.message);
+    return null;
+  }
+}
+
 export async function getOpportunityById(id) {
   if (!base) return null;
   try {

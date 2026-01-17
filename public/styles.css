@@ -276,6 +276,30 @@
   .new-contact-btn:hover { background: var(--color-star); color: #FFF; }
   .contact-back-btn { background: transparent; border: none; color: var(--color-midnight); font-size: 11px; cursor: pointer; padding: 2px 0; margin-top: 2px; text-decoration: none; opacity: 0.7; transition: opacity 0.2s; text-align: left; }
   .contact-back-btn:hover { opacity: 1; text-decoration: underline; }
+  
+  /* Actions Menu */
+  .actions-menu-wrapper { position: relative; }
+  .actions-menu-btn { background: transparent; color: var(--color-midnight); border: 1px solid var(--color-border); margin: 0; padding: 5px 14px; width: auto; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 15px; cursor: pointer; transition: all 0.2s; }
+  .actions-menu-btn:hover { border-color: var(--color-midnight); background: rgba(25, 65, 76, 0.05); }
+  .actions-dropdown { display: none; position: absolute; top: 100%; right: 0; margin-top: 4px; background: #FFF; border: 1px solid var(--color-border); border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 180px; z-index: 100; }
+  .actions-dropdown.open { display: block; }
+  .actions-dropdown button { display: block; width: 100%; text-align: left; padding: 10px 14px; border: none; background: transparent; font-size: 12px; color: var(--color-trail); cursor: pointer; margin: 0; border-radius: 0; text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .actions-dropdown button:hover { background: #F5F5F5; }
+  .actions-dropdown button:first-child { border-radius: 4px 4px 0 0; }
+  .actions-dropdown button:last-child { border-radius: 0 0 4px 4px; }
+  body.dark-mode .actions-menu-btn { color: #E8E6E1; border-color: #555; }
+  body.dark-mode .actions-menu-btn:hover { border-color: #888; background: rgba(255,255,255,0.05); }
+  body.dark-mode .actions-dropdown { background: #333; border-color: #555; }
+  body.dark-mode .actions-dropdown button { color: #E8E6E1; }
+  body.dark-mode .actions-dropdown button:hover { background: #444; }
+  
+  /* Deceased Badge & Styling */
+  .deceased-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; background: #666; color: #FFF; margin-left: 4px; }
+  .contact-deceased { opacity: 0.6; }
+  .contact-deceased .profile-columns { filter: grayscale(40%); }
+  .contact-deceased #formTitle { color: #888; }
+  body.dark-mode .deceased-badge { background: #555; }
+  body.dark-mode .contact-deceased { opacity: 0.5; }
   .status-success { color: var(--color-cedar); font-weight: 700; font-size: 14px; letter-spacing: 0.5px; }
   .status-error { color: #A00; font-weight: 700; font-size: 13px; } 
 

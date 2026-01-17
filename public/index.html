@@ -47,11 +47,21 @@
             <div style="display:flex; align-items:center; gap:8px;">
               <h2 id="formTitle">Contact</h2>
               <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
+              <span id="deceasedBadge" class="deceased-badge" style="display:none;">DECEASED</span>
             </div>
             <div id="formSubtitle" class="form-subtitle"></div>
             <button type="button" id="contactBackBtn" class="contact-back-btn" onclick="goBackToContact()" style="display:none;">← Back</button>
           </div>
-          <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="actions-menu-wrapper" id="actionsMenuWrapper" style="display:none;">
+              <button type="button" class="actions-menu-btn" onclick="toggleActionsMenu()">Actions</button>
+              <div class="actions-dropdown" id="actionsDropdown">
+                <button type="button" onclick="markAsDeceased()">Mark as Deceased</button>
+                <button type="button" id="undoDeceasedBtn" onclick="undoDeceased()" style="display:none;">Undo Deceased Status</button>
+              </div>
+            </div>
+            <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>
+          </div>
         </div>
 
         <div id="duplicateWarningBox">

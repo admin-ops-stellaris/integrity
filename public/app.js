@@ -1296,6 +1296,14 @@
     renderSpouseSection(f);
     loadConnections(record.id);
     closeOppPanel();
+    
+    // Show Actions menu for existing contacts
+    const actionsMenu = document.getElementById('actionsMenuWrapper');
+    if (actionsMenu) actionsMenu.style.display = 'inline-block';
+    
+    // Apply deceased styling if contact is deceased
+    const isDeceased = f.Deceased === true;
+    applyDeceasedStyling(isDeceased);
   }
   
   // Collapsible section pattern - reusable for any collapsible field groups
@@ -1544,6 +1552,101 @@
   
   function closeAlertModal() {
     closeModal('alertModal');
+  }
+
+  // --- ACTIONS MENU & DECEASED WORKFLOW ---
+  
+  window.toggleActionsMenu = function() {
+    const dropdown = document.getElementById('actionsDropdown');
+    if (dropdown) dropdown.classList.toggle('open');
+  };
+  
+  document.addEventListener('click', function(e) {
+    const wrapper = document.getElementById('actionsMenuWrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      const dropdown = document.getElementById('actionsDropdown');
+      if (dropdown) dropdown.classList.remove('open');
+    }
+  });
+  
+  window.markAsDeceased = function() {
+    if (!currentContactRecord) return;
+    const f = currentContactRecord.fields;
+    const name = formatName(f);
+    
+    const confirmed = confirm(`Are you sure you want to mark ${name} as deceased?\n\nThis will:\n- Set the Deceased flag\n- Unsubscribe them from marketing communications\n\nThis action can be undone later.`);
+    
+    if (!confirmed) {
+      document.getElementById('actionsDropdown').classList.remove('open');
+      return;
+    }
+    
+    document.getElementById('actionsDropdown').classList.remove('open');
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success && result.record) {
+          currentContactRecord = result.record;
+          applyDeceasedStyling(true);
+          showAlert('Contact Marked as Deceased', `${name} has been marked as deceased and unsubscribed from marketing.`, 'success');
+        }
+      })
+      .withFailureHandler(function(err) {
+        showAlert('Error', err.message, 'error');
+      })
+      .markContactDeceased(currentContactRecord.id, true);
+  };
+  
+  window.undoDeceased = function() {
+    if (!currentContactRecord) return;
+    const f = currentContactRecord.fields;
+    const name = formatName(f);
+    
+    const confirmed = confirm(`Are you sure you want to undo the deceased status for ${name}?\n\nNote: This will NOT automatically re-subscribe them to marketing communications.`);
+    
+    if (!confirmed) {
+      document.getElementById('actionsDropdown').classList.remove('open');
+      return;
+    }
+    
+    document.getElementById('actionsDropdown').classList.remove('open');
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success && result.record) {
+          currentContactRecord = result.record;
+          applyDeceasedStyling(false);
+          showAlert('Status Updated', `${name} is no longer marked as deceased.`, 'success');
+        }
+      })
+      .withFailureHandler(function(err) {
+        showAlert('Error', err.message, 'error');
+      })
+      .markContactDeceased(currentContactRecord.id, false);
+  };
+  
+  function applyDeceasedStyling(isDeceased) {
+    const badge = document.getElementById('deceasedBadge');
+    const profileContent = document.getElementById('profileContent');
+    const undoBtn = document.getElementById('undoDeceasedBtn');
+    const markBtn = document.querySelector('#actionsDropdown button:first-child');
+    
+    if (isDeceased) {
+      if (badge) badge.style.display = 'inline-block';
+      if (profileContent) profileContent.classList.add('contact-deceased');
+      if (undoBtn) undoBtn.style.display = 'block';
+      if (markBtn) markBtn.style.display = 'none';
+    } else {
+      if (badge) badge.style.display = 'none';
+      if (profileContent) profileContent.classList.remove('contact-deceased');
+      if (undoBtn) undoBtn.style.display = 'none';
+      if (markBtn) markBtn.style.display = 'block';
+    }
+    
+    // Update unsubscribe display if needed
+    if (currentContactRecord && currentContactRecord.fields) {
+      updateUnsubscribeDisplay(currentContactRecord.fields["Unsubscribed from Marketing"] || false);
+    }
   }
 
   // --- EMAIL COMPOSER ---
@@ -4420,6 +4523,13 @@ Best wishes,
     document.getElementById('spouseHistoryList').innerHTML = "";
     document.getElementById('spouseEditLink').style.display = 'inline';
     document.getElementById('refreshBtn').style.display = 'none';
+    // Hide actions menu and reset deceased styling for new contacts
+    const actionsMenu = document.getElementById('actionsMenuWrapper');
+    if (actionsMenu) actionsMenu.style.display = 'none';
+    const deceasedBadge = document.getElementById('deceasedBadge');
+    if (deceasedBadge) deceasedBadge.style.display = 'none';
+    const profileContent = document.getElementById('profileContent');
+    if (profileContent) profileContent.classList.remove('contact-deceased');
     closeOppPanel();
   }
   function handleSearch(event) {

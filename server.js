@@ -567,6 +567,33 @@ app.post("/api/deleteOpportunity", async (req, res) => {
   }
 });
 
+// ==================== CONTACT ACTIONS ====================
+
+app.post("/api/markContactDeceased", async (req, res) => {
+  try {
+    const [contactId, isDeceased] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    
+    // Update Deceased field (and unsubscribe from marketing if marking as deceased)
+    const updateFields = {
+      'Deceased': isDeceased
+    };
+    if (isDeceased) {
+      updateFields['Unsubscribed from Marketing'] = true;
+    }
+    
+    const record = await airtable.updateContactMultipleFields(contactId, updateFields, userContext);
+    if (!record) {
+      return res.status(500).json({ success: false, error: 'Failed to update contact' });
+    }
+    res.json({ success: true, record });
+  } catch (err) {
+    console.error("markContactDeceased error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ==================== CONNECTIONS ====================
 
 app.post("/api/getConnectionsForContact", async (req, res) => {

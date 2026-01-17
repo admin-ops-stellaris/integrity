@@ -1089,7 +1089,8 @@
     'email3Comment': 'EmailAddress3Comment',
     'notes': 'Notes',
     'gender': 'Gender',
-    'genderOther': 'Gender - Other'
+    'genderOther': 'Gender - Other',
+    'maritalStatus': 'Marital Status'
   };
 
   // Initialize inline editing for contact form
@@ -1254,6 +1255,7 @@
     document.getElementById('gender').value = f.Gender || "";
     // Ensure Gender - Other note value is set (populateNoteFields should handle this, but be explicit)
     document.getElementById('genderOther').value = f["Gender - Other"] || "";
+    document.getElementById('maritalStatus').value = f["Marital Status"] || "";
     updateAllNoteIcons();
     handleGenderChange(); // Show/hide note icon based on gender value
     

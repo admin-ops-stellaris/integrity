@@ -120,6 +120,7 @@
         closeNewOppModal();
         closeShortcutsModal();
         closeDeleteConfirmModal();
+        closeDeceasedConfirmModal();
         closeAlertModal();
         if (document.getElementById('actionRow').style.display === 'flex') disableEditMode();
         return;
@@ -1569,32 +1570,27 @@
     }
   });
   
+  let pendingDeceasedAction = null; // 'mark' or 'undo'
+  
   window.markAsDeceased = function() {
     if (!currentContactRecord) return;
     const f = currentContactRecord.fields;
     const name = formatName(f);
     
-    const confirmed = confirm(`Are you sure you want to mark ${name} as deceased?\n\nThis will:\n- Set the Deceased flag\n- Unsubscribe them from marketing communications\n\nThis action can be undone later.`);
-    
-    if (!confirmed) {
-      document.getElementById('actionsDropdown').classList.remove('open');
-      return;
-    }
-    
     document.getElementById('actionsDropdown').classList.remove('open');
+    pendingDeceasedAction = 'mark';
     
-    google.script.run
-      .withSuccessHandler(function(result) {
-        if (result.success && result.record) {
-          currentContactRecord = result.record;
-          applyDeceasedStyling(true);
-          showAlert('Contact Marked as Deceased', `${name} has been marked as deceased and unsubscribed from marketing.`, 'success');
-        }
-      })
-      .withFailureHandler(function(err) {
-        showAlert('Error', err.message, 'error');
-      })
-      .markContactDeceased(currentContactRecord.id, true);
+    document.getElementById('deceasedModalTitle').innerText = 'Mark as Deceased';
+    document.getElementById('deceasedConfirmMessage').innerHTML = 
+      `Are you sure you want to mark <strong>${name}</strong> as deceased?<br><br>` +
+      `This will:<br>` +
+      `&bull; Set the Deceased flag<br>` +
+      `&bull; Unsubscribe them from marketing communications<br><br>` +
+      `<em>This action can be undone later.</em>`;
+    document.getElementById('deceasedConfirmBtn').innerText = 'Mark as Deceased';
+    document.getElementById('deceasedConfirmBtn').className = 'btn-primary';
+    
+    openModal('deceasedConfirmModal');
   };
   
   window.undoDeceased = function() {
@@ -1602,27 +1598,50 @@
     const f = currentContactRecord.fields;
     const name = formatName(f);
     
-    const confirmed = confirm(`Are you sure you want to undo the deceased status for ${name}?\n\nNote: This will NOT automatically re-subscribe them to marketing communications.`);
-    
-    if (!confirmed) {
-      document.getElementById('actionsDropdown').classList.remove('open');
-      return;
-    }
-    
     document.getElementById('actionsDropdown').classList.remove('open');
+    pendingDeceasedAction = 'undo';
     
-    google.script.run
-      .withSuccessHandler(function(result) {
-        if (result.success && result.record) {
-          currentContactRecord = result.record;
-          applyDeceasedStyling(false);
-          showAlert('Status Updated', `${name} is no longer marked as deceased.`, 'success');
-        }
-      })
-      .withFailureHandler(function(err) {
-        showAlert('Error', err.message, 'error');
-      })
-      .markContactDeceased(currentContactRecord.id, false);
+    document.getElementById('deceasedModalTitle').innerText = 'Undo Deceased Status';
+    document.getElementById('deceasedConfirmMessage').innerHTML = 
+      `Are you sure you want to undo the deceased status for <strong>${name}</strong>?<br><br>` +
+      `<em>Note: This will NOT automatically re-subscribe them to marketing communications.</em>`;
+    document.getElementById('deceasedConfirmBtn').innerText = 'Undo Status';
+    document.getElementById('deceasedConfirmBtn').className = 'btn-primary';
+    
+    openModal('deceasedConfirmModal');
+  };
+  
+  window.closeDeceasedConfirmModal = function() {
+    closeModal('deceasedConfirmModal');
+    pendingDeceasedAction = null;
+  };
+  
+  window.executeMarkDeceased = function() {
+    if (!currentContactRecord || !pendingDeceasedAction) return;
+    const f = currentContactRecord.fields;
+    const name = formatName(f);
+    const isMarking = pendingDeceasedAction === 'mark';
+    
+    closeModal('deceasedConfirmModal', function() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success && result.record) {
+            currentContactRecord = result.record;
+            applyDeceasedStyling(isMarking);
+            if (isMarking) {
+              showAlert('Contact Marked as Deceased', `${name} has been marked as deceased and unsubscribed from marketing.`, 'success');
+            } else {
+              showAlert('Status Updated', `${name} is no longer marked as deceased.`, 'success');
+            }
+          }
+        })
+        .withFailureHandler(function(err) {
+          showAlert('Error', err.message, 'error');
+        })
+        .markContactDeceased(currentContactRecord.id, isMarking);
+    });
+    
+    pendingDeceasedAction = null;
   };
   
   function applyDeceasedStyling(isDeceased) {

@@ -474,6 +474,22 @@
         </div>
       </div>
 
+      <div id="deceasedConfirmModal" class="modal">
+        <div class="modal-content" style="max-width:440px;">
+          <div class="modal-sidebar" style="background:#666;">
+            <span style="font-size:20px; font-weight:600; color:#FFF;">RIP</span>
+          </div>
+          <div class="modal-body">
+            <h3 id="deceasedModalTitle" style="margin-top:0; margin-bottom:15px; font-size:16px;">Mark as Deceased</h3>
+            <p id="deceasedConfirmMessage" style="font-size:13px; color:#666; margin-bottom:20px;"></p>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+              <button type="button" class="btn-cancel" onclick="closeDeceasedConfirmModal()">Cancel</button>
+              <button type="button" id="deceasedConfirmBtn" class="btn-primary" onclick="executeMarkDeceased()">Confirm</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Delete Evidence Item Confirmation Modal -->
       <div id="deleteEvidenceConfirmModal" class="modal" style="z-index:1400;">
         <div class="modal-content" style="max-width:400px;">

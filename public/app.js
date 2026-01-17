@@ -58,37 +58,48 @@
     let lastScrollY = 0;
     let ticking = false;
     const header = document.querySelector('.app-header');
-    const container = document.querySelector('.container');
     
-    if (!header || !container) return;
+    if (!header) return;
     
-    container.addEventListener('scroll', function() {
+    function handleScroll(scrollTop) {
       if (!ticking) {
         window.requestAnimationFrame(function() {
-          const currentScrollY = container.scrollTop;
           const isMobileOrTablet = window.innerWidth <= 1024;
           
           if (isMobileOrTablet) {
-            if (currentScrollY > lastScrollY && currentScrollY > 50) {
-              // Scrolling down - hide header
+            if (scrollTop > lastScrollY && scrollTop > 50) {
               header.classList.add('header-hidden');
             } else {
-              // Scrolling up - show header
               header.classList.remove('header-hidden');
             }
           } else {
-            // Desktop - always show
             header.classList.remove('header-hidden');
           }
           
-          lastScrollY = currentScrollY;
+          lastScrollY = scrollTop;
           ticking = false;
         });
         ticking = true;
       }
+    }
+    
+    // Listen to all scrollable elements
+    const container = document.querySelector('.container');
+    const columns = document.querySelectorAll('.column');
+    
+    if (container) {
+      container.addEventListener('scroll', function() {
+        handleScroll(this.scrollTop);
+      });
+    }
+    
+    columns.forEach(function(col) {
+      col.addEventListener('scroll', function() {
+        handleScroll(this.scrollTop);
+      });
     });
     
-    // Also listen to window resize to reset header visibility
+    // Reset on resize to desktop
     window.addEventListener('resize', function() {
       if (window.innerWidth > 1024) {
         header.classList.remove('header-hidden');

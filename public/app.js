@@ -50,7 +50,51 @@
     initScreensaver();
     initInlineEditing();
     initAllNoteFields();
+    initScrollHeader();
   };
+
+  // --- SCROLL-HIDE HEADER (Mobile/Tablet) ---
+  function initScrollHeader() {
+    let lastScrollY = 0;
+    let ticking = false;
+    const header = document.querySelector('.app-header');
+    const container = document.querySelector('.container');
+    
+    if (!header || !container) return;
+    
+    container.addEventListener('scroll', function() {
+      if (!ticking) {
+        window.requestAnimationFrame(function() {
+          const currentScrollY = container.scrollTop;
+          const isMobileOrTablet = window.innerWidth <= 1024;
+          
+          if (isMobileOrTablet) {
+            if (currentScrollY > lastScrollY && currentScrollY > 50) {
+              // Scrolling down - hide header
+              header.classList.add('header-hidden');
+            } else {
+              // Scrolling up - show header
+              header.classList.remove('header-hidden');
+            }
+          } else {
+            // Desktop - always show
+            header.classList.remove('header-hidden');
+          }
+          
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+    
+    // Also listen to window resize to reset header visibility
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 1024) {
+        header.classList.remove('header-hidden');
+      }
+    });
+  }
 
   // --- KEYBOARD SHORTCUTS ---
   function initKeyboardShortcuts() {

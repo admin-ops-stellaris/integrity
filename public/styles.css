@@ -1301,6 +1301,45 @@
   }
   .breakpoint-indicator::before { content: 'Desktop'; }
 
+  /* Ultra Wide (min-width: 2000px) - Dual monitor / command centre mode */
+  @media (min-width: 2000px) {
+    .breakpoint-indicator::before { content: 'Ultra'; }
+    
+    /* Expand to use full width */
+    .container { max-width: 100%; padding: 25px 40px; gap: 30px; }
+    
+    /* Header gets more breathing room */
+    .app-header { padding: 0 40px; }
+    .header-search-wrapper { flex: 0 0 400px; }
+    
+    /* Contact panel: left half of screen */
+    .column.form-section { 
+      flex: 0 0 calc(50% - 45px); 
+      max-width: calc(50% - 45px);
+    }
+    
+    /* Profile columns get more space */
+    .profile-columns { gap: 35px; }
+    .profile-col-middle, .profile-col-right { padding-left: 35px; }
+    
+    /* Opportunity panel: right half of screen (future: no slide, always visible) */
+    .column.opp-panel-container {
+      flex: 0 0 calc(50% - 45px);
+      max-width: calc(50% - 45px);
+    }
+    
+    /* Modals can be wider in Ultra mode */
+    .modal-content { max-width: 900px; }
+    .evidence-modal-content { max-width: 1200px; }
+    
+    /* Future placeholder zones for AI/Slack/Email panels */
+    .ultra-zone-left, .ultra-zone-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+  }
+
   /* Small Desktop / Tablet Landscape (max-width: 1200px) */
   @media (max-width: 1200px) {
     .container { padding: 15px 20px; gap: 15px; }

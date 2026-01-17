@@ -294,12 +294,16 @@
   body.dark-mode .actions-dropdown button:hover { background: #444; }
   
   /* Deceased Badge & Styling */
-  .deceased-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; background: #666; color: #FFF; margin-left: 4px; }
-  .contact-deceased { opacity: 0.6; }
-  .contact-deceased .profile-columns { filter: grayscale(40%); }
-  .contact-deceased #formTitle { color: #888; }
-  body.dark-mode .deceased-badge { background: #555; }
-  body.dark-mode .contact-deceased { opacity: 0.5; }
+  .deceased-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; background: #888; color: #FFF; margin-left: 8px; vertical-align: middle; }
+  .deceased-badge-small { display: inline-block; padding: 1px 5px; border-radius: 2px; font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; background: #888; color: #FFF; margin-left: 4px; vertical-align: middle; }
+  .contact-deceased .profile-columns { opacity: 0.55; filter: grayscale(50%); }
+  .contact-deceased #formTitle { color: #777; }
+  .contact-deceased .collapsible-title { color: #888; }
+  .contact-deceased .field-group label { color: #999; }
+  .contact-deceased input, .contact-deceased select, .contact-deceased textarea { color: #777 !important; }
+  body.dark-mode .deceased-badge { background: #666; }
+  body.dark-mode .deceased-badge-small { background: #666; }
+  body.dark-mode .contact-deceased .profile-columns { opacity: 0.5; }
   .status-success { color: var(--color-cedar); font-weight: 700; font-size: 14px; letter-spacing: 0.5px; }
   .status-error { color: #A00; font-weight: 700; font-size: 13px; } 
 

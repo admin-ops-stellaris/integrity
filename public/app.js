@@ -1605,7 +1605,8 @@
     document.getElementById('deceasedModalTitle').innerText = 'Undo Deceased Status';
     document.getElementById('deceasedConfirmMessage').innerHTML = 
       `Are you sure you want to undo the deceased status for <strong>${name}</strong>?<br><br>` +
-      `<em>Note: This will NOT automatically re-subscribe them to marketing communications.</em>`;
+      `<strong style="color:#A00;">Important:</strong> This will NOT re-subscribe them to marketing communications.<br><br>` +
+      `If you need to send marketing to this contact, you will need to manually change their marketing preferences afterward.`;
     document.getElementById('deceasedConfirmBtn').innerText = 'Undo Status';
     document.getElementById('deceasedConfirmBtn').className = 'btn-primary';
     
@@ -3445,10 +3446,12 @@ Best wishes,
       const roleClass = getPillRoleClass(conn.myRole);
       const roleLabel = getPillRoleLabel(conn.myRole);
       
+      const deceasedSuffix = conn.otherContactDeceased ? ' (DECEASED)' : '';
       pill.innerHTML = `
         <span class="pill-role ${roleClass}">${roleLabel}</span>
-        <span class="pill-name">${conn.otherContactName || 'Unknown'}</span>
+        <span class="pill-name">${conn.otherContactName || 'Unknown'}${deceasedSuffix}</span>
       `;
+      if (conn.otherContactDeceased) pill.style.opacity = '0.6';
       
       // Click to open connection details modal
       pill.addEventListener('click', function(e) {
@@ -3627,15 +3630,17 @@ Best wishes,
       const showDate = rolesWithDate.includes(role);
       const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
       const hasNote = conn.note && conn.note.trim();
+      const deceasedSuffix = conn.otherContactDeceased ? ' (DECEASED)' : '';
       
       li.innerHTML = `
         <div class="connection-info">
           <span class="connection-role-badge ${badgeClass}">${displayRole}</span>
-          <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
+          <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}${deceasedSuffix}</span>
           ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
         </div>
         <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
       `;
+      if (conn.otherContactDeceased) li.style.opacity = '0.6';
       
       // Note icon click handler - read from data attribute for updated values
       const noteIcon = li.querySelector('.conn-note-icon');
@@ -3711,14 +3716,16 @@ Best wishes,
         
         const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
         const hasNote = conn.note && conn.note.trim();
+        const deceasedSuffix = conn.otherContactDeceased ? ' (DECEASED)' : '';
         
         subLi.innerHTML = `
           <div class="connection-subitem-content">
-            <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
+            <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}${deceasedSuffix}</span>
             ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
           </div>
           <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
         `;
+        if (conn.otherContactDeceased) subLi.style.opacity = '0.6';
         
         // Note icon click handler - read from data attribute for updated values
         const noteIcon = subLi.querySelector('.conn-note-icon');
@@ -4613,7 +4620,10 @@ Best wishes,
       const avatarColor = getAvatarColor(fullName);
       const modifiedTooltip = formatModifiedTooltip(f);
       const modifiedShort = formatModifiedShort(f);
-      item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>${modifiedShort ? `<span class="contact-modified" title="${modifiedTooltip || ''}">${modifiedShort}</span>` : ''}`;
+      const isDeceased = f.Deceased === true;
+      const deceasedBadge = isDeceased ? '<span class="deceased-badge-small">DECEASED</span>' : '';
+      item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}${deceasedBadge}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>${modifiedShort ? `<span class="contact-modified" title="${modifiedTooltip || ''}">${modifiedShort}</span>` : ''}`;
+      if (isDeceased) item.style.opacity = '0.6';
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
     // Re-apply highlight if one was preserved

@@ -638,12 +638,15 @@ export async function getConnectionsForContact(contactId, bypassCache = false) {
       const contactFormula = `OR(${[...otherContactIds].map(id => `RECORD_ID()='${id}'`).join(',')})`;
       const contactRecords = await base("Contacts").select({
         filterByFormula: contactFormula,
-        fields: ["FirstName", "MiddleName", "LastName", "Calculated Name"]
+        fields: ["FirstName", "MiddleName", "LastName", "Calculated Name", "Deceased"]
       }).all();
       contactRecords.forEach(c => {
         const cf = c.fields;
-        contactsMap[c.id] = cf["Calculated Name"] || 
-          `${cf.FirstName || ''} ${cf.MiddleName || ''} ${cf.LastName || ''}`.replace(/\s+/g, ' ').trim();
+        contactsMap[c.id] = {
+          name: cf["Calculated Name"] || 
+            `${cf.FirstName || ''} ${cf.MiddleName || ''} ${cf.LastName || ''}`.replace(/\s+/g, ' ').trim(),
+          deceased: cf["Deceased"] === true
+        };
       });
     }
     
@@ -676,9 +679,9 @@ export async function getConnectionsForContact(contactId, bypassCache = false) {
       const theirRole = isContact1 ? f["Record2Role"] : f["Record1Role"];
       
       // Use batch-fetched contact name or fallback
-      const displayName = otherContactId && contactsMap[otherContactId] 
-        ? contactsMap[otherContactId] 
-        : fallbackName;
+      const contactInfo = otherContactId && contactsMap[otherContactId];
+      const displayName = contactInfo ? contactInfo.name : fallbackName;
+      const otherContactDeceased = contactInfo ? contactInfo.deceased : false;
       
       // Get user names from batch-fetched Users
       const createdById = (f["Created By"] || [])[0];
@@ -690,6 +693,7 @@ export async function getConnectionsForContact(contactId, bypassCache = false) {
         id: record.id,
         otherContactId: otherContactId || null,
         otherContactName: displayName,
+        otherContactDeceased: otherContactDeceased,
         myRole: myRole,
         theirRole: theirRole,
         status: f["Status"] || "Active",

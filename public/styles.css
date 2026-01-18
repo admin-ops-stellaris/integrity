@@ -1327,6 +1327,35 @@
   body.dark-mode .evidence-btn-secondary:hover { background: #333; }
 
   /* ========================================
+     ADDRESS HISTORY STYLES
+     ======================================== */
+  .address-history-list { max-height: 140px; overflow-y: auto; transition: max-height 0.3s ease; }
+  .address-history-list.expanded { max-height: none; }
+  .address-item { background: #FFF; padding: 10px 12px; margin-bottom: 6px; border-radius: 4px; border: 1px solid #E0E0E0; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .address-item:hover { background: #F9F9F9; border-color: var(--color-star); }
+  .address-item.is-current { border-left: 3px solid var(--color-cedar); background: rgba(123, 139, 100, 0.05); }
+  .address-item.is-postal { border-left: 3px solid var(--color-sky); background: rgba(208, 223, 230, 0.1); }
+  .address-name { font-weight: 400; color: var(--color-trail); line-height: 1.4; margin-bottom: 6px; }
+  .address-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .address-status-badge { font-size: 9px; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; font-weight: 600; background: var(--color-sky); color: var(--color-midnight); }
+  .address-date-range { font-size: 11px; color: #888; }
+  .address-postal-badge { font-size: 8px; text-transform: uppercase; padding: 2px 5px; border-radius: 3px; font-weight: 600; background: var(--color-sky); color: var(--color-midnight); }
+  .address-expand-link { font-size: 11px; color: var(--color-star); cursor: pointer; margin-top: 8px; display: inline-block; }
+  .address-expand-link:hover { text-decoration: underline; }
+  .btn-add-small { padding: 6px 12px; font-size: 11px; background: var(--color-cedar); color: #FFF; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; }
+  .btn-add-small:hover { background: #6a7a56; }
+  .btn-add-small.btn-secondary { background: transparent; color: var(--color-star); border: 1px solid var(--color-star); }
+  .btn-add-small.btn-secondary:hover { background: rgba(187, 153, 52, 0.1); }
+  .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background: #888; color: #FFF; font-size: 10px; font-weight: 700; cursor: help; margin-left: 4px; }
+  body.dark-mode .address-item { background: #333; border-color: #444; }
+  body.dark-mode .address-item:hover { background: #3a3a3a; }
+  body.dark-mode .address-name { color: #E8E6E1; }
+  .postal-copy-item { padding: 10px 12px; margin-bottom: 6px; border-radius: 4px; border: 1px solid #E0E0E0; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+  .postal-copy-item:hover { background: rgba(187, 153, 52, 0.1); border-color: var(--color-star); }
+  body.dark-mode .postal-copy-item { background: #333; border-color: #444; }
+  body.dark-mode .postal-copy-item:hover { background: #3a3a3a; }
+
+  /* ========================================
      RESPONSIVE BREAKPOINTS
      ======================================== */
 

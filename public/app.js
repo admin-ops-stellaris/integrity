@@ -1302,6 +1302,7 @@
     loadOpportunities(f);
     renderSpouseSection(f);
     loadConnections(record.id);
+    loadAddressHistory(record.id);
     closeOppPanel();
     
     // Show Actions menu for existing contacts
@@ -6143,6 +6144,355 @@ Best wishes,
       })
       .deleteAppointment(appointmentId);
   }
+
+  // ==================== ADDRESS HISTORY SYSTEM ====================
+  let currentContactAddresses = [];
+  let editingAddressId = null;
+  
+  function loadAddressHistory(contactId) {
+    const container = document.getElementById('addressHistoryList');
+    if (!container || !contactId) return;
+    
+    container.innerHTML = '<div style="padding:10px; color:#888; font-size:12px;">Loading addresses...</div>';
+    
+    google.script.run
+      .withSuccessHandler(function(addresses) {
+        currentContactAddresses = addresses || [];
+        renderAddressHistory();
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error loading addresses:', err);
+        container.innerHTML = '<div style="padding:10px; color:#A00; font-size:12px;">Error loading addresses</div>';
+      })
+      .getAddressesForContact(contactId);
+  }
+  
+  function renderAddressHistory() {
+    const container = document.getElementById('addressHistoryList');
+    if (!container) return;
+    
+    if (currentContactAddresses.length === 0) {
+      container.innerHTML = '<div style="padding:10px; color:#888; font-size:12px; font-style:italic;">No addresses recorded</div>';
+      return;
+    }
+    
+    // Separate residential and postal addresses
+    const residential = currentContactAddresses.filter(a => !a.isPostal);
+    const postal = currentContactAddresses.filter(a => a.isPostal);
+    
+    let html = '';
+    
+    // Render residential addresses
+    residential.forEach((addr, idx) => {
+      const isCurrent = !addr.to;
+      const dateRange = formatAddressDateRange(addr.from, addr.to);
+      html += `
+        <div class="address-item${isCurrent ? ' is-current' : ''}" onclick="editAddress('${addr.id}')">
+          <div class="address-name">${escapeHtml(addr.calculatedName) || 'No address'}</div>
+          <div class="address-meta-row">
+            ${addr.status ? `<span class="address-status-badge">${escapeHtml(addr.status)}</span>` : ''}
+            <span class="address-date-range">${dateRange}</span>
+          </div>
+        </div>
+      `;
+    });
+    
+    // Render postal addresses
+    postal.forEach(addr => {
+      html += `
+        <div class="address-item is-postal" onclick="editAddress('${addr.id}')">
+          <div class="address-name">${escapeHtml(addr.calculatedName) || 'No address'}</div>
+          <div class="address-meta-row">
+            <span class="address-postal-badge">POSTAL</span>
+            ${addr.status ? `<span class="address-status-badge">${escapeHtml(addr.status)}</span>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    
+    // Add expand/collapse if more than 2 addresses
+    const totalAddresses = currentContactAddresses.length;
+    if (totalAddresses > 2) {
+      const isExpanded = container.classList.contains('expanded');
+      html += `<span class="address-expand-link" onclick="toggleAddressExpand(event)">${isExpanded ? 'Show less' : `Show all ${totalAddresses} addresses`}</span>`;
+    }
+    
+    container.innerHTML = html;
+  }
+  
+  function formatAddressDateRange(from, to) {
+    const fromStr = from ? formatDateDisplay(from) : '?';
+    const toStr = to ? formatDateDisplay(to) : 'Present';
+    return `${fromStr} - ${toStr}`;
+  }
+  
+  function formatDateDisplay(isoDate) {
+    if (!isoDate) return '';
+    const parts = isoDate.split('-');
+    if (parts.length !== 3) return isoDate;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  
+  function parseDateInput(value) {
+    // Convert DD/MM/YYYY to YYYY-MM-DD for Airtable
+    if (!value) return null;
+    const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (match) {
+      return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+    }
+    return value; // Return as-is if already ISO format
+  }
+  
+  window.toggleAddressExpand = function(event) {
+    event.stopPropagation();
+    const container = document.getElementById('addressHistoryList');
+    container.classList.toggle('expanded');
+    renderAddressHistory();
+  };
+  
+  window.openAddressModal = function(isPostal = false) {
+    const recordId = state.getRecordId();
+    if (!recordId) {
+      alert('Please save the contact first');
+      return;
+    }
+    
+    editingAddressId = null;
+    document.getElementById('addressFormId').value = '';
+    document.getElementById('addressFormIsPostal').value = isPostal ? 'true' : 'false';
+    document.getElementById('addressFormTitle').textContent = isPostal ? 'Add Postal Address' : 'Add Address';
+    document.getElementById('addressDeleteBtn').style.display = 'none';
+    
+    // Reset form fields
+    document.querySelector('input[name="addressFormat"][value="Standard"]').checked = true;
+    document.getElementById('addressFloor').value = '';
+    document.getElementById('addressBuilding').value = '';
+    document.getElementById('addressUnit').value = '';
+    document.getElementById('addressStreetNo').value = '';
+    document.getElementById('addressStreetName').value = '';
+    document.getElementById('addressStreetType').value = '';
+    document.getElementById('addressCity').value = '';
+    document.getElementById('addressState').value = '';
+    document.getElementById('addressPostcode').value = '';
+    document.getElementById('addressCountry').value = 'Australia';
+    document.getElementById('addressLabel').value = '';
+    document.getElementById('addressStatus').value = '';
+    document.getElementById('addressFrom').value = '';
+    document.getElementById('addressTo').value = '';
+    
+    updateAddressFormatFields();
+    
+    const modal = document.getElementById('addressFormModal');
+    modal.style.display = 'flex';
+  };
+  
+  window.openPostalAddressModal = function() {
+    // Check if there are existing residential addresses to copy from
+    const residential = currentContactAddresses.filter(a => !a.isPostal);
+    
+    if (residential.length === 0) {
+      // No addresses to copy from, open new postal address form directly
+      openAddressModal(true);
+      return;
+    }
+    
+    // Show copy selection modal
+    const listContainer = document.getElementById('postalAddressCopyList');
+    let html = '';
+    residential.forEach(addr => {
+      html += `
+        <div class="postal-copy-item" onclick="copyAddressAsPostal('${addr.id}')">
+          ${escapeHtml(addr.calculatedName) || 'No address'}
+        </div>
+      `;
+    });
+    listContainer.innerHTML = html;
+    
+    document.getElementById('postalAddressCopyModal').style.display = 'flex';
+  };
+  
+  window.closePostalCopyModal = function() {
+    document.getElementById('postalAddressCopyModal').style.display = 'none';
+  };
+  
+  window.openPostalAddressNew = function() {
+    closePostalCopyModal();
+    openAddressModal(true);
+  };
+  
+  window.copyAddressAsPostal = function(addressId) {
+    closePostalCopyModal();
+    
+    const addr = currentContactAddresses.find(a => a.id === addressId);
+    if (!addr) {
+      openAddressModal(true);
+      return;
+    }
+    
+    // Open modal pre-filled with copied address data
+    editingAddressId = null;
+    document.getElementById('addressFormId').value = '';
+    document.getElementById('addressFormIsPostal').value = 'true';
+    document.getElementById('addressFormTitle').textContent = 'Add Postal Address';
+    document.getElementById('addressDeleteBtn').style.display = 'none';
+    
+    // Fill form with copied data
+    const formatRadio = document.querySelector(`input[name="addressFormat"][value="${addr.format || 'Standard'}"]`);
+    if (formatRadio) formatRadio.checked = true;
+    
+    document.getElementById('addressFloor').value = addr.floor || '';
+    document.getElementById('addressBuilding').value = addr.building || '';
+    document.getElementById('addressUnit').value = addr.unit || '';
+    document.getElementById('addressStreetNo').value = addr.streetNo || '';
+    document.getElementById('addressStreetName').value = addr.streetName || '';
+    document.getElementById('addressStreetType').value = addr.streetType || '';
+    document.getElementById('addressCity').value = addr.city || '';
+    document.getElementById('addressState').value = addr.state || '';
+    document.getElementById('addressPostcode').value = addr.postcode || '';
+    document.getElementById('addressCountry').value = addr.country || 'Australia';
+    document.getElementById('addressLabel').value = addr.label || '';
+    document.getElementById('addressStatus').value = ''; // Don't copy status
+    document.getElementById('addressFrom').value = ''; // Don't copy dates
+    document.getElementById('addressTo').value = '';
+    
+    updateAddressFormatFields();
+    
+    document.getElementById('addressFormModal').style.display = 'flex';
+  };
+  
+  window.editAddress = function(addressId) {
+    const addr = currentContactAddresses.find(a => a.id === addressId);
+    if (!addr) return;
+    
+    editingAddressId = addressId;
+    document.getElementById('addressFormId').value = addressId;
+    document.getElementById('addressFormIsPostal').value = addr.isPostal ? 'true' : 'false';
+    document.getElementById('addressFormTitle').textContent = 'Edit Address';
+    document.getElementById('addressDeleteBtn').style.display = 'block';
+    
+    // Fill form
+    const formatRadio = document.querySelector(`input[name="addressFormat"][value="${addr.format || 'Standard'}"]`);
+    if (formatRadio) formatRadio.checked = true;
+    
+    document.getElementById('addressFloor').value = addr.floor || '';
+    document.getElementById('addressBuilding').value = addr.building || '';
+    document.getElementById('addressUnit').value = addr.unit || '';
+    document.getElementById('addressStreetNo').value = addr.streetNo || '';
+    document.getElementById('addressStreetName').value = addr.streetName || '';
+    document.getElementById('addressStreetType').value = addr.streetType || '';
+    document.getElementById('addressCity').value = addr.city || '';
+    document.getElementById('addressState').value = addr.state || '';
+    document.getElementById('addressPostcode').value = addr.postcode || '';
+    document.getElementById('addressCountry').value = addr.country || 'Australia';
+    document.getElementById('addressLabel').value = addr.label || '';
+    document.getElementById('addressStatus').value = addr.status || '';
+    document.getElementById('addressFrom').value = addr.from ? formatDateDisplay(addr.from) : '';
+    document.getElementById('addressTo').value = addr.to ? formatDateDisplay(addr.to) : '';
+    
+    updateAddressFormatFields();
+    
+    document.getElementById('addressFormModal').style.display = 'flex';
+  };
+  
+  window.closeAddressForm = function() {
+    document.getElementById('addressFormModal').style.display = 'none';
+    editingAddressId = null;
+  };
+  
+  window.updateAddressFormatFields = function() {
+    const format = document.querySelector('input[name="addressFormat"]:checked')?.value || 'Standard';
+    
+    document.getElementById('addressNonStandardFields').style.display = format === 'Non-Standard' ? 'block' : 'none';
+    document.getElementById('addressPOBoxFields').style.display = format === 'PO Box' ? 'block' : 'none';
+    document.getElementById('addressStreetFields').style.display = format === 'PO Box' ? 'none' : 'block';
+  };
+  
+  window.saveAddress = function() {
+    const recordId = state.getRecordId();
+    if (!recordId) {
+      alert('Please save the contact first');
+      return;
+    }
+    
+    const format = document.querySelector('input[name="addressFormat"]:checked')?.value || 'Standard';
+    const isPostal = document.getElementById('addressFormIsPostal').value === 'true';
+    
+    const fields = {
+      format: format,
+      floor: document.getElementById('addressFloor').value,
+      building: document.getElementById('addressBuilding').value,
+      unit: document.getElementById('addressUnit').value,
+      streetNo: document.getElementById('addressStreetNo').value,
+      streetName: document.getElementById('addressStreetName').value,
+      streetType: document.getElementById('addressStreetType').value,
+      city: document.getElementById('addressCity').value,
+      state: document.getElementById('addressState').value,
+      postcode: document.getElementById('addressPostcode').value,
+      country: document.getElementById('addressCountry').value,
+      label: document.getElementById('addressLabel').value,
+      status: document.getElementById('addressStatus').value,
+      from: parseDateInput(document.getElementById('addressFrom').value),
+      to: parseDateInput(document.getElementById('addressTo').value),
+      isPostal: isPostal
+    };
+    
+    if (editingAddressId) {
+      // Update existing address
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            closeAddressForm();
+            loadAddressHistory(recordId);
+          } else {
+            alert('Error saving address: ' + (result.error || 'Unknown error'));
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error updating address:', err);
+          alert('Error saving address: ' + (err.message || err));
+        })
+        .updateAddress(editingAddressId, fields);
+    } else {
+      // Create new address
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            closeAddressForm();
+            loadAddressHistory(recordId);
+          } else {
+            alert('Error creating address: ' + (result.error || 'Unknown error'));
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error creating address:', err);
+          alert('Error creating address: ' + (err.message || err));
+        })
+        .createAddress(recordId, fields);
+    }
+  };
+  
+  window.deleteAddress = function() {
+    if (!editingAddressId) return;
+    
+    if (!confirm('Are you sure you want to delete this address?')) return;
+    
+    const recordId = state.getRecordId();
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          closeAddressForm();
+          loadAddressHistory(recordId);
+        } else {
+          alert('Error deleting address: ' + (result.error || 'Unknown error'));
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error deleting address:', err);
+        alert('Error deleting address: ' + (err.message || err));
+      })
+      .deleteAddress(editingAddressId);
+  };
 
   // ==================== EVIDENCE MODAL SYSTEM ====================
   let currentEvidenceOpportunityId = null;

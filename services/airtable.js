@@ -1785,7 +1785,7 @@ function formatAddressRecord(record) {
     from: f["From"] || null,
     to: f["To"] || null,
     isPostal: f["Is Postal"] || false,
-    contactId: Array.isArray(f["BACK-LINK: Contacts: Addresses"]) ? f["BACK-LINK: Contacts: Addresses"][0] : f["BACK-LINK: Contacts: Addresses"] || null
+    contactId: Array.isArray(f["BACK-LINK: Contacts: Address History"]) ? f["BACK-LINK: Contacts: Address History"][0] : f["BACK-LINK: Contacts: Address History"] || null
   };
 }
 
@@ -1799,7 +1799,7 @@ export async function getAddressesForContact(contactId) {
     
     // Filter to only addresses linked to this contact
     const records = allRecords.filter(r => {
-      const contactIds = r.fields["BACK-LINK: Contacts: Addresses"] || [];
+      const contactIds = r.fields["BACK-LINK: Contacts: Address History"] || [];
       return contactIds.includes(contactId);
     });
     
@@ -1841,7 +1841,7 @@ export async function createAddress(contactId, fields, userContext = null) {
   
   try {
     const createFields = {
-      "BACK-LINK: Contacts: Addresses": [contactId],
+      "BACK-LINK: Contacts: Address History": [contactId],
       "Format": fields.format || "Standard",
       "Country": fields.country || "Australia"
     };

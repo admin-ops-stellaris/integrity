@@ -1785,7 +1785,7 @@ function formatAddressRecord(record) {
     from: f["From"] || null,
     to: f["To"] || null,
     isPostal: f["Is Postal"] || false,
-    contactId: Array.isArray(f["Contact"]) ? f["Contact"][0] : f["Contact"] || null
+    contactId: Array.isArray(f["Contacts"]) ? f["Contacts"][0] : f["Contacts"] || null
   };
 }
 
@@ -1799,7 +1799,7 @@ export async function getAddressesForContact(contactId) {
     
     // Filter to only addresses linked to this contact
     const records = allRecords.filter(r => {
-      const contactIds = r.fields["Contact"] || [];
+      const contactIds = r.fields["Contacts"] || [];
       return contactIds.includes(contactId);
     });
     
@@ -1841,7 +1841,7 @@ export async function createAddress(contactId, fields, userContext = null) {
   
   try {
     const createFields = {
-      "Contact": [contactId],
+      "Contacts": [contactId],
       "Format": fields.format || "Standard",
       "Country": fields.country || "Australia"
     };

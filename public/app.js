@@ -6258,39 +6258,44 @@ Best wishes,
   };
   
   window.openAddressModal = function(isPostal = false) {
-    const recordId = currentContactRecord?.id;
-    if (!recordId) {
-      alert('Please save the contact first');
-      return;
+    try {
+      const recordId = currentContactRecord?.id;
+      if (!recordId) {
+        alert('Please save the contact first');
+        return;
+      }
+      
+      editingAddressId = null;
+      document.getElementById('addressFormId').value = '';
+      document.getElementById('addressFormIsPostal').value = isPostal ? 'true' : 'false';
+      document.getElementById('addressFormTitle').textContent = isPostal ? 'Add Postal Address' : 'Add Address';
+      document.getElementById('addressDeleteBtn').style.display = 'none';
+      
+      // Reset form fields
+      document.querySelector('input[name="addressFormat"][value="Standard"]').checked = true;
+      document.getElementById('addressFloor').value = '';
+      document.getElementById('addressBuilding').value = '';
+      document.getElementById('addressUnit').value = '';
+      document.getElementById('addressStreetNo').value = '';
+      document.getElementById('addressStreetName').value = '';
+      document.getElementById('addressStreetType').value = '';
+      document.getElementById('addressCity').value = '';
+      document.getElementById('addressState').value = '';
+      document.getElementById('addressPostcode').value = '';
+      document.getElementById('addressCountry').value = 'Australia';
+      document.getElementById('addressLabel').value = '';
+      document.getElementById('addressStatus').value = '';
+      document.getElementById('addressFrom').value = '';
+      document.getElementById('addressTo').value = '';
+      
+      updateAddressFormatFields();
+      
+      const modal = document.getElementById('addressFormModal');
+      modal.style.display = 'flex';
+    } catch (err) {
+      alert('Error in openAddressModal: ' + err.message);
+      console.error('openAddressModal error:', err);
     }
-    
-    editingAddressId = null;
-    document.getElementById('addressFormId').value = '';
-    document.getElementById('addressFormIsPostal').value = isPostal ? 'true' : 'false';
-    document.getElementById('addressFormTitle').textContent = isPostal ? 'Add Postal Address' : 'Add Address';
-    document.getElementById('addressDeleteBtn').style.display = 'none';
-    
-    // Reset form fields
-    document.querySelector('input[name="addressFormat"][value="Standard"]').checked = true;
-    document.getElementById('addressFloor').value = '';
-    document.getElementById('addressBuilding').value = '';
-    document.getElementById('addressUnit').value = '';
-    document.getElementById('addressStreetNo').value = '';
-    document.getElementById('addressStreetName').value = '';
-    document.getElementById('addressStreetType').value = '';
-    document.getElementById('addressCity').value = '';
-    document.getElementById('addressState').value = '';
-    document.getElementById('addressPostcode').value = '';
-    document.getElementById('addressCountry').value = 'Australia';
-    document.getElementById('addressLabel').value = '';
-    document.getElementById('addressStatus').value = '';
-    document.getElementById('addressFrom').value = '';
-    document.getElementById('addressTo').value = '';
-    
-    updateAddressFormatFields();
-    
-    const modal = document.getElementById('addressFormModal');
-    modal.style.display = 'flex';
   };
   
   window.openPostalAddressModal = function() {

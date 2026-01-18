@@ -3905,6 +3905,13 @@ Best wishes,
     return str.replace(/'/g, "&#39;").replace(/"/g, '&quot;');
   }
   
+  function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+  
   function unescapeHtml(str) {
     if (!str) return '';
     return str.replace(/&#39;/g, "'").replace(/&quot;/g, '"');

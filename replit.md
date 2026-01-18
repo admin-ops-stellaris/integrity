@@ -36,6 +36,7 @@ Integrity is built on a Node.js/Express backend, serving a static frontend.
     - **Opportunity Management**: Creation, updating, and deletion of opportunities with extensive fields, user tracking, and audit trails. Integration with Taco data for streamlined opportunity creation.
     - **Appointment Management**: Dedicated Appointments table linked to Opportunities. Full CRUD operations with fields: Appointment Time, Type (Office/Phone/Video), How Booked (Calendly/Email/Phone/Podium/Other), Phone Number, Video Meet URL, checkboxes for evidence/reminder needs, appointment status, and notes. Appointments section displays in the Opportunity panel with Add/Edit/Delete functionality.
     - **Evidence & Data Collection**: Full-screen modal system for managing loan application evidence requirements. Features include: 4 Airtable tables (Evidence Categories, Evidence Templates, Lender Evidence Rules, Evidence Items), category-based organization (Identification, Income, Assets, Liabilities, etc.), status tracking (Outstanding/Received/N/A), progress bar with percentage completion, email generation for Initial/Subsequent requests with automatic "Requested On/By" tracking, custom item creation, clipboard copy, and lender-specific rules support. Evidence button appears in Opportunity panel next to Add Appointment.
+    - **Address History**: Comprehensive address tracking linked to contacts. Features include: format-aware fields (Standard/Non-Standard/PO Box), residential and postal address support, date range tracking (From/To), status field, copy functionality for postal addresses, and sorting (current addresses first, then by To date descending). Addresses table includes fields: Format, Floor, Building, Unit, Street No, Street Name, Street Type, City, State, Postcode, Country, Label, Status, From, To, Is Postal, Contact, CalculatedName. Tooltips direct users to admin for adding new Street Types/Countries to Airtable.
     - **Email Integration**: Sending emails via Gmail API with support for HTML formatting, dynamic templates, and signature generation. Emails appear in the user's Sent folder.
     - **Settings Management**: Team-wide configurations, such as email links and signature templates, are stored in Airtable and accessible via a global settings modal.
 - **System Design Choices**:
@@ -44,7 +45,7 @@ Integrity is built on a Node.js/Express backend, serving a static frontend.
     - All core business logic and data interactions are channeled through `services/airtable.js` and `services/gmail.js` for modularity.
 
 ## External Dependencies
-- **Airtable**: Primary database for storing Contacts, Opportunities, Spouse History, Spouse History Log, Connections, Users, and Settings. Utilizes the official Airtable SDK.
+- **Airtable**: Primary database for storing Contacts, Opportunities, Spouse History, Spouse History Log, Connections, Addresses, Users, and Settings. Utilizes the official Airtable SDK.
 - **Google OAuth 2.0**: For user authentication and authorization, restricting access to a specific Google Workspace domain.
 - **Gmail API**: Integrated for sending emails directly from the application, including rich text and dynamic content.
 - **Quill.js**: WYSIWYG editor used for rich text email composition.

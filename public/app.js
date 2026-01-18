@@ -6258,7 +6258,7 @@ Best wishes,
   };
   
   window.openAddressModal = function(isPostal = false) {
-    const recordId = state.getRecordId();
+    const recordId = currentContactRecord?.id;
     if (!recordId) {
       alert('Please save the contact first');
       return;
@@ -6415,7 +6415,7 @@ Best wishes,
   };
   
   window.saveAddress = function() {
-    const recordId = state.getRecordId();
+    const recordId = currentContactRecord?.id;
     if (!recordId) {
       alert('Please save the contact first');
       return;
@@ -6483,7 +6483,7 @@ Best wishes,
     
     if (!confirm('Are you sure you want to delete this address?')) return;
     
-    const recordId = state.getRecordId();
+    const recordId = currentContactRecord?.id;
     
     google.script.run
       .withSuccessHandler(function(result) {

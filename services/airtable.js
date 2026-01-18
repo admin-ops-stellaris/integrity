@@ -1761,3 +1761,177 @@ export async function deleteEvidenceTemplate(templateId) {
     return { success: false, error: err.message };
   }
 }
+
+// ==================== ADDRESS FUNCTIONS ====================
+
+function formatAddressRecord(record) {
+  const f = record.fields || {};
+  return {
+    id: record.id,
+    calculatedName: f["CalculatedName"] || "",
+    format: f["Format"] || "Standard",
+    floor: f["Floor"] || "",
+    building: f["Building"] || "",
+    unit: f["Unit"] || "",
+    streetNo: f["Street No"] || "",
+    streetName: f["Street Name"] || "",
+    streetType: f["Street Type"] || "",
+    city: f["City"] || "",
+    state: f["State"] || "",
+    postcode: f["Postcode"] || "",
+    country: f["Country"] || "Australia",
+    label: f["Label"] || "",
+    status: f["Status"] || "",
+    from: f["From"] || null,
+    to: f["To"] || null,
+    isPostal: f["Is Postal"] || false,
+    contactId: Array.isArray(f["Contact"]) ? f["Contact"][0] : f["Contact"] || null
+  };
+}
+
+export async function getAddressesForContact(contactId) {
+  if (!base || !contactId) return [];
+  
+  try {
+    const allRecords = await base("Addresses")
+      .select({})
+      .all();
+    
+    // Filter to only addresses linked to this contact
+    const records = allRecords.filter(r => {
+      const contactIds = r.fields["Contact"] || [];
+      return contactIds.includes(contactId);
+    });
+    
+    // Sort: current addresses (no To date) first, then by To date descending
+    const formatted = records.map(formatAddressRecord);
+    formatted.sort((a, b) => {
+      // Current addresses (no To date) come first
+      if (!a.to && b.to) return -1;
+      if (a.to && !b.to) return 1;
+      if (!a.to && !b.to) {
+        // Both current - sort by From date descending
+        return (b.from || "").localeCompare(a.from || "");
+      }
+      // Both have To dates - sort by To date descending (newest first)
+      return (b.to || "").localeCompare(a.to || "");
+    });
+    
+    return formatted;
+  } catch (err) {
+    console.error("getAddressesForContact error:", err.message);
+    return [];
+  }
+}
+
+export async function getAddressById(addressId) {
+  if (!base || !addressId) return null;
+  
+  try {
+    const record = await base("Addresses").find(addressId);
+    return formatAddressRecord(record);
+  } catch (err) {
+    console.error("getAddressById error:", err.message);
+    return null;
+  }
+}
+
+export async function createAddress(contactId, fields, userContext = null) {
+  if (!base || !contactId) return { success: false, error: "Missing contact ID" };
+  
+  try {
+    const createFields = {
+      "Contact": [contactId],
+      "Format": fields.format || "Standard",
+      "Country": fields.country || "Australia"
+    };
+    
+    // Add optional fields
+    if (fields.floor) createFields["Floor"] = fields.floor;
+    if (fields.building) createFields["Building"] = fields.building;
+    if (fields.unit) createFields["Unit"] = fields.unit;
+    if (fields.streetNo) createFields["Street No"] = fields.streetNo;
+    if (fields.streetName) createFields["Street Name"] = fields.streetName;
+    if (fields.streetType) createFields["Street Type"] = fields.streetType;
+    if (fields.city) createFields["City"] = fields.city;
+    if (fields.state) createFields["State"] = fields.state;
+    if (fields.postcode) createFields["Postcode"] = fields.postcode;
+    if (fields.label) createFields["Label"] = fields.label;
+    if (fields.status) createFields["Status"] = fields.status;
+    if (fields.from) createFields["From"] = fields.from;
+    if (fields.to) createFields["To"] = fields.to;
+    if (fields.isPostal !== undefined) createFields["Is Postal"] = fields.isPostal;
+    
+    const record = await base("Addresses").create(createFields);
+    
+    // Mark contact as modified
+    if (userContext) {
+      await markContactModified(contactId, userContext);
+    }
+    
+    return { success: true, id: record.id, address: formatAddressRecord(record) };
+  } catch (err) {
+    console.error("createAddress error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateAddress(addressId, fields, userContext = null) {
+  if (!base || !addressId) return { success: false, error: "Missing address ID" };
+  
+  try {
+    const updateFields = {};
+    
+    if (fields.format !== undefined) updateFields["Format"] = fields.format;
+    if (fields.floor !== undefined) updateFields["Floor"] = fields.floor;
+    if (fields.building !== undefined) updateFields["Building"] = fields.building;
+    if (fields.unit !== undefined) updateFields["Unit"] = fields.unit;
+    if (fields.streetNo !== undefined) updateFields["Street No"] = fields.streetNo;
+    if (fields.streetName !== undefined) updateFields["Street Name"] = fields.streetName;
+    if (fields.streetType !== undefined) updateFields["Street Type"] = fields.streetType;
+    if (fields.city !== undefined) updateFields["City"] = fields.city;
+    if (fields.state !== undefined) updateFields["State"] = fields.state;
+    if (fields.postcode !== undefined) updateFields["Postcode"] = fields.postcode;
+    if (fields.country !== undefined) updateFields["Country"] = fields.country;
+    if (fields.label !== undefined) updateFields["Label"] = fields.label;
+    if (fields.status !== undefined) updateFields["Status"] = fields.status;
+    if (fields.from !== undefined) updateFields["From"] = fields.from || null;
+    if (fields.to !== undefined) updateFields["To"] = fields.to || null;
+    if (fields.isPostal !== undefined) updateFields["Is Postal"] = fields.isPostal;
+    
+    const record = await base("Addresses").update(addressId, updateFields);
+    
+    // Mark contact as modified
+    const contactId = Array.isArray(record.fields["Contact"]) ? record.fields["Contact"][0] : null;
+    if (userContext && contactId) {
+      await markContactModified(contactId, userContext);
+    }
+    
+    return { success: true, address: formatAddressRecord(record) };
+  } catch (err) {
+    console.error("updateAddress error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteAddress(addressId, userContext = null) {
+  if (!base || !addressId) return { success: false, error: "Missing address ID" };
+  
+  try {
+    // Get contact ID before deleting
+    const record = await base("Addresses").find(addressId);
+    const contactId = Array.isArray(record.fields["Contact"]) ? record.fields["Contact"][0] : null;
+    
+    await base("Addresses").destroy(addressId);
+    
+    // Mark contact as modified
+    if (userContext && contactId) {
+      await markContactModified(contactId, userContext);
+    }
+    
+    return { success: true };
+  } catch (err) {
+    console.error("deleteAddress error:", err.message);
+    return { success: false, error: err.message };
+  }
+}

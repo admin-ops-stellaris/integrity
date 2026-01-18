@@ -1045,10 +1045,10 @@
 
     <!-- Address Form Modal -->
     <div id="addressFormModal" class="modal-overlay" style="display:none; z-index:1200;">
-      <div class="modal-content" style="width:500px; max-width:95vw;">
+      <div class="modal-content" style="min-width:500px; max-width:95vw;">
         <div class="modal-header">
-          <h3 id="addressFormTitle">Add Address</h3>
-          <button type="button" class="close-btn" onclick="closeAddressForm()">✕</button>
+          <h3 id="addressFormTitle" style="white-space:nowrap;">Add Address</h3>
+          <button type="button" class="close-panel" onclick="closeAddressForm()">&times;</button>
         </div>
         <div class="modal-body" style="padding:20px;">
           <input type="hidden" id="addressFormId">

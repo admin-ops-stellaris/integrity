@@ -6427,6 +6427,7 @@ Best wishes,
   window.updateAddressFormatFields = function() {
     const format = document.querySelector('input[name="addressFormat"]:checked')?.value || 'Standard';
     
+    // Show/hide format-specific fields but keep modal size consistent via min-height
     document.getElementById('addressNonStandardFields').style.display = format === 'Non-Standard' ? 'block' : 'none';
     document.getElementById('addressPOBoxFields').style.display = format === 'PO Box' ? 'block' : 'none';
     document.getElementById('addressStreetFields').style.display = format === 'PO Box' ? 'none' : 'block';
@@ -6520,14 +6521,23 @@ Best wishes,
   }
   
   window.deleteAddress = function() {
-    if (!editingAddressId) return;
+    if (!editingAddressId) {
+      console.error('deleteAddress: No editingAddressId');
+      return;
+    }
     
     const recordId = currentContactRecord?.id;
     const addressId = editingAddressId;
+    const isPostal = document.getElementById('addressFormIsPostal').value === 'true';
+    const confirmMessage = isPostal 
+      ? 'Are you sure you want to remove the postal address?' 
+      : 'Are you sure you want to delete this address?';
     
-    showConfirmModal('Are you sure you want to delete this address?', function() {
+    showConfirmModal(confirmMessage, function() {
+      console.log('Deleting address:', addressId);
       google.script.run
         .withSuccessHandler(function(result) {
+          console.log('Delete result:', result);
           if (result.success) {
             closeAddressForm();
             loadAddressHistory(recordId);

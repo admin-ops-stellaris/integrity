@@ -194,16 +194,19 @@
                       <span class="collapsible-icon">&#9654;</span>
                       <span class="collapsible-title">Addresses</span>
                     </div>
-                    <div style="display:flex; gap:6px;" onclick="event.stopPropagation();">
-                      <span class="spouse-action-link" onclick="window.openAddressModal();">+ Add</span>
-                    </div>
                   </div>
                   <div class="collapsible-content">
                     <div id="postalAddressSection" class="postal-address-section">
-                      <div class="postal-address-label">Postal Address</div>
+                      <div class="address-section-header">
+                        <span class="address-section-label">Postal Address</span>
+                        <span class="address-section-add" onclick="openPostalAddressModal()">+ Add</span>
+                      </div>
                       <div id="postalAddressDisplay"></div>
                     </div>
-                    <div class="postal-address-label" style="margin-top:10px;">Address History</div>
+                    <div class="address-section-header" style="margin-top:12px;">
+                      <span class="address-section-label">Residential Address History</span>
+                      <span class="address-section-add" onclick="openAddressModal(false)">+ Add</span>
+                    </div>
                     <div id="addressHistoryList" class="address-history-list"></div>
                   </div>
                 </div>

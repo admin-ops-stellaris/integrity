@@ -6192,7 +6192,7 @@ Best wishes,
           </div>
         `;
       } else {
-        postalDisplay.innerHTML = `<span class="postal-empty" onclick="openPostalAddressModal()">Click to add postal address</span>`;
+        postalDisplay.innerHTML = '';
       }
     }
     

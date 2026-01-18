@@ -6348,8 +6348,12 @@ Best wishes,
     editingAddressId = null;
     document.getElementById('addressFormId').value = '';
     document.getElementById('addressFormIsPostal').value = 'true';
-    document.getElementById('addressFormTitle').textContent = 'Add Postal Address';
+    document.getElementById('addressFormTitle').textContent = 'Set Postal Address';
     document.getElementById('addressDeleteBtn').style.display = 'none';
+    
+    // Hide residential-only fields (status, from, to dates) since this is a postal address
+    const residentialFields = document.getElementById('addressResidentialFields');
+    if (residentialFields) residentialFields.style.display = 'none';
     
     // Fill form with copied data
     const formatRadio = document.querySelector(`input[name="addressFormat"][value="${addr.format || 'Standard'}"]`);
@@ -6366,8 +6370,8 @@ Best wishes,
     document.getElementById('addressPostcode').value = addr.postcode || '';
     document.getElementById('addressCountry').value = addr.country || 'Australia';
     document.getElementById('addressLabel').value = addr.label || '';
-    document.getElementById('addressStatus').value = ''; // Don't copy status
-    document.getElementById('addressFrom').value = ''; // Don't copy dates
+    document.getElementById('addressStatus').value = '';
+    document.getElementById('addressFrom').value = '';
     document.getElementById('addressTo').value = '';
     
     updateAddressFormatFields();

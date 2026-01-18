@@ -6176,20 +6176,33 @@ Best wishes,
   
   function renderAddressHistory() {
     const container = document.getElementById('addressHistoryList');
+    const postalDisplay = document.getElementById('postalAddressDisplay');
     if (!container) return;
     
-    if (currentContactAddresses.length === 0) {
+    // Separate residential and postal addresses
+    const residential = currentContactAddresses.filter(a => !a.isPostal);
+    const postal = currentContactAddresses.find(a => a.isPostal);
+    
+    // Render postal address section
+    if (postalDisplay) {
+      if (postal) {
+        postalDisplay.innerHTML = `
+          <div class="postal-address-display" onclick="editAddress('${postal.id}')">
+            ${escapeHtml(postal.calculatedName) || 'No address'}
+          </div>
+        `;
+      } else {
+        postalDisplay.innerHTML = `<span class="postal-empty" onclick="openPostalAddressModal()">Click to add postal address</span>`;
+      }
+    }
+    
+    // Render residential addresses
+    if (residential.length === 0) {
       container.innerHTML = '<div style="padding:10px; color:#888; font-size:12px; font-style:italic;">No addresses recorded</div>';
       return;
     }
     
-    // Separate residential and postal addresses
-    const residential = currentContactAddresses.filter(a => !a.isPostal);
-    const postal = currentContactAddresses.filter(a => a.isPostal);
-    
     let html = '';
-    
-    // Render residential addresses
     residential.forEach((addr, idx) => {
       const isCurrent = !addr.to;
       const dateRange = formatAddressDateRange(addr.from, addr.to);
@@ -6204,24 +6217,10 @@ Best wishes,
       `;
     });
     
-    // Render postal addresses
-    postal.forEach(addr => {
-      html += `
-        <div class="address-item is-postal" onclick="editAddress('${addr.id}')">
-          <div class="address-name">${escapeHtml(addr.calculatedName) || 'No address'}</div>
-          <div class="address-meta-row">
-            <span class="address-postal-badge">POSTAL</span>
-            ${addr.status ? `<span class="address-status-badge">${escapeHtml(addr.status)}</span>` : ''}
-          </div>
-        </div>
-      `;
-    });
-    
-    // Add expand/collapse if more than 2 addresses
-    const totalAddresses = currentContactAddresses.length;
-    if (totalAddresses > 2) {
+    // Add expand/collapse if more than 3 residential addresses
+    if (residential.length > 3) {
       const isExpanded = container.classList.contains('expanded');
-      html += `<span class="address-expand-link" onclick="toggleAddressExpand(event)">${isExpanded ? 'Show less' : `Show all ${totalAddresses} addresses`}</span>`;
+      html += `<span class="address-expand-link" onclick="toggleAddressExpand(event)">${isExpanded ? 'Show less' : `Show all ${residential.length} addresses`}</span>`;
     }
     
     container.innerHTML = html;
@@ -6267,8 +6266,12 @@ Best wishes,
     editingAddressId = null;
     document.getElementById('addressFormId').value = '';
     document.getElementById('addressFormIsPostal').value = isPostal ? 'true' : 'false';
-    document.getElementById('addressFormTitle').textContent = isPostal ? 'Add Postal Address' : 'Add Address';
+    document.getElementById('addressFormTitle').textContent = isPostal ? 'Set Postal Address' : 'Add Address';
     document.getElementById('addressDeleteBtn').style.display = 'none';
+    
+    // Show/hide residential-only fields (status, from, to dates)
+    const residentialFields = document.getElementById('addressResidentialFields');
+    if (residentialFields) residentialFields.style.display = isPostal ? 'none' : 'block';
     
     // Reset form fields
     document.querySelector('input[name="addressFormat"][value="Standard"]').checked = true;
@@ -6381,8 +6384,12 @@ Best wishes,
     editingAddressId = addressId;
     document.getElementById('addressFormId').value = addressId;
     document.getElementById('addressFormIsPostal').value = addr.isPostal ? 'true' : 'false';
-    document.getElementById('addressFormTitle').textContent = 'Edit Address';
+    document.getElementById('addressFormTitle').textContent = addr.isPostal ? 'Edit Postal Address' : 'Edit Address';
     document.getElementById('addressDeleteBtn').style.display = 'block';
+    
+    // Show/hide residential-only fields (status, from, to dates)
+    const residentialFields = document.getElementById('addressResidentialFields');
+    if (residentialFields) residentialFields.style.display = addr.isPostal ? 'none' : 'block';
     
     // Fill form
     const formatRadio = document.querySelector(`input[name="addressFormat"][value="${addr.format || 'Standard'}"]`);
@@ -6448,11 +6455,31 @@ Best wishes,
       postcode: document.getElementById('addressPostcode').value,
       country: document.getElementById('addressCountry').value,
       label: document.getElementById('addressLabel').value,
-      status: document.getElementById('addressStatus').value,
-      from: parseDateInput(document.getElementById('addressFrom').value),
-      to: parseDateInput(document.getElementById('addressTo').value),
+      status: isPostal ? '' : document.getElementById('addressStatus').value,
+      from: isPostal ? null : parseDateInput(document.getElementById('addressFrom').value),
+      to: isPostal ? null : parseDateInput(document.getElementById('addressTo').value),
       isPostal: isPostal
     };
+    
+    // For postal addresses, delete existing postal before creating new (replace behavior)
+    const existingPostal = currentContactAddresses.find(a => a.isPostal);
+    if (isPostal && !editingAddressId && existingPostal) {
+      // Delete old postal, then create new one
+      google.script.run
+        .withSuccessHandler(function(deleteResult) {
+          if (deleteResult.success) {
+            createNewAddress(recordId, fields);
+          } else {
+            alert('Error replacing postal address: ' + (deleteResult.error || 'Unknown error'));
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error deleting old postal:', err);
+          alert('Error replacing postal address: ' + (err.message || err));
+        })
+        .deleteAddress(existingPostal.id);
+      return;
+    }
     
     if (editingAddressId) {
       // Update existing address
@@ -6471,23 +6498,26 @@ Best wishes,
         })
         .updateAddress(editingAddressId, fields);
     } else {
-      // Create new address
-      google.script.run
-        .withSuccessHandler(function(result) {
-          if (result.success) {
-            closeAddressForm();
-            loadAddressHistory(recordId);
-          } else {
-            alert('Error creating address: ' + (result.error || 'Unknown error'));
-          }
-        })
-        .withFailureHandler(function(err) {
-          console.error('Error creating address:', err);
-          alert('Error creating address: ' + (err.message || err));
-        })
-        .createAddress(recordId, fields);
+      createNewAddress(recordId, fields);
     }
   };
+  
+  function createNewAddress(recordId, fields) {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          closeAddressForm();
+          loadAddressHistory(recordId);
+        } else {
+          alert('Error creating address: ' + (result.error || 'Unknown error'));
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error creating address:', err);
+        alert('Error creating address: ' + (err.message || err));
+      })
+      .createAddress(recordId, fields);
+  }
   
   window.deleteAddress = function() {
     if (!editingAddressId) return;

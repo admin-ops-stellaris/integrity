@@ -1330,12 +1330,17 @@
   /* ========================================
      ADDRESS HISTORY STYLES
      ======================================== */
-  .address-history-list { max-height: 140px; overflow-y: auto; transition: max-height 0.3s ease; }
+  .address-history-list { max-height: 210px; overflow-y: auto; transition: max-height 0.3s ease; }
   .address-history-list.expanded { max-height: none; }
   .address-item { background: #FFF; padding: 10px 12px; margin-bottom: 6px; border-radius: 4px; border: 1px solid #E0E0E0; font-size: 13px; cursor: pointer; transition: all 0.2s; }
   .address-item:hover { background: #F9F9F9; border-color: var(--color-star); }
-  .address-item.is-current { border-left: 3px solid var(--color-cedar); background: rgba(123, 139, 100, 0.05); }
-  .address-item.is-postal { border-left: 3px solid var(--color-sky); background: rgba(208, 223, 230, 0.1); }
+  .address-item.is-current { border-left: 3px solid var(--color-cedar); }
+  .postal-address-section { margin-bottom: 12px; }
+  .postal-address-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; font-weight: 600; margin-bottom: 6px; }
+  .postal-address-display { background: #FFF; padding: 10px 12px; border-radius: 4px; border: 1px solid #E0E0E0; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .postal-address-display:hover { border-color: var(--color-star); }
+  .postal-empty { font-size: 12px; color: #888; font-style: italic; cursor: pointer; }
+  .postal-empty:hover { color: var(--color-star); }
   .address-name { font-weight: 400; color: var(--color-trail); line-height: 1.4; margin-bottom: 6px; }
   .address-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .address-status-badge { font-size: 9px; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; font-weight: 600; background: var(--color-sky); color: var(--color-midnight); }

@@ -192,14 +192,18 @@
                   <div class="collapsible-header" onclick="toggleCollapsible('addressHistorySection')" style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; align-items:center; gap:6px;">
                       <span class="collapsible-icon">&#9654;</span>
-                      <span class="collapsible-title">Address History</span>
+                      <span class="collapsible-title">Addresses</span>
                     </div>
                     <div style="display:flex; gap:6px;" onclick="event.stopPropagation();">
                       <span class="spouse-action-link" onclick="window.openAddressModal();">+ Add</span>
-                      <span class="spouse-action-link" onclick="window.openPostalAddressModal();">+ Postal</span>
                     </div>
                   </div>
                   <div class="collapsible-content">
+                    <div id="postalAddressSection" class="postal-address-section">
+                      <div class="postal-address-label">Postal Address</div>
+                      <div id="postalAddressDisplay"></div>
+                    </div>
+                    <div class="postal-address-label" style="margin-top:10px;">Address History</div>
                     <div id="addressHistoryList" class="address-history-list"></div>
                   </div>
                 </div>
@@ -1144,26 +1148,28 @@
             </div>
           </div>
 
-          <hr style="margin:15px 0; border:0; border-top:1px solid #ddd;">
+          <div id="addressResidentialFields">
+            <hr style="margin:15px 0; border:0; border-top:1px solid #ddd;">
 
-          <div class="form-row">
-            <div class="field-group" style="flex:1;">
-              <label>Status</label>
-              <select id="addressStatus">
-                <option value=""></option>
-                <option value="Own Home">Own Home</option>
-                <option value="Boarding">Boarding</option>
-                <option value="Caravan">Caravan</option>
-                <option value="Own Home - Mortgage">Own Home - Mortgage</option>
-                <option value="Renting">Renting</option>
-                <option value="With Parents">With Parents</option>
-                <option value="Other">Other</option>
-              </select>
+            <div class="form-row">
+              <div class="field-group" style="flex:1;">
+                <label>Status</label>
+                <select id="addressStatus">
+                  <option value=""></option>
+                  <option value="Own Home">Own Home</option>
+                  <option value="Boarding">Boarding</option>
+                  <option value="Caravan">Caravan</option>
+                  <option value="Own Home - Mortgage">Own Home - Mortgage</option>
+                  <option value="Renting">Renting</option>
+                  <option value="With Parents">With Parents</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div class="form-row">
-            <div class="field-group" style="flex:1;"><label>From (Move-in Date)</label><input type="text" id="addressFrom" placeholder="DD/MM/YYYY"></div>
-            <div class="field-group" style="flex:1;"><label>To (Move-out Date)</label><input type="text" id="addressTo" placeholder="DD/MM/YYYY (leave blank if current)"></div>
+            <div class="form-row">
+              <div class="field-group" style="flex:1;"><label>From (Move-in Date)</label><input type="text" id="addressFrom" placeholder="DD/MM/YYYY"></div>
+              <div class="field-group" style="flex:1;"><label>To (Move-out Date)</label><input type="text" id="addressTo" placeholder="DD/MM/YYYY (leave blank if current)"></div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -1176,10 +1182,10 @@
 
     <!-- Postal Address Copy Modal -->
     <div id="postalAddressCopyModal" class="modal-overlay" style="display:none; z-index:1250;">
-      <div class="modal-content" style="width:400px; max-width:95vw;">
+      <div class="modal-content" style="min-width:400px; max-width:95vw;">
         <div class="modal-header">
-          <h3>Add Postal Address</h3>
-          <button type="button" class="close-btn" onclick="closePostalCopyModal()">✕</button>
+          <h3 style="white-space:nowrap;">Set Postal Address</h3>
+          <button type="button" class="close-panel" onclick="closePostalCopyModal()">&times;</button>
         </div>
         <div class="modal-body" style="padding:20px;">
           <p style="margin-bottom:15px; font-size:13px;">Would you like to copy from an existing address or enter a new one?</p>

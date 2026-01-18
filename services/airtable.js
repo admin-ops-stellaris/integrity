@@ -1842,9 +1842,11 @@ export async function createAddress(contactId, fields, userContext = null) {
   try {
     const createFields = {
       "BACK-LINK: Contacts: Address History": [contactId],
-      "Format": fields.format || "Standard",
-      "Country": fields.country || "Australia"
+      "Format": fields.format || "Standard"
     };
+    
+    // Only add Country if it has a value (it's a select field in Airtable)
+    if (fields.country) createFields["Country"] = fields.country;
     
     // Add optional fields
     if (fields.floor) createFields["Floor"] = fields.floor;

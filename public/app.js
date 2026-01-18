@@ -6258,60 +6258,40 @@ Best wishes,
   };
   
   window.openAddressModal = function(isPostal = false) {
-    alert('Step 1: Function started');
-    
     const recordId = currentContactRecord?.id;
-    alert('Step 2: recordId = ' + recordId);
-    
     if (!recordId) {
       alert('Please save the contact first');
       return;
     }
     
-    alert('Step 3: About to reset form');
     editingAddressId = null;
+    document.getElementById('addressFormId').value = '';
+    document.getElementById('addressFormIsPostal').value = isPostal ? 'true' : 'false';
+    document.getElementById('addressFormTitle').textContent = isPostal ? 'Add Postal Address' : 'Add Address';
+    document.getElementById('addressDeleteBtn').style.display = 'none';
     
-    const formId = document.getElementById('addressFormId');
-    alert('Step 4: formId element = ' + (formId ? 'found' : 'NOT FOUND'));
-    if (formId) formId.value = '';
+    // Reset form fields
+    document.querySelector('input[name="addressFormat"][value="Standard"]').checked = true;
+    document.getElementById('addressFloor').value = '';
+    document.getElementById('addressBuilding').value = '';
+    document.getElementById('addressUnit').value = '';
+    document.getElementById('addressStreetNo').value = '';
+    document.getElementById('addressStreetName').value = '';
+    document.getElementById('addressStreetType').value = '';
+    document.getElementById('addressCity').value = '';
+    document.getElementById('addressState').value = '';
+    document.getElementById('addressPostcode').value = '';
+    document.getElementById('addressCountry').value = 'Australia';
+    document.getElementById('addressLabel').value = '';
+    document.getElementById('addressStatus').value = '';
+    document.getElementById('addressFrom').value = '';
+    document.getElementById('addressTo').value = '';
     
-    const formIsPostal = document.getElementById('addressFormIsPostal');
-    alert('Step 5: formIsPostal element = ' + (formIsPostal ? 'found' : 'NOT FOUND'));
-    if (formIsPostal) formIsPostal.value = isPostal ? 'true' : 'false';
-    
-    const formTitle = document.getElementById('addressFormTitle');
-    alert('Step 6: formTitle element = ' + (formTitle ? 'found' : 'NOT FOUND'));
-    if (formTitle) formTitle.textContent = isPostal ? 'Add Postal Address' : 'Add Address';
-    
-    const deleteBtn = document.getElementById('addressDeleteBtn');
-    alert('Step 7: deleteBtn element = ' + (deleteBtn ? 'found' : 'NOT FOUND'));
-    if (deleteBtn) deleteBtn.style.display = 'none';
-    
-    alert('Step 8: About to reset field values');
-    
-    const formatRadio = document.querySelector('input[name="addressFormat"][value="Standard"]');
-    if (formatRadio) formatRadio.checked = true;
-    
-    const fields = ['addressFloor', 'addressBuilding', 'addressUnit', 'addressStreetNo', 
-                    'addressStreetName', 'addressStreetType', 'addressCity', 'addressState', 
-                    'addressPostcode', 'addressLabel', 'addressStatus', 'addressFrom', 'addressTo'];
-    fields.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    
-    const countryEl = document.getElementById('addressCountry');
-    if (countryEl) countryEl.value = 'Australia';
-    
-    alert('Step 9: About to call updateAddressFormatFields');
     updateAddressFormatFields();
     
-    alert('Step 10: About to show modal');
     const modal = document.getElementById('addressFormModal');
-    alert('Step 11: modal element = ' + (modal ? 'found' : 'NOT FOUND'));
-    if (modal) modal.style.display = 'flex';
-    
-    alert('Step 12: Function complete');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
   };
   
   window.openPostalAddressModal = function() {
@@ -6336,11 +6316,15 @@ Best wishes,
     });
     listContainer.innerHTML = html;
     
-    document.getElementById('postalAddressCopyModal').style.display = 'flex';
+    const modal = document.getElementById('postalAddressCopyModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
   };
   
   window.closePostalCopyModal = function() {
-    document.getElementById('postalAddressCopyModal').style.display = 'none';
+    const modal = document.getElementById('postalAddressCopyModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.style.display = 'none', 250);
   };
   
   window.openPostalAddressNew = function() {
@@ -6385,7 +6369,9 @@ Best wishes,
     
     updateAddressFormatFields();
     
-    document.getElementById('addressFormModal').style.display = 'flex';
+    const modal = document.getElementById('addressFormModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
   };
   
   window.editAddress = function(addressId) {
@@ -6419,11 +6405,15 @@ Best wishes,
     
     updateAddressFormatFields();
     
-    document.getElementById('addressFormModal').style.display = 'flex';
+    const modal = document.getElementById('addressFormModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
   };
   
   window.closeAddressForm = function() {
-    document.getElementById('addressFormModal').style.display = 'none';
+    const modal = document.getElementById('addressFormModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.style.display = 'none', 250);
     editingAddressId = null;
   };
   

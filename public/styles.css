@@ -1074,7 +1074,6 @@
     width: auto;
     min-width: 400px;
     max-width: min(90vw, 650px);
-    max-height: 95vh;
     border-radius: 8px; 
     box-shadow: 0 4px 30px rgba(0,0,0,0.3); 
     display: flex; 

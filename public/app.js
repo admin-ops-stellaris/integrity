@@ -6492,24 +6492,25 @@ Best wishes,
   window.deleteAddress = function() {
     if (!editingAddressId) return;
     
-    if (!confirm('Are you sure you want to delete this address?')) return;
-    
     const recordId = currentContactRecord?.id;
+    const addressId = editingAddressId;
     
-    google.script.run
-      .withSuccessHandler(function(result) {
-        if (result.success) {
-          closeAddressForm();
-          loadAddressHistory(recordId);
-        } else {
-          alert('Error deleting address: ' + (result.error || 'Unknown error'));
-        }
-      })
-      .withFailureHandler(function(err) {
-        console.error('Error deleting address:', err);
-        alert('Error deleting address: ' + (err.message || err));
-      })
-      .deleteAddress(editingAddressId);
+    showConfirmModal('Are you sure you want to delete this address?', function() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            closeAddressForm();
+            loadAddressHistory(recordId);
+          } else {
+            alert('Error deleting address: ' + (result.error || 'Unknown error'));
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error deleting address:', err);
+          alert('Error deleting address: ' + (err.message || err));
+        })
+        .deleteAddress(addressId);
+    });
   };
 
   // ==================== EVIDENCE MODAL SYSTEM ====================

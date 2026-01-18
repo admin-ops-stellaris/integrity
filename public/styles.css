@@ -1072,13 +1072,15 @@
   .modal-overlay .modal-content { 
     background: var(--color-salt); 
     width: auto;
+    height: auto;
     min-width: 400px;
     max-width: min(90vw, 650px);
+    margin: 0;
     border-radius: 8px; 
     box-shadow: 0 4px 30px rgba(0,0,0,0.3); 
     display: flex; 
     flex-direction: column; 
-    overflow: hidden; 
+    overflow: visible; 
     transform: scale(0.95); 
     transition: transform 0.25s ease-in-out;
     box-sizing: border-box;

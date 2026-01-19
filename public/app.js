@@ -30,18 +30,28 @@
       btn.classList.toggle('active', btn.dataset.status === status);
     });
   }
+  // State aliases - these reference IntegrityState for module compatibility
+  const state = window.IntegrityState;
+  
+  // Legacy local variables - TODO: migrate to IntegrityState
   let pollInterval;
   let pollAttempts = 0;
   let panelHistory = []; 
   let contactHistory = [];
-  let currentContactRecord = null; 
+  // currentContactRecord MOVED to IntegrityState - use state.currentContactRecord
   let currentOppRecords = []; 
   let currentOppSortDirection = 'desc'; 
   let pendingLinkedEdits = {}; 
   let currentPanelData = {}; 
   let pendingRemovals = {};
   let searchHighlightIndex = -1;
-  let currentSearchRecords = []; 
+  let currentSearchRecords = [];
+  
+  // Getter/setter for backwards compatibility with local code
+  Object.defineProperty(window, 'currentContactRecord', {
+    get: function() { return state.currentContactRecord; },
+    set: function(val) { state.currentContactRecord = val; }
+  }); 
 
   window.onload = function() { 
     loadContacts(); 

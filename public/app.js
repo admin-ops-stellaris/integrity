@@ -54,7 +54,8 @@
     initScrollHeader();
   };
 
-  // --- SCROLL-HIDE HEADER (Mobile/Tablet) ---
+  // SCROLL HEADER - MOVED TO core.js
+  /* COMMENTED OUT - Using core.js module
   function initScrollHeader() {
     let lastScrollY = 0;
     let ticking = false;
@@ -84,7 +85,6 @@
       }
     }
     
-    // Listen to all scrollable elements
     const container = document.querySelector('.container');
     const columns = document.querySelectorAll('.column');
     
@@ -100,13 +100,13 @@
       });
     });
     
-    // Reset on resize to desktop
     window.addEventListener('resize', function() {
       if (window.innerWidth > 1024) {
         header.classList.remove('header-hidden');
       }
     });
   }
+  END COMMENTED OUT */
 
   // --- KEYBOARD SHORTCUTS ---
   function initKeyboardShortcuts() {
@@ -151,7 +151,8 @@
     });
   }
 
-  // --- DARK MODE ---
+  // DARK MODE - MOVED TO core.js
+  /* COMMENTED OUT - Using core.js module
   function initDarkMode() {
     const savedTheme = localStorage.getItem('integrity-theme');
     if (savedTheme === 'dark') document.body.classList.add('dark-mode');
@@ -161,6 +162,7 @@
     const isDark = document.body.classList.contains('dark-mode');
     localStorage.setItem('integrity-theme', isDark ? 'dark' : 'light');
   }
+  END COMMENTED OUT */
 
   // --- AUTO-EXPANDING TEXTAREA ---
   function autoExpandTextarea(el) {
@@ -168,7 +170,8 @@
     el.style.height = el.scrollHeight + 'px';
   }
 
-  // --- SCREENSAVER ---
+  // SCREENSAVER - MOVED TO core.js
+  /* COMMENTED OUT - Using core.js module
   let screensaverTimer = null;
   const SCREENSAVER_DELAY = 120000; // 2 minutes
   
@@ -189,6 +192,7 @@
     
     resetScreensaverTimer();
   }
+  END COMMENTED OUT */
 
   // --- QUICK ADD OPPORTUNITY (COMPOSER) ---
   function quickAddOpportunity() {

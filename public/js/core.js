@@ -1,6 +1,7 @@
 /**
  * Core Module
- * Initialization, dark mode, keyboard shortcuts, screensaver, scroll header
+ * Dark mode, screensaver, scroll header
+ * These are standalone UI features extracted from app.js
  */
 (function() {
   'use strict';
@@ -8,51 +9,46 @@
   const state = window.IntegrityState;
   
   // ============================================================
-  // Initialization
+  // Dark Mode
   // ============================================================
   
-  window.onload = function() {
-    loadContacts();
-    checkUserIdentity();
-    initKeyboardShortcuts();
-    initDarkMode();
-    initScreensaver();
-    initInlineEditing();
-    initAllNoteFields();
-    initScrollHeader();
-  };
+  function initDarkMode() {
+    const savedTheme = localStorage.getItem('integrity-theme');
+    if (savedTheme === 'dark') document.body.classList.add('dark-mode');
+  }
   
-  // Initialize contact status filter on DOM ready
-  document.addEventListener('DOMContentLoaded', function() {
-    const saved = localStorage.getItem('contactStatusFilter') || 'Active';
-    state.contactStatusFilter = saved;
-    updateStatusToggleUI(saved);
-  });
-  
-  // ============================================================
-  // Contact Status Filter
-  // ============================================================
-  
-  window.setContactStatusFilter = function(status) {
-    state.contactStatusFilter = status;
-    localStorage.setItem('contactStatusFilter', status);
-    updateStatusToggleUI(status);
-    const query = document.getElementById('searchInput')?.value?.trim();
-    if (query && query.length > 0) {
-      handleSearch({ target: { value: query } });
-    } else {
-      loadContacts();
-    }
-  };
-  
-  function updateStatusToggleUI(status) {
-    document.querySelectorAll('.status-toggle-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.status === status);
-    });
+  function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('integrity-theme', isDark ? 'dark' : 'light');
   }
   
   // ============================================================
-  // Scroll Header (Mobile/Tablet)
+  // Screensaver / Idle Timer
+  // ============================================================
+  
+  const SCREENSAVER_DELAY = 120000; // 2 minutes
+  
+  function initScreensaver() {
+    function resetScreensaverTimer() {
+      if (document.body.classList.contains('screensaver-active')) {
+        document.body.classList.remove('screensaver-active');
+      }
+      clearTimeout(state.screensaverTimer);
+      state.screensaverTimer = setTimeout(() => {
+        document.body.classList.add('screensaver-active');
+      }, SCREENSAVER_DELAY);
+    }
+    
+    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
+      document.addEventListener(event, resetScreensaverTimer, { passive: true });
+    });
+    
+    resetScreensaverTimer();
+  }
+  
+  // ============================================================
+  // Scroll-Hide Header (Mobile/Tablet)
   // ============================================================
   
   function initScrollHeader() {
@@ -98,184 +94,21 @@
         handleScroll(this.scrollTop);
       });
     });
-  }
-  
-  // ============================================================
-  // Keyboard Shortcuts
-  // ============================================================
-  
-  function initKeyboardShortcuts() {
-    document.addEventListener('keydown', function(e) {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
-        if (e.key === 'Escape') {
-          e.target.blur();
-          hideSearchDropdown();
-        }
-        return;
-      }
-      
-      if (e.key === '/' || e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-          searchInput.focus();
-          showSearchDropdown();
-        }
-      } else if (e.key === 'Escape') {
-        const oppPanel = document.getElementById('oppDetailPanel');
-        if (oppPanel && oppPanel.classList.contains('open')) {
-          closeOppPanel();
-        } else {
-          hideSearchDropdown();
-        }
-      } else if (e.key === 'n' || e.key === 'N') {
-        e.preventDefault();
-        resetForm();
-      } else if (e.key === 'e' || e.key === 'E') {
-        if (state.currentContactRecord && document.getElementById('editBtn').style.visibility !== 'hidden') {
-          e.preventDefault();
-          enableEditMode();
-        }
+    
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 1024) {
+        header.classList.remove('header-hidden');
       }
     });
   }
   
-  window.showShortcutsHelp = function() {
-    openModal('shortcutsModal');
-  };
-  
-  window.closeShortcutsModal = function() {
-    closeModal('shortcutsModal');
-  };
-  
   // ============================================================
-  // Dark Mode
+  // Expose functions globally
   // ============================================================
   
-  function initDarkMode() {
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark-mode');
-    }
-  }
-  
-  window.toggleDarkMode = function() {
-    document.body.classList.toggle('dark-mode');
-    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-  };
-  
-  // ============================================================
-  // Screensaver
-  // ============================================================
-  
-  function initScreensaver() {
-    let screensaverTimer;
-    const IDLE_TIME = 5 * 60 * 1000;
-    
-    function resetTimer() {
-      clearTimeout(screensaverTimer);
-      hideScreensaver();
-      screensaverTimer = setTimeout(showScreensaver, IDLE_TIME);
-    }
-    
-    function showScreensaver() {
-      document.getElementById('screensaverOverlay')?.classList.add('active');
-    }
-    
-    function hideScreensaver() {
-      document.getElementById('screensaverOverlay')?.classList.remove('active');
-    }
-    
-    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(event => {
-      document.addEventListener(event, resetTimer, { passive: true });
-    });
-    
-    resetTimer();
-  }
-  
-  // ============================================================
-  // User Identity
-  // ============================================================
-  
-  function checkUserIdentity() {
-    google.script.run.withSuccessHandler(function(email) {
-      const display = email ? email : "Unknown";
-      const debugEl = document.getElementById('debugUser');
-      if (debugEl) debugEl.innerText = display;
-      document.getElementById('userEmail').innerText = email || "Not signed in";
-      if (!email) alert("Warning: The system cannot detect your email address.");
-    }).getEffectiveUserEmail();
-  }
-  
-  window.updateHeaderTitle = function(isEditing) {
-    const fName = document.getElementById('firstName')?.value || "";
-    const mName = document.getElementById('middleName')?.value || "";
-    const lName = document.getElementById('lastName')?.value || "";
-    let fullName = [fName, mName, lName].filter(Boolean).join(" ");
-    const titleEl = document.getElementById('formTitle');
-    if (!titleEl) return;
-    if (!fullName.trim()) { titleEl.innerText = "New Contact"; return; }
-    titleEl.innerText = isEditing ? `Editing ${fullName}` : fullName;
-  };
-  
-  // ============================================================
-  // Profile View Toggle
-  // ============================================================
-  
-  window.toggleProfileView = function(show) {
-    if (show) {
-      document.getElementById('emptyState').style.display = 'none';
-      document.getElementById('profileContent').style.display = 'flex';
-    } else {
-      document.getElementById('emptyState').style.display = 'flex';
-      document.getElementById('profileContent').style.display = 'none';
-      document.getElementById('formTitle').innerText = "Contact";
-      document.getElementById('formSubtitle').innerText = '';
-      const refreshBtn = document.getElementById('refreshBtn');
-      if (refreshBtn) refreshBtn.style.display = 'none';
-      document.getElementById('contactMetaBar')?.classList.remove('visible');
-      const dupWarning = document.getElementById('duplicateWarningBox');
-      if (dupWarning) dupWarning.style.display = 'none';
-    }
-  };
-  
-  // ============================================================
-  // Go Home
-  // ============================================================
-  
-  window.goHome = function() {
-    state.currentContactRecord = null;
-    state.currentOppRecords = [];
-    state.currentContactAddresses = [];
-    toggleProfileView(false);
-    closeOppPanel();
-    
-    document.getElementById('searchInput').value = '';
-    loadContacts();
-    
-    const modals = document.querySelectorAll('.modal-overlay, .modal');
-    modals.forEach(m => {
-      m.style.display = 'none';
-      m.classList.remove('showing', 'visible');
-    });
-  };
-  
-  // ============================================================
-  // Won Celebration
-  // ============================================================
-  
-  window.triggerWonCelebration = function() {
-    const container = document.getElementById('celebrationContainer');
-    if (!container) return;
-    container.innerHTML = '';
-    for (let i = 0; i < 50; i++) {
-      const confetti = document.createElement('div');
-      confetti.className = 'confetti';
-      confetti.style.left = Math.random() * 100 + '%';
-      confetti.style.animationDelay = Math.random() * 0.5 + 's';
-      confetti.style.backgroundColor = ['#BB9934', '#7B8B64', '#19414C', '#FFD700', '#FFA500'][Math.floor(Math.random() * 5)];
-      container.appendChild(confetti);
-    }
-    setTimeout(() => container.innerHTML = '', 3000);
-  };
+  window.initDarkMode = initDarkMode;
+  window.toggleDarkMode = toggleDarkMode;
+  window.initScreensaver = initScreensaver;
+  window.initScrollHeader = initScrollHeader;
   
 })();

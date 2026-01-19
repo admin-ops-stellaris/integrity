@@ -22,20 +22,13 @@ Integrity is built on a Node.js/Express backend, serving a static frontend.
     - **Contact Layout**: Full-width 3-column layout. Left column: accordion sections for personal data (Name, Contact Info, Personal Details, Notes). Middle column: Spouse, Connections, Opportunities. Right column: reserved for future tasks/notes.
     - **Name Display**: Two-line format with full name prominent on top, metadata (name preferences, tenure) on second line below in smaller text.
 - **Technical Implementations**:
-    - **Modular JavaScript Architecture**: Frontend code organized into 13 IIFE modules in `public/js/` directory. Load order: shared-state → ui-utils → core → feature modules → app.js. Each module defines functions on `window` for global access. Remaining email/evidence modules stay in app.js temporarily.
-        - `shared-state.js`: Global state variables (currentContactRecord, currentOppRecords, panelHistory, etc.)
-        - `ui-utils.js`: Modal functions, alerts, escape utilities, collapsible sections
-        - `core.js`: Dark mode, keyboard shortcuts, screensaver, scroll header
-        - `contacts.js`: Contact loading, searching, selection, status filtering
-        - `inline-editing.js`: Click-to-edit InlineEditingManager with Tab navigation
-        - `spouse.js`: Spouse linking/unlinking and search
-        - `connections.js`: Relationship management between contacts
-        - `addresses.js`: Address history with postal address support
-        - `notes.js`: Field and connection note popovers
-        - `opportunities.js`: Opportunity panel rendering and CRUD
-        - `appointments.js`: Appointment management for opportunities
-        - `quick-view.js`: Quick view panel for linked contacts
-        - `settings.js`: Global settings modal
+    - **Modular JavaScript Architecture (In Progress)**: Frontend code being refactored from monolithic app.js (~7800 lines) into modular IIFE modules in `public/js/` directory. Uses incremental "TEST_ prefix" strategy to verify parity before removing duplicates.
+        - **Phase 1 Complete - Foundation Modules**:
+            - `shared-state.js`: Global mutable state variables (currentContactRecord, currentOppRecords, panelHistory, timeouts, etc.) accessed via `window.IntegrityState`
+            - `shared-utils.js`: Pure utility functions (escapeHtml, formatDate*, getOrdinalSuffix, parseDateInput) with no dependencies
+            - `modal-utils.js`: Modal management (openModal, closeModal, showAlert, showConfirmModal)
+        - **Load Order**: shared-state.js → shared-utils.js → modal-utils.js → (future feature modules) → app.js
+        - **Planned Feature Modules** (Phase 2+): contacts.js, inline-editing.js, spouse.js, connections.js, addresses.js, notes.js, opportunities.js, appointments.js, quick-view.js, settings.js, evidence.js, email.js
     - **Authentication**: Google OAuth 2.0 is used for secure access, restricted to a specified Google Workspace domain. Session management is handled via encrypted cookies.
     - **API Layer**: A unified API uses POST requests with JSON bodies for all CRUD operations and specific functionalities like contact search, spouse management, and opportunity handling. An `api-bridge.js` layer ensures compatibility by converting `google.script.run` calls to standard fetch API requests.
     - **Email Composition**: Rich text email composition is supported via Quill.js WYSIWYG editor.

@@ -17,7 +17,7 @@
         <img class="logo-light" src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/WEB_Stellaris_Primary%20Logo_Horizontal_Full%20Col.png/:/rs=w:400,h:130,cg:true,m/cr=w:400,h:130/qt=q:95" alt="Stellaris">
         <img class="logo-dark" src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/WEB_Stellaris_Primary%20Logo_Horizontal_Reversed.png/:/rs=w:309,h:100,cg:true,m/cr=w:309,h:100/qt=q:26" alt="Stellaris">
       </div>
-      <div class="header-title">INTEGRITY</div>
+      <div class="header-title" onclick="goHome()" style="cursor:pointer;" title="Go to home screen">INTEGRITY</div>
       <div class="header-search-wrapper">
         <input type="text" id="searchInput" class="header-search" placeholder="Search Contacts..." onkeyup="handleSearch(event)" onkeydown="handleSearchKeydown(event)" onfocus="showSearchDropdown()" autocomplete="off">
         <div id="searchDropdown" class="search-dropdown">
@@ -199,7 +199,7 @@
                     <div id="postalAddressSection" class="postal-address-section">
                       <div class="address-section-header">
                         <span class="address-section-label">Postal Address</span>
-                        <span class="address-section-add" onclick="openPostalAddressModal()">+ Add</span>
+                        <span id="postalAddressAddBtn" class="address-section-add" onclick="openPostalAddressModal()">+ Add</span>
                       </div>
                       <div id="postalAddressDisplay"></div>
                     </div>

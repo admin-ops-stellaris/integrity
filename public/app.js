@@ -4547,6 +4547,27 @@ Best wishes,
      clearInterval(pollInterval);
      google.script.run.withSuccessHandler(function(r) { if(r && r.fields) selectContact(r); }).getContactById(id);
   }
+  
+  window.goHome = function() {
+    // Clear current contact and show initial empty state
+    currentContactRecord = null;
+    currentOppRecords = [];
+    currentContactAddresses = [];
+    toggleProfileView(false);
+    closeOppPanel();
+    
+    // Clear search and reload contact list
+    document.getElementById('searchInput').value = '';
+    loadContacts();
+    
+    // Reset any modals that might be open
+    const modals = document.querySelectorAll('.modal-overlay, .modal');
+    modals.forEach(m => {
+      m.style.display = 'none';
+      m.classList.remove('showing', 'visible');
+    });
+  };
+  
   function resetForm() {
     toggleProfileView(true); document.getElementById('contactForm').reset();
     document.getElementById('recordId').value = "";
@@ -6194,6 +6215,12 @@ Best wishes,
       } else {
         postalDisplay.innerHTML = '';
       }
+    }
+    
+    // Update postal button text: +Add when none exists, +Update when one does
+    const postalBtn = document.getElementById('postalAddressAddBtn');
+    if (postalBtn) {
+      postalBtn.textContent = postal ? '+ Update' : '+ Add';
     }
     
     // Render residential addresses

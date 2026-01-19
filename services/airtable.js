@@ -1890,13 +1890,13 @@ export async function updateAddress(addressId, fields, userContext = null) {
     if (fields.unit !== undefined) updateFields["Unit"] = fields.unit;
     if (fields.streetNo !== undefined) updateFields["Street No"] = fields.streetNo;
     if (fields.streetName !== undefined) updateFields["Street Name"] = fields.streetName;
-    if (fields.streetType !== undefined) updateFields["Street Type"] = fields.streetType;
+    if (fields.streetType !== undefined && fields.streetType !== '') updateFields["Street Type"] = fields.streetType;
     if (fields.city !== undefined) updateFields["City"] = fields.city;
-    if (fields.state !== undefined) updateFields["State"] = fields.state;
+    if (fields.state !== undefined && fields.state !== '') updateFields["State"] = fields.state;
     if (fields.postcode !== undefined) updateFields["Postcode"] = fields.postcode;
-    if (fields.country !== undefined) updateFields["Country"] = fields.country;
+    if (fields.country !== undefined && fields.country !== '') updateFields["Country"] = fields.country;
     if (fields.label !== undefined) updateFields["Label"] = fields.label;
-    if (fields.status !== undefined) updateFields["Status"] = fields.status;
+    if (fields.status !== undefined && fields.status !== '' && fields.status !== null) updateFields["Status"] = fields.status;
     if (fields.from !== undefined) updateFields["From"] = fields.from || null;
     if (fields.to !== undefined) updateFields["To"] = fields.to || null;
     if (fields.isPostal !== undefined) updateFields["Is Postal"] = fields.isPostal;

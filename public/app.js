@@ -6487,7 +6487,7 @@ Best wishes,
       postcode: document.getElementById('addressPostcode').value,
       country: document.getElementById('addressCountry').value,
       label: document.getElementById('addressLabel').value,
-      status: isPostal ? '' : document.getElementById('addressStatus').value,
+      status: isPostal ? null : (document.getElementById('addressStatus').value || null),
       from: isPostal ? null : parseDateInput(document.getElementById('addressFrom').value),
       to: isPostal ? null : parseDateInput(document.getElementById('addressTo').value),
       isPostal: isPostal

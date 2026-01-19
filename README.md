@@ -15,3 +15,9 @@ Here's how to take the updated version through to being live for users:
    - Confirm merge
    - can watch the log of it going live at https://fly.io/apps/integrity-prod/monitoring
 5. To view the live version go to https://integrity-prod.fly.dev
+
+**Prompts for code health**
+Periodically (every few major features):
+"Review the codebase for code health. Are there duplicated patterns that should be consolidated? Functions over 50 lines that should be split? Inconsistent patterns that should be standardized?"
+At session start (when continuing work):
+"Before we begin, please check replit.md for current architecture. Follow existing patterns. If you see something that should be refactored, mention it before proceeding."

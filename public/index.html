@@ -1453,8 +1453,25 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=55"></script>
-    <script src="/app.js?v=55"></script>
+    <script src="/api-bridge.js?v=56"></script>
+    
+    <!-- Modular JS Architecture -->
+    <script src="/js/shared-state.js?v=1"></script>
+    <script src="/js/ui-utils.js?v=1"></script>
+    <script src="/js/core.js?v=1"></script>
+    <script src="/js/contacts.js?v=1"></script>
+    <script src="/js/inline-editing.js?v=1"></script>
+    <script src="/js/spouse.js?v=1"></script>
+    <script src="/js/connections.js?v=1"></script>
+    <script src="/js/addresses.js?v=1"></script>
+    <script src="/js/notes.js?v=1"></script>
+    <script src="/js/opportunities.js?v=1"></script>
+    <script src="/js/appointments.js?v=1"></script>
+    <script src="/js/quick-view.js?v=1"></script>
+    <script src="/js/settings.js?v=1"></script>
+    
+    <!-- Main app (contains email/evidence modules not yet extracted) -->
+    <script src="/app.js?v=56"></script>
 
     <!-- Breakpoint Indicator (Development Helper) -->
     <div class="breakpoint-indicator"></div>

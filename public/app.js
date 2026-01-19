@@ -6043,6 +6043,9 @@ Best wishes,
   }
 
   // ==================== ADDRESS HISTORY SYSTEM ====================
+  // COMMENTED OUT - Using addresses.js module
+  // State moved to IntegrityState: currentContactAddresses, editingAddressId
+  /*
   let currentContactAddresses = [];
   let editingAddressId = null;
   
@@ -6452,6 +6455,8 @@ Best wishes,
         .deleteAddress(addressId);
     });
   };
+  */
+  // END COMMENTED OUT - addresses.js module
 
   // ==================== EVIDENCE MODAL SYSTEM ====================
   let currentEvidenceOpportunityId = null;

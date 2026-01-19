@@ -50,7 +50,62 @@
     initScreensaver();
     initInlineEditing();
     initAllNoteFields();
+    initScrollHeader();
   };
+
+  // --- SCROLL-HIDE HEADER (Mobile/Tablet) ---
+  function initScrollHeader() {
+    let lastScrollY = 0;
+    let ticking = false;
+    const header = document.querySelector('.app-header');
+    
+    if (!header) return;
+    
+    function handleScroll(scrollTop) {
+      if (!ticking) {
+        window.requestAnimationFrame(function() {
+          const isMobileOrTablet = window.innerWidth <= 1024;
+          
+          if (isMobileOrTablet) {
+            if (scrollTop > lastScrollY && scrollTop > 50) {
+              header.classList.add('header-hidden');
+            } else {
+              header.classList.remove('header-hidden');
+            }
+          } else {
+            header.classList.remove('header-hidden');
+          }
+          
+          lastScrollY = scrollTop;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
+    
+    // Listen to all scrollable elements
+    const container = document.querySelector('.container');
+    const columns = document.querySelectorAll('.column');
+    
+    if (container) {
+      container.addEventListener('scroll', function() {
+        handleScroll(this.scrollTop);
+      });
+    }
+    
+    columns.forEach(function(col) {
+      col.addEventListener('scroll', function() {
+        handleScroll(this.scrollTop);
+      });
+    });
+    
+    // Reset on resize to desktop
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 1024) {
+        header.classList.remove('header-hidden');
+      }
+    });
+  }
 
   // --- KEYBOARD SHORTCUTS ---
   function initKeyboardShortcuts() {
@@ -65,6 +120,7 @@
         closeNewOppModal();
         closeShortcutsModal();
         closeDeleteConfirmModal();
+        closeDeceasedConfirmModal();
         closeAlertModal();
         if (document.getElementById('actionRow').style.display === 'flex') disableEditMode();
         return;
@@ -1021,8 +1077,10 @@
     'lastName': 'LastName',
     'preferredName': 'PreferredName',
     'doesNotLike': 'Does Not Like Being Called',
+    'mothersMaidenName': "Mother's Maiden Name",
+    'previousNames': 'Previous Names',
     'mobilePhone': 'Mobile',
-    'dateOfBirth': 'DateOfBirth',
+    'dateOfBirth': 'Date of Birth',
     'email1': 'EmailAddress1',
     'email1Comment': 'EmailAddress1Comment',
     'email2': 'EmailAddress2',
@@ -1031,7 +1089,8 @@
     'email3Comment': 'EmailAddress3Comment',
     'notes': 'Notes',
     'gender': 'Gender',
-    'genderOther': 'Gender - Other'
+    'genderOther': 'Gender - Other',
+    'maritalStatus': 'Marital Status'
   };
 
   // Initialize inline editing for contact form
@@ -1177,6 +1236,8 @@
     document.getElementById('lastName').value = f.LastName || "";
     document.getElementById('preferredName').value = f.PreferredName || "";
     document.getElementById('doesNotLike').value = f["Does Not Like Being Called"] || "";
+    document.getElementById('mothersMaidenName').value = f["Mother's Maiden Name"] || "";
+    document.getElementById('previousNames').value = f["Previous Names"] || "";
     document.getElementById('mobilePhone').value = f.Mobile || "";
     
     // Email fields
@@ -1194,6 +1255,7 @@
     document.getElementById('gender').value = f.Gender || "";
     // Ensure Gender - Other note value is set (populateNoteFields should handle this, but be explicit)
     document.getElementById('genderOther').value = f["Gender - Other"] || "";
+    document.getElementById('maritalStatus').value = f["Marital Status"] || "";
     updateAllNoteIcons();
     handleGenderChange(); // Show/hide note icon based on gender value
     
@@ -1240,7 +1302,16 @@
     loadOpportunities(f);
     renderSpouseSection(f);
     loadConnections(record.id);
+    loadAddressHistory(record.id);
     closeOppPanel();
+    
+    // Show Actions menu for existing contacts
+    const actionsMenu = document.getElementById('actionsMenuWrapper');
+    if (actionsMenu) actionsMenu.style.display = 'inline-block';
+    
+    // Apply deceased styling if contact is deceased
+    const isDeceased = f.Deceased === true;
+    applyDeceasedStyling(isDeceased);
   }
   
   // Collapsible section pattern - reusable for any collapsible field groups
@@ -1293,6 +1364,7 @@
   // Unsubscribe handling
   function updateUnsubscribeDisplay(isUnsubscribed) {
     const statusEl = document.getElementById('unsubscribeStatus');
+    if (!statusEl) return;
     if (isUnsubscribed) {
       statusEl.textContent = 'Unsubscribed';
       statusEl.className = 'unsubscribe-status-unsubscribed';
@@ -1489,6 +1561,120 @@
   
   function closeAlertModal() {
     closeModal('alertModal');
+  }
+
+  // --- ACTIONS MENU & DECEASED WORKFLOW ---
+  
+  window.toggleActionsMenu = function() {
+    const dropdown = document.getElementById('actionsDropdown');
+    if (dropdown) dropdown.classList.toggle('open');
+  };
+  
+  document.addEventListener('click', function(e) {
+    const wrapper = document.getElementById('actionsMenuWrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+      const dropdown = document.getElementById('actionsDropdown');
+      if (dropdown) dropdown.classList.remove('open');
+    }
+  });
+  
+  let pendingDeceasedAction = null; // 'mark' or 'undo'
+  
+  window.markAsDeceased = function() {
+    if (!currentContactRecord) return;
+    const f = currentContactRecord.fields;
+    const name = formatName(f);
+    
+    document.getElementById('actionsDropdown').classList.remove('open');
+    pendingDeceasedAction = 'mark';
+    
+    document.getElementById('deceasedModalTitle').innerText = 'Mark as Deceased';
+    document.getElementById('deceasedConfirmMessage').innerHTML = 
+      `Are you sure you want to mark <strong>${name}</strong> as deceased?<br><br>` +
+      `This will:<br>` +
+      `&bull; Set the Deceased flag<br>` +
+      `&bull; Unsubscribe them from marketing communications<br><br>` +
+      `<em>This action can be undone later.</em>`;
+    document.getElementById('deceasedConfirmBtn').innerText = 'Mark as Deceased';
+    document.getElementById('deceasedConfirmBtn').className = 'btn-primary';
+    
+    openModal('deceasedConfirmModal');
+  };
+  
+  window.undoDeceased = function() {
+    if (!currentContactRecord) return;
+    const f = currentContactRecord.fields;
+    const name = formatName(f);
+    
+    document.getElementById('actionsDropdown').classList.remove('open');
+    pendingDeceasedAction = 'undo';
+    
+    document.getElementById('deceasedModalTitle').innerText = 'Undo Deceased Status';
+    document.getElementById('deceasedConfirmMessage').innerHTML = 
+      `Are you sure you want to undo the deceased status for <strong>${name}</strong>?<br><br>` +
+      `<strong style="color:#A00;">Important:</strong> This will NOT re-subscribe them to marketing communications.<br><br>` +
+      `If you need to send marketing to this contact, you will need to manually change their marketing preferences afterward.`;
+    document.getElementById('deceasedConfirmBtn').innerText = 'Undo Status';
+    document.getElementById('deceasedConfirmBtn').className = 'btn-primary';
+    
+    openModal('deceasedConfirmModal');
+  };
+  
+  window.closeDeceasedConfirmModal = function() {
+    closeModal('deceasedConfirmModal');
+    pendingDeceasedAction = null;
+  };
+  
+  window.executeMarkDeceased = function() {
+    if (!currentContactRecord || !pendingDeceasedAction) return;
+    const f = currentContactRecord.fields;
+    const name = formatName(f);
+    const isMarking = pendingDeceasedAction === 'mark';
+    
+    closeModal('deceasedConfirmModal', function() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success && result.record) {
+            currentContactRecord = result.record;
+            applyDeceasedStyling(isMarking);
+            if (isMarking) {
+              showAlert('Contact Marked as Deceased', `${name} has been marked as deceased and unsubscribed from marketing.`, 'success');
+            } else {
+              showAlert('Status Updated', `${name} is no longer marked as deceased.`, 'success');
+            }
+          }
+        })
+        .withFailureHandler(function(err) {
+          showAlert('Error', err.message, 'error');
+        })
+        .markContactDeceased(currentContactRecord.id, isMarking);
+    });
+    
+    pendingDeceasedAction = null;
+  };
+  
+  function applyDeceasedStyling(isDeceased) {
+    const badge = document.getElementById('deceasedBadge');
+    const profileContent = document.getElementById('profileContent');
+    const undoBtn = document.getElementById('undoDeceasedBtn');
+    const markBtn = document.querySelector('#actionsDropdown button:first-child');
+    
+    if (isDeceased) {
+      if (badge) badge.style.display = 'inline-block';
+      if (profileContent) profileContent.classList.add('contact-deceased');
+      if (undoBtn) undoBtn.style.display = 'block';
+      if (markBtn) markBtn.style.display = 'none';
+    } else {
+      if (badge) badge.style.display = 'none';
+      if (profileContent) profileContent.classList.remove('contact-deceased');
+      if (undoBtn) undoBtn.style.display = 'none';
+      if (markBtn) markBtn.style.display = 'block';
+    }
+    
+    // Update unsubscribe display if needed
+    if (currentContactRecord && currentContactRecord.fields) {
+      updateUnsubscribeDisplay(currentContactRecord.fields["Unsubscribed from Marketing"] || false);
+    }
   }
 
   // --- EMAIL COMPOSER ---
@@ -3267,10 +3453,12 @@ Best wishes,
       const roleClass = getPillRoleClass(conn.myRole);
       const roleLabel = getPillRoleLabel(conn.myRole);
       
+      const deceasedSuffix = conn.otherContactDeceased ? ' (DECEASED)' : '';
       pill.innerHTML = `
         <span class="pill-role ${roleClass}">${roleLabel}</span>
-        <span class="pill-name">${conn.otherContactName || 'Unknown'}</span>
+        <span class="pill-name">${conn.otherContactName || 'Unknown'}${deceasedSuffix}</span>
       `;
+      if (conn.otherContactDeceased) pill.style.opacity = '0.6';
       
       // Click to open connection details modal
       pill.addEventListener('click', function(e) {
@@ -3449,15 +3637,17 @@ Best wishes,
       const showDate = rolesWithDate.includes(role);
       const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
       const hasNote = conn.note && conn.note.trim();
+      const deceasedSuffix = conn.otherContactDeceased ? ' (DECEASED)' : '';
       
       li.innerHTML = `
         <div class="connection-info">
           <span class="connection-role-badge ${badgeClass}">${displayRole}</span>
-          <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
+          <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}${deceasedSuffix}</span>
           ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
         </div>
         <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
       `;
+      if (conn.otherContactDeceased) li.style.opacity = '0.6';
       
       // Note icon click handler - read from data attribute for updated values
       const noteIcon = li.querySelector('.conn-note-icon');
@@ -3533,14 +3723,16 @@ Best wishes,
         
         const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
         const hasNote = conn.note && conn.note.trim();
+        const deceasedSuffix = conn.otherContactDeceased ? ' (DECEASED)' : '';
         
         subLi.innerHTML = `
           <div class="connection-subitem-content">
-            <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}</span>
+            <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}${deceasedSuffix}</span>
             ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
           </div>
           <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
         `;
+        if (conn.otherContactDeceased) subLi.style.opacity = '0.6';
         
         // Note icon click handler - read from data attribute for updated values
         const noteIcon = subLi.querySelector('.conn-note-icon');
@@ -3711,6 +3903,13 @@ Best wishes,
   function escapeHtmlForAttr(str) {
     if (!str) return '';
     return str.replace(/'/g, "&#39;").replace(/"/g, '&quot;');
+  }
+  
+  function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
   
   function unescapeHtml(str) {
@@ -4348,6 +4547,27 @@ Best wishes,
      clearInterval(pollInterval);
      google.script.run.withSuccessHandler(function(r) { if(r && r.fields) selectContact(r); }).getContactById(id);
   }
+  
+  window.goHome = function() {
+    // Clear current contact and show initial empty state
+    currentContactRecord = null;
+    currentOppRecords = [];
+    currentContactAddresses = [];
+    toggleProfileView(false);
+    closeOppPanel();
+    
+    // Clear search and reload contact list
+    document.getElementById('searchInput').value = '';
+    loadContacts();
+    
+    // Reset any modals that might be open
+    const modals = document.querySelectorAll('.modal-overlay, .modal');
+    modals.forEach(m => {
+      m.style.display = 'none';
+      m.classList.remove('showing', 'visible');
+    });
+  };
+  
   function resetForm() {
     toggleProfileView(true); document.getElementById('contactForm').reset();
     document.getElementById('recordId').value = "";
@@ -4365,6 +4585,13 @@ Best wishes,
     document.getElementById('spouseHistoryList').innerHTML = "";
     document.getElementById('spouseEditLink').style.display = 'inline';
     document.getElementById('refreshBtn').style.display = 'none';
+    // Hide actions menu and reset deceased styling for new contacts
+    const actionsMenu = document.getElementById('actionsMenuWrapper');
+    if (actionsMenu) actionsMenu.style.display = 'none';
+    const deceasedBadge = document.getElementById('deceasedBadge');
+    if (deceasedBadge) deceasedBadge.style.display = 'none';
+    const profileContent = document.getElementById('profileContent');
+    if (profileContent) profileContent.classList.remove('contact-deceased');
     closeOppPanel();
   }
   function handleSearch(event) {
@@ -4428,7 +4655,10 @@ Best wishes,
       const avatarColor = getAvatarColor(fullName);
       const modifiedTooltip = formatModifiedTooltip(f);
       const modifiedShort = formatModifiedShort(f);
-      item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>${modifiedShort ? `<span class="contact-modified" title="${modifiedTooltip || ''}">${modifiedShort}</span>` : ''}`;
+      const isDeceased = f.Deceased === true;
+      const deceasedBadge = isDeceased ? '<span class="deceased-badge-small">DECEASED</span>' : '';
+      item.innerHTML = `<div class="contact-avatar" style="background-color:${avatarColor}">${initials}</div><div class="contact-info"><span class="contact-name">${fullName}${deceasedBadge}</span><div class="contact-details-row">${formatDetailsRow(f)}</div></div>${modifiedShort ? `<span class="contact-modified" title="${modifiedTooltip || ''}">${modifiedShort}</span>` : ''}`;
+      if (isDeceased) item.style.opacity = '0.6';
       item.onclick = function() { selectContact(record); }; list.appendChild(item);
     });
     // Re-apply highlight if one was preserved
@@ -5942,6 +6172,417 @@ Best wishes,
       })
       .deleteAppointment(appointmentId);
   }
+
+  // ==================== ADDRESS HISTORY SYSTEM ====================
+  let currentContactAddresses = [];
+  let editingAddressId = null;
+  
+  function loadAddressHistory(contactId) {
+    const container = document.getElementById('addressHistoryList');
+    if (!container || !contactId) return;
+    
+    container.innerHTML = '<div style="padding:10px; color:#888; font-size:12px;">Loading addresses...</div>';
+    
+    google.script.run
+      .withSuccessHandler(function(addresses) {
+        currentContactAddresses = addresses || [];
+        renderAddressHistory();
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error loading addresses:', err);
+        container.innerHTML = '<div style="padding:10px; color:#A00; font-size:12px;">Error loading addresses</div>';
+      })
+      .getAddressesForContact(contactId);
+  }
+  
+  function renderAddressHistory() {
+    const container = document.getElementById('addressHistoryList');
+    const postalDisplay = document.getElementById('postalAddressDisplay');
+    if (!container) return;
+    
+    // Separate residential and postal addresses
+    const residential = currentContactAddresses.filter(a => !a.isPostal);
+    const postal = currentContactAddresses.find(a => a.isPostal);
+    
+    // Render postal address section
+    if (postalDisplay) {
+      if (postal) {
+        postalDisplay.innerHTML = `
+          <div class="postal-address-display" onclick="editAddress('${postal.id}')">
+            ${escapeHtml(postal.calculatedName) || 'No address'}
+          </div>
+        `;
+      } else {
+        postalDisplay.innerHTML = '';
+      }
+    }
+    
+    // Update postal button text: +Add when none exists, +Update when one does
+    const postalBtn = document.getElementById('postalAddressAddBtn');
+    if (postalBtn) {
+      postalBtn.textContent = postal ? '+ Update' : '+ Add';
+    }
+    
+    // Render residential addresses
+    if (residential.length === 0) {
+      container.innerHTML = '<div style="padding:10px; color:#888; font-size:12px; font-style:italic;">No addresses recorded</div>';
+      return;
+    }
+    
+    let html = '';
+    residential.forEach((addr, idx) => {
+      const isCurrent = !addr.to;
+      const dateRange = formatAddressDateRange(addr.from, addr.to);
+      html += `
+        <div class="address-item${isCurrent ? ' is-current' : ''}" onclick="editAddress('${addr.id}')">
+          <div class="address-name">${escapeHtml(addr.calculatedName) || 'No address'}</div>
+          <div class="address-meta-row">
+            ${addr.status ? `<span class="address-status-badge">${escapeHtml(addr.status)}</span>` : ''}
+            <span class="address-date-range">${dateRange}</span>
+          </div>
+        </div>
+      `;
+    });
+    
+    // Add expand/collapse if more than 3 residential addresses
+    if (residential.length > 3) {
+      const isExpanded = container.classList.contains('expanded');
+      html += `<span class="address-expand-link" onclick="toggleAddressExpand(event)">${isExpanded ? 'Show less' : `Show all ${residential.length} addresses`}</span>`;
+    }
+    
+    container.innerHTML = html;
+  }
+  
+  function formatAddressDateRange(from, to) {
+    const fromStr = from ? formatDateDisplay(from) : '?';
+    const toStr = to ? formatDateDisplay(to) : 'Present';
+    return `${fromStr} - ${toStr}`;
+  }
+  
+  function formatDateDisplay(isoDate) {
+    if (!isoDate) return '';
+    const parts = isoDate.split('-');
+    if (parts.length !== 3) return isoDate;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  
+  function parseDateInput(value) {
+    // Convert DD/MM/YYYY to YYYY-MM-DD for Airtable
+    if (!value) return null;
+    const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (match) {
+      return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+    }
+    return value; // Return as-is if already ISO format
+  }
+  
+  window.toggleAddressExpand = function(event) {
+    event.stopPropagation();
+    const container = document.getElementById('addressHistoryList');
+    container.classList.toggle('expanded');
+    renderAddressHistory();
+  };
+  
+  window.openAddressModal = function(isPostal = false) {
+    const recordId = currentContactRecord?.id;
+    if (!recordId) {
+      alert('Please save the contact first');
+      return;
+    }
+    
+    editingAddressId = null;
+    document.getElementById('addressFormId').value = '';
+    document.getElementById('addressFormIsPostal').value = isPostal ? 'true' : 'false';
+    document.getElementById('addressFormTitle').textContent = isPostal ? 'Set Postal Address' : 'Add Address';
+    document.getElementById('addressDeleteBtn').style.display = 'none';
+    
+    // Show/hide residential-only fields (status, from, to dates)
+    const residentialFields = document.getElementById('addressResidentialFields');
+    if (residentialFields) residentialFields.style.display = isPostal ? 'none' : 'block';
+    
+    // Reset form fields
+    document.querySelector('input[name="addressFormat"][value="Standard"]').checked = true;
+    document.getElementById('addressFloor').value = '';
+    document.getElementById('addressBuilding').value = '';
+    document.getElementById('addressUnit').value = '';
+    document.getElementById('addressStreetNo').value = '';
+    document.getElementById('addressStreetName').value = '';
+    document.getElementById('addressStreetType').value = '';
+    document.getElementById('addressCity').value = '';
+    document.getElementById('addressState').value = '';
+    document.getElementById('addressPostcode').value = '';
+    document.getElementById('addressCountry').value = 'Australia';
+    document.getElementById('addressLabel').value = '';
+    document.getElementById('addressStatus').value = '';
+    document.getElementById('addressFrom').value = '';
+    document.getElementById('addressTo').value = '';
+    
+    updateAddressFormatFields();
+    
+    const modal = document.getElementById('addressFormModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
+  };
+  
+  window.openPostalAddressModal = function() {
+    // Check if there are existing residential addresses to copy from
+    const residential = currentContactAddresses.filter(a => !a.isPostal);
+    
+    if (residential.length === 0) {
+      // No addresses to copy from, open new postal address form directly
+      openAddressModal(true);
+      return;
+    }
+    
+    // Show copy selection modal
+    const listContainer = document.getElementById('postalAddressCopyList');
+    let html = '';
+    residential.forEach(addr => {
+      html += `
+        <div class="postal-copy-item" onclick="copyAddressAsPostal('${addr.id}')">
+          ${escapeHtml(addr.calculatedName) || 'No address'}
+        </div>
+      `;
+    });
+    listContainer.innerHTML = html;
+    
+    const modal = document.getElementById('postalAddressCopyModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
+  };
+  
+  window.closePostalCopyModal = function() {
+    const modal = document.getElementById('postalAddressCopyModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.style.display = 'none', 250);
+  };
+  
+  window.openPostalAddressNew = function() {
+    closePostalCopyModal();
+    openAddressModal(true);
+  };
+  
+  window.copyAddressAsPostal = function(addressId) {
+    closePostalCopyModal();
+    
+    const addr = currentContactAddresses.find(a => a.id === addressId);
+    if (!addr) {
+      openAddressModal(true);
+      return;
+    }
+    
+    // Open modal pre-filled with copied address data
+    editingAddressId = null;
+    document.getElementById('addressFormId').value = '';
+    document.getElementById('addressFormIsPostal').value = 'true';
+    document.getElementById('addressFormTitle').textContent = 'Set Postal Address';
+    document.getElementById('addressDeleteBtn').style.display = 'none';
+    
+    // Hide residential-only fields (status, from, to dates) since this is a postal address
+    const residentialFields = document.getElementById('addressResidentialFields');
+    if (residentialFields) residentialFields.style.display = 'none';
+    
+    // Fill form with copied data
+    const formatRadio = document.querySelector(`input[name="addressFormat"][value="${addr.format || 'Standard'}"]`);
+    if (formatRadio) formatRadio.checked = true;
+    
+    document.getElementById('addressFloor').value = addr.floor || '';
+    document.getElementById('addressBuilding').value = addr.building || '';
+    document.getElementById('addressUnit').value = addr.unit || '';
+    document.getElementById('addressStreetNo').value = addr.streetNo || '';
+    document.getElementById('addressStreetName').value = addr.streetName || '';
+    document.getElementById('addressStreetType').value = addr.streetType || '';
+    document.getElementById('addressCity').value = addr.city || '';
+    document.getElementById('addressState').value = addr.state || '';
+    document.getElementById('addressPostcode').value = addr.postcode || '';
+    document.getElementById('addressCountry').value = addr.country || 'Australia';
+    document.getElementById('addressLabel').value = addr.label || '';
+    document.getElementById('addressStatus').value = '';
+    document.getElementById('addressFrom').value = '';
+    document.getElementById('addressTo').value = '';
+    
+    updateAddressFormatFields();
+    
+    const modal = document.getElementById('addressFormModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
+  };
+  
+  window.editAddress = function(addressId) {
+    const addr = currentContactAddresses.find(a => a.id === addressId);
+    if (!addr) return;
+    
+    editingAddressId = addressId;
+    document.getElementById('addressFormId').value = addressId;
+    document.getElementById('addressFormIsPostal').value = addr.isPostal ? 'true' : 'false';
+    document.getElementById('addressFormTitle').textContent = addr.isPostal ? 'Edit Postal Address' : 'Edit Address';
+    document.getElementById('addressDeleteBtn').style.display = 'block';
+    
+    // Show/hide residential-only fields (status, from, to dates)
+    const residentialFields = document.getElementById('addressResidentialFields');
+    if (residentialFields) residentialFields.style.display = addr.isPostal ? 'none' : 'block';
+    
+    // Fill form
+    const formatRadio = document.querySelector(`input[name="addressFormat"][value="${addr.format || 'Standard'}"]`);
+    if (formatRadio) formatRadio.checked = true;
+    
+    document.getElementById('addressFloor').value = addr.floor || '';
+    document.getElementById('addressBuilding').value = addr.building || '';
+    document.getElementById('addressUnit').value = addr.unit || '';
+    document.getElementById('addressStreetNo').value = addr.streetNo || '';
+    document.getElementById('addressStreetName').value = addr.streetName || '';
+    document.getElementById('addressStreetType').value = addr.streetType || '';
+    document.getElementById('addressCity').value = addr.city || '';
+    document.getElementById('addressState').value = addr.state || '';
+    document.getElementById('addressPostcode').value = addr.postcode || '';
+    document.getElementById('addressCountry').value = addr.country || 'Australia';
+    document.getElementById('addressLabel').value = addr.label || '';
+    document.getElementById('addressStatus').value = addr.status || '';
+    document.getElementById('addressFrom').value = addr.from ? formatDateDisplay(addr.from) : '';
+    document.getElementById('addressTo').value = addr.to ? formatDateDisplay(addr.to) : '';
+    
+    updateAddressFormatFields();
+    
+    const modal = document.getElementById('addressFormModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('showing'), 10);
+  };
+  
+  window.closeAddressForm = function() {
+    const modal = document.getElementById('addressFormModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.style.display = 'none', 250);
+    editingAddressId = null;
+  };
+  
+  window.updateAddressFormatFields = function() {
+    const format = document.querySelector('input[name="addressFormat"]:checked')?.value || 'Standard';
+    
+    // Show/hide format-specific fields but keep modal size consistent via min-height
+    document.getElementById('addressNonStandardFields').style.display = format === 'Non-Standard' ? 'block' : 'none';
+    document.getElementById('addressPOBoxFields').style.display = format === 'PO Box' ? 'block' : 'none';
+    document.getElementById('addressStreetFields').style.display = format === 'PO Box' ? 'none' : 'block';
+  };
+  
+  window.saveAddress = function() {
+    const recordId = currentContactRecord?.id;
+    if (!recordId) {
+      alert('Please save the contact first');
+      return;
+    }
+    
+    const format = document.querySelector('input[name="addressFormat"]:checked')?.value || 'Standard';
+    const isPostal = document.getElementById('addressFormIsPostal').value === 'true';
+    
+    const fields = {
+      format: format,
+      floor: document.getElementById('addressFloor').value,
+      building: document.getElementById('addressBuilding').value,
+      unit: document.getElementById('addressUnit').value,
+      streetNo: document.getElementById('addressStreetNo').value,
+      streetName: document.getElementById('addressStreetName').value,
+      streetType: document.getElementById('addressStreetType').value,
+      city: document.getElementById('addressCity').value,
+      state: document.getElementById('addressState').value,
+      postcode: document.getElementById('addressPostcode').value,
+      country: document.getElementById('addressCountry').value,
+      label: document.getElementById('addressLabel').value,
+      status: isPostal ? null : (document.getElementById('addressStatus').value || null),
+      from: isPostal ? null : parseDateInput(document.getElementById('addressFrom').value),
+      to: isPostal ? null : parseDateInput(document.getElementById('addressTo').value),
+      isPostal: isPostal
+    };
+    
+    // For postal addresses, delete existing postal before creating new (replace behavior)
+    const existingPostal = currentContactAddresses.find(a => a.isPostal);
+    if (isPostal && !editingAddressId && existingPostal) {
+      // Delete old postal, then create new one
+      google.script.run
+        .withSuccessHandler(function(deleteResult) {
+          if (deleteResult.success) {
+            createNewAddress(recordId, fields);
+          } else {
+            alert('Error replacing postal address: ' + (deleteResult.error || 'Unknown error'));
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error deleting old postal:', err);
+          alert('Error replacing postal address: ' + (err.message || err));
+        })
+        .deleteAddress(existingPostal.id);
+      return;
+    }
+    
+    if (editingAddressId) {
+      // Update existing address
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            closeAddressForm();
+            loadAddressHistory(recordId);
+          } else {
+            alert('Error saving address: ' + (result.error || 'Unknown error'));
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error updating address:', err);
+          alert('Error saving address: ' + (err.message || err));
+        })
+        .updateAddress(editingAddressId, fields);
+    } else {
+      createNewAddress(recordId, fields);
+    }
+  };
+  
+  function createNewAddress(recordId, fields) {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.success) {
+          closeAddressForm();
+          loadAddressHistory(recordId);
+        } else {
+          alert('Error creating address: ' + (result.error || 'Unknown error'));
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error creating address:', err);
+        alert('Error creating address: ' + (err.message || err));
+      })
+      .createAddress(recordId, fields);
+  }
+  
+  window.deleteAddress = function() {
+    if (!editingAddressId) {
+      console.error('deleteAddress: No editingAddressId');
+      return;
+    }
+    
+    const recordId = currentContactRecord?.id;
+    const addressId = editingAddressId;
+    const isPostal = document.getElementById('addressFormIsPostal').value === 'true';
+    const confirmMessage = isPostal 
+      ? 'Are you sure you want to remove the postal address?' 
+      : 'Are you sure you want to delete this address?';
+    
+    showConfirmModal(confirmMessage, function() {
+      console.log('Deleting address:', addressId);
+      google.script.run
+        .withSuccessHandler(function(result) {
+          console.log('Delete result:', result);
+          if (result.success) {
+            closeAddressForm();
+            loadAddressHistory(recordId);
+          } else {
+            alert('Error deleting address: ' + (result.error || 'Unknown error'));
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error deleting address:', err);
+          alert('Error deleting address: ' + (err.message || err));
+        })
+        .deleteAddress(addressId);
+    });
+  };
 
   // ==================== EVIDENCE MODAL SYSTEM ====================
   let currentEvidenceOpportunityId = null;

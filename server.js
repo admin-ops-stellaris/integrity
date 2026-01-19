@@ -567,6 +567,33 @@ app.post("/api/deleteOpportunity", async (req, res) => {
   }
 });
 
+// ==================== CONTACT ACTIONS ====================
+
+app.post("/api/markContactDeceased", async (req, res) => {
+  try {
+    const [contactId, isDeceased] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    
+    // Update Deceased field (and unsubscribe from marketing if marking as deceased)
+    const updateFields = {
+      'Deceased': isDeceased
+    };
+    if (isDeceased) {
+      updateFields['Unsubscribed from Marketing'] = true;
+    }
+    
+    const record = await airtable.updateContactMultipleFields(contactId, updateFields, userContext);
+    if (!record) {
+      return res.status(500).json({ success: false, error: 'Failed to update contact' });
+    }
+    res.json({ success: true, record });
+  } catch (err) {
+    console.error("markContactDeceased error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ==================== CONNECTIONS ====================
 
 app.post("/api/getConnectionsForContact", async (req, res) => {
@@ -1040,6 +1067,68 @@ app.post("/api/deleteAppointment", async (req, res) => {
     res.json({ success: result });
   } catch (err) {
     console.error("deleteAppointment error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- ADDRESS HISTORY ---
+app.post("/api/getAddressesForContact", async (req, res) => {
+  try {
+    const [contactId] = req.body.args || [];
+    const addresses = await airtable.getAddressesForContact(contactId);
+    res.json(addresses);
+  } catch (err) {
+    console.error("getAddressesForContact error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getAddressById", async (req, res) => {
+  try {
+    const [addressId] = req.body.args || [];
+    const address = await airtable.getAddressById(addressId);
+    res.json(address);
+  } catch (err) {
+    console.error("getAddressById error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/createAddress", async (req, res) => {
+  try {
+    const [contactId, fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.createAddress(contactId, fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("createAddress error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/updateAddress", async (req, res) => {
+  try {
+    const [addressId, fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.updateAddress(addressId, fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("updateAddress error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/deleteAddress", async (req, res) => {
+  try {
+    const [addressId] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.deleteAddress(addressId, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("deleteAddress error:", err);
     res.status(500).json({ error: err.message });
   }
 });

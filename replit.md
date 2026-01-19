@@ -27,12 +27,14 @@ Integrity is built on a Node.js/Express backend, serving a static frontend.
             - `shared-state.js`: Global mutable state variables (currentContactRecord, currentOppRecords, panelHistory, timeouts, etc.) accessed via `window.IntegrityState`
             - `shared-utils.js`: Pure utility functions (escapeHtml, formatDate*, getOrdinalSuffix, parseDateInput) with no dependencies
             - `modal-utils.js`: Modal management (openModal, closeModal, showAlert, showConfirmModal)
-        - **Load Order**: shared-state.js → shared-utils.js → modal-utils.js → contacts-search.js → core.js → inline-editing.js → (future feature modules) → app.js
+        - **Load Order**: shared-state.js → shared-utils.js → modal-utils.js → contacts-search.js → core.js → inline-editing.js → spouse.js → connections.js → (future feature modules) → app.js
         - **Phase 2 In Progress - Feature Modules**:
             - `contacts-search.js`: Contact search, display, keyboard navigation, avatar helpers, modified date formatting
             - `core.js`: Dark Mode (toggle + persistence), Screensaver/Idle timer (2-min timeout), Scroll-Hide Header (mobile/tablet)
             - `inline-editing.js`: InlineEditingManager, contact field mapping, edit mode functions (enable/disable/cancel), panel inline edit helpers (toggleFieldEdit, saveFieldEdit, saveDateField, refreshPanelAudit)
-        - **Planned Feature Modules** (remaining): spouse.js, connections.js, addresses.js, notes.js, opportunities.js, appointments.js, quick-view.js, settings.js, evidence.js, email.js
+            - `spouse.js`: Spouse section rendering, history parsing/display, spouse modal (connect/disconnect flow), polling for Airtable updates, recent contacts for modal search
+            - `connections.js`: Connections management with 12 role types, bidirectional role display, left/right column rendering, connection details modal, add/deactivate connections, connection notes with popover, connection role types from Airtable
+        - **Planned Feature Modules** (remaining): addresses.js, notes.js, opportunities.js, appointments.js, quick-view.js, settings.js, evidence.js, email.js
     - **Authentication**: Google OAuth 2.0 is used for secure access, restricted to a specified Google Workspace domain. Session management is handled via encrypted cookies.
     - **API Layer**: A unified API uses POST requests with JSON bodies for all CRUD operations and specific functionalities like contact search, spouse management, and opportunity handling. An `api-bridge.js` layer ensures compatibility by converting `google.script.run` calls to standard fetch API requests.
     - **Email Composition**: Rich text email composition is supported via Quill.js WYSIWYG editor.

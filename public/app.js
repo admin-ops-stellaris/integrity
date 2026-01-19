@@ -3376,7 +3376,7 @@ Best wishes,
      if(expandLink) { container.insertBefore(li, expandLink); } else { container.appendChild(li); }
   }
 
-  END COMMENTED OUT - spouse.js */
+  // END COMMENTED OUT - spouse.js */
   
   // CONNECTIONS LOGIC - MOVED TO public/js/connections.js
   /* COMMENTED OUT - Using connections.js module
@@ -4107,7 +4107,7 @@ Best wishes,
       alert('Error: ' + err.message);
     }).deactivateConnection(connectionId);
   }
-  END COMMENTED OUT - connections.js */
+  // END COMMENTED OUT - connections.js */
 
   // PANEL INLINE EDIT HELPERS - MOVED TO inline-editing.js
   /* COMMENTED OUT - Using inline-editing.js module

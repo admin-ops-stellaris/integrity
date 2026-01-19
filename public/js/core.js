@@ -197,16 +197,24 @@
   // ============================================================
   
   function checkUserIdentity() {
-    google.script.run.withSuccessHandler(function(user) {
-      document.getElementById('userEmail').innerText = user?.email || 'Unknown';
-    }).getCurrentUser();
+    google.script.run.withSuccessHandler(function(email) {
+      const display = email ? email : "Unknown";
+      const debugEl = document.getElementById('debugUser');
+      if (debugEl) debugEl.innerText = display;
+      document.getElementById('userEmail').innerText = email || "Not signed in";
+      if (!email) alert("Warning: The system cannot detect your email address.");
+    }).getEffectiveUserEmail();
   }
   
   window.updateHeaderTitle = function(isEditing) {
-    const titleEl = document.querySelector('.header-title');
-    if (titleEl) {
-      titleEl.textContent = isEditing ? 'INTEGRITY*' : 'INTEGRITY';
-    }
+    const fName = document.getElementById('firstName')?.value || "";
+    const mName = document.getElementById('middleName')?.value || "";
+    const lName = document.getElementById('lastName')?.value || "";
+    let fullName = [fName, mName, lName].filter(Boolean).join(" ");
+    const titleEl = document.getElementById('formTitle');
+    if (!titleEl) return;
+    if (!fullName.trim()) { titleEl.innerText = "New Contact"; return; }
+    titleEl.innerText = isEditing ? `Editing ${fullName}` : fullName;
   };
   
   // ============================================================
@@ -216,10 +224,17 @@
   window.toggleProfileView = function(show) {
     if (show) {
       document.getElementById('emptyState').style.display = 'none';
-      document.getElementById('profileContent').style.display = 'block';
+      document.getElementById('profileContent').style.display = 'flex';
     } else {
       document.getElementById('emptyState').style.display = 'flex';
       document.getElementById('profileContent').style.display = 'none';
+      document.getElementById('formTitle').innerText = "Contact";
+      document.getElementById('formSubtitle').innerText = '';
+      const refreshBtn = document.getElementById('refreshBtn');
+      if (refreshBtn) refreshBtn.style.display = 'none';
+      document.getElementById('contactMetaBar')?.classList.remove('visible');
+      const dupWarning = document.getElementById('duplicateWarningBox');
+      if (dupWarning) dupWarning.style.display = 'none';
     }
   };
   

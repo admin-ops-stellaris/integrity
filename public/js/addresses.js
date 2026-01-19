@@ -103,7 +103,7 @@
     const modal = document.getElementById('addressFormModal');
     const title = document.getElementById('addressFormTitle');
     const deleteBtn = document.getElementById('addressDeleteBtn');
-    const statusRow = document.getElementById('addressStatusRow');
+    const residentialFields = document.getElementById('addressResidentialFields');
     
     // Reset form
     document.getElementById('addressFormId').value = '';
@@ -122,8 +122,8 @@
     title.textContent = isPostal ? 'Add Postal Address' : 'Add Address';
     deleteBtn.style.display = 'none';
     
-    // Hide status/from/to for postal
-    statusRow.style.display = isPostal ? 'none' : 'flex';
+    // Hide residential-only fields (status, from, to) for postal addresses
+    if (residentialFields) residentialFields.style.display = isPostal ? 'none' : 'block';
     
     state.editingAddressId = null;
     updateAddressFormatFields();
@@ -142,8 +142,8 @@
     
     if (!existingPostal && hasResidential) {
       // Show copy choice modal
-      const copyModal = document.getElementById('postalCopyModal');
-      const residentialList = document.getElementById('postalCopyResidentialList');
+      const copyModal = document.getElementById('postalAddressCopyModal');
+      const residentialList = document.getElementById('postalAddressCopyList');
       
       if (residentialList) {
         const residential = state.currentContactAddresses.filter(a => !a.isPostal);
@@ -154,8 +154,12 @@
         `).join('');
       }
       
-      copyModal.style.display = 'flex';
-      setTimeout(() => copyModal.classList.add('showing'), 10);
+      if (copyModal) {
+        copyModal.style.display = 'flex';
+        setTimeout(() => copyModal.classList.add('showing'), 10);
+      } else {
+        openAddressModal(true);
+      }
     } else {
       // Open blank postal form
       openAddressModal(true);
@@ -163,9 +167,11 @@
   };
   
   window.closePostalCopyModal = function() {
-    const modal = document.getElementById('postalCopyModal');
-    modal.classList.remove('showing');
-    setTimeout(() => modal.style.display = 'none', 250);
+    const modal = document.getElementById('postalAddressCopyModal');
+    if (modal) {
+      modal.classList.remove('showing');
+      setTimeout(() => modal.style.display = 'none', 250);
+    }
   };
   
   window.openPostalAddressNew = function() {
@@ -223,7 +229,7 @@
     const modal = document.getElementById('addressFormModal');
     const title = document.getElementById('addressFormTitle');
     const deleteBtn = document.getElementById('addressDeleteBtn');
-    const statusRow = document.getElementById('addressStatusRow');
+    const residentialFields = document.getElementById('addressResidentialFields');
     
     state.editingAddressId = addressId;
     
@@ -259,8 +265,8 @@
     title.textContent = addr.isPostal ? 'Edit Postal Address' : 'Edit Address';
     deleteBtn.style.display = 'inline-block';
     
-    // Hide status/from/to for postal
-    statusRow.style.display = addr.isPostal ? 'none' : 'flex';
+    // Hide residential-only fields (status, from, to) for postal addresses
+    if (residentialFields) residentialFields.style.display = addr.isPostal ? 'none' : 'block';
     
     updateAddressFormatFields();
     

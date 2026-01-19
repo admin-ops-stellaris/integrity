@@ -1,18 +1,19 @@
+  // Timeouts - now using IntegrityState but keeping local refs for backward compat
   let searchTimeout;
   let spouseSearchTimeout;
   let linkedSearchTimeout;
   let loadingTimer;
-  let contactStatusFilter = localStorage.getItem('contactStatusFilter') || 'Active';
+  // contactStatusFilter MOVED to IntegrityState - use window.IntegrityState.contactStatusFilter
   
   // Initialize status toggle on page load
   document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('contactStatusFilter') || 'Active';
-    contactStatusFilter = saved;
+    window.IntegrityState.contactStatusFilter = saved;
     updateStatusToggleUI(saved);
   });
   
   function setContactStatusFilter(status) {
-    contactStatusFilter = status;
+    window.IntegrityState.contactStatusFilter = status;
     localStorage.setItem('contactStatusFilter', status);
     updateStatusToggleUI(status);
     // Re-trigger search or reload

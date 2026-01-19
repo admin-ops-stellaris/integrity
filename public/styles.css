@@ -1336,7 +1336,7 @@
   .address-item:hover { background: #F9F9F9; border-color: var(--color-star); }
   .address-item.is-current { border-left: 3px solid var(--color-cedar); }
   .postal-address-section { margin-bottom: 4px; }
-  .address-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; max-width: 320px; }
+  .address-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
   .address-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; font-weight: 600; }
   .address-section-add { font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--color-star); cursor: pointer; font-weight: 600; }
   .address-section-add:hover { text-decoration: underline; }

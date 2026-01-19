@@ -1,250 +1,472 @@
 /**
  * Opportunities Module
- * Opportunity list, panel, and appointments
+ * Handles opportunity management: composer, list, panel, and deletion
+ * 
+ * Depends on: shared-state.js, shared-utils.js, modal-utils.js
  */
 (function() {
   'use strict';
   
   const state = window.IntegrityState;
-  
+
   // ============================================================
-  // Load Opportunities
+  // Quick Add Opportunity (Composer)
   // ============================================================
-  
-  window.loadOpportunities = function(f) {
-    const oppIds = [];
-    if (f['Opportunities - Primary Applicant']) oppIds.push(...f['Opportunities - Primary Applicant']);
-    if (f['Opportunities - Applicant']) oppIds.push(...f['Opportunities - Applicant']);
-    
-    const uniqueIds = [...new Set(oppIds)];
-    
-    if (uniqueIds.length === 0) {
-      state.currentOppRecords = [];
-      renderOppList();
-      return;
-    }
-    
-    google.script.run.withSuccessHandler(function(opps) {
-      state.currentOppRecords = opps || [];
-      renderOppList();
-    }).getOpportunitiesByIds(uniqueIds);
-  };
-  
-  // ============================================================
-  // Toggle Sort Direction
-  // ============================================================
-  
-  window.toggleOppSort = function() {
-    state.currentOppSortDirection = state.currentOppSortDirection === 'desc' ? 'asc' : 'desc';
-    renderOppList();
-  };
-  
-  // ============================================================
-  // Render Opportunity List
-  // ============================================================
-  
-  window.renderOppList = function() {
-    const list = document.getElementById('oppList');
-    const sortIcon = document.getElementById('oppSortIcon');
-    
-    if (sortIcon) {
-      sortIcon.innerHTML = state.currentOppSortDirection === 'desc' ? '&#9660;' : '&#9650;';
-    }
-    
-    if (!state.currentOppRecords || state.currentOppRecords.length === 0) {
-      list.innerHTML = '<li style="color:#CCC; font-size:12px; font-style:italic;">No opportunities linked.</li>';
-      return;
-    }
-    
-    const sorted = [...state.currentOppRecords].sort((a, b) => {
-      const aDate = new Date(a.fields?.['Created On'] || 0);
-      const bDate = new Date(b.fields?.['Created On'] || 0);
-      return state.currentOppSortDirection === 'desc' ? bDate - aDate : aDate - bDate;
-    });
-    
-    list.innerHTML = sorted.map(opp => {
-      const f = opp.fields || {};
-      const name = f['Opportunity Name'] || 'Unnamed';
-      const status = f['Status'] || '';
-      const statusClass = getOppStatusClass(status);
-      
-      return `
-        <li class="opp-list-item" onclick="loadPanelRecord('Opportunities', '${opp.id}')">
-          <span class="opp-name">${escapeHtml(name)}</span>
-          <span class="opp-status ${statusClass}">${escapeHtml(status)}</span>
-        </li>
-      `;
-    }).join('');
-  };
-  
-  function getOppStatusClass(status) {
-    const statusClasses = {
-      'New': 'status-new',
-      'In Progress': 'status-in-progress',
-      'Submitted': 'status-submitted',
-      'Conditionally Approved': 'status-conditionally-approved',
-      'Approved': 'status-approved',
-      'Settled': 'status-settled',
-      'Won': 'status-won',
-      'Lost': 'status-lost'
-    };
-    return statusClasses[status] || '';
-  }
-  
-  // ============================================================
-  // Quick Add Opportunity
-  // ============================================================
-  
+
   window.quickAddOpportunity = function() {
+    if (!state.currentContactRecord) { 
+      alert('Please select a contact first.'); 
+      return; 
+    }
     openOppComposer();
   };
-  
-  window.openOppComposer = function() {
-    const modal = document.getElementById('newOppModal');
+
+  function openOppComposer() {
+    const f = state.currentContactRecord.fields;
+    const contactName = formatName(f);
+    const today = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const defaultName = `${contactName} - ${today}`;
     
-    // Reset form
-    document.getElementById('newOppType').value = '';
-    document.getElementById('newOppAmount').value = '';
-    document.getElementById('newOppLender').value = '';
-    document.getElementById('tacoImport').value = '';
-    document.getElementById('parsedTacoData').innerHTML = '';
+    document.getElementById('composerOppName').value = defaultName;
+    document.getElementById('composerOppType').value = 'Home Loans';
+    document.getElementById('composerContactInfo').innerText = `Creating for ${contactName}`;
+    document.getElementById('composerPrimaryName').innerText = contactName;
     
-    updateComposerSpouseLabel();
+    const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
+    const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
     
-    openModal('newOppModal');
-  };
-  
-  window.closeOppComposer = function() {
-    closeModal('newOppModal');
-  };
-  
-  window.closeNewOppModal = function() {
-    closeOppComposer();
-  };
-  
-  // ============================================================
-  // Update Composer Spouse Label
-  // ============================================================
-  
-  function updateComposerSpouseLabel() {
-    const spouseCheckboxLabel = document.getElementById('addSpouseLabel');
-    const spouseCheckbox = document.getElementById('addSpouseToOpp');
-    
-    if (state.currentContactRecord?.fields?.['Spouse Calculated Name']) {
-      const spouseName = state.currentContactRecord.fields['Spouse Calculated Name'];
-      spouseCheckboxLabel.textContent = `Add ${spouseName} as Applicant`;
-      spouseCheckbox.parentElement.style.display = 'block';
+    const spouseSection = document.getElementById('composerSpouseSection');
+    if (spouseName && spouseId) {
+      document.getElementById('composerSpouseName').innerText = spouseName;
+      document.getElementById('composerAddSpouse').checked = false;
+      document.getElementById('composerSpouseLabelPrefix').innerText = 'Also add ';
+      document.getElementById('composerSpouseLabelSuffix').innerText = ' as Applicant?';
+      spouseSection.style.display = 'block';
     } else {
-      spouseCheckbox.parentElement.style.display = 'none';
-      spouseCheckbox.checked = false;
+      spouseSection.style.display = 'none';
     }
+    
+    document.getElementById('oppComposer').classList.add('open');
+    setTimeout(() => {
+      document.getElementById('composerOppName').focus();
+      document.getElementById('composerOppName').select();
+    }, 100);
   }
-  
+
+  window.closeOppComposer = function() {
+    document.getElementById('oppComposer').classList.remove('open');
+    clearTacoImport();
+  };
+
   // ============================================================
-  // Taco Data Parser
+  // Taco Data Parsing
   // ============================================================
-  
+
   window.parseTacoData = function() {
-    const tacoText = document.getElementById('tacoImport').value;
-    const outputDiv = document.getElementById('parsedTacoData');
-    
-    if (!tacoText.trim()) {
-      outputDiv.innerHTML = '';
+    const rawText = document.getElementById('tacoRawInput').value;
+    if (!rawText.trim()) {
+      document.getElementById('tacoPreview').style.display = 'none';
+      state.parsedTacoFields = {};
       return;
     }
-    
-    const lines = tacoText.split('\n');
-    const parsed = {};
-    
-    lines.forEach(line => {
-      const colonIdx = line.indexOf(':');
-      if (colonIdx > 0) {
-        const key = line.substring(0, colonIdx).trim();
-        const value = line.substring(colonIdx + 1).trim();
-        if (key && value) {
-          parsed[key] = value;
-        }
-      }
-    });
-    
-    // Map to our fields
-    if (parsed['Lender']) document.getElementById('newOppLender').value = parsed['Lender'];
-    if (parsed['Loan Amount']) document.getElementById('newOppAmount').value = parsed['Loan Amount'].replace(/[,$]/g, '');
-    
-    outputDiv.innerHTML = `<div style="color:#7B8B64; font-size:11px;">Parsed ${Object.keys(parsed).length} fields</div>`;
-  };
-  
-  window.clearTacoImport = function() {
-    document.getElementById('tacoImport').value = '';
-    document.getElementById('parsedTacoData').innerHTML = '';
-  };
-  
-  // ============================================================
-  // Submit from Composer
-  // ============================================================
-  
-  window.submitFromComposer = function() {
-    const contactId = state.currentContactRecord?.id;
-    if (!contactId) {
-      showAlert('Error', 'No contact selected', 'error');
-      return;
-    }
-    
-    const oppType = document.getElementById('newOppType').value;
-    const amount = document.getElementById('newOppAmount').value;
-    const lender = document.getElementById('newOppLender').value;
-    const addSpouse = document.getElementById('addSpouseToOpp')?.checked || false;
-    
-    if (!oppType) {
-      showAlert('Error', 'Please select an opportunity type', 'error');
-      return;
-    }
-    
-    const oppData = {
-      'Opportunity Type': oppType,
-      'Amount': amount ? parseFloat(amount.replace(/[,$]/g, '')) : null,
-      'Lender': lender,
-      'Primary Applicant': [contactId],
-      'Status': 'New'
-    };
-    
-    if (addSpouse && state.currentContactRecord?.fields?.Spouse?.[0]) {
-      oppData['Applicant'] = [state.currentContactRecord.fields.Spouse[0]];
-    }
-    
-    closeOppComposer();
     
     google.script.run.withSuccessHandler(function(result) {
-      if (result && result.id) {
-        // Reload opportunities
-        loadOpportunities(state.currentContactRecord.fields);
-        // Open the new opportunity
-        loadPanelRecord('Opportunities', result.id);
+      state.parsedTacoFields = result.parsed || {};
+      const display = result.display || [];
+      const unmapped = result.unmapped || [];
+      
+      let html = '';
+      if (display.length > 0) {
+        display.forEach(item => {
+          const displayValue = item.value.length > 50 ? item.value.substring(0, 50) + '...' : item.value;
+          html += `<div style="margin-bottom:6px; display:flex; gap:8px;"><span style="color:var(--color-cedar);">&#10003;</span><span style="color:#666;">${item.airtableField}:</span> <span style="color:var(--color-midnight);">${displayValue}</span></div>`;
+        });
       }
-    }).createOpportunity(oppData);
+      if (unmapped.length > 0) {
+        html += '<div style="margin-top:10px; padding-top:8px; border-top:1px solid #EEE;"><div style="color:#999; font-size:11px; margin-bottom:6px;">Unrecognized fields:</div>';
+        unmapped.forEach(item => {
+          const displayValue = item.value.length > 40 ? item.value.substring(0, 40) + '...' : item.value;
+          html += `<div style="margin-bottom:4px; color:#999;"><span style="color:#CCC;">?</span> ${item.tacoField}: ${displayValue}</div>`;
+        });
+        html += '</div>';
+      }
+      if (display.length === 0 && unmapped.length === 0) {
+        html = '<div style="color:#999; font-style:italic;">No valid fields found. Use format: field_name: value</div>';
+      }
+      
+      document.getElementById('tacoPreviewContent').innerHTML = html;
+      document.getElementById('tacoPreview').style.display = 'block';
+      document.getElementById('tacoImportArea').style.display = 'none';
+    }).parseTacoData(rawText);
   };
-  
-  // ============================================================
-  // Load Panel Record (Opportunity Detail)
-  // ============================================================
-  
-  window.loadPanelRecord = function(table, id) {
-    const panel = document.getElementById('oppDetailPanel');
-    panel.classList.add('open');
-    
-    state.panelHistory.push({ table, id });
-    updateBackButton();
-    
-    if (table === 'Opportunities') {
-      google.script.run.withSuccessHandler(function(record) {
-        if (record && record.fields) {
-          state.currentPanelData = { table, record };
-          renderOpportunityPanel(record);
-        }
-      }).getOpportunityById(id);
+
+  function clearTacoImport() {
+    document.getElementById('tacoRawInput').value = '';
+    document.getElementById('tacoPreview').style.display = 'none';
+    document.getElementById('tacoImportArea').style.display = 'block';
+    state.parsedTacoFields = {};
+  }
+  window.clearTacoImport = clearTacoImport;
+
+  window.updateComposerSpouseLabel = function() {
+    const checkbox = document.getElementById('composerAddSpouse');
+    const prefix = document.getElementById('composerSpouseLabelPrefix');
+    const suffix = document.getElementById('composerSpouseLabelSuffix');
+    if (checkbox.checked) {
+      prefix.innerText = 'Adding ';
+      suffix.innerText = ' as Applicant';
+    } else {
+      prefix.innerText = 'Also add ';
+      suffix.innerText = ' as Applicant?';
     }
   };
-  
+
+  window.submitFromComposer = function() {
+    const oppName = document.getElementById('composerOppName').value.trim();
+    if (!oppName) { alert('Please enter an opportunity name.'); return; }
+    
+    const oppType = document.getElementById('composerOppType').value;
+    const f = state.currentContactRecord.fields;
+    const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
+    const addSpouse = document.getElementById('composerAddSpouse')?.checked && spouseId;
+    
+    const tacoFieldsCopy = { ...state.parsedTacoFields };
+    document.getElementById('oppComposer').classList.remove('open');
+    
+    google.script.run.withSuccessHandler(function(res) {
+      clearTacoImport();
+      if (res && res.id) {
+        const finishUp = () => {
+          google.script.run.withSuccessHandler(function(updatedContact) {
+            if (updatedContact) {
+              state.currentContactRecord = updatedContact;
+              loadOpportunities(updatedContact.fields);
+            }
+            setTimeout(() => loadPanelRecord('Opportunities', res.id), 300);
+          }).getContactById(state.currentContactRecord.id);
+        };
+        
+        if (addSpouse) {
+          google.script.run.withSuccessHandler(finishUp).updateOpportunity(res.id, 'Applicants', [spouseId]);
+        } else {
+          finishUp();
+        }
+      } else {
+        showAlert('Error', 'Failed to create opportunity. Check that all Taco field names match Airtable exactly.', 'error');
+      }
+    }).withFailureHandler(function(err) {
+      showAlert('Error', err.message || 'Failed to create opportunity', 'error');
+    }).createOpportunity(oppName, state.currentContactRecord.id, oppType, tacoFieldsCopy);
+  };
+
+  // ============================================================
+  // Opportunity List
+  // ============================================================
+
+  window.loadOpportunities = function(f) {
+    const oppList = document.getElementById('oppList');
+    const loader = document.getElementById('oppLoading');
+    document.getElementById('oppSortBtn').style.display = 'none';
+    oppList.innerHTML = '';
+    loader.style.display = 'block';
+    
+    let oppsToFetch = [];
+    let roleMap = {};
+    
+    const addIds = (ids, roleName) => {
+      if (!ids) return;
+      (Array.isArray(ids) ? ids : [ids]).forEach(id => {
+        oppsToFetch.push(id);
+        roleMap[id] = roleName;
+      });
+    };
+    
+    addIds(f['Opportunities - Primary Applicant'], 'Primary Applicant');
+    addIds(f['Opportunities - Applicant'], 'Applicant');
+    addIds(f['Opportunities - Guarantor'], 'Guarantor');
+    
+    if (oppsToFetch.length === 0) {
+      loader.style.display = 'none';
+      oppList.innerHTML = '<li style="color:#CCC; font-size:12px; font-style:italic;">No opportunities linked.</li>';
+      return;
+    }
+    
+    google.script.run.withSuccessHandler(function(oppRecords) {
+      loader.style.display = 'none';
+      oppRecords.forEach(r => r._role = roleMap[r.id] || "Linked");
+      if (oppRecords.length > 1) {
+        document.getElementById('oppSortBtn').style.display = 'inline';
+      }
+      state.currentOppRecords = oppRecords;
+      renderOppList();
+    }).getLinkedOpportunities(oppsToFetch);
+  };
+
+  window.toggleOppSort = function() {
+    if (state.currentOppSortDirection === 'asc') {
+      state.currentOppSortDirection = 'desc';
+    } else {
+      state.currentOppSortDirection = 'asc';
+    }
+    renderOppList();
+  };
+
+  function renderOppList() {
+    const oppList = document.getElementById('oppList');
+    oppList.innerHTML = '';
+    
+    const sorted = [...state.currentOppRecords].sort((a, b) => {
+      const nameA = (a.fields['Opportunity Name'] || "").toLowerCase();
+      const nameB = (b.fields['Opportunity Name'] || "").toLowerCase();
+      if (state.currentOppSortDirection === 'asc') return nameA.localeCompare(nameB);
+      return nameB.localeCompare(nameA);
+    });
+    
+    sorted.forEach(opp => {
+      const fields = opp.fields;
+      const name = fields['Opportunity Name'] || "Unnamed Opportunity";
+      const role = opp._role;
+      const status = fields['Status'] || '';
+      const oppType = fields['Opportunity Type'] || '';
+      const statusClass = status === 'Won' ? 'status-won' : status === 'Lost' ? 'status-lost' : '';
+      
+      const li = document.createElement('li');
+      li.className = `opp-item ${statusClass}`;
+      
+      const statusBadge = status ? `<span class="opp-status-badge ${statusClass}">${status}</span>` : '';
+      const typeLabel = oppType ? `<span class="opp-type">${oppType}</span>` : '';
+      const roleLabel = role ? `<span class="opp-role-badge">${role}</span>` : '';
+      
+      li.innerHTML = `
+        <span class="opp-title">${name}</span>
+        <div class="opp-meta-row">${statusBadge}${typeLabel}${roleLabel}</div>
+      `;
+      li.onclick = function() {
+        state.panelHistory = [];
+        loadPanelRecord('Opportunities', opp.id);
+      };
+      oppList.appendChild(li);
+    });
+  }
+
+  // ============================================================
+  // Opportunity Panel
+  // ============================================================
+
+  window.loadPanelRecord = function(table, id) {
+    const panel = document.getElementById('oppDetailPanel');
+    const content = document.getElementById('panelContent');
+    const titleEl = document.getElementById('panelTitle');
+    
+    panel.classList.add('open');
+    content.innerHTML = `<div style="text-align:center; color:#999; margin-top:50px;">Loading...</div>`;
+    
+    google.script.run.withSuccessHandler(function(response) {
+      if (!response || !response.data) {
+        content.innerHTML = "Error loading.";
+        return;
+      }
+
+      state.currentPanelData = {};
+      response.data.forEach(item => {
+        state.currentPanelData[item.key] = item.value;
+      });
+
+      state.panelHistory.push({ table: table, id: id, title: response.title });
+      updateBackButton();
+      titleEl.innerText = response.title;
+      
+      function renderField(item, tbl, recId) {
+        const tacoClass = item.tacoField ? ' taco-field' : '';
+        if (item.key === 'Opportunity Name') {
+          const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${item.value || ''}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.type === 'select') {
+          const currentVal = item.value || '';
+          const options = item.options || [];
+          let optionsHtml = options.map(opt => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('');
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${currentVal || '<span style="color:#CCC; font-style:italic;">Not set</span>'}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><select id="input_${item.key}" class="edit-input">${optionsHtml}</select><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.type === 'readonly') {
+          const displayVal = item.value || '';
+          if (!displayVal) return '';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value readonly-field">${displayVal}</div></div>`;
+        }
+        if (item.type === 'long-text') {
+          const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
+          const displayVal = item.value || '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:flex-start;"><span id="display_${item.key}" style="white-space:pre-wrap; flex:1;">${displayVal}</span><span class="edit-field-icon" style="margin-left:8px;">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><textarea id="input_${item.key}" class="edit-input" rows="3" style="resize:vertical;">${safeValue}</textarea><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.type === 'date') {
+          const rawVal = item.value || '';
+          let displayVal = '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          let inputVal = '';
+          if (rawVal) {
+            const parts = rawVal.split('/');
+            if (parts.length === 3) {
+              inputVal = `${parts[2].length === 2 ? '20' + parts[2] : parts[2]}-${parts[1]}-${parts[0]}`;
+              displayVal = `${parts[0]}/${parts[1]}/${parts[2].slice(-2)}`;
+            } else if (rawVal.includes('-')) {
+              const isoParts = rawVal.split('-');
+              if (isoParts.length === 3) {
+                inputVal = rawVal;
+                displayVal = `${isoParts[2]}/${isoParts[1]}/${isoParts[0].slice(-2)}`;
+              }
+            } else {
+              displayVal = rawVal;
+              inputVal = rawVal;
+            }
+          }
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="date" id="input_${item.key}" value="${inputVal}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveDateField('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.type === 'checkbox') {
+          const isChecked = item.value === true || item.value === 'true' || item.value === 'Yes';
+          const checkedAttr = isChecked ? 'checked' : '';
+          return `<div class="detail-group${tacoClass}"><div class="checkbox-field"><input type="checkbox" id="input_${item.key}" ${checkedAttr} onchange="saveCheckboxField('${tbl}', '${recId}', '${item.key}', this.checked)"><label for="input_${item.key}">${item.label}</label></div></div>`;
+        }
+        if (item.type === 'url') {
+          const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
+          const displayVal = item.value ? `<a href="${item.value}" target="_blank" style="color:var(--color-sky);">${item.value}</a>` : '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="url" id="input_${item.key}" value="${safeValue}" class="edit-input" placeholder="https://..."><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {
+          let linkHtml = '';
+          if (item.value.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
+          else item.value.forEach(link => { linkHtml += `<span class="data-link panel-contact-link" data-contact-id="${link.id}" data-contact-table="${link.table}">${link.name}</span>`; });
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleLinkedEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span>${linkHtml}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><div id="chip_container_${item.key}" class="link-chip-container"></div><input type="text" placeholder="Add contact..." class="link-search-input" onkeyup="handleLinkedSearch(event, '${item.key}')"><div id="error_${item.key}" class="input-error"></div><div id="results_${item.key}" class="link-results"></div><div class="edit-btn-row" style="margin-top:10px;"><button onclick="cancelLinkedEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveLinkedEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.type === 'link') {
+          const links = item.value;
+          let linkHtml = '';
+          if (links.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
+          else { links.forEach(link => { linkHtml += `<a class="data-link" onclick="loadPanelRecord('${link.table}', '${link.id}')">${link.name}</a>`; }); }
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value" style="border:none;">${linkHtml}</div></div>`;
+        }
+        if (item.tacoField) {
+          const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
+          const displayVal = item.value || '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+        }
+        if (item.value === undefined || item.value === null || item.value === "") return '';
+        return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value">${item.value}</div></div>`;
+      }
+      
+      let html = '';
+      
+      if (table === 'Opportunities') {
+        const dataMap = {};
+        response.data.forEach(item => { dataMap[item.key] = item; });
+        
+        if (response.audit && (response.audit.Created || response.audit.Modified)) {
+          const oppName = (dataMap['Opportunity Name']?.value || response.title || '').replace(/'/g, "\\'");
+          const oppType = (dataMap['Opportunity Type']?.value || '').replace(/'/g, "\\'");
+          const lender = (dataMap['Lender']?.value || '').replace(/'/g, "\\'");
+          html += `<div class="panel-audit-header">`;
+          html += `<div class="panel-audit-section">`;
+          if (response.audit.Created) html += `<div>${response.audit.Created}</div>`;
+          if (response.audit.Modified) html += `<div>${response.audit.Modified}</div>`;
+          html += `</div>`;
+          html += `<button type="button" class="btn-evidence-top" onclick="openEvidenceModal('${id}', '${oppName}', '${oppType}', '${lender}')">📋 EVIDENCE & DATA COLLECTION</button>`;
+          html += `</div>`;
+        }
+      } else {
+        if (response.audit && (response.audit.Created || response.audit.Modified)) {
+          let auditHtml = '<div class="panel-audit-section">';
+          if (response.audit.Created) auditHtml += `<div>${response.audit.Created}</div>`;
+          if (response.audit.Modified) auditHtml += `<div>${response.audit.Modified}</div>`;
+          auditHtml += '</div>';
+          html += auditHtml;
+        }
+      }
+      
+      if (table === 'Opportunities') {
+        const dataMap = {};
+        response.data.forEach(item => { dataMap[item.key] = item; });
+        
+        html += '<div class="panel-row panel-row-3">';
+        ['Opportunity Name', 'Status', 'Opportunity Type'].forEach(key => {
+          if (dataMap[key]) html += renderField(dataMap[key], table, id);
+        });
+        html += '</div>';
+        
+        const tacoFields = response.data.filter(item => item.tacoField);
+        if (tacoFields.length > 0) {
+          html += '<div class="taco-section-box">';
+          html += `<div class="taco-section-header"><img src="https://taco.insightprocessing.com.au/static/images/taco.jpg" alt="Taco"><span>Fields from Taco Enquiry tab</span></div>`;
+          html += '<div id="tacoFieldsContainer">';
+          
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: New or Existing Client']) html += renderField(dataMap['Taco: New or Existing Client'], table, id);
+          if (dataMap['Taco: Lead Source']) html += renderField(dataMap['Taco: Lead Source'], table, id);
+          html += '<div class="detail-group"></div>';
+          html += '</div>';
+          
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: Last thing we did']) html += renderField(dataMap['Taco: Last thing we did'], table, id);
+          if (dataMap['Taco: How can we help']) html += renderField(dataMap['Taco: How can we help'], table, id);
+          if (dataMap['Taco: CM notes']) html += renderField(dataMap['Taco: CM notes'], table, id);
+          html += '</div>';
+          
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: Broker']) html += renderField(dataMap['Taco: Broker'], table, id);
+          if (dataMap['Taco: Broker Assistant']) html += renderField(dataMap['Taco: Broker Assistant'], table, id);
+          if (dataMap['Taco: Client Manager']) html += renderField(dataMap['Taco: Client Manager'], table, id);
+          html += '</div>';
+          
+          html += '<div class="taco-row">';
+          if (dataMap['Taco: Converted to Appt']) html += renderField(dataMap['Taco: Converted to Appt'], table, id);
+          html += '</div>';
+          
+          html += '</div></div>';
+        }
+        
+        html += `<div class="appointments-section" style="margin-top:15px;">`;
+        html += `<div id="appointmentsContainer" data-opportunity-id="${id}"><div style="color:#888; padding:10px;">Loading appointments...</div></div>`;
+        html += `<div class="opp-action-buttons">`;
+        html += `<button type="button" onclick="openAppointmentForm('${id}')">+ ADD APPOINTMENT</button>`;
+        html += `</div></div>`;
+        
+        setTimeout(() => loadAppointmentsForOpportunity(id), 100);
+        
+        const applicantKeys = ['Primary Applicant', 'Applicants', 'Guarantors', 'Loan Applications'];
+        html += '<div class="panel-row panel-row-4" style="margin-top:20px;">';
+        applicantKeys.forEach(key => {
+          if (dataMap[key]) html += renderField(dataMap[key], table, id);
+        });
+        html += '</div>';
+        
+        if (dataMap['Lead Source Major'] || dataMap['Lead Source Minor']) {
+          html += '<div class="panel-row panel-row-2">';
+          if (dataMap['Lead Source Major']) html += renderField(dataMap['Lead Source Major'], table, id);
+          if (dataMap['Lead Source Minor']) html += renderField(dataMap['Lead Source Minor'], table, id);
+          html += '</div>';
+        }
+        
+        const usedKeys = new Set(['Opportunity Name', 'Status', 'Opportunity Type', 'Lead Source Major', 'Lead Source Minor', ...applicantKeys]);
+        const remaining = response.data.filter(item => !item.tacoField && !usedKeys.has(item.key));
+        if (remaining.length > 0) {
+          html += '<div style="margin-top:15px; display:grid; grid-template-columns:repeat(3, 1fr); gap:12px 15px;">';
+          remaining.forEach(item => { html += renderField(item, table, id); });
+          html += '</div>';
+        }
+        
+        const safeName = (response.title || '').replace(/'/g, "\\'");
+        html += `<div style="margin-top:30px; padding-top:20px; border-top:1px solid #EEE;">`;
+        html += `<button type="button" class="btn-delete btn-inline" onclick="confirmDeleteOpportunity('${id}', '${safeName}')">Delete Opportunity</button>`;
+        html += `</div>`;
+      } else {
+        response.data.forEach(item => { html += renderField(item, table, id); });
+      }
+      
+      content.innerHTML = html;
+    }).getRecordDetail(table, id);
+  };
+
+  // ============================================================
+  // Panel Navigation
+  // ============================================================
+
   window.popHistory = function() {
     if (state.panelHistory.length <= 1) return;
     state.panelHistory.pop();
@@ -252,253 +474,86 @@
     state.panelHistory.pop();
     loadPanelRecord(prev.table, prev.id);
   };
-  
+
   function updateBackButton() {
     const btn = document.getElementById('panelBackBtn');
-    if (btn) {
-      btn.style.display = state.panelHistory.length > 1 ? 'block' : 'none';
+    if (state.panelHistory.length > 1) {
+      btn.style.display = 'block';
+    } else {
+      btn.style.display = 'none';
     }
   }
-  
+  window.updateBackButton = updateBackButton;
+
   window.closeOppPanel = function() {
     document.getElementById('oppDetailPanel').classList.remove('open');
     state.panelHistory = [];
   };
-  
-  // ============================================================
-  // Render Opportunity Panel
-  // ============================================================
-  
-  function renderOpportunityPanel(record) {
-    const f = record.fields;
-    
-    document.getElementById('panelTitle').textContent = f['Opportunity Name'] || 'Opportunity';
-    
-    const statusEl = document.getElementById('panelStatus');
-    statusEl.textContent = f['Status'] || '';
-    statusEl.className = 'panel-status ' + getOppStatusClass(f['Status'] || '');
-    
-    // Render fields
-    const fieldsContainer = document.getElementById('panelFields');
-    fieldsContainer.innerHTML = `
-      ${renderPanelField(record.id, 'Opportunity Type', f['Opportunity Type'], 'select', getOppTypeOptions())}
-      ${renderPanelField(record.id, 'Status', f['Status'], 'select', getStatusOptions())}
-      ${renderPanelField(record.id, 'Amount', f['Amount'], 'currency')}
-      ${renderPanelField(record.id, 'Lender', f['Lender'], 'text')}
-      ${renderPanelField(record.id, 'Settlement Date', f['Settlement Date'], 'date')}
-      ${renderPanelField(record.id, 'Notes', f['Notes'], 'textarea')}
-    `;
-    
-    // Load appointments
-    loadAppointmentsForOpportunity(record.id);
-    
-    // Render audit trail
-    refreshPanelAudit('Opportunities', record.id);
-    
-    // Check for "Won" status
-    if (f['Status'] === 'Won' || f['Status'] === 'Settled') {
-      triggerWonCelebration();
-    }
-  }
-  
-  function renderPanelField(recordId, fieldKey, value, type, options = []) {
-    const displayValue = formatFieldValue(value, type);
-    const fieldId = `panelField_${fieldKey.replace(/\s+/g, '_')}`;
-    
-    return `
-      <div class="panel-field" id="${fieldId}">
-        <label class="panel-field-label">${escapeHtml(fieldKey)}</label>
-        <div class="panel-field-value" onclick="toggleFieldEdit('${escapeHtmlForAttr(fieldKey)}')" data-record-id="${recordId}" data-field-key="${escapeHtmlForAttr(fieldKey)}" data-field-type="${type}" data-options="${escapeHtmlForAttr(JSON.stringify(options))}">
-          ${displayValue || '<span class="empty-value">-</span>'}
-        </div>
-      </div>
-    `;
-  }
-  
-  function formatFieldValue(value, type) {
-    if (value === null || value === undefined || value === '') return '';
-    
-    switch (type) {
-      case 'currency':
-        const num = parseFloat(value);
-        return isNaN(num) ? value : '$' + num.toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      case 'date':
-        return formatDateDisplay(value);
-      default:
-        return escapeHtml(String(value));
-    }
-  }
-  
-  function getOppTypeOptions() {
-    return ['Home Loan', 'Investment Loan', 'Construction Loan', 'Personal Loan', 'Car Loan', 'Commercial Loan', 'Asset Finance', 'Other'];
-  }
-  
-  function getStatusOptions() {
-    return ['New', 'In Progress', 'Submitted', 'Conditionally Approved', 'Approved', 'Docs Out', 'Docs In', 'Settled', 'Won', 'Lost'];
-  }
-  
-  // ============================================================
-  // Toggle Field Edit
-  // ============================================================
-  
-  window.toggleFieldEdit = function(fieldKey) {
-    const fieldEl = document.querySelector(`[data-field-key="${fieldKey}"]`);
-    if (!fieldEl) return;
-    
-    const recordId = fieldEl.dataset.recordId;
-    const type = fieldEl.dataset.fieldType;
-    const options = JSON.parse(fieldEl.dataset.options || '[]');
-    const currentValue = fieldEl.textContent.trim();
-    
-    // Replace with input
-    let inputHtml = '';
-    
-    switch (type) {
-      case 'select':
-        inputHtml = `<select onchange="saveFieldEdit('Opportunities', '${recordId}', '${escapeHtmlForAttr(fieldKey)}')" onblur="cancelFieldEdit('${escapeHtmlForAttr(fieldKey)}')">
-          <option value="">-</option>
-          ${options.map(o => `<option value="${escapeHtml(o)}" ${currentValue === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
-        </select>`;
-        break;
-      case 'textarea':
-        inputHtml = `<textarea onblur="saveFieldEdit('Opportunities', '${recordId}', '${escapeHtmlForAttr(fieldKey)}')">${escapeHtml(currentValue === '-' ? '' : currentValue)}</textarea>`;
-        break;
-      case 'date':
-        inputHtml = `<input type="text" placeholder="DD/MM/YYYY" value="${currentValue === '-' ? '' : currentValue}" onblur="saveDateField('Opportunities', '${recordId}', '${escapeHtmlForAttr(fieldKey)}')">`;
-        break;
-      case 'currency':
-        const numValue = currentValue.replace(/[$,]/g, '');
-        inputHtml = `<input type="text" value="${numValue === '-' ? '' : numValue}" onblur="saveFieldEdit('Opportunities', '${recordId}', '${escapeHtmlForAttr(fieldKey)}')">`;
-        break;
-      default:
-        inputHtml = `<input type="text" value="${currentValue === '-' ? '' : currentValue}" onblur="saveFieldEdit('Opportunities', '${recordId}', '${escapeHtmlForAttr(fieldKey)}')">`;
-    }
-    
-    fieldEl.innerHTML = inputHtml;
-    const input = fieldEl.querySelector('input, select, textarea');
-    if (input) {
-      input.focus();
-      if (input.tagName === 'SELECT') {
-        // Keep select open
-      }
-    }
-  };
-  
-  window.cancelFieldEdit = function(fieldKey) {
-    // Re-render panel
-    if (state.currentPanelData.record) {
-      renderOpportunityPanel(state.currentPanelData.record);
-    }
-  };
-  
-  window.saveFieldEdit = function(table, id, fieldKey) {
-    const fieldEl = document.querySelector(`[data-field-key="${fieldKey}"]`);
-    const input = fieldEl?.querySelector('input, select, textarea');
-    
-    if (!input) return;
-    
-    let value = input.value;
-    const type = fieldEl.dataset.fieldType;
-    
-    // Convert currency back to number
-    if (type === 'currency' && value) {
-      value = parseFloat(value.replace(/[,$]/g, ''));
-    }
-    
-    const updateData = {};
-    updateData[fieldKey] = value || null;
-    
-    google.script.run.withSuccessHandler(function(result) {
-      if (result && result.id) {
-        state.currentPanelData.record = result;
-        renderOpportunityPanel(result);
-        
-        // Reload opportunity list
-        if (state.currentContactRecord) {
-          loadOpportunities(state.currentContactRecord.fields);
-        }
-      }
-    }).updateOpportunity(id, updateData);
-  };
-  
-  window.saveDateField = function(table, id, fieldKey) {
-    const fieldEl = document.querySelector(`[data-field-key="${fieldKey}"]`);
-    const input = fieldEl?.querySelector('input');
-    
-    if (!input) return;
-    
-    const value = parseDateInput(input.value);
-    
-    const updateData = {};
-    updateData[fieldKey] = value;
-    
-    google.script.run.withSuccessHandler(function(result) {
-      if (result && result.id) {
-        state.currentPanelData.record = result;
-        renderOpportunityPanel(result);
-      }
-    }).updateOpportunity(id, updateData);
-  };
-  
-  // ============================================================
-  // Panel Audit Trail
-  // ============================================================
-  
-  window.refreshPanelAudit = function(table, id) {
-    const auditEl = document.getElementById('panelAudit');
-    if (!auditEl) return;
-    
-    const record = state.currentPanelData.record;
-    if (!record) return;
-    
-    const f = record.fields;
-    const createdOn = f['Created On'];
-    const createdBy = f['Created By'];
-    const modifiedOn = f['Modified On'];
-    const modifiedBy = f['Modified By'];
-    
-    let html = '';
-    if (createdOn) {
-      html += `<div class="audit-item">Created: ${formatAuditDate(createdOn)}${createdBy ? ' by ' + createdBy : ''}</div>`;
-    }
-    if (modifiedOn) {
-      html += `<div class="audit-item">Modified: ${formatAuditDate(modifiedOn)}${modifiedBy ? ' by ' + modifiedBy : ''}</div>`;
-    }
-    
-    auditEl.innerHTML = html;
-  };
-  
+
   // ============================================================
   // Delete Opportunity
   // ============================================================
-  
+
   window.confirmDeleteOpportunity = function(oppId, oppName) {
-    state.deletingOppId = oppId;
-    document.getElementById('deleteOppName').textContent = oppName || 'this opportunity';
+    state.currentOppToDelete = { id: oppId, name: oppName };
+    document.getElementById('deleteOppConfirmMessage').innerText = `Are you sure you want to delete "${oppName}"? This action cannot be undone.`;
     openModal('deleteOppConfirmModal');
   };
-  
+
   window.closeDeleteOppConfirmModal = function() {
     closeModal('deleteOppConfirmModal');
-    state.deletingOppId = null;
+    state.currentOppToDelete = null;
   };
-  
+
   window.executeDeleteOpportunity = function() {
-    const oppId = state.deletingOppId;
-    if (!oppId) return;
+    if (!state.currentOppToDelete) return;
+    const { id, name } = state.currentOppToDelete;
     
-    closeDeleteOppConfirmModal();
-    closeOppPanel();
-    
-    google.script.run.withSuccessHandler(function(result) {
-      if (result.success) {
-        if (state.currentContactRecord) {
-          loadOpportunities(state.currentContactRecord.fields);
-        }
-      } else {
-        showAlert('Error', result.error || 'Failed to delete opportunity', 'error');
-      }
-    }).deleteOpportunity(oppId);
+    closeModal('deleteOppConfirmModal', function() {
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.success) {
+            showAlert('Success', `"${name}" has been deleted.`, 'success');
+            closeOppPanel();
+            if (state.currentContactRecord) {
+              google.script.run.withSuccessHandler(function(updatedContact) {
+                if (updatedContact) {
+                  state.currentContactRecord = updatedContact;
+                  loadOpportunities(updatedContact.fields);
+                }
+              }).getContactById(state.currentContactRecord.id);
+            }
+          } else {
+            showAlert('Cannot Delete', result.error || 'Failed to delete opportunity.', 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          showAlert('Error', err.message, 'error');
+        })
+        .deleteOpportunity(id);
+    });
+    state.currentOppToDelete = null;
   };
-  
+
+  // ============================================================
+  // Celebration (Won status)
+  // ============================================================
+
+  window.triggerWonCelebration = function() {
+    const container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+    const colors = ['#BB9934', '#7B8B64', '#19414C', '#D0DFE6', '#F2F0E9'];
+    for (let i = 0; i < 50; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = Math.random() * 100 + '%';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = Math.random() * 0.5 + 's';
+      confetti.style.animationDuration = (Math.random() * 1 + 1.5) + 's';
+      container.appendChild(confetti);
+    }
+    setTimeout(() => container.remove(), 3000);
+  };
+
 })();

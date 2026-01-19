@@ -204,7 +204,8 @@
   }
   END COMMENTED OUT */
 
-  // --- QUICK ADD OPPORTUNITY (COMPOSER) ---
+  // OPPORTUNITY COMPOSER - MOVED TO opportunities.js
+  /* COMMENTED OUT - Using opportunities.js module
   function quickAddOpportunity() {
     if (!currentContactRecord) { alert('Please select a contact first.'); return; }
     openOppComposer();
@@ -344,6 +345,7 @@
       showAlert('Error', err.message || 'Failed to create opportunity', 'error');
     }).createOpportunity(oppName, currentContactRecord.id, oppType, tacoFieldsCopy);
   }
+  END COMMENTED OUT */
   
   function showShortcutsHelp() {
     openModal('shortcutsModal');
@@ -366,7 +368,8 @@
     if (alertModal && e.target === alertModal) closeAlertModal();
   });
   
-  // --- CELEBRATION ---
+  // CELEBRATION - MOVED TO opportunities.js
+  /* COMMENTED OUT - Using opportunities.js module
   function triggerWonCelebration() {
     const container = document.createElement('div');
     container.className = 'confetti-container';
@@ -383,6 +386,7 @@
     }
     setTimeout(() => container.remove(), 3000);
   }
+  END COMMENTED OUT */
 
   // --- AVATAR HELPERS --- MOVED TO contacts-search.js
   /* COMMENTED OUT - Using contacts-search.js module
@@ -1495,6 +1499,8 @@
     });
   }
   
+  // DELETE OPPORTUNITY - MOVED TO opportunities.js
+  /* COMMENTED OUT - Using opportunities.js module
   let currentOppToDelete = null;
   
   function confirmDeleteOpportunity(oppId, oppName) {
@@ -1537,6 +1543,7 @@
     });
     currentOppToDelete = null;
   }
+  END COMMENTED OUT */
   
   function openModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -4750,6 +4757,8 @@ Best wishes,
     bar.classList.add('visible');
   }
 
+  // OPPORTUNITY LIST - MOVED TO opportunities.js
+  /* COMMENTED OUT - Using opportunities.js module
   function loadOpportunities(f) {
     const oppList = document.getElementById('oppList'); const loader = document.getElementById('oppLoading');
     document.getElementById('oppSortBtn').style.display = 'none'; oppList.innerHTML = ''; loader.style.display = 'block';
@@ -4793,6 +4802,8 @@ Best wishes,
          li.onclick = function() { panelHistory = []; loadPanelRecord('Opportunities', opp.id); }; oppList.appendChild(li);
      });
   }
+  END COMMENTED OUT */
+
   function handleFormSubmit(formObject) {
     event.preventDefault();
     const btn = document.getElementById('submitBtn'); const status = document.getElementById('status');
@@ -4832,6 +4843,9 @@ Best wishes,
          }
       }).withFailureHandler(function(err) { status.innerText = "❌ " + err.message; status.className = "status-error"; btn.disabled = false; btn.innerText = "Try Again"; }).processForm(formData);
   }
+  
+  // LOAD PANEL RECORD - MOVED TO opportunities.js
+  /* COMMENTED OUT - Using opportunities.js module
   function loadPanelRecord(table, id) {
     const panel = document.getElementById('oppDetailPanel'); const content = document.getElementById('panelContent');
     const titleEl = document.getElementById('panelTitle'); const backBtn = document.getElementById('panelBackBtn');
@@ -5045,9 +5059,14 @@ Best wishes,
       content.innerHTML = html;
     }).getRecordDetail(table, id);
   }
+  END COMMENTED OUT */
+
+  // PANEL NAVIGATION - MOVED TO opportunities.js
+  /* COMMENTED OUT - Using opportunities.js module
   function popHistory() { if (panelHistory.length <= 1) return; panelHistory.pop(); const prev = panelHistory[panelHistory.length - 1]; panelHistory.pop(); loadPanelRecord(prev.table, prev.id); }
   function updateBackButton() { const btn = document.getElementById('panelBackBtn'); if (panelHistory.length > 1) { btn.style.display = 'block'; } else { btn.style.display = 'none'; } }
   function closeOppPanel() { document.getElementById('oppDetailPanel').classList.remove('open'); panelHistory = []; }
+  END COMMENTED OUT */
   
   // --- APPOINTMENTS MANAGEMENT ---
   let currentAppointmentOpportunityId = null;

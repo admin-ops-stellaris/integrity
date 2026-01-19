@@ -646,13 +646,11 @@
     }
   }
 
-  // ============================================================
-  // INLINE EDITING MANAGER - Reusable module for click-to-edit fields
-  // ============================================================
+  // INLINE EDITING MANAGER - MOVED TO public/js/inline-editing.js
+  /* COMMENTED OUT - Using inline-editing.js module
   // Usage: Call InlineEditingManager.init(containerSelector, config) where:
   //   containerSelector: CSS selector for the container (e.g., '#profileTop')
   //   config: { fieldMap: {fieldId: 'AirtableField'}, getRecordId: fn, saveCallback: fn, onFieldSave: fn }
-  // ============================================================
   
   const InlineEditingManager = (function() {
     const instances = new Map();
@@ -1076,8 +1074,10 @@
       }
     };
   })();
+  END COMMENTED OUT - InlineEditingManager */
 
-  // Field name to Airtable field mapping for Contacts
+  // CONTACT_FIELD_MAP, initInlineEditing, edit mode functions - MOVED TO inline-editing.js
+  /* COMMENTED OUT - Using inline-editing.js module
   const CONTACT_FIELD_MAP = {
     'firstName': 'FirstName',
     'middleName': 'MiddleName', 
@@ -1229,6 +1229,7 @@
   }
   
   function cancelEditMode() { cancelNewContact(); }
+  END COMMENTED OUT - edit mode functions */
 
   function selectContact(record) {
     document.getElementById('cancelBtn').style.display = 'none';
@@ -4103,7 +4104,8 @@ Best wishes,
     }).deactivateConnection(connectionId);
   }
 
-  // --- INLINE EDIT LOGIC ---
+  // PANEL INLINE EDIT HELPERS - MOVED TO inline-editing.js
+  /* COMMENTED OUT - Using inline-editing.js module
   function refreshPanelAudit(table, id) {
     google.script.run.withSuccessHandler(function(response) {
       if (!response || !response.audit) return;
@@ -4144,7 +4146,6 @@ Best wishes,
         if(fieldKey === 'Status' && currentContactRecord) {
            loadOpportunities(currentContactRecord.fields);
         }
-        // Toggle conditional Taco fields
         if(fieldKey === 'Taco: Type of Appointment') {
            const phoneWrap = document.getElementById('field_wrap_Taco: Appt Phone Number');
            const videoWrap = document.getElementById('field_wrap_Taco: Appt Meet URL');
@@ -4154,7 +4155,6 @@ Best wishes,
         if(fieldKey === 'Taco: How appt booked') {
            const otherWrap = document.getElementById('field_wrap_Taco: How Appt Booked Other');
            if (otherWrap) otherWrap.style.display = val === 'Other' ? '' : 'none';
-           // Update Appt Reminder label reactively based on Calendly selection
            const reminderLabel = document.querySelector('label[for="input_Taco: Need Appt Reminder"]');
            const reminderInput = document.getElementById('input_Taco: Need Appt Reminder');
            if (reminderLabel && reminderInput && !reminderInput.checked) {
@@ -4188,6 +4188,7 @@ Best wishes,
         refreshPanelAudit(table, id);
      }).updateRecord(table, id, fieldKey, saveVal);
   }
+  END COMMENTED OUT - panel inline edit helpers */
 
   function saveCheckboxField(table, id, fieldKey, isChecked) {
     const label = document.querySelector(`label[for="input_${fieldKey}"]`);

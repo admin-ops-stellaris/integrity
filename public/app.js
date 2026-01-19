@@ -3283,7 +3283,8 @@ Best wishes,
     }).getRecordById('Opportunities', opportunityId);
   }
 
-  // --- SPOUSE LOGIC ---
+  // SPOUSE LOGIC - MOVED TO public/js/spouse.js
+  /* COMMENTED OUT - Using spouse.js module
   function renderSpouseSection(f) {
      const badgeEl = document.getElementById('spouseBadge');
      const statusEl = document.getElementById('spouseStatusText');
@@ -3375,7 +3376,10 @@ Best wishes,
      if(expandLink) { container.insertBefore(li, expandLink); } else { container.appendChild(li); }
   }
 
-  // --- CONNECTIONS LOGIC ---
+  END COMMENTED OUT - spouse.js */
+  
+  // CONNECTIONS LOGIC - MOVED TO public/js/connections.js
+  /* COMMENTED OUT - Using connections.js module
   let connectionRoleTypes = [];
   
   let allConnectionsData = [];
@@ -4103,6 +4107,7 @@ Best wishes,
       alert('Error: ' + err.message);
     }).deactivateConnection(connectionId);
   }
+  END COMMENTED OUT - connections.js */
 
   // PANEL INLINE EDIT HELPERS - MOVED TO inline-editing.js
   /* COMMENTED OUT - Using inline-editing.js module

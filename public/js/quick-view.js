@@ -1,103 +1,194 @@
 /**
- * Quick View Module
- * Contact quick view hover functionality
+ * quick-view.js - Contact Quick View Module
+ * 
+ * Displays contact summary cards on hover with mobile/email details.
+ * Includes positioning, event delegation, and navigation.
+ * 
+ * Dependencies: shared-state.js, contacts-search.js (getInitials, getAvatarColor)
+ * 
+ * Functions exposed to window:
+ * - showContactQuickView, hideContactQuickView
+ * - attachQuickViewToElement, navigateFromQuickView
  */
 (function() {
   'use strict';
   
   const state = window.IntegrityState;
-  
-  let quickViewTimeout = null;
-  let hideQuickViewTimeout = null;
-  
-  // ============================================================
-  // Show Contact Quick View
-  // ============================================================
-  
-  window.showContactQuickView = function(contactId, triggerElement) {
-    clearTimeout(hideQuickViewTimeout);
+
+  state.quickViewContactId = null;
+  state.quickViewHoverTimeout = null;
+  state.isQuickViewHovered = false;
+
+  function showContactQuickView(contactId, triggerElement) {
+    if (!contactId) return;
+    state.quickViewContactId = contactId;
     
-    // Delay showing to prevent flicker
-    quickViewTimeout = setTimeout(() => {
-      google.script.run.withSuccessHandler(function(record) {
-        if (!record || !record.fields) return;
-        
-        const f = record.fields;
-        const quickView = document.getElementById('contactQuickView');
-        
-        if (!quickView) return;
-        
-        quickView.dataset.contactId = contactId;
-        
-        const initials = getInitials(f.FirstName, f.LastName);
-        const avatarColor = getAvatarColor((f.FirstName || '') + (f.LastName || ''));
-        
-        quickView.innerHTML = `
-          <div class="quick-view-header">
-            <div class="quick-view-avatar" style="background-color:${avatarColor};">${initials}</div>
-            <div class="quick-view-name">${escapeHtml(formatName(f))}</div>
-          </div>
-          <div class="quick-view-details">
-            ${f.EmailAddress1 ? `<div class="quick-view-row"><span class="quick-view-label">Email:</span> ${escapeHtml(f.EmailAddress1)}</div>` : ''}
-            ${f.Mobile ? `<div class="quick-view-row"><span class="quick-view-label">Mobile:</span> ${escapeHtml(f.Mobile)}</div>` : ''}
-            ${f.Telephone1 ? `<div class="quick-view-row"><span class="quick-view-label">Home:</span> ${escapeHtml(f.Telephone1)}</div>` : ''}
-          </div>
-          <div class="quick-view-actions">
-            <button class="quick-view-btn" onclick="navigateFromQuickView()">View Contact</button>
-          </div>
-        `;
-        
-        // Position quick view
-        const rect = triggerElement.getBoundingClientRect();
-        quickView.style.top = (rect.bottom + 5) + 'px';
-        quickView.style.left = Math.min(rect.left, window.innerWidth - 280) + 'px';
-        quickView.classList.add('visible');
-        
-      }).getContactById(contactId);
-    }, 300);
-  };
-  
-  // ============================================================
-  // Hide Contact Quick View
-  // ============================================================
-  
-  window.hideContactQuickView = function() {
-    clearTimeout(quickViewTimeout);
+    const card = document.getElementById('contactQuickView');
+    const rect = triggerElement.getBoundingClientRect();
     
-    hideQuickViewTimeout = setTimeout(() => {
-      const quickView = document.getElementById('contactQuickView');
-      if (quickView) {
-        quickView.classList.remove('visible');
-      }
-    }, 200);
-  };
-  
-  // ============================================================
-  // Attach Quick View to Element
-  // ============================================================
-  
-  window.attachQuickViewToElement = function(element, contactId) {
-    element.addEventListener('mouseenter', function(e) {
-      showContactQuickView(contactId, element);
-    });
+    let left = rect.left + (rect.width / 2) - 150;
+    let top = rect.bottom + 8;
     
-    element.addEventListener('mouseleave', function(e) {
-      hideContactQuickView();
-    });
-  };
-  
-  // Keep quick view visible when hovering over it
-  document.addEventListener('DOMContentLoaded', function() {
-    const quickView = document.getElementById('contactQuickView');
-    if (quickView) {
-      quickView.addEventListener('mouseenter', function() {
-        clearTimeout(hideQuickViewTimeout);
-      });
+    if (left < 10) left = 10;
+    if (left + 320 > window.innerWidth - 10) left = window.innerWidth - 330;
+    if (top + 300 > window.innerHeight) {
+      top = rect.top - 8;
+      card.style.transform = 'translateY(-100%)';
+    } else {
+      card.style.transform = 'translateY(0)';
+    }
+    
+    card.style.left = left + 'px';
+    card.style.top = top + 'px';
+    
+    document.getElementById('quickViewName').textContent = 'Loading...';
+    document.getElementById('quickViewPreferred').textContent = '';
+    document.getElementById('quickViewAvatar').textContent = '...';
+    document.getElementById('quickViewAvatar').style.backgroundColor = '#999';
+    document.getElementById('quickViewDetails').innerHTML = '';
+    document.getElementById('quickViewFooter').textContent = '';
+    
+    card.classList.add('visible');
+    
+    google.script.run.withSuccessHandler(function(contact) {
+      if (!contact || !contact.fields || state.quickViewContactId !== contactId) return;
       
-      quickView.addEventListener('mouseleave', function() {
-        hideContactQuickView();
+      const f = contact.fields;
+      const fullName = f['Calculated Name'] || 
+        `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
+      const initials = getInitials(f.FirstName, f.LastName);
+      const avatarColor = getAvatarColor(fullName);
+      
+      document.getElementById('quickViewName').textContent = fullName;
+      document.getElementById('quickViewAvatar').textContent = initials;
+      document.getElementById('quickViewAvatar').style.backgroundColor = avatarColor;
+      
+      const preferred = f.PreferredName;
+      if (preferred && preferred.toLowerCase() !== (f.FirstName || '').toLowerCase()) {
+        document.getElementById('quickViewPreferred').textContent = `Preferred: ${preferred}`;
+      } else {
+        document.getElementById('quickViewPreferred').textContent = '';
+      }
+      
+      let detailsHtml = '';
+      if (f.Mobile) {
+        detailsHtml += `<div class="quick-view-detail-row"><span class="quick-view-detail-icon">📱</span><span class="quick-view-detail-value">${f.Mobile}</span></div>`;
+      }
+      if (f.EmailAddress1) {
+        detailsHtml += `<div class="quick-view-detail-row"><span class="quick-view-detail-icon">✉️</span><span class="quick-view-detail-value">${f.EmailAddress1}</span></div>`;
+      }
+      if (!f.Mobile && !f.EmailAddress1) {
+        detailsHtml = '<div class="quick-view-no-details">No contact details available</div>';
+      }
+      document.getElementById('quickViewDetails').innerHTML = detailsHtml;
+      
+      const modifiedOn = f['Modified On (Web App)'] || f['Last Modified'];
+      if (modifiedOn) {
+        const modDate = new Date(modifiedOn);
+        const now = new Date();
+        const diffMs = now - modDate;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        let relativeTime;
+        if (diffMins < 1) relativeTime = 'Just now';
+        else if (diffMins < 60) relativeTime = `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+        else if (diffHours < 24) relativeTime = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        else if (diffDays === 1) relativeTime = 'Yesterday';
+        else if (diffDays < 7) relativeTime = `${diffDays} days ago`;
+        else {
+          const day = String(modDate.getDate()).padStart(2, '0');
+          const month = modDate.toLocaleString('en', { month: 'short' });
+          const year = modDate.getFullYear();
+          relativeTime = `${day} ${month} ${year}`;
+        }
+        document.getElementById('quickViewFooter').textContent = `Last modified: ${relativeTime}`;
+      } else {
+        document.getElementById('quickViewFooter').textContent = '';
+      }
+    }).getContactById(contactId);
+  }
+
+  function hideContactQuickView() {
+    if (state.isQuickViewHovered) return;
+    const card = document.getElementById('contactQuickView');
+    card.classList.remove('visible');
+    state.quickViewContactId = null;
+  }
+
+  function attachQuickViewToElement(element, contactId) {
+    element.setAttribute('data-quick-view-contact', contactId);
+    element.addEventListener('mouseenter', function(e) {
+      if (state.quickViewHoverTimeout) clearTimeout(state.quickViewHoverTimeout);
+      state.quickViewHoverTimeout = setTimeout(function() {
+        showContactQuickView(contactId, element);
+      }, 300);
+    });
+    element.addEventListener('mouseleave', function(e) {
+      if (state.quickViewHoverTimeout) clearTimeout(state.quickViewHoverTimeout);
+      state.quickViewHoverTimeout = setTimeout(hideContactQuickView, 200);
+    });
+  }
+
+  function navigateFromQuickView() {
+    if (!state.quickViewContactId) return;
+    const contactId = state.quickViewContactId;
+    hideContactQuickView();
+    loadContactById(contactId, true);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const card = document.getElementById('contactQuickView');
+    if (card) {
+      card.addEventListener('mouseenter', function() {
+        state.isQuickViewHovered = true;
+        if (state.quickViewHoverTimeout) clearTimeout(state.quickViewHoverTimeout);
+      });
+      card.addEventListener('mouseleave', function() {
+        state.isQuickViewHovered = false;
+        state.quickViewHoverTimeout = setTimeout(hideContactQuickView, 200);
       });
     }
   });
-  
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const card = document.getElementById('contactQuickView');
+      if (card && card.classList.contains('visible')) {
+        state.isQuickViewHovered = false;
+        hideContactQuickView();
+      }
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    const card = document.getElementById('contactQuickView');
+    if (card && card.classList.contains('visible')) {
+      if (!card.contains(e.target) && !e.target.hasAttribute('data-quick-view-contact')) {
+        state.isQuickViewHovered = false;
+        hideContactQuickView();
+      }
+    }
+  });
+
+  document.addEventListener('mouseover', function(e) {
+    const link = e.target.closest('.panel-contact-link');
+    if (link && !link.hasAttribute('data-quick-view-contact')) {
+      const contactId = link.getAttribute('data-contact-id');
+      if (contactId) {
+        attachQuickViewToElement(link, contactId);
+        if (state.quickViewHoverTimeout) clearTimeout(state.quickViewHoverTimeout);
+        state.quickViewHoverTimeout = setTimeout(function() {
+          showContactQuickView(contactId, link);
+        }, 300);
+      }
+    }
+  });
+
+  window.showContactQuickView = showContactQuickView;
+  window.hideContactQuickView = hideContactQuickView;
+  window.attachQuickViewToElement = attachQuickViewToElement;
+  window.navigateFromQuickView = navigateFromQuickView;
+
 })();

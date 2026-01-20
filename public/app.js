@@ -403,6 +403,7 @@
   }
   END COMMENTED OUT */
 
+  /* COMMENTED OUT - Using quick-view.js module
   // --- CONTACT QUICK-VIEW CARD ---
   let quickViewContactId = null;
   let quickViewHoverTimeout = null;
@@ -626,6 +627,8 @@
       }
     }
   });
+  // END COMMENTED OUT - quick-view.js module
+  */
 
   function checkUserIdentity() {
     google.script.run.withSuccessHandler(function(email) {
@@ -1707,6 +1710,7 @@
   // --- EMAIL COMPOSER ---
   let currentEmailContext = null;
   
+  /* COMMENTED OUT - Using settings.js module
   // Email template links (editable, saved to Airtable Settings table for team-wide sync)
   const DEFAULT_EMAIL_LINKS = {
     officeMap: 'https://maps.app.goo.gl/qm2ohJP2j1t6GqCt9',
@@ -2068,6 +2072,8 @@
     
     showAlert('Applied!', 'Signature added. Click Save to store it.', 'success');
   }
+  // END COMMENTED OUT - settings.js module
+  */
   
   const EMAIL_TEMPLATE = {
     subject: {

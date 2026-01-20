@@ -1,79 +1,57 @@
 # Integrity
 
 ## Overview
-Integrity is a Customer Relationship Management (CRM) system designed for Stellaris Finance Broking. It facilitates contact management and integrates with Airtable as its primary backend database. The system, originally a Google Apps Script project, has been re-engineered to run on Node.js/Express, providing a robust and scalable solution for managing client interactions and opportunities. The project aims to enhance operational efficiency and streamline communication workflows for finance brokers.
+Integrity is a Customer Relationship Management (CRM) system for Stellaris Finance Broking, re-engineered from Google Apps Script to Node.js/Express. It centralizes contact management and integrates with Airtable as its primary backend. The system aims to significantly improve operational efficiency and streamline communication workflows for finance brokers, enhancing client interaction and opportunity management.
 
 ## User Preferences
 - Professional, production-ready setup with GitHub and Fly.io deployment
 - Security is important - Google Workspace OAuth for team access control
 - Future plans: Mercury CRM integration, WYSIWYG email editor, Slack integration, requirements tracking
 
-## Brand Colors
-- Trail: #2C2622
-- Midnight: #19414C
-- Star: #BB9934
-- Cedar: #7B8B64
-- Salt: #F2F0E9
-- Sky: #D0DFE6
-
 ## System Architecture
-Integrity is built on a Node.js/Express backend, serving a static frontend.
-- **UI/UX Decisions**: The application features a modern UI with custom fonts (Geist, Libre Baskerville), dark mode toggle with persistence, and intuitive UX enhancements like keyboard shortcuts and status color-coding. Opportunity status badges, avatar initials with colored circles, and a redesigned header contribute to a clean and efficient interface.
-    - **Contact Layout**: Full-width 3-column layout. Left column: accordion sections for personal data (Name, Contact Info, Personal Details, Notes). Middle column: Spouse, Connections, Opportunities. Right column: reserved for future tasks/notes.
-    - **Name Display**: Two-line format with full name prominent on top, metadata (name preferences, tenure) on second line below in smaller text.
-- **Technical Implementations**:
-    - **Modular JavaScript Architecture (Complete)**: Frontend code successfully refactored from monolithic app.js (7,725 lines) down to lean initialization file (~1,100 lines) with 16 IIFE modules in `public/js/` directory. Phase 4 cleanup removed all commented-out code blocks.
-        - **Phase 1 Complete - Foundation Modules**:
-            - `shared-state.js`: Global mutable state variables (currentContactRecord, currentOppRecords, panelHistory, timeouts, etc.) accessed via `window.IntegrityState`
-            - `shared-utils.js`: Pure utility functions (escapeHtml, formatDate*, getOrdinalSuffix, parseDateInput) with no dependencies
-            - `modal-utils.js`: Modal management (openModal, closeModal, showAlert, showConfirmModal)
-        - **Load Order**: shared-state.js → shared-utils.js → modal-utils.js → contacts-search.js → core.js → inline-editing.js → spouse.js → connections.js → notes.js → addresses.js → appointments.js → opportunities.js → settings.js → quick-view.js → email.js → evidence.js → app.js
-        - **Phase 2 Complete - Feature Modules**:
-            - `contacts-search.js`: Contact search, display, keyboard navigation, avatar helpers, modified date formatting
-            - `core.js`: Dark Mode (toggle + persistence), Screensaver/Idle timer (2-min timeout), Scroll-Hide Header (mobile/tablet)
-            - `inline-editing.js`: InlineEditingManager, contact field mapping, edit mode functions (enable/disable/cancel), panel inline edit helpers (toggleFieldEdit, saveFieldEdit, saveDateField, refreshPanelAudit)
-            - `spouse.js`: Spouse section rendering, history parsing/display, spouse modal (connect/disconnect flow), polling for Airtable updates, recent contacts for modal search
-            - `connections.js`: Connections management with 12 role types, bidirectional role display, left/right column rendering, connection details modal, add/deactivate connections, connection notes with popover, connection role types from Airtable
-            - `notes.js`: Note popover system for contact fields and connections, NOTE_FIELDS configuration, icon rendering, auto-save with debounce, keyboard handling
-            - `addresses.js`: Address history management (residential + postal), format-aware fields (Standard/Non-Standard/PO Box), CRUD operations, postal address copy/replace flow, expand/collapse for multiple addresses
-            - `opportunities.js`: Opportunity management including Quick Add composer with Taco data parsing, opportunity list with sort/filter, panel rendering with smart layout, delete confirmation, celebration animation, and panel navigation (popHistory, updateBackButton, closeOppPanel)
-            - `appointments.js`: Appointment management with inline field editing, loadAppointmentsForOpportunity with Taco backfill, openAppointmentForm/closeAppointmentForm/saveAppointment, toggleAppointmentExpand, editAppointment/deleteAppointment, render helpers (renderApptField, renderApptCheckbox), datetime formatting
-            - `settings.js`: Team-wide settings, email template links, signature generation/preview, Gmail/Mercury copy helpers, EMAIL_LINKS config accessible to email.js
-            - `quick-view.js`: Contact quick-view card on hover, positioning, event delegation, navigation from quick-view to full contact
-            - `email.js`: Email composer with Quill WYSIWYG editor, template management (CRUD), conditional template parsing ({{if}}/{{elseif}}/{{else}}/{{endif}}), Gmail integration, template preview with variable picker
-            - `evidence.js`: Evidence & Data Collection system including evidence modal with category grouping, progress tracking, client-facing view with copy, email generation (Initial/Subsequent/Appointment), templates management CRUD
-        - **Phase 3 Complete** - All Feature Modules extracted and working
-        - **Phase 4 Complete** - Cleanup purge removed ~6,600 lines of commented-out code from app.js
-    - **Authentication**: Google OAuth 2.0 is used for secure access, restricted to a specified Google Workspace domain. Session management is handled via encrypted cookies.
-    - **API Layer**: A unified API uses POST requests with JSON bodies for all CRUD operations and specific functionalities like contact search, spouse management, and opportunity handling. An `api-bridge.js` layer ensures compatibility by converting `google.script.run` calls to standard fetch API requests.
-    - **Email Composition**: Rich text email composition is supported via Quill.js WYSIWYG editor.
-    - **InlineEditingManager**: Reusable IIFE module for click-to-edit form fields (now in `public/js/inline-editing.js`). Features include: per-field state tracking, composite key session tracking (field+sessionId) for async race condition handling, Tab/Shift+Tab key navigation between fields, select element support via parent click handlers, and bulk edit mode for new record creation. Container selector: `#profileColumns`.
-    - **Accordion Sections Pattern**: Collapsible field groupings using `.collapsible-section` class. Add new sections by wrapping fields in: `<div class="collapsible-section" id="uniqueId"><div class="collapsible-header" onclick="toggleCollapsible('uniqueId')"><span class="collapsible-icon">&#9654;</span><span class="collapsible-title">Section Title</span></div><div class="collapsible-content">...fields...</div></div>`. Add `expanded` class to start expanded. Current sections: Name, Contact Info, Personal Details, Notes.
-    - **Header Search with Dropdown**: Search field moved to header banner between title and user icons. Dropdown appears on focus (`showSearchDropdown()`), closes on outside click or Escape. Keyboard shortcut "/" focuses and opens search. Contact selection closes dropdown automatically.
-    - **Modal Systems**: Two modal systems exist - use `.modal-overlay` (NOT `.modal`) for all new modals. The `.modal-overlay .modal-content` pattern auto-sizes to content with proper resets (height:auto, margin:0). Structure: `<div class="modal-overlay" style="display:none;"><div class="modal-content">...</div></div>`. Opening: `modal.style.display='flex'; setTimeout(()=>modal.classList.add('showing'),10);`. Closing: `modal.classList.remove('showing'); setTimeout(()=>modal.style.display='none',250);`. Use `showConfirmModal(message, callback)` for delete confirmations instead of native `confirm()`.
-    - **Note Fields System**: Configuration-driven note popover system for attaching inline notes to form fields. Add new note fields by adding entries to `NOTE_FIELDS` array in `public/js/notes.js`. Each entry specifies: `fieldId` (hidden field ID), `airtableField` (Airtable column name), `inputId` (visible input to attach icon to). Current note fields: email1Comment, email2Comment, email3Comment (for email addresses), and genderOther (for Gender - Other specification). System handles: icon rendering, popover UI, auto-save with debounce, keyboard shortcuts (Tab/Enter/Escape), text selection protection, and icon state (grey on hover, gold when populated). Works with both input and select elements.
-    - **Data Parsing**: The system includes a parser for Taco data, mapping key-value pairs from an external system to Airtable fields during opportunity creation.
-- **Feature Specifications**:
-    - **Contact Management**: CRUD operations for contacts, including linking/unlinking spouse relationships and retrieving linked opportunities. Actions menu provides "Mark as Deceased" workflow which sets Deceased flag and auto-unsubscribes from marketing. Deceased contacts display grey badge and muted styling with undo capability.
-    - **Connections Management**: Relationship tracking between contacts with 12 role types (Parent/Child, Sibling, Friend, Household Rep/Member, Employer/Employee, Referral-based). Single non-reciprocal records with bidirectional querying. Connections are deactivated rather than deleted to preserve history. UI includes color-coded role badges, clickable contact names for navigation, note icons per connection (popover with auto-save), and add/remove functionality. Two-step modal flow: contact search with recently modified list, then relationship type selection. Connection notes are stored in Airtable "Note" field.
-    - **Opportunity Management**: Creation, updating, and deletion of opportunities with extensive fields, user tracking, and audit trails. Integration with Taco data for streamlined opportunity creation.
-    - **Appointment Management**: Dedicated Appointments table linked to Opportunities. Full CRUD operations with fields: Appointment Time, Type (Office/Phone/Video), How Booked (Calendly/Email/Phone/Podium/Other), Phone Number, Video Meet URL, checkboxes for evidence/reminder needs, appointment status, and notes. Appointments section displays in the Opportunity panel with Add/Edit/Delete functionality.
-    - **Evidence & Data Collection**: Full-screen modal system for managing loan application evidence requirements. Features include: 4 Airtable tables (Evidence Categories, Evidence Templates, Lender Evidence Rules, Evidence Items), category-based organization (Identification, Income, Assets, Liabilities, etc.), status tracking (Outstanding/Received/N/A), progress bar with percentage completion, email generation for Initial/Subsequent requests with automatic "Requested On/By" tracking, custom item creation, clipboard copy, and lender-specific rules support. Evidence button appears in Opportunity panel next to Add Appointment.
-    - **Address History**: Comprehensive address tracking linked to contacts. Features include: format-aware fields (Standard/Non-Standard/PO Box), residential and postal address support, date range tracking (From/To), status field, copy functionality for postal addresses, and sorting (current addresses first, then by To date descending). Addresses table includes fields: Format, Floor, Building, Unit, Street No, Street Name, Street Type, City, State, Postcode, Country, Label, Status, From, To, Is Postal, Contact, CalculatedName. Tooltips direct users to admin for adding new Street Types/Countries to Airtable.
-    - **Email Integration**: Sending emails via Gmail API with support for HTML formatting, dynamic templates, and signature generation. Emails appear in the user's Sent folder.
-    - **Settings Management**: Team-wide configurations, such as email links and signature templates, are stored in Airtable and accessible via a global settings modal.
-- **System Design Choices**:
-    - The application is designed for containerized deployment using Docker, optimized for platforms like Fly.io.
-    - Development environment in Replit allows for authentication bypass for easier testing, while production environments enforce full OAuth.
-    - All core business logic and data interactions are channeled through `services/airtable.js` and `services/gmail.js` for modularity.
+Integrity employs a Node.js/Express backend serving a static frontend.
+
+**UI/UX Decisions**:
+- Modern UI with custom fonts (Geist, Libre Baskerville), dark mode toggle with persistence.
+- Intuitive UX with keyboard shortcuts, status color-coding, opportunity status badges, and avatar initials.
+- Redesigned header for a clean interface.
+- **Contact Layout**: Full-width 3-column layout for detailed contact information.
+- **Name Display**: Two-line format for clear presentation of contact names and metadata.
+
+**Technical Implementations**:
+- **Modular JavaScript Architecture**: Frontend refactored into lean initialization (~1,100 lines) and 16 independent IIFE modules, enhancing maintainability and scalability.
+- **Authentication**: Google OAuth 2.0 secures access, restricted to a specified Google Workspace domain, with session management via encrypted cookies.
+- **API Layer**: A unified API uses POST requests with JSON bodies for all CRUD and specific functionalities. An `api-bridge.js` layer ensures compatibility with standard fetch API requests.
+- **Email Composition**: Rich text email composition is supported via Quill.js WYSIWYG editor, integrated with Gmail API.
+- **InlineEditingManager**: Reusable module for click-to-edit form fields, supporting per-field state tracking, keyboard navigation, and bulk edit mode.
+- **Accordion Sections Pattern**: Collapsible field groupings for organized content display.
+- **Header Search with Dropdown**: Integrated search functionality with keyboard shortcuts.
+- **Modal Systems**: Standardized modal system for confirmations and data input.
+- **Note Fields System**: Configuration-driven popover system for attaching inline notes to form fields with auto-save and keyboard handling.
+- **Data Parsing**: Includes a parser for Taco data, mapping external system data to Airtable fields for opportunity creation.
+
+**Feature Specifications**:
+- **Contact Management**: Comprehensive CRUD operations, including spouse linking/unlinking, and "Mark as Deceased" workflow.
+- **Connections Management**: Tracks relationships between contacts with 12 role types, bidirectional querying, and note-taking capabilities.
+- **Opportunity Management**: Full CRUD for opportunities, with user tracking, audit trails, and Taco data integration for streamlined creation.
+- **Appointment Management**: Dedicated table for appointments linked to opportunities, supporting full CRUD operations and various appointment types.
+- **Evidence & Data Collection**: Full-screen modal system for managing loan application evidence, including category-based organization, status tracking, progress bar, and email generation.
+- **Address History**: Tracks residential and postal addresses with format-aware fields, date range tracking, and status management.
+- **Email Integration**: Sends emails via Gmail API with HTML formatting, dynamic templates, and signature generation.
+- **Settings Management**: Team-wide configurations stored in Airtable and accessible via a global settings modal.
+
+**System Design Choices**:
+- Designed for containerized deployment using Docker, optimized for platforms like Fly.io.
+- Development environment in Replit allows authentication bypass for easier testing.
+- All core business logic and data interactions are centralized through `services/airtable.js` and `services/gmail.js`.
 
 ## External Dependencies
-- **Airtable**: Primary database for storing Contacts, Opportunities, Spouse History, Spouse History Log, Connections, Addresses, Users, and Settings. Utilizes the official Airtable SDK.
-- **Google OAuth 2.0**: For user authentication and authorization, restricting access to a specific Google Workspace domain.
-- **Gmail API**: Integrated for sending emails directly from the application, including rich text and dynamic content.
-- **Quill.js**: WYSIWYG editor used for rich text email composition.
-- **openid-client**: Library for handling Google OAuth 2.0 flow.
-- **cookie-session**: Used for encrypting and managing user sessions.
-- **Fly.io**: Deployment platform for the production environment.
-- **Replit Gmail connector**: Used for managing OAuth tokens for Gmail integration in the Replit environment.
-- **Taco (external system)**: Data from Taco can be imported and parsed for opportunity creation.
+- **Airtable**: Primary database for Contacts, Opportunities, Spouse History, Connections, Addresses, Users, Settings.
+- **Google OAuth 2.0**: For user authentication and authorization.
+- **Gmail API**: For sending emails directly from the application.
+- **Quill.js**: WYSIWYG editor for rich text email composition.
+- **openid-client**: Library for Google OAuth 2.0 flow.
+- **cookie-session**: For encrypting and managing user sessions.
+- **Fly.io**: Deployment platform.
+- **Replit Gmail connector**: Manages OAuth tokens for Gmail integration in Replit.
+- **Taco (external system)**: For importing and parsing data for opportunity creation.

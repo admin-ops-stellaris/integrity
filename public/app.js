@@ -515,6 +515,8 @@
     card.classList.remove('visible');
     quickViewContactId = null;
   }
+  // END COMMENTED OUT - quick-view.js module (showContactQuickView, hideContactQuickView)
+  */
 
   // Load a contact by ID into the main view
   function loadContactById(contactId, addToHistory = false) {

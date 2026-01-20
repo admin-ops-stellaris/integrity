@@ -168,6 +168,28 @@ function toggleProfileView(show) {
 }
 
 function selectContact(record) {
+  // If this is a partial record (from optimized list), fetch full record first
+  if (record._isPartial) {
+    toggleProfileView(true);
+    hideSearchDropdown();
+    // Show loading state
+    document.getElementById('formTitle').innerText = 'Loading...';
+    document.getElementById('formSubtitle').innerHTML = '';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('profileContent').style.display = 'flex';
+    
+    google.script.run.withSuccessHandler(function(fullRecord) {
+      if (fullRecord && fullRecord.fields) {
+        selectContact(fullRecord); // Call again with full record
+      } else {
+        showAlert('Failed to load contact details');
+      }
+    }).withFailureHandler(function(err) {
+      showAlert('Error loading contact: ' + err.message);
+    }).getContactById(record.id);
+    return;
+  }
+  
   document.getElementById('cancelBtn').style.display = 'none';
   toggleProfileView(true);
   hideSearchDropdown(); // Close search dropdown when contact selected

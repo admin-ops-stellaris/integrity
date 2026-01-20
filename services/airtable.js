@@ -216,7 +216,7 @@ export async function getRecentContacts(statusFilter = null) {
     
     // Only fetch fields needed for the search list (performance optimization)
     const listFields = [
-      'CalculatedName', 'FirstName', 'MiddleName', 'LastName',
+      'Calculated Name', 'FirstName', 'MiddleName', 'LastName',
       'EmailAddress1', 'Mobile', 'Status', 'Deceased', 'Modified',
       'Modified On (Web App)'
     ];
@@ -270,7 +270,7 @@ export async function searchContacts(query, statusFilter = null) {
     
     // Only fetch fields needed for list display + scoring (performance optimization)
     const searchFields = [
-      'CalculatedName', 'FirstName', 'MiddleName', 'LastName', 'PreferredName',
+      'Calculated Name', 'FirstName', 'MiddleName', 'LastName', 'PreferredName',
       'EmailAddress1', 'EmailAddress2', 'EmailAddress3', 'Mobile', 'Notes',
       'Status', 'Deceased', 'Modified', 'Modified On (Web App)'
     ];

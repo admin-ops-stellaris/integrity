@@ -55,3 +55,66 @@ Integrity employs a Node.js/Express backend serving a static frontend.
 - **Fly.io**: Deployment platform.
 - **Replit Gmail connector**: Manages OAuth tokens for Gmail integration in Replit.
 - **Taco (external system)**: For importing and parsing data for opportunity creation.
+
+## Refactoring Milestone - January 2026
+
+### Shadow Strategy Refactor: Complete Success
+
+The frontend codebase has been successfully refactored from a monolithic architecture to a clean, modular structure using the "Shadow Strategy" - extracting code incrementally while maintaining full functionality.
+
+**Before:** `app.js` was 7,725 lines of tightly coupled code
+**After:** `app.js` is ~1,100 lines (lean initialization), with 16 independent IIFE modules
+
+### Module Structure (Source of Truth)
+
+```
+public/js/
+├── shared-state.js      # Global state (currentContactRecord, panelHistory, timeouts)
+├── shared-utils.js      # Pure utilities (escapeHtml, formatDate*, parseDateInput)
+├── modal-utils.js       # Modal management (openModal, closeModal, showAlert, showConfirmModal)
+├── contacts-search.js   # Contact search, display, keyboard nav, avatar helpers
+├── core.js              # Dark mode, screensaver/idle timer, scroll-hide header
+├── inline-editing.js    # InlineEditingManager, field mapping, edit mode
+├── spouse.js            # Spouse section, history, connect/disconnect modal
+├── connections.js       # 12 role types, bidirectional display, connection notes
+├── notes.js             # Note popover system, NOTE_FIELDS config, auto-save
+├── addresses.js         # Address history (residential + postal), CRUD
+├── appointments.js      # Appointment CRUD, inline editing, datetime formatting
+├── opportunities.js     # Quick Add, Taco parsing, panel navigation
+├── settings.js          # Team settings, signature generation, EMAIL_LINKS
+├── quick-view.js        # Contact hover cards, positioning
+├── email.js             # Quill WYSIWYG, template CRUD, conditional parsing
+└── evidence.js          # Evidence modal, progress tracking, email generation
+```
+
+### Load Order (Critical)
+
+```
+shared-state.js → shared-utils.js → modal-utils.js → contacts-search.js → 
+core.js → inline-editing.js → spouse.js → connections.js → notes.js → 
+addresses.js → appointments.js → opportunities.js → settings.js → 
+quick-view.js → email.js → evidence.js → app.js
+```
+
+### Performance Optimization: Lazy Loading Contacts
+
+**Problem:** `getRecentContacts` was returning full deep records with heavy arrays (Opportunities, Connections, Address History, Spouse History, SEARCH_INDEX).
+
+**Solution:** Implemented lazy loading pattern:
+1. `getRecentContacts` and `searchContacts` now fetch only list fields:
+   - `Calculated Name`, `FirstName`, `MiddleName`, `LastName`
+   - `EmailAddress1`, `Mobile`, `Status`, `Deceased`, `Modified`
+2. Returned records are marked with `_isPartial: true`
+3. `selectContact()` detects partial records and fetches full data on click
+4. Shows "Loading..." state while fetching full record
+
+**Result:** Fast initial load, Smart Search list remains fully functional, heavy details only fetched when needed.
+
+### Architecture Principles
+
+- **IIFE Pattern**: Each module is an Immediately Invoked Function Expression exposing functions to `window`
+- **State via IntegrityState**: All shared mutable state accessed through `window.IntegrityState`
+- **API Bridge**: `api-bridge.js` converts `google.script.run` calls to REST API calls
+- **No Build Step**: Plain ES5-compatible JavaScript, loaded via script tags in order
+
+This modular architecture is now the **Source of Truth** for the Integrity CRM frontend.

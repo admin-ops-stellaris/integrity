@@ -6496,6 +6496,7 @@ Best wishes,
   */
   // END COMMENTED OUT - addresses.js module
 
+  /* COMMENTED OUT - Using evidence.js module
   // ==================== EVIDENCE MODAL SYSTEM ====================
   let currentEvidenceOpportunityId = null;
   let currentEvidenceOpportunityName = '';
@@ -7720,3 +7721,5 @@ ${evidenceListHtml}`;
         .deleteEvidenceTemplate(editingEvidenceTemplateId);
     });
   };
+  // END COMMENTED OUT - evidence.js module
+  */

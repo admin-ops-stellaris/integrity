@@ -27,7 +27,7 @@ Integrity is built on a Node.js/Express backend, serving a static frontend.
             - `shared-state.js`: Global mutable state variables (currentContactRecord, currentOppRecords, panelHistory, timeouts, etc.) accessed via `window.IntegrityState`
             - `shared-utils.js`: Pure utility functions (escapeHtml, formatDate*, getOrdinalSuffix, parseDateInput) with no dependencies
             - `modal-utils.js`: Modal management (openModal, closeModal, showAlert, showConfirmModal)
-        - **Load Order**: shared-state.js → shared-utils.js → modal-utils.js → contacts-search.js → core.js → inline-editing.js → spouse.js → connections.js → notes.js → addresses.js → appointments.js → opportunities.js → settings.js → quick-view.js → app.js
+        - **Load Order**: shared-state.js → shared-utils.js → modal-utils.js → contacts-search.js → core.js → inline-editing.js → spouse.js → connections.js → notes.js → addresses.js → appointments.js → opportunities.js → settings.js → quick-view.js → email.js → app.js
         - **Phase 2 In Progress - Feature Modules**:
             - `contacts-search.js`: Contact search, display, keyboard navigation, avatar helpers, modified date formatting
             - `core.js`: Dark Mode (toggle + persistence), Screensaver/Idle timer (2-min timeout), Scroll-Hide Header (mobile/tablet)
@@ -40,7 +40,8 @@ Integrity is built on a Node.js/Express backend, serving a static frontend.
             - `appointments.js`: Appointment management with inline field editing, loadAppointmentsForOpportunity with Taco backfill, openAppointmentForm/closeAppointmentForm/saveAppointment, toggleAppointmentExpand, editAppointment/deleteAppointment, render helpers (renderApptField, renderApptCheckbox), datetime formatting
             - `settings.js`: Team-wide settings, email template links, signature generation/preview, Gmail/Mercury copy helpers, EMAIL_LINKS config accessible to email.js
             - `quick-view.js`: Contact quick-view card on hover, positioning, event delegation, navigation from quick-view to full contact
-        - **Planned Feature Modules** (remaining): evidence.js, email.js
+            - `email.js`: Email composer with Quill WYSIWYG editor, template management (CRUD), conditional template parsing ({{if}}/{{elseif}}/{{else}}/{{endif}}), Gmail integration, template preview with variable picker
+        - **Planned Feature Modules** (remaining): evidence.js
     - **Authentication**: Google OAuth 2.0 is used for secure access, restricted to a specified Google Workspace domain. Session management is handled via encrypted cookies.
     - **API Layer**: A unified API uses POST requests with JSON bodies for all CRUD operations and specific functionalities like contact search, spouse management, and opportunity handling. An `api-bridge.js` layer ensures compatibility by converting `google.script.run` calls to standard fetch API requests.
     - **Email Composition**: Rich text email composition is supported via Quill.js WYSIWYG editor.

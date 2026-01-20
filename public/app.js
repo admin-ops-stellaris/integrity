@@ -1714,7 +1714,8 @@
   }
 
   // --- EMAIL COMPOSER ---
-  let currentEmailContext = null;
+  // NOTE: currentEmailContext, emailQuill, and email functions moved to email.js module
+  // Settings-related email code (DEFAULT_EMAIL_LINKS, etc.) moved to settings.js module
   
   /* COMMENTED OUT - Using settings.js module
   // Email template links (editable, saved to Airtable Settings table for team-wide sync)
@@ -2081,6 +2082,7 @@
   // END COMMENTED OUT - settings.js module
   */
   
+  /* COMMENTED OUT - Using email.js module
   const EMAIL_TEMPLATE = {
     subject: {
       Office: 'Confirmation of Appointment - {{appointmentTime}}',
@@ -3311,6 +3313,8 @@ Best wishes,
       }).getAppointmentsForOpportunity(opportunityId);
     }).getRecordById('Opportunities', opportunityId);
   }
+  // END COMMENTED OUT - email.js module
+  */
 
   // SPOUSE LOGIC - MOVED TO public/js/spouse.js
   /* COMMENTED OUT - Using spouse.js module

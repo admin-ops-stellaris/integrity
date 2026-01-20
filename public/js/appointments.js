@@ -1,354 +1,500 @@
-/**
- * Appointments Module
- * Appointment management within opportunities
- */
 (function() {
   'use strict';
   
   const state = window.IntegrityState;
   
-  // ============================================================
-  // Load Appointments for Opportunity
-  // ============================================================
-  
-  window.loadAppointmentsForOpportunity = function(opportunityId) {
-    google.script.run.withSuccessHandler(function(appointments) {
-      renderAppointments(appointments || [], opportunityId);
-    }).getAppointmentsForOpportunity(opportunityId);
-  };
-  
-  // ============================================================
-  // Render Appointments
-  // ============================================================
-  
-  function renderAppointments(appointments, opportunityId) {
-    const container = document.getElementById('appointmentsSection');
-    if (!container) return;
+  // Helper function to render editable appointment fields (label above value like Taco fields)
+  function renderApptField(apptId, label, fieldKey, value, type, options = []) {
+    const displayValue = value || '-';
+    let valueHtml = '';
     
-    const addBtn = `<span class="add-appointment-btn" onclick="openAppointmentForm('${opportunityId}')">+ Add Appointment</span>`;
+    if (type === 'datetime') {
+      const formatted = formatDatetimeForDisplay(value);
+      valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}" style="display:flex; justify-content:space-between; align-items:center;"><span>${formatted}</span><span class="edit-field-icon">✎</span></div>`;
+    } else if (type === 'select') {
+      valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}', ${JSON.stringify(options).replace(/"/g, '&quot;')})" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
+    } else if (type === 'textarea') {
+      const escaped = (value || '').replace(/"/g, '&quot;');
+      valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="display:flex; justify-content:space-between; align-items:flex-start;"><span style="white-space:pre-wrap; flex:1;">${displayValue}</span><span class="edit-field-icon" style="margin-left:8px;">✎</span></div>`;
+    } else {
+      valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
+    }
     
-    if (!appointments || appointments.length === 0) {
-      container.innerHTML = `
-        <div class="appointments-header">
-          <span class="appointments-title">Appointments</span>
-          ${addBtn}
-        </div>
-        <div class="appointments-empty">No appointments scheduled</div>
-      `;
+    return `<div class="detail-group"><div class="detail-label">${label}</div>${valueHtml}</div>`;
+  }
+  
+  // Helper function to render editable appointment fields without edit icon (for Notes/Video URL)
+  function renderApptFieldNoIcon(apptId, label, fieldKey, value, type) {
+    const displayValue = value || '';
+    const escaped = (value || '').replace(/"/g, '&quot;');
+    const isTextarea = type === 'textarea';
+    const lineHeight = 20;
+    const lines = displayValue ? displayValue.split('\n').length : 1;
+    const minHeight = isTextarea ? `${Math.max(lineHeight, lines * lineHeight)}px` : 'auto';
+    const style = isTextarea 
+      ? `white-space:pre-wrap; min-height:${minHeight}; padding:8px; border:1px solid #ddd; border-radius:4px; cursor:text;`
+      : `padding:8px; border:1px solid #ddd; border-radius:4px; cursor:text;`;
+    const valueHtml = `<div class="detail-value appt-editable appt-notes-field" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${escaped}" style="${style}">${displayValue || '-'}</div>`;
+    return `<div class="detail-group"><div class="detail-label">${label}</div>${valueHtml}</div>`;
+  }
+  
+  // Helper function to render appointment checkboxes
+  function renderApptCheckbox(apptId, label, fieldKey, checked) {
+    return `<div class="detail-group"><div class="checkbox-field"><input type="checkbox" ${checked ? 'checked' : ''} onchange="updateApptCheckbox('${apptId}', '${fieldKey}', this.checked)"><label>${label}</label></div></div>`;
+  }
+  
+  // Edit appointment field inline
+  function editApptField(apptId, fieldKey, type, options) {
+    const valueSpan = document.querySelector(`[data-appt-id="${apptId}"][data-field="${fieldKey}"]`);
+    if (!valueSpan) return;
+    
+    const currentValue = valueSpan.dataset.value || valueSpan.textContent;
+    const parent = valueSpan.parentElement;
+    
+    let inputHtml = '';
+    if (type === 'datetime') {
+      const dtValue = formatDatetimeForInput(currentValue);
+      inputHtml = `<input type="datetime-local" class="inline-edit-input" value="${dtValue}" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){cancelApptEdit('${apptId}', '${fieldKey}');}">`;
+    } else if (type === 'select') {
+      let optHtml = options.map(o => `<option value="${o}" ${o === currentValue ? 'selected' : ''}>${o}</option>`).join('');
+      inputHtml = `<select class="inline-edit-input" onchange="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')">${optHtml}</select>`;
+    } else if (type === 'textarea') {
+      inputHtml = `<textarea class="inline-edit-input auto-resize-textarea" rows="1" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" oninput="autoResizeTextarea(this)" onfocus="autoResizeTextarea(this)" onkeydown="if(event.key==='Escape'){cancelApptEdit('${apptId}', '${fieldKey}');}">${currentValue === '-' ? '' : currentValue}</textarea>`;
+    } else {
+      inputHtml = `<input type="text" class="inline-edit-input" value="${currentValue === '-' ? '' : currentValue}" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){cancelApptEdit('${apptId}', '${fieldKey}');}">`;
+    }
+    
+    valueSpan.outerHTML = inputHtml;
+    const input = parent.querySelector('.inline-edit-input');
+    if (input) {
+      input.focus();
+      if (input.classList.contains('auto-resize-textarea')) {
+        autoResizeTextarea(input);
+      }
+    }
+  }
+  
+  // Save appointment field
+  function saveApptField(apptId, fieldKey, value, type) {
+    const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
+    
+    // If setting appointment time to a future date and status is currently blank, auto-set to Scheduled
+    if (fieldKey === 'appointmentTime' && value) {
+      const apptTime = new Date(value);
+      const now = new Date();
+      if (apptTime > now) {
+        const statusEl = document.querySelector(`[data-appt-id="${apptId}"][data-field="appointmentStatus"]`);
+        const statusSpan = statusEl?.querySelector('span');
+        const currentStatus = statusSpan?.textContent?.trim() || '';
+        if (!currentStatus || currentStatus === 'Not Set' || currentStatus === '-' || currentStatus === '') {
+          google.script.run.updateAppointment(apptId, 'appointmentStatus', 'Scheduled');
+        }
+      }
+    }
+    
+    google.script.run
+      .withSuccessHandler(function() {
+        if (opportunityId) loadAppointmentsForOpportunity(opportunityId);
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error updating appointment field:', err);
+        alert('Error updating field: ' + (err.message || err));
+        if (opportunityId) loadAppointmentsForOpportunity(opportunityId);
+      })
+      .updateAppointment(apptId, fieldKey, value);
+  }
+  
+  // Update appointment checkbox
+  function updateApptCheckbox(apptId, fieldKey, checked) {
+    google.script.run
+      .withSuccessHandler(function() {
+        console.log('Appointment checkbox updated');
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error updating appointment checkbox:', err);
+        alert('Error updating: ' + (err.message || err));
+      })
+      .updateAppointment(apptId, fieldKey, checked);
+  }
+  
+  // Auto-resize textarea based on content
+  function autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
+  }
+  
+  // Cancel appointment edit
+  function cancelApptEdit(apptId, fieldKey) {
+    const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
+    if (opportunityId) loadAppointmentsForOpportunity(opportunityId);
+  }
+  
+  function loadAppointmentsForOpportunity(opportunityId) {
+    const container = document.getElementById('appointmentsContainer');
+    if (!container) {
+      console.log('Appointments container not found');
       return;
     }
     
-    // Sort by date
-    appointments.sort((a, b) => {
-      const aDate = new Date(a.appointmentTime || 0);
-      const bDate = new Date(b.appointmentTime || 0);
-      return aDate - bDate;
-    });
+    console.log('Loading appointments for opportunity:', opportunityId);
     
-    container.innerHTML = `
-      <div class="appointments-header">
-        <span class="appointments-title">Appointments</span>
-        ${addBtn}
-      </div>
-      <div class="appointments-list">
-        ${appointments.map(appt => renderAppointmentItem(appt, opportunityId)).join('')}
-      </div>
-    `;
+    google.script.run
+      .withSuccessHandler(function(appointments) {
+        console.log('Appointments received:', appointments);
+        if (!appointments || appointments.length === 0) {
+          const isTruthyCheckbox = (val) => {
+            if (val === true || val === 1) return true;
+            if (typeof val === 'string') {
+              const lower = val.trim().toLowerCase();
+              return ['true', 'yes', 'checked', '1'].includes(lower);
+            }
+            return Boolean(val);
+          };
+          
+          const rawConverted = state.currentPanelData['Taco: Converted to Appt'];
+          let convertedVal = (typeof rawConverted === 'object' && rawConverted !== null) 
+            ? rawConverted.value 
+            : rawConverted;
+          
+          if (isTruthyCheckbox(convertedVal)) {
+            console.log('Legacy backfill: Converted to Appt is true but no appointments exist - creating from Taco fields');
+            container.innerHTML = '<div style="color:#888; padding:16px 16px 4px 16px; font-style:italic;">Migrating appointment data...</div>';
+            
+            const getVal = (key) => {
+              const v = state.currentPanelData[key];
+              if (v === undefined || v === null) return null;
+              if (typeof v === 'object' && v.value !== undefined) return v.value;
+              return v;
+            };
+            const getBool = (key) => {
+              const v = getVal(key);
+              return isTruthyCheckbox(v);
+            };
+            
+            const fields = {
+              "Appointment Time": getVal('Taco: Appointment Time') || null,
+              "Type of Appointment": getVal('Taco: Type of Appointment') || "Phone",
+              "How Booked": getVal('Taco: How appt booked') || "Calendly",
+              "How Booked Other": getVal('Taco: How Appt Booked Other') || null,
+              "Phone Number": getVal('Taco: Appt Phone Number') || null,
+              "Video Meet URL": getVal('Taco: Appt Meet URL') || null,
+              "Need Evidence in Advance": getBool('Taco: Need Evidence in Advance'),
+              "Need Appt Reminder": getBool('Taco: Need Appt Reminder'),
+              "Conf Email Sent": getBool('Taco: Appt Conf Email Sent'),
+              "Conf Text Sent": getBool('Taco: Appt Conf Text Sent'),
+              "Appointment Status": getVal('Taco: Appt Status') || null,
+              "Notes": getVal('Taco: Appt Notes') || null
+            };
+            
+            console.log('Backfill fields:', fields);
+            
+            google.script.run
+              .withSuccessHandler(function() {
+                console.log('Legacy appointment backfilled successfully');
+                loadAppointmentsForOpportunity(opportunityId);
+              })
+              .withFailureHandler(function(err) {
+                console.error('Failed to backfill legacy appointment:', err);
+                container.innerHTML = '';
+              })
+              .createAppointment(opportunityId, fields);
+            return;
+          }
+          
+          container.innerHTML = '';
+          window.currentOpportunityAppointments = [];
+          return;
+        }
+        
+        window.currentOpportunityAppointments = appointments;
+        
+        appointments.sort((a, b) => {
+          const dateA = a.appointmentTime ? new Date(a.appointmentTime).getTime() : 0;
+          const dateB = b.appointmentTime ? new Date(b.appointmentTime).getTime() : 0;
+          return dateA - dateB;
+        });
+        
+        let html = '';
+        appointments.forEach(appt => {
+          const status = appt.appointmentStatus || '';
+          const isPast = appt.appointmentTime && new Date(appt.appointmentTime) < new Date();
+          const needsUpdate = isPast && (status === 'Scheduled' || status === '');
+          const statusClass = needsUpdate ? 'status-needs-update' :
+                             status === 'Completed' ? 'status-completed' : 
+                             status === 'Cancelled' ? 'status-cancelled' : 
+                             status === 'No Show' ? 'status-noshow' : 
+                             status === 'Scheduled' ? 'status-scheduled' : 'status-blank';
+          const statusDisplay = needsUpdate ? 'Please Update Status' : (status || 'Not Set');
+          
+          const isExpanded = status === 'Scheduled';
+          const expandedClass = isExpanded ? 'expanded' : '';
+          
+          html += `<div class="appointment-item subsequent-appt ${expandedClass}" data-appt-id="${appt.id}">`;
+          
+          html += `<div class="appointment-item-header" onclick="toggleAppointmentExpand('${appt.id}')">`;
+          html += `<div class="appt-header-left">`;
+          html += `<span class="appointment-item-chevron">▶</span>`;
+          html += `<span class="appt-header-label">Appointment:</span>`;
+          html += `<span class="appt-header-time">${formatDatetimeForDisplay(appt.appointmentTime)}</span>`;
+          html += `<span class="appt-header-type">${appt.typeOfAppointment || '-'}</span>`;
+          html += `</div>`;
+          const statusTooltip = needsUpdate ? ' title="This appointment time has passed but the status is still Scheduled or blank. Please update to Completed, Cancelled, or No Show."' : '';
+          html += `<span class="appointment-status ${statusClass}"${statusTooltip}>${statusDisplay}</span>`;
+          html += `</div>`;
+          
+          html += `<div class="appointment-item-body">`;
+          html += `<div class="appointment-item-divider"></div>`;
+          
+          let auditParts = [];
+          if (appt.createdTime) {
+            const createdDate = new Date(appt.createdTime).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true });
+            let createdText = `Created ${createdDate}`;
+            if (appt.createdByName) createdText += ` by ${appt.createdByName}`;
+            auditParts.push(createdText);
+          }
+          if (appt.modifiedTime && appt.modifiedTime !== appt.createdTime) {
+            const modifiedDate = new Date(appt.modifiedTime).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true });
+            let modifiedText = `Modified ${modifiedDate}`;
+            if (appt.modifiedByName) modifiedText += ` by ${appt.modifiedByName}`;
+            auditParts.push(modifiedText);
+          }
+          if (auditParts.length > 0) {
+            html += `<div class="appt-audit-info">${auditParts.join(' · ')}</div>`;
+          }
+          
+          html += `<div class="appt-section appt-section-1">`;
+          
+          html += `<div class="taco-row">`;
+          html += renderApptField(appt.id, 'Appointment Time', 'appointmentTime', appt.appointmentTime, 'datetime');
+          html += renderApptField(appt.id, 'Type of Appointment', 'typeOfAppointment', appt.typeOfAppointment, 'select', ['Phone', 'Video', 'Office']);
+          html += renderApptField(appt.id, 'How Booked', 'howBooked', appt.howBooked, 'select', ['Calendly', 'Email', 'Phone', 'Podium', 'Other']);
+          html += `</div>`;
+          
+          html += `<div class="taco-row">`;
+          const phoneStyle = appt.typeOfAppointment === 'Phone' ? '' : 'display:none;';
+          const videoStyle = appt.typeOfAppointment === 'Video' ? '' : 'display:none;';
+          const otherStyle = appt.howBooked === 'Other' ? '' : 'display:none;';
+          html += `<div id="appt_field_wrap_${appt.id}_phone" style="${phoneStyle}">${renderApptFieldNoIcon(appt.id, 'Phone Number', 'phoneNumber', appt.phoneNumber, 'text')}</div>`;
+          html += `<div id="appt_field_wrap_${appt.id}_video" style="${videoStyle}">${renderApptFieldNoIcon(appt.id, 'Video Meet URL', 'videoMeetUrl', appt.videoMeetUrl, 'text')}</div>`;
+          html += `<div id="appt_field_wrap_${appt.id}_other" style="${otherStyle}">${renderApptField(appt.id, 'How Booked Other', 'howBookedOther', appt.howBookedOther, 'text')}</div>`;
+          html += `</div>`;
+          
+          html += `<div class="taco-row">`;
+          html += renderApptCheckbox(appt.id, 'Need Evidence in Advance', 'needEvidenceInAdvance', appt.needEvidenceInAdvance);
+          html += renderApptCheckbox(appt.id, 'Need Appt Reminder', 'needApptReminder', appt.needApptReminder);
+          html += `</div>`;
+          
+          html += `<div style="margin:15px 0;"><button type="button" class="btn-confirm btn-inline" onclick="openEmailComposerFromPanel('${opportunityId}')">Send Confirmation Email</button></div>`;
+          
+          html += `</div>`;
+          
+          html += `<div class="appt-section appt-section-2">`;
+          
+          html += `<div class="taco-row">`;
+          html += renderApptCheckbox(appt.id, 'Conf Email Sent', 'confEmailSent', appt.confEmailSent);
+          html += renderApptCheckbox(appt.id, 'Conf Text Sent', 'confTextSent', appt.confTextSent);
+          html += renderApptField(appt.id, 'Appointment Status', 'appointmentStatus', status, 'select', ['', 'Scheduled', 'Completed', 'Cancelled', 'No Show']);
+          html += `</div>`;
+          
+          html += `<div style="margin-top:12px;">`;
+          html += renderApptFieldNoIcon(appt.id, 'Notes', 'notes', appt.notes, 'textarea');
+          html += `</div>`;
+          
+          html += `</div>`;
+          html += `</div>`;
+          html += `</div>`;
+        });
+        
+        container.innerHTML = html;
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error loading appointments:', err);
+        container.innerHTML = '<div style="color:#C00; padding:10px;">Error loading appointments: ' + (err.message || err) + '</div>';
+      })
+      .getAppointmentsForOpportunity(opportunityId);
   }
   
-  function renderAppointmentItem(appt, opportunityId) {
-    const timeDisplay = formatAppointmentTime(appt.appointmentTime);
-    const daysUntil = calculateDaysUntil(appt.appointmentTime);
-    const typeIcon = getAppointmentTypeIcon(appt.type);
-    const statusClass = appt.status ? `appt-status-${appt.status.toLowerCase().replace(/\s+/g, '-')}` : '';
-    
-    return `
-      <div class="appointment-item ${statusClass}" data-appt-id="${appt.id}">
-        <div class="appointment-main" onclick="toggleAppointmentExpand('${appt.id}')">
-          <span class="appointment-icon">${typeIcon}</span>
-          <span class="appointment-time">${timeDisplay}</span>
-          ${daysUntil ? `<span class="appointment-days">${daysUntil}</span>` : ''}
-          <span class="appointment-expand-icon">&#9654;</span>
-        </div>
-        <div class="appointment-details" id="apptDetails_${appt.id}" style="display:none;">
-          ${renderApptField(appt.id, 'Type', 'type', appt.type, 'select', ['Office', 'Phone', 'Video'])}
-          ${renderApptField(appt.id, 'How Booked', 'howBooked', appt.howBooked, 'select', ['Calendly', 'Email', 'Phone', 'Podium', 'Other'])}
-          ${appt.type === 'Phone' ? renderApptField(appt.id, 'Phone Number', 'phoneNumber', appt.phoneNumber, 'text') : ''}
-          ${appt.type === 'Video' ? renderApptField(appt.id, 'Video Meet URL', 'videoMeetUrl', appt.videoMeetUrl, 'text') : ''}
-          ${renderApptCheckbox(appt.id, 'Evidence Needed', 'evidenceNeeded', appt.evidenceNeeded)}
-          ${renderApptCheckbox(appt.id, 'Reminder Sent', 'reminderSent', appt.reminderSent)}
-          ${renderApptField(appt.id, 'Status', 'status', appt.status, 'select', ['Scheduled', 'Completed', 'No Show', 'Cancelled'])}
-          ${renderApptField(appt.id, 'Notes', 'notes', appt.notes, 'textarea')}
-          <div class="appointment-actions">
-            <button class="btn-small btn-edit" onclick="editAppointment('${appt.id}', '${opportunityId}')">Edit</button>
-            <button class="btn-small btn-delete" onclick="deleteAppointment('${appt.id}', '${opportunityId}')">Delete</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
-  // ============================================================
-  // Render Appointment Fields
-  // ============================================================
-  
-  function renderApptField(apptId, label, fieldKey, value, type, options = []) {
-    const displayValue = value || '-';
-    
-    return `
-      <div class="appt-field" data-appt-id="${apptId}" data-field-key="${fieldKey}">
-        <label>${escapeHtml(label)}</label>
-        <span class="appt-field-value" onclick="editApptField('${apptId}', '${fieldKey}', '${type}', ${escapeHtmlForAttr(JSON.stringify(options))})">${escapeHtml(displayValue)}</span>
-      </div>
-    `;
-  }
-  
-  function renderApptFieldNoIcon(apptId, label, fieldKey, value, type) {
-    return renderApptField(apptId, label, fieldKey, value, type, []);
-  }
-  
-  function renderApptCheckbox(apptId, label, fieldKey, checked) {
-    return `
-      <div class="appt-field appt-checkbox" data-appt-id="${apptId}" data-field-key="${fieldKey}">
-        <label>
-          <input type="checkbox" ${checked ? 'checked' : ''} onchange="updateApptCheckbox('${apptId}', '${fieldKey}', this.checked)">
-          ${escapeHtml(label)}
-        </label>
-      </div>
-    `;
-  }
-  
-  // ============================================================
-  // Edit Appointment Field
-  // ============================================================
-  
-  window.editApptField = function(apptId, fieldKey, type, options) {
-    const fieldEl = document.querySelector(`[data-appt-id="${apptId}"][data-field-key="${fieldKey}"] .appt-field-value`);
-    if (!fieldEl) return;
-    
-    const currentValue = fieldEl.textContent.trim();
-    let inputHtml = '';
-    
-    switch (type) {
-      case 'select':
-        inputHtml = `<select onchange="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')" onblur="cancelApptEdit('${apptId}', '${fieldKey}')">
-          <option value="">-</option>
-          ${options.map(o => `<option value="${escapeHtml(o)}" ${currentValue === o ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
-        </select>`;
-        break;
-      case 'textarea':
-        inputHtml = `<textarea onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')">${currentValue === '-' ? '' : escapeHtml(currentValue)}</textarea>`;
-        break;
-      default:
-        inputHtml = `<input type="text" value="${currentValue === '-' ? '' : escapeHtml(currentValue)}" onblur="saveApptField('${apptId}', '${fieldKey}', this.value, '${type}')">`;
+  function formatDatetimeForInput(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().slice(0, 16);
+    } catch (e) {
+      return '';
     }
-    
-    fieldEl.innerHTML = inputHtml;
-    const input = fieldEl.querySelector('input, select, textarea');
-    if (input) input.focus();
-  };
+  }
   
-  window.saveApptField = function(apptId, fieldKey, value, type) {
-    const updateData = {};
-    updateData[fieldKey] = value || null;
-    
-    google.script.run.withSuccessHandler(function(result) {
-      if (result.success && state.currentPanelData.record) {
-        loadAppointmentsForOpportunity(state.currentPanelData.record.id);
-      }
-    }).updateAppointment(apptId, updateData);
-  };
-  
-  window.updateApptCheckbox = function(apptId, fieldKey, checked) {
-    const updateData = {};
-    updateData[fieldKey] = checked;
-    
-    google.script.run.withSuccessHandler(function(result) {
-      // Checkbox updates silently
-    }).updateAppointment(apptId, updateData);
-  };
-  
-  window.cancelApptEdit = function(apptId, fieldKey) {
-    if (state.currentPanelData.record) {
-      loadAppointmentsForOpportunity(state.currentPanelData.record.id);
+  function formatDatetimeForDisplay(dateStr) {
+    if (!dateStr) return 'Time not set';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleString('en-AU', { 
+        weekday: 'short', 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: '2-digit',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true 
+      });
+    } catch (e) {
+      return dateStr;
     }
-  };
+  }
   
-  // ============================================================
-  // Toggle Appointment Expand
-  // ============================================================
-  
-  window.toggleAppointmentExpand = function(appointmentId) {
-    const details = document.getElementById(`apptDetails_${appointmentId}`);
-    const icon = document.querySelector(`[data-appt-id="${appointmentId}"] .appointment-expand-icon`);
+  function openAppointmentForm(opportunityId, appointment = null) {
+    state.currentAppointmentOpportunityId = opportunityId;
+    state.editingAppointmentId = appointment ? appointment.id : null;
     
-    if (details) {
-      const isHidden = details.style.display === 'none';
-      details.style.display = isHidden ? 'block' : 'none';
-      if (icon) icon.classList.toggle('expanded', isHidden);
-    }
-  };
-  
-  // ============================================================
-  // Appointment Form
-  // ============================================================
-  
-  window.openAppointmentForm = function(opportunityId, appointment = null) {
     const modal = document.getElementById('appointmentFormModal');
     const title = document.getElementById('appointmentFormTitle');
+    title.textContent = appointment ? 'Edit Appointment' : 'New Appointment';
     
-    document.getElementById('appointmentFormOppId').value = opportunityId;
-    document.getElementById('appointmentFormId').value = appointment?.id || '';
-    
-    // Reset or populate fields
-    document.getElementById('appointmentTime').value = appointment ? formatDatetimeForInput(appointment.appointmentTime) : '';
-    document.getElementById('appointmentType').value = appointment?.type || 'Office';
-    document.getElementById('appointmentHowBooked').value = appointment?.howBooked || '';
-    document.getElementById('appointmentPhoneNumber').value = appointment?.phoneNumber || '';
-    document.getElementById('appointmentVideoUrl').value = appointment?.videoMeetUrl || '';
-    document.getElementById('appointmentStatus').value = appointment?.status || 'Scheduled';
-    document.getElementById('appointmentNotes').value = appointment?.notes || '';
-    
-    title.textContent = appointment ? 'Edit Appointment' : 'Add Appointment';
+    document.getElementById('apptFormTime').value = formatDatetimeForInput(appointment?.appointmentTime);
+    document.getElementById('apptFormType').value = appointment?.typeOfAppointment || 'Phone';
+    document.getElementById('apptFormHowBooked').value = appointment?.howBooked || 'Calendly';
+    document.getElementById('apptFormHowBookedOther').value = appointment?.howBookedOther || '';
+    document.getElementById('apptFormPhone').value = appointment?.phoneNumber || '';
+    document.getElementById('apptFormMeetUrl').value = appointment?.videoMeetUrl || '';
+    document.getElementById('apptFormNeedEvidence').checked = appointment?.needEvidenceInAdvance || false;
+    document.getElementById('apptFormNeedReminder').checked = appointment?.needApptReminder || false;
+    document.getElementById('apptFormNotes').value = appointment?.notes || '';
+    document.getElementById('apptFormStatus').value = appointment?.appointmentStatus || '';
     
     updateAppointmentFormVisibility();
+    modal.classList.add('visible');
+    setTimeout(() => modal.classList.add('showing'), 10);
     
-    openModal('appointmentFormModal');
-  };
+    modal.scrollTop = 0;
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
+    setTimeout(() => {
+      const firstInput = document.getElementById('apptFormTime');
+      if (firstInput) firstInput.focus();
+    }, 100);
+  }
   
-  window.updateAppointmentFormVisibility = function() {
-    const type = document.getElementById('appointmentType').value;
-    document.getElementById('appointmentPhoneRow').style.display = type === 'Phone' ? 'flex' : 'none';
-    document.getElementById('appointmentVideoRow').style.display = type === 'Video' ? 'flex' : 'none';
-  };
-  
-  window.closeAppointmentForm = function() {
-    closeModal('appointmentFormModal');
-  };
-  
-  // ============================================================
-  // Save Appointment
-  // ============================================================
-  
-  window.saveAppointment = function() {
-    const oppId = document.getElementById('appointmentFormOppId').value;
-    const apptId = document.getElementById('appointmentFormId').value;
+  function updateAppointmentFormVisibility() {
+    const type = document.getElementById('apptFormType').value;
+    const howBooked = document.getElementById('apptFormHowBooked').value;
     
-    const apptData = {
-      appointmentTime: document.getElementById('appointmentTime').value || null,
-      type: document.getElementById('appointmentType').value,
-      howBooked: document.getElementById('appointmentHowBooked').value,
-      phoneNumber: document.getElementById('appointmentPhoneNumber').value,
-      videoMeetUrl: document.getElementById('appointmentVideoUrl').value,
-      status: document.getElementById('appointmentStatus').value,
-      notes: document.getElementById('appointmentNotes').value
+    document.getElementById('apptFormPhoneRow').style.display = type === 'Phone' ? 'block' : 'none';
+    document.getElementById('apptFormMeetRow').style.display = type === 'Video' ? 'block' : 'none';
+    document.getElementById('apptFormHowBookedOtherRow').style.display = howBooked === 'Other' ? 'block' : 'none';
+  }
+  
+  function closeAppointmentForm() {
+    const modal = document.getElementById('appointmentFormModal');
+    modal.classList.remove('showing');
+    setTimeout(() => modal.classList.remove('visible'), 200);
+    state.currentAppointmentOpportunityId = null;
+    state.editingAppointmentId = null;
+  }
+  
+  function saveAppointment() {
+    if (!state.currentAppointmentOpportunityId) return;
+    
+    const fields = {
+      "Appointment Time": document.getElementById('apptFormTime').value,
+      "Type of Appointment": document.getElementById('apptFormType').value,
+      "How Booked": document.getElementById('apptFormHowBooked').value,
+      "How Booked Other": document.getElementById('apptFormHowBookedOther').value,
+      "Phone Number": document.getElementById('apptFormPhone').value,
+      "Video Meet URL": document.getElementById('apptFormMeetUrl').value,
+      "Need Evidence in Advance": document.getElementById('apptFormNeedEvidence').checked,
+      "Need Appt Reminder": document.getElementById('apptFormNeedReminder').checked,
+      "Notes": document.getElementById('apptFormNotes').value,
+      "Appointment Status": document.getElementById('apptFormStatus').value
     };
     
-    closeAppointmentForm();
+    const saveBtn = document.getElementById('apptFormSaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
     
-    if (apptId) {
-      google.script.run.withSuccessHandler(function(result) {
-        if (result.success) {
-          loadAppointmentsForOpportunity(oppId);
-        }
-      }).updateAppointment(apptId, apptData);
+    const oppId = state.currentAppointmentOpportunityId;
+    
+    function onSaveComplete() {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+      closeAppointmentForm();
+      loadAppointmentsForOpportunity(oppId);
+    }
+    
+    function onSaveError(err) {
+      console.error('Error saving appointment:', err);
+      alert('Error saving appointment: ' + (err.message || err));
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+    
+    if (state.editingAppointmentId) {
+      google.script.run
+        .withSuccessHandler(onSaveComplete)
+        .withFailureHandler(onSaveError)
+        .updateAppointmentFields(state.editingAppointmentId, fields);
     } else {
-      google.script.run.withSuccessHandler(function(result) {
-        if (result.success) {
-          loadAppointmentsForOpportunity(oppId);
-        }
-      }).createAppointment(oppId, apptData);
-    }
-  };
-  
-  // ============================================================
-  // Edit/Delete Appointment
-  // ============================================================
-  
-  window.editAppointment = function(appointmentId, opportunityId) {
-    google.script.run.withSuccessHandler(function(appointment) {
-      if (appointment) {
-        openAppointmentForm(opportunityId, appointment);
-      }
-    }).getAppointmentById(appointmentId);
-  };
-  
-  window.deleteAppointment = function(appointmentId, opportunityId) {
-    showConfirmModal('Are you sure you want to delete this appointment?', function() {
-      google.script.run.withSuccessHandler(function(result) {
-        if (result.success) {
-          loadAppointmentsForOpportunity(opportunityId);
-        }
-      }).deleteAppointment(appointmentId);
-    });
-  };
-  
-  // ============================================================
-  // Formatting Helpers
-  // ============================================================
-  
-  window.formatAppointmentTime = function(dateStr) {
-    if (!dateStr) return 'No time set';
-    
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    const dayName = days[d.getDay()];
-    const dayNum = d.getDate();
-    const suffix = getOrdinalSuffix(dayNum);
-    const month = months[d.getMonth()];
-    
-    let hours = d.getHours();
-    const mins = String(d.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'pm' : 'am';
-    hours = hours % 12 || 12;
-    
-    return `${dayName} ${dayNum}${suffix} ${month}, ${hours}:${mins}${ampm}`;
-  };
-  
-  function getOrdinalSuffix(day) {
-    if (day > 3 && day < 21) return 'th';
-    switch (day % 10) {
-      case 1: return 'st';
-      case 2: return 'nd';
-      case 3: return 'rd';
-      default: return 'th';
+      google.script.run
+        .withSuccessHandler(onSaveComplete)
+        .withFailureHandler(onSaveError)
+        .createAppointment(state.currentAppointmentOpportunityId, fields);
     }
   }
   
-  window.calculateDaysUntil = function(appointmentTimeStr) {
-    if (!appointmentTimeStr) return '';
-    
-    const apptDate = new Date(appointmentTimeStr);
-    if (isNaN(apptDate.getTime())) return '';
-    
-    const now = new Date();
-    const diffMs = apptDate - now;
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return `${Math.abs(diffDays)} days ago`;
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Tomorrow';
-    return `in ${diffDays} days`;
-  };
-  
-  function getAppointmentTypeIcon(type) {
-    switch (type) {
-      case 'Phone': return '&#128222;';
-      case 'Video': return '&#128249;';
-      case 'Office': return '&#127970;';
-      default: return '&#128197;';
+  function toggleAppointmentExpand(appointmentId) {
+    const item = document.querySelector(`.appointment-item[data-appt-id="${appointmentId}"]`);
+    if (item) {
+      item.classList.toggle('expanded');
     }
   }
   
-  window.togglePastApptFields = function() {
-    const pastFieldsContainer = document.getElementById('pastApptFields');
-    if (pastFieldsContainer) {
-      pastFieldsContainer.classList.toggle('expanded');
-    }
-  };
+  function editAppointment(appointmentId, opportunityId) {
+    google.script.run
+      .withSuccessHandler(function(appointments) {
+        const appt = appointments.find(a => a.id === appointmentId);
+        if (appt) {
+          openAppointmentForm(opportunityId, appt);
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error loading appointment for edit:', err);
+      })
+      .getAppointmentsForOpportunity(opportunityId);
+  }
+  
+  function deleteAppointment(appointmentId, opportunityId) {
+    if (!confirm('Are you sure you want to delete this appointment?')) return;
+    
+    google.script.run
+      .withSuccessHandler(function() {
+        loadAppointmentsForOpportunity(opportunityId);
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error deleting appointment:', err);
+        alert('Error deleting appointment: ' + (err.message || err));
+      })
+      .deleteAppointment(appointmentId);
+  }
+  
+  // Expose functions to window for onclick handlers and opportunities.js usage
+  window.renderApptField = renderApptField;
+  window.renderApptFieldNoIcon = renderApptFieldNoIcon;
+  window.renderApptCheckbox = renderApptCheckbox;
+  window.editApptField = editApptField;
+  window.saveApptField = saveApptField;
+  window.updateApptCheckbox = updateApptCheckbox;
+  window.autoResizeTextarea = autoResizeTextarea;
+  window.cancelApptEdit = cancelApptEdit;
+  window.loadAppointmentsForOpportunity = loadAppointmentsForOpportunity;
+  window.formatDatetimeForInput = formatDatetimeForInput;
+  window.formatDatetimeForDisplay = formatDatetimeForDisplay;
+  window.openAppointmentForm = openAppointmentForm;
+  window.updateAppointmentFormVisibility = updateAppointmentFormVisibility;
+  window.closeAppointmentForm = closeAppointmentForm;
+  window.saveAppointment = saveAppointment;
+  window.toggleAppointmentExpand = toggleAppointmentExpand;
+  window.editAppointment = editAppointment;
+  window.deleteAppointment = deleteAppointment;
   
 })();

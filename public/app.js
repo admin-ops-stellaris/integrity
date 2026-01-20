@@ -5059,16 +5059,20 @@ Best wishes,
       content.innerHTML = html;
     }).getRecordDetail(table, id);
   }
-  END COMMENTED OUT */
+  // END COMMENTED OUT - loadPanelRecord
+  */
 
   // PANEL NAVIGATION - MOVED TO opportunities.js
   /* COMMENTED OUT - Using opportunities.js module
   function popHistory() { if (panelHistory.length <= 1) return; panelHistory.pop(); const prev = panelHistory[panelHistory.length - 1]; panelHistory.pop(); loadPanelRecord(prev.table, prev.id); }
   function updateBackButton() { const btn = document.getElementById('panelBackBtn'); if (panelHistory.length > 1) { btn.style.display = 'block'; } else { btn.style.display = 'none'; } }
   function closeOppPanel() { document.getElementById('oppDetailPanel').classList.remove('open'); panelHistory = []; }
-  END COMMENTED OUT */
+  // END COMMENTED OUT - panel navigation
+  */
   
   // --- APPOINTMENTS MANAGEMENT ---
+  // COMMENTED OUT - Using appointments.js module
+  /* COMMENTED OUT - Using appointments.js module
   let currentAppointmentOpportunityId = null;
   let editingAppointmentId = null;
   
@@ -5196,6 +5200,8 @@ Best wishes,
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
   }
+  // END COMMENTED OUT - appointments helper functions
+  */
   
   // ==================== NOTE POPOVER SYSTEM ====================
   
@@ -5683,6 +5689,8 @@ Best wishes,
     }
   });
   
+  // REMAINING APPOINTMENTS FUNCTIONS - COMMENTED OUT - Using appointments.js module
+  /* COMMENTED OUT - Using appointments.js module
   // Cancel appointment edit
   function cancelApptEdit(apptId, fieldKey) {
     const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
@@ -6060,6 +6068,8 @@ Best wishes,
       })
       .deleteAppointment(appointmentId);
   }
+  // END COMMENTED OUT - appointments.js
+  */
 
   // ==================== ADDRESS HISTORY SYSTEM ====================
   // COMMENTED OUT - Using addresses.js module

@@ -551,7 +551,11 @@
       updateContactBackButton();
     }
   };
+  
+  // Expose loadContactById for quick-view.js module
+  window.loadContactById = loadContactById;
 
+  /* COMMENTED OUT - Using quick-view.js module
   window.navigateFromQuickView = function() {
     if (!quickViewContactId) return;
     const contactId = quickViewContactId;

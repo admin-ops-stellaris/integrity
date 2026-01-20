@@ -134,8 +134,14 @@
   function navigateFromQuickView() {
     if (!state.quickViewContactId) return;
     const contactId = state.quickViewContactId;
+    state.isQuickViewHovered = false;
     hideContactQuickView();
-    loadContactById(contactId, true);
+    // Use window.loadContactById which is exposed from app.js
+    if (typeof window.loadContactById === 'function') {
+      window.loadContactById(contactId, true);
+    } else {
+      console.error('loadContactById not available');
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {

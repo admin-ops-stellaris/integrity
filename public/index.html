@@ -79,7 +79,7 @@
         </div>
 
         <div id="profileContent" style="display:none; flex:1; flex-direction:column;">
-          <form id="contactForm" onsubmit="handleFormSubmit(this)" style="display:flex; flex-direction:column; flex:1;">
+          <form id="contactForm" onsubmit="handleFormSubmit(this); return false;" style="display:flex; flex-direction:column; flex:1;">
             <input type="hidden" name="recordId" id="recordId">
             <div class="profile-columns" id="profileColumns">
               <div class="profile-col profile-col-left">

@@ -1078,7 +1078,7 @@ function renderContactMetaBar(f) {
 }
 
 function handleFormSubmit(formObject) {
-  event.preventDefault();
+  if (window.event) window.event.preventDefault();
   const btn = document.getElementById('submitBtn'); const status = document.getElementById('status');
   btn.disabled = true; btn.innerText = "Saving...";
   const formData = {

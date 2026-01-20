@@ -325,45 +325,8 @@
   
   window.cancelEditMode = function() { cancelNewContact(); };
   
-  window.handleFormSubmit = function(formObject) {
-    const recordId = document.getElementById('recordId').value;
-    const isNew = !recordId;
-    
-    const fieldsToSave = {
-      FirstName: formObject.firstName,
-      MiddleName: formObject.middleName,
-      LastName: formObject.lastName,
-      PreferredName: formObject.preferredName,
-      mc_mailingtitle: formObject.mailingTitle,
-      mc_salutation: formObject.salutation,
-      EmailAddress1: formObject.email1,
-      Email2: formObject.email2,
-      Email3: formObject.email3,
-      Mobile: formObject.mobile,
-      Telephone1: formObject.homePhone,
-      Telephone2: formObject.workPhone,
-      DOB: formObject.dob,
-      Gender: formObject.gender,
-      Notes: formObject.notes,
-      Status: formObject.status,
-      ...getNoteFieldValues()
-    };
-    
-    if (isNew) {
-      google.script.run.withSuccessHandler(function(newRecord) {
-        if (newRecord && newRecord.id) {
-          selectContact(newRecord);
-          loadContacts();
-        }
-      }).createContact(fieldsToSave);
-    } else {
-      google.script.run.withSuccessHandler(function(updatedRecord) {
-        if (updatedRecord && updatedRecord.id) {
-          selectContact(updatedRecord);
-        }
-      }).updateContact(recordId, fieldsToSave);
-    }
-  };
+  // handleFormSubmit is defined in app.js - it uses processForm() API
+  // which properly handles both create and update operations
   
   // ============================================================
   // Refresh Contact

@@ -80,11 +80,12 @@ public/js/
 ├── notes.js             # Note popover system, NOTE_FIELDS config, auto-save
 ├── addresses.js         # Address history (residential + postal), CRUD
 ├── appointments.js      # Appointment CRUD, inline editing, datetime formatting
-├── opportunities.js     # Quick Add, Taco parsing, panel navigation
+├── opportunities.js     # Quick Add, Taco parsing, panel navigation, URL updates
 ├── settings.js          # Team settings, signature generation, EMAIL_LINKS
 ├── quick-view.js        # Contact hover cards, positioning
 ├── email.js             # Quill WYSIWYG, template CRUD, conditional parsing
-└── evidence.js          # Evidence modal, progress tracking, email generation
+├── evidence.js          # Evidence modal, progress tracking, email generation
+└── router.js            # URL routing, deep linking, browser history management
 ```
 
 ### Load Order (Critical)
@@ -93,8 +94,28 @@ public/js/
 shared-state.js → shared-utils.js → modal-utils.js → contacts-search.js → 
 core.js → inline-editing.js → spouse.js → connections.js → notes.js → 
 addresses.js → appointments.js → opportunities.js → settings.js → 
-quick-view.js → email.js → evidence.js → app.js
+quick-view.js → email.js → evidence.js → router.js → app.js
 ```
+
+### URL Routing (Deep Linking) - January 2026
+
+**URL Patterns:**
+- `/` - Home (contact list)
+- `/contact/:contactId` - View specific contact
+- `/contact/:contactId/opportunity/:oppId` - View contact with opportunity panel open
+
+**Implementation:**
+1. **Path-based Nested Routing**: Clean URLs using History API (pushState/popState)
+2. **Server Catch-All**: `app.get("*")` serves index.html for all unknown routes
+3. **Auth Trap**: Unauthenticated users redirected to login; original URL saved in session and restored after OAuth callback
+4. **Daisy Chain Rehydration**: Deep links load contact first, then open opportunity panel
+5. **Unidirectional Flow**: `selectContact()` and `loadPanelRecord()` update URL; `popstate` triggers reverse navigation
+
+**Key Functions in router.js:**
+- `parseRoute(pathname)` - Extract contactId/opportunityId from URL
+- `navigateTo(contactId, oppId)` - Update URL via pushState
+- `handleRoute(route)` - Load content for a given route
+- `init()` - Set up popstate listener and handle initial deep link
 
 ### Performance Optimization: Lazy Loading Contacts
 

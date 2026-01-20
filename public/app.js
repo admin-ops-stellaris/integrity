@@ -997,10 +997,19 @@ window.goHome = function() {
 };
 
 function resetForm() {
+  // Clear current contact first (new contact mode)
+  currentContactRecord = null;
+  currentOppRecords = [];
+  
   toggleProfileView(true); document.getElementById('contactForm').reset();
   document.getElementById('recordId').value = "";
   // Explicitly enable new contact mode
   enableNewContactMode();
+  
+  // Update URL to home (no contact selected)
+  if (window.IntegrityRouter) {
+    window.IntegrityRouter.navigateToHome();
+  }
   document.getElementById('formTitle').innerText = "New Contact";
   document.getElementById('formSubtitle').innerText = '';
   document.getElementById('submitBtn').innerText = "Create Contact";

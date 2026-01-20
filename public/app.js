@@ -62,6 +62,10 @@ window.onload = function() {
   initInlineEditing();
   initAllNoteFields();
   initScrollHeader();
+  
+  if (window.IntegrityRouter) {
+    window.IntegrityRouter.init();
+  }
 };
 
 // --- KEYBOARD SHORTCUTS ---
@@ -278,7 +282,20 @@ function selectContact(record) {
   // Apply deceased styling if contact is deceased
   const isDeceased = f.Deceased === true;
   applyDeceasedStyling(isDeceased);
+  
+  // Update URL (only if not already navigating from router)
+  if (window.IntegrityRouter && !window._routerNavigating) {
+    window.IntegrityRouter.navigateTo(record.id, null);
+  }
 }
+
+// Callback-based version for router (daisy chain pattern)
+window.selectContactFromRouter = function(record, callback) {
+  window._routerNavigating = true;
+  selectContact(record);
+  window._routerNavigating = false;
+  if (callback) callback();
+};
 
 // Collapsible section pattern - reusable for any collapsible field groups
 window.toggleCollapsible = function(sectionId) {
@@ -957,7 +974,15 @@ window.goHome = function() {
   currentOppRecords = [];
   currentContactAddresses = [];
   toggleProfileView(false);
-  closeOppPanel();
+  
+  // Close opp panel without URL update (we'll update URL separately)
+  document.getElementById('oppDetailPanel').classList.remove('open');
+  state.panelHistory = [];
+  
+  // Update URL to home
+  if (window.IntegrityRouter) {
+    window.IntegrityRouter.navigateToHome();
+  }
   
   // Clear search and reload contact list
   document.getElementById('searchInput').value = '';

@@ -253,6 +253,11 @@
   // Opportunity Panel
   // ============================================================
 
+  window.openOpportunityPanel = function(opportunityId) {
+    state.panelHistory = [];
+    loadPanelRecord('Opportunities', opportunityId);
+  };
+
   window.loadPanelRecord = function(table, id) {
     const panel = document.getElementById('oppDetailPanel');
     const content = document.getElementById('panelContent');
@@ -260,6 +265,10 @@
     
     panel.classList.add('open');
     content.innerHTML = `<div style="text-align:center; color:#999; margin-top:50px;">Loading...</div>`;
+    
+    if (table === 'Opportunities' && window.IntegrityRouter && state.currentContactRecord) {
+      window.IntegrityRouter.navigateTo(state.currentContactRecord.id, id);
+    }
     
     google.script.run.withSuccessHandler(function(response) {
       if (!response || !response.data) {
@@ -488,6 +497,10 @@
   window.closeOppPanel = function() {
     document.getElementById('oppDetailPanel').classList.remove('open');
     state.panelHistory = [];
+    
+    if (window.IntegrityRouter && state.currentContactRecord) {
+      window.IntegrityRouter.navigateTo(state.currentContactRecord.id, null);
+    }
   };
 
   // ============================================================

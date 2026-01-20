@@ -226,9 +226,11 @@ app.get(CALLBACK_PATH, async (req, res, next) => {
       expires_at: tokenSet.expires_at ? tokenSet.expires_at * 1000 : Date.now() + 3600000,
     };
     
+    const returnTo = req.session.returnTo || '/';
     delete req.session.oauth;
+    delete req.session.returnTo;
 
-    res.redirect("/");
+    res.redirect(returnTo);
   } catch (e) {
     next(e);
   }
@@ -247,6 +249,10 @@ function requireAuth(req, res, next) {
     return next();
   }
   if (req.session?.user?.email) return next();
+  
+  if (req.path !== '/' && !req.path.startsWith('/auth/') && !req.path.startsWith('/api/')) {
+    req.session.returnTo = req.originalUrl;
+  }
   return res.redirect("/auth/google");
 }
 

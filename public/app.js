@@ -5203,20 +5203,19 @@ Best wishes,
   // END COMMENTED OUT - appointments helper functions
   */
   
+  /* COMMENTED OUT - Using notes.js module
   // ==================== NOTE POPOVER SYSTEM ====================
   
   let activeNotePopover = null;
   let noteSaveTimeout = null;
   
-  /**
-   * NOTE_FIELDS Configuration
-   * Add new note fields here - all logic (popover, save, icons) is handled automatically.
-   * 
-   * Each entry requires:
-   *   - fieldId: The HTML hidden field ID (used for form submission)
-   *   - airtableField: The corresponding Airtable field name
-   *   - inputId: The visible input field this note is attached to
-   */
+  // NOTE_FIELDS Configuration
+  // Add new note fields here - all logic (popover, save, icons) is handled automatically.
+  // 
+  // Each entry requires:
+  //   - fieldId: The HTML hidden field ID (used for form submission)
+  //   - airtableField: The corresponding Airtable field name
+  //   - inputId: The visible input field this note is attached to
   const NOTE_FIELDS = [
     { fieldId: 'email1Comment', airtableField: 'EmailAddress1Comment', inputId: 'email1' },
     { fieldId: 'email2Comment', airtableField: 'EmailAddress2Comment', inputId: 'email2' },
@@ -5230,10 +5229,8 @@ Best wishes,
     return map;
   }, {});
 
-  /**
-   * Initialize note icon on a field wrapper
-   * Call this to attach note functionality to any .input-with-note wrapper
-   */
+  // Initialize note icon on a field wrapper
+  // Call this to attach note functionality to any .input-with-note wrapper
   function initNoteIcon(wrapper, fieldId) {
     // Check if already initialized
     if (wrapper.querySelector('.note-icon')) return;
@@ -5258,10 +5255,8 @@ Best wishes,
     }
   }
 
-  /**
-   * Initialize all configured note fields
-   * Called on page load to set up note icons on all configured fields
-   */
+  // Initialize all configured note fields
+  // Called on page load to set up note icons on all configured fields
   function initAllNoteFields() {
     NOTE_FIELDS.forEach(config => {
       const input = document.getElementById(config.inputId);
@@ -5274,10 +5269,8 @@ Best wishes,
     });
   }
 
-  /**
-   * Populate note field values from contact data
-   * @param {Object} contact - The contact record from Airtable
-   */
+  // Populate note field values from contact data
+  // @param {Object} contact - The contact record from Airtable
   function populateNoteFields(contact) {
     NOTE_FIELDS.forEach(config => {
       const field = document.getElementById(config.fieldId);
@@ -5288,10 +5281,8 @@ Best wishes,
     updateAllNoteIcons();
   }
 
-  /**
-   * Get note field values for form submission
-   * @returns {Object} Object with fieldId: value pairs
-   */
+  // Get note field values for form submission
+  // @returns {Object} Object with fieldId: value pairs
   function getNoteFieldValues() {
     const values = {};
     NOTE_FIELDS.forEach(config => {
@@ -5688,6 +5679,8 @@ Best wishes,
       saveNoteFromPopover(true);
     }
   });
+  // END COMMENTED OUT - notes.js module
+  */
   
   // REMAINING APPOINTMENTS FUNCTIONS - COMMENTED OUT - Using appointments.js module
   /* COMMENTED OUT - Using appointments.js module

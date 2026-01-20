@@ -17,9 +17,34 @@ Here's how to take the updated version through to being live for users:
 5. To view the live version go to https://integrity-prod.fly.dev
 
 # Prompts for code health
-- Periodically (every few major features):
-   - Review the codebase for code health. Are there duplicated patterns that should be consolidated? Functions over 50 lines that should be split? Inconsistent patterns that should be standardized? Finally, compare the current file structure and logic patterns against replit.md. If we have introduced new architecture (like new modules or service files) that isn't documented there, please rewrite the relevant sections of replit.md to keep it accurate.
-- At session start (when sitting down to work):
-   - Before we begin, strictly read replit.md to understand the current architecture, file structure, and preferred patterns (like the Modal Overlay system). Do not deviate from these patterns. If you see a code request that conflicts with the documented architecture, warn me before proceeding.
-- At session end (when wrapping up a session):
-   - We are done for now. Please scan the changes we made today. If we added any new features, database tables, or changed how a core system works, please update replit.md with a summary so the next session starts with fresh context.
+
+**At Session Start (The "Locator" Prompt)**
+"Before we begin:
+
+Read replit.md to load the current architecture and file structure.
+
+Locate the Logic: If I ask for a feature (e.g., 'Update the email composer'), first identify which module handles that logic (e.g., email.js) and work strictly within that file. Do not dump new logic into app.js unless it is global orchestration.
+
+Pattern Check: Remind yourself of the 'Modal Overlay' pattern and the IntegrityState object for state management. Do not create new global variables."
+
+**Periodically / Code Health (The "Integrity" Prompt)**
+
+"Please review the codebase for code health:
+
+Module Boundaries: Are there any functions sitting in app.js that actually belong in a specific feature module? If so, move them.
+
+State Hygiene: Are we correctly using window.IntegrityState for shared data, or have we accidentally created loose global variables?
+
+Performance Check: Ensure we haven't broken the 'Lazy Loading' pattern (e.g., check that we aren't accidentally fetching full deep-graph records in simple list views).
+
+Documentation: Compare the current file structure against replit.md and update it if we've added new modules."
+
+**At Session End (The "Debt" Prompt)**
+
+"We are done for now. Please scan the changes we made today:
+
+Documentation: Update replit.md with any new features, database changes, or module additions.
+
+Tech Debt Check: Did we leave any 'TODOs' or temporary hacks (like hardcoded IDs or bypassed checks) to get things working? List them now so I know what to clean up next time.
+
+File Size: Briefly confirm that app.js hasn't bloated back up."

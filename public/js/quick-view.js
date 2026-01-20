@@ -24,6 +24,8 @@
     state.quickViewContactId = contactId;
     
     const card = document.getElementById('contactQuickView');
+    // Store contact ID on card element for button click access
+    card.dataset.contactId = contactId;
     const rect = triggerElement.getBoundingClientRect();
     
     let left = rect.left + (rect.width / 2) - 150;
@@ -131,16 +133,24 @@
     });
   }
 
-  function navigateFromQuickView() {
-    if (!state.quickViewContactId) return;
-    const contactId = state.quickViewContactId;
+  function navigateFromQuickView(id) {
+    // Accept ID as parameter (from button click) or fall back to state
+    const contactId = id || state.quickViewContactId;
+    console.log('Navigate requested for:', contactId);
+    
+    if (!contactId) {
+      console.error('No contact ID available for navigation');
+      return;
+    }
+    
     state.isQuickViewHovered = false;
     hideContactQuickView();
+    
     // Use window.loadContactById which is exposed from app.js
     if (typeof window.loadContactById === 'function') {
       window.loadContactById(contactId, true);
     } else {
-      console.error('loadContactById not available');
+      console.error('loadContactById not available - app.js may not be loaded');
     }
   }
 

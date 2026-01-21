@@ -146,49 +146,12 @@
     let time24 = '';
     
     if (currentValue) {
-      let year, month, day, hour, minute;
-      
-      // Check if UTC Z string - need to convert to Perth time first
-      if (currentValue.endsWith('Z')) {
-        // Parse as UTC and convert to Perth (UTC+8)
-        const d = new Date(currentValue);
-        if (!isNaN(d.getTime())) {
-          // Get Perth time components using toLocaleString
-          const perthStr = d.toLocaleString('en-AU', { 
-            timeZone: 'Australia/Perth',
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', hour12: false
-          });
-          // Format: DD/MM/YYYY, HH:mm
-          const dateTimeParts = perthStr.split(', ');
-          if (dateTimeParts.length === 2) {
-            const [datePart, timePart] = dateTimeParts;
-            const [d, m, y] = datePart.split('/');
-            const [h, min] = timePart.split(':');
-            year = y; month = m; day = d;
-            hour = h; minute = min;
-          }
-        }
-      } else {
-        // Floating ISO - parse directly without conversion
-        const match = currentValue.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-        if (match) {
-          [, year, month, day, hour, minute] = match;
-        }
-      }
-      
-      if (year && month && day && hour && minute) {
-        isoDate = `${year}-${month}-${day}`;
-        time24 = `${hour}:${minute}`;
-        
-        // Convert to display formats
-        dateDisplay = `${day}/${month}/${year}`;
-        
-        const h = parseInt(hour, 10);
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        const displayHours = h % 12 || 12;
-        timeDisplay = `${displayHours}:${minute} ${ampm}`;
-      }
+      // Use Perth Standard centralized parser
+      const parsed = window.parseDateForEditor(currentValue);
+      dateDisplay = parsed.dateDisplay;
+      timeDisplay = parsed.timeDisplay;
+      isoDate = parsed.isoDate;
+      time24 = parsed.time24;
     }
     
     // Create popover HTML
@@ -602,47 +565,14 @@
     const timeEl = document.getElementById('apptFormTime');
     
     if (appointment?.appointmentTime) {
-      const rawTime = appointment.appointmentTime;
-      let dd, mm, yyyy, hours, mins;
+      // Use Perth Standard centralized parser
+      const parsed = window.parseDateForEditor(appointment.appointmentTime);
       
-      // Check if UTC Z string - need to convert to Perth time first
-      if (rawTime.endsWith('Z')) {
-        const dt = new Date(rawTime);
-        if (!isNaN(dt.getTime())) {
-          // Get Perth time components using toLocaleString
-          const perthStr = dt.toLocaleString('en-AU', { 
-            timeZone: 'Australia/Perth',
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', hour12: false
-          });
-          // Format: DD/MM/YYYY, HH:mm
-          const dateTimeParts = perthStr.split(', ');
-          if (dateTimeParts.length === 2) {
-            const [datePart, timePart] = dateTimeParts;
-            [dd, mm, yyyy] = datePart.split('/');
-            [hours, mins] = timePart.split(':');
-            hours = parseInt(hours, 10);
-          }
-        }
-      } else {
-        // Floating ISO - parse directly without conversion
-        const match = rawTime.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-        if (match) {
-          const [, y, m, d, h, min] = match;
-          yyyy = y; mm = m; dd = d;
-          hours = parseInt(h, 10); mins = min;
-        }
-      }
-      
-      if (dd && mm && yyyy && hours !== undefined && mins) {
-        dateEl.value = `${dd}/${mm}/${yyyy}`;
-        dateEl.dataset.isoDate = `${yyyy}-${mm}-${dd}`;
-        
-        // Format time as h:mm AM/PM for display
-        const ampm = hours < 12 ? 'AM' : 'PM';
-        const displayHour = hours % 12 || 12;
-        timeEl.value = `${displayHour}:${String(mins).padStart(2, '0')} ${ampm}`;
-        timeEl.dataset.time24 = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+      if (parsed.dateDisplay) {
+        dateEl.value = parsed.dateDisplay;
+        dateEl.dataset.isoDate = parsed.isoDate;
+        timeEl.value = parsed.timeDisplay;
+        timeEl.dataset.time24 = parsed.time24;
       } else {
         dateEl.value = '';
         timeEl.value = '';

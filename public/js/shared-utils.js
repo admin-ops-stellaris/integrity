@@ -557,4 +557,66 @@
     }
   };
   
+  /**
+   * PERTH STANDARD: Parse ISO datetime for form/editor inputs
+   * Converts UTC Z strings to Perth time, keeps floating ISO as-is
+   * 
+   * @param {string} isoString - ISO datetime string (with Z or floating)
+   * @returns {Object} { dateDisplay, timeDisplay, isoDate, time24 } or empty values
+   */
+  window.parseDateForEditor = function(isoString) {
+    const empty = { dateDisplay: '', timeDisplay: '', isoDate: '', time24: '' };
+    
+    if (!isoString) return empty;
+    
+    try {
+      let year, month, day, hour, minute;
+      
+      // Check if UTC Z string - need to convert to Perth time first
+      if (isoString.endsWith('Z')) {
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return empty;
+        
+        // Get Perth time components using toLocaleString
+        const perthStr = d.toLocaleString('en-AU', { 
+          timeZone: 'Australia/Perth',
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hour12: false
+        });
+        // Format: DD/MM/YYYY, HH:mm
+        const dateTimeParts = perthStr.split(', ');
+        if (dateTimeParts.length === 2) {
+          const [datePart, timePart] = dateTimeParts;
+          [day, month, year] = datePart.split('/');
+          [hour, minute] = timePart.split(':');
+        }
+      } else {
+        // Floating ISO - parse directly without conversion
+        const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+        if (match) {
+          [, year, month, day, hour, minute] = match;
+        }
+      }
+      
+      if (!year || !month || !day || hour === undefined || !minute) {
+        return empty;
+      }
+      
+      // Build return object
+      const h = parseInt(hour, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const displayHour = h % 12 || 12;
+      
+      return {
+        dateDisplay: `${day}/${month}/${year}`,
+        timeDisplay: `${displayHour}:${String(minute).padStart(2, '0')} ${ampm}`,
+        isoDate: `${year}-${month}-${day}`,
+        time24: `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+      };
+    } catch (e) {
+      console.error('Error parsing date for editor:', e);
+      return empty;
+    }
+  };
+  
 })();

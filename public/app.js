@@ -64,6 +64,7 @@ window.onload = function() {
   initScrollHeader();
   initSmartDateListener();
   initSmartTimeListener();
+  initSmartFieldEnterGuard();
   
   if (window.IntegrityRouter) {
     window.IntegrityRouter.init();

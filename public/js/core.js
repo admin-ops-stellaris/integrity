@@ -166,6 +166,50 @@
   }
   
   // ============================================================
+  // Enter Key Guard for Smart Date/Time Fields
+  // Ensures value is formatted before Enter triggers save
+  // ============================================================
+  
+  function initSmartFieldEnterGuard() {
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter') return;
+      
+      const target = e.target;
+      if (!target || target.tagName !== 'INPUT' || target.type !== 'text') return;
+      
+      // Check for smart-date field
+      if (target.classList.contains('smart-date') || (target.id && /[Dd]ate/.test(target.id))) {
+        const value = target.value;
+        if (value) {
+          const parsed = window.parseFlexibleDate(value);
+          if (parsed) {
+            target.value = parsed.display;
+            target.dataset.isoDate = parsed.iso;
+          } else {
+            delete target.dataset.isoDate;
+          }
+        }
+        return; // Let Enter propagate to trigger save
+      }
+      
+      // Check for smart-time field
+      if (target.classList.contains('smart-time')) {
+        const value = target.value;
+        if (value) {
+          const parsed = window.parseFlexibleTime(value);
+          if (parsed) {
+            target.value = parsed.display;
+            target.dataset.time24 = parsed.value24;
+          } else {
+            delete target.dataset.time24;
+          }
+        }
+        return; // Let Enter propagate to trigger save
+      }
+    }, true); // Capture phase to run before other handlers
+  }
+  
+  // ============================================================
   // Expose functions globally
   // ============================================================
   
@@ -175,5 +219,6 @@
   window.initScrollHeader = initScrollHeader;
   window.initSmartDateListener = initSmartDateListener;
   window.initSmartTimeListener = initSmartTimeListener;
+  window.initSmartFieldEnterGuard = initSmartFieldEnterGuard;
   
 })();

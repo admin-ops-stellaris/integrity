@@ -219,10 +219,11 @@
       dateInput.select();
     }
     
-    // Add event listeners for keyboard and outside click
+    // Add event listeners for keyboard, outside click, and focus tracking
     setTimeout(() => {
       document.addEventListener('click', handlePopoverOutsideClick);
       document.addEventListener('keydown', handlePopoverKeydown);
+      popover.addEventListener('focusout', handlePopoverFocusOut);
     }, 10);
   }
   
@@ -231,6 +232,27 @@
     if (popover && !popover.contains(e.target)) {
       closeApptTimePopover();
     }
+  }
+  
+  function handlePopoverFocusOut(e) {
+    const popover = document.getElementById('apptTimePopover');
+    if (!popover) return;
+    
+    // Check if the new focus target is still within the popover
+    // relatedTarget is where focus is going to
+    if (e.relatedTarget && popover.contains(e.relatedTarget)) {
+      // Focus is moving within the popover (e.g., Tab from date to time)
+      return;
+    }
+    
+    // Small delay to allow button clicks to register before closing
+    setTimeout(() => {
+      if (document.activeElement && popover.contains(document.activeElement)) {
+        return;
+      }
+      // Focus moved outside popover - close it
+      closeApptTimePopover();
+    }, 100);
   }
   
   function handlePopoverKeydown(e) {
@@ -293,12 +315,20 @@
       return;
     }
     
-    // Build ISO datetime
+    // Build ISO datetime with timezone offset to preserve local time
+    // Perth is UTC+8, but we get the actual local offset dynamically
+    const now = new Date();
+    const offsetMinutes = -now.getTimezoneOffset(); // getTimezoneOffset returns minutes behind UTC (negative for ahead)
+    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+    const offsetMins = Math.abs(offsetMinutes) % 60;
+    const offsetSign = offsetMinutes >= 0 ? '+' : '-';
+    const tzOffset = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
+    
     let appointmentTimeISO = '';
     if (isoDate && time24) {
-      appointmentTimeISO = `${isoDate}T${time24}`;
+      appointmentTimeISO = `${isoDate}T${time24}:00${tzOffset}`;
     } else if (isoDate) {
-      appointmentTimeISO = `${isoDate}T00:00`;
+      appointmentTimeISO = `${isoDate}T00:00:00${tzOffset}`;
     }
     
     // Delegate to saveApptField for consistent status auto-update behavior
@@ -626,12 +656,18 @@
       return parsed ? parsed.value24 : null;
     })();
     
+    // Build ISO datetime with timezone offset to preserve local time
+    const now = new Date();
+    const offsetMinutes = -now.getTimezoneOffset();
+    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+    const offsetMins = Math.abs(offsetMinutes) % 60;
+    const offsetSign = offsetMinutes >= 0 ? '+' : '-';
+    const tzOffset = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
+    
     if (isoDate && time24) {
-      // Combine into ISO format: YYYY-MM-DDTHH:MM
-      appointmentTimeISO = `${isoDate}T${time24}`;
+      appointmentTimeISO = `${isoDate}T${time24}:00${tzOffset}`;
     } else if (isoDate) {
-      // Date only, default to midnight
-      appointmentTimeISO = `${isoDate}T00:00`;
+      appointmentTimeISO = `${isoDate}T00:00:00${tzOffset}`;
     }
     
     const fields = {

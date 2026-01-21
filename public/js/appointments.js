@@ -10,8 +10,9 @@
     
     if (type === 'datetime') {
       const formatted = formatDatetimeForDisplay(value);
-      // Datetime editing opens the full modal for better UX with split date/time fields
-      valueHtml = `<div class="detail-value appt-editable" onclick="editAppointmentInline('${apptId}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}" style="display:flex; justify-content:space-between; align-items:center;"><span>${formatted}</span><span class="edit-field-icon">✎</span></div>`;
+      const escapedValue = (value || '').replace(/'/g, "\\'");
+      // Datetime editing opens mini-popover with smart-date and smart-time fields
+      valueHtml = `<div class="detail-value appt-editable" onclick="editApptTimeInline('${apptId}', '${escapedValue}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}" style="display:flex; justify-content:space-between; align-items:center;"><span>${formatted}</span><span class="edit-field-icon">✎</span></div>`;
     } else if (type === 'select') {
       valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}', ${JSON.stringify(options).replace(/"/g, '&quot;')})" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
     } else if (type === 'textarea') {
@@ -130,23 +131,188 @@
     if (opportunityId) loadAppointmentsForOpportunity(opportunityId);
   }
   
-  // Edit appointment inline by opening the modal
-  function editAppointmentInline(apptId) {
-    const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
-    if (!opportunityId) return;
+  // Edit appointment date/time inline with mini-popover
+  function editApptTimeInline(apptId, currentValue) {
+    // Close any existing popover
+    closeApptTimePopover();
     
-    // Fetch the appointment to open in modal
-    google.script.run
-      .withSuccessHandler(function(appointments) {
-        const appt = appointments.find(a => a.id === apptId);
-        if (appt) {
-          openAppointmentForm(opportunityId, appt);
+    const triggerEl = document.querySelector(`[data-appt-id="${apptId}"][data-field="appointmentTime"]`);
+    if (!triggerEl) return;
+    
+    // Parse current datetime value using local time to match existing display logic
+    let dateDisplay = '';
+    let timeDisplay = '';
+    let isoDate = '';
+    let time24 = '';
+    
+    if (currentValue) {
+      // Use formatDatetimeForInput to get consistent ISO format
+      const isoInput = formatDatetimeForInput(currentValue);
+      if (isoInput) {
+        // isoInput is YYYY-MM-DDTHH:MM format
+        const parts = isoInput.split('T');
+        if (parts.length === 2) {
+          isoDate = parts[0]; // YYYY-MM-DD
+          time24 = parts[1];  // HH:MM
+          
+          // Convert to display formats
+          const [year, month, day] = isoDate.split('-');
+          dateDisplay = `${day}/${month}/${year}`;
+          
+          const [h, m] = time24.split(':').map(Number);
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const displayHours = h % 12 || 12;
+          timeDisplay = `${displayHours}:${String(m).padStart(2, '0')} ${ampm}`;
         }
-      })
-      .withFailureHandler(function(err) {
-        console.error('Error fetching appointment for edit:', err);
-      })
-      .getAppointmentsForOpportunity(opportunityId);
+      }
+    }
+    
+    // Create popover HTML
+    const popover = document.createElement('div');
+    popover.className = 'appt-time-popover';
+    popover.id = 'apptTimePopover';
+    popover.dataset.apptId = apptId;
+    popover.innerHTML = `
+      <div class="appt-time-popover-content">
+        <div class="appt-time-popover-row">
+          <label>Date</label>
+          <input type="text" class="smart-date appt-popover-date" 
+                 value="${dateDisplay}" 
+                 data-iso-date="${isoDate}"
+                 placeholder="DD/MM/YYYY">
+        </div>
+        <div class="appt-time-popover-row">
+          <label>Time</label>
+          <input type="text" class="smart-time appt-popover-time" 
+                 value="${timeDisplay}" 
+                 data-time24="${time24}"
+                 placeholder="e.g. 1300">
+        </div>
+        <div class="appt-time-popover-actions">
+          <button type="button" class="appt-popover-save" onclick="saveApptTimePopover()">✓</button>
+          <button type="button" class="appt-popover-cancel" onclick="closeApptTimePopover()">✕</button>
+        </div>
+      </div>
+    `;
+    
+    // Position near the trigger element
+    document.body.appendChild(popover);
+    const rect = triggerEl.getBoundingClientRect();
+    popover.style.position = 'fixed';
+    popover.style.top = (rect.bottom + 4) + 'px';
+    popover.style.left = rect.left + 'px';
+    popover.style.zIndex = '10000';
+    
+    // Adjust if off-screen
+    const popoverRect = popover.getBoundingClientRect();
+    if (popoverRect.right > window.innerWidth) {
+      popover.style.left = (window.innerWidth - popoverRect.width - 10) + 'px';
+    }
+    if (popoverRect.bottom > window.innerHeight) {
+      popover.style.top = (rect.top - popoverRect.height - 4) + 'px';
+    }
+    
+    // Focus the date field
+    const dateInput = popover.querySelector('.appt-popover-date');
+    if (dateInput) {
+      dateInput.focus();
+      dateInput.select();
+    }
+    
+    // Add event listeners for keyboard and outside click
+    setTimeout(() => {
+      document.addEventListener('click', handlePopoverOutsideClick);
+      document.addEventListener('keydown', handlePopoverKeydown);
+    }, 10);
+  }
+  
+  function handlePopoverOutsideClick(e) {
+    const popover = document.getElementById('apptTimePopover');
+    if (popover && !popover.contains(e.target)) {
+      closeApptTimePopover();
+    }
+  }
+  
+  function handlePopoverKeydown(e) {
+    const popover = document.getElementById('apptTimePopover');
+    if (!popover) return;
+    
+    if (e.key === 'Escape') {
+      closeApptTimePopover();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      saveApptTimePopover();
+    } else if (e.key === 'Tab' && !e.shiftKey) {
+      // Allow tab between date and time fields
+      const timeInput = popover.querySelector('.appt-popover-time');
+      if (document.activeElement === timeInput) {
+        e.preventDefault();
+        saveApptTimePopover();
+      }
+    }
+  }
+  
+  function saveApptTimePopover() {
+    const popover = document.getElementById('apptTimePopover');
+    if (!popover) return;
+    
+    const apptId = popover.dataset.apptId;
+    const dateInput = popover.querySelector('.appt-popover-date');
+    const timeInput = popover.querySelector('.appt-popover-time');
+    
+    // Parse values directly in case change event hasn't fired yet
+    let isoDate = dateInput?.dataset.isoDate || '';
+    let time24 = timeInput?.dataset.time24 || '';
+    
+    // If dataset not set, try parsing the raw value
+    if (!isoDate && dateInput?.value) {
+      const parsed = window.parseFlexibleDate(dateInput.value);
+      if (parsed) {
+        isoDate = parsed.iso;
+        dateInput.value = parsed.display;
+        dateInput.dataset.isoDate = parsed.iso;
+      }
+    }
+    if (!time24 && timeInput?.value) {
+      const parsed = window.parseFlexibleTime(timeInput.value);
+      if (parsed) {
+        time24 = parsed.value24;
+        timeInput.value = parsed.display;
+        timeInput.dataset.time24 = parsed.value24;
+      }
+    }
+    
+    // Validate: require at least a date
+    if (!isoDate) {
+      if (dateInput?.value) {
+        dateInput.style.borderColor = '#dc2626';
+        dateInput.focus();
+        return; // Keep popover open for correction
+      }
+      closeApptTimePopover();
+      return;
+    }
+    
+    // Build ISO datetime
+    let appointmentTimeISO = '';
+    if (isoDate && time24) {
+      appointmentTimeISO = `${isoDate}T${time24}`;
+    } else if (isoDate) {
+      appointmentTimeISO = `${isoDate}T00:00`;
+    }
+    
+    // Delegate to saveApptField for consistent status auto-update behavior
+    closeApptTimePopover();
+    saveApptField(apptId, 'appointmentTime', appointmentTimeISO, 'datetime');
+  }
+  
+  function closeApptTimePopover() {
+    const popover = document.getElementById('apptTimePopover');
+    if (popover) {
+      popover.remove();
+    }
+    document.removeEventListener('click', handlePopoverOutsideClick);
+    document.removeEventListener('keydown', handlePopoverKeydown);
   }
   
   function loadAppointmentsForOpportunity(opportunityId) {
@@ -558,7 +724,9 @@
   window.updateApptCheckbox = updateApptCheckbox;
   window.autoResizeTextarea = autoResizeTextarea;
   window.cancelApptEdit = cancelApptEdit;
-  window.editAppointmentInline = editAppointmentInline;
+  window.editApptTimeInline = editApptTimeInline;
+  window.saveApptTimePopover = saveApptTimePopover;
+  window.closeApptTimePopover = closeApptTimePopover;
   window.loadAppointmentsForOpportunity = loadAppointmentsForOpportunity;
   window.formatDatetimeForInput = formatDatetimeForInput;
   window.formatDatetimeForDisplay = formatDatetimeForDisplay;

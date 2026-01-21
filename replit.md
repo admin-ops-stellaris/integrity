@@ -164,9 +164,18 @@ quick-view.js → email.js → evidence.js → router.js → app.js
    - Date field uses `.smart-date`, Time field uses `.smart-time`
    - On save: combines `data-iso-date` + `data-time24` into ISO string
 
+4. **Inline Date/Time Mini-Popover**:
+   - `editApptTimeInline()` shows floating popover near the clicked field
+   - Contains both `.smart-date` and `.smart-time` inputs for "Type → Tab → Type" flow
+   - Pre-fills using `formatDatetimeForInput()` for consistent timezone handling
+   - Save: Enter key or ✓ button → parses values, delegates to `saveApptField()`
+   - Cancel: Escape key or click outside → closes without saving
+   - Validation: Invalid date highlights red, keeps popover open for correction
+
 **Usage:**
 - Add `.smart-time` class to text inputs for time formatting
 - Access 24h value via `element.dataset.time24`
+- For inline date/time editing: call `editApptTimeInline(apptId, currentISOValue)`
 
 ### Performance Optimization: Lazy Loading Contacts
 

@@ -50,4 +50,5 @@ Tech Debt Check: Did we leave any 'TODOs' or temporary hacks (like hardcoded IDs
 File Size: Briefly confirm that app.js hasn't bloated back up."
 
 # When creating date fields
-the prompt to replit should be something like "Add a 'Settlement Date' field to the Opportunity panel. Use the standard .smart-date and .smart-time classes. When loading the data, use parseDateForEditor to handle the timezone automatically."
+* in Airtable, European, and if show time is appropriate, 24 hr, use the same timezone for all collaborators, Australia/Perth.
+* the prompt to replit should be something like "Add a 'Settlement Date' field to the Opportunity panel. Use the standard .smart-date and .smart-time classes. When loading the data, use parseDateForEditor to handle the timezone automatically."

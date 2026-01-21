@@ -117,6 +117,31 @@ quick-view.js → email.js → evidence.js → router.js → app.js
 - `handleRoute(route)` - Load content for a given route
 - `init()` - Set up popstate listener and handle initial deep link
 
+### Global Smart Date System - January 2026
+
+**Goal:** Users can type dates loosely (e.g., `210126`, `21/1/26`, `21.01.26`) and have them auto-format to `DD/MM/YYYY`.
+
+**Implementation:**
+1. **parseFlexibleDate()** in shared-utils.js handles all formats:
+   - No separators: `DDMMYY`, `DDMMYYYY`
+   - With separators: `DD/MM/YY`, `DD.MM.YYYY`, `D-M-YY`, etc.
+   - Returns `{ iso: 'YYYY-MM-DD', display: 'DD/MM/YYYY' }` or null
+
+2. **Event Delegation** in core.js:
+   - Global `change` listener on document
+   - Targets: `.smart-date` class OR text inputs with 'Date' in ID
+   - Auto-formats value and stores ISO in `data-iso-date` attribute
+
+3. **Integration** via enhanced `parseDateInput(value, inputEl)`:
+   - Checks `dataset.isoDate` first (from smart listener)
+   - Falls back to `parseFlexibleDate()` then legacy pattern
+   - Backward compatible with existing code
+
+**Usage:**
+- Add `.smart-date` class to any text input for date formatting
+- Or use ID containing 'Date' (e.g., `addressFromDate`)
+- `type="date"` inputs use browser picker (already returns ISO)
+
 ### Performance Optimization: Lazy Loading Contacts
 
 **Problem:** `getRecentContacts` was returning full deep records with heavy arrays (Opportunities, Connections, Address History, Spouse History, SEARCH_INDEX).

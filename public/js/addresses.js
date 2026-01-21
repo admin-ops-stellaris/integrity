@@ -325,8 +325,14 @@
       country: document.getElementById('addressCountry').value,
       label: document.getElementById('addressLabel').value,
       status: isPostal ? null : (document.getElementById('addressStatus').value || null),
-      from: isPostal ? null : parseDateInput(document.getElementById('addressFrom').value),
-      to: isPostal ? null : parseDateInput(document.getElementById('addressTo').value),
+      from: isPostal ? null : (function() {
+        const el = document.getElementById('addressFrom');
+        return parseDateInput(el.value, el);
+      })(),
+      to: isPostal ? null : (function() {
+        const el = document.getElementById('addressTo');
+        return parseDateInput(el.value, el);
+      })(),
       isPostal: isPostal
     };
     

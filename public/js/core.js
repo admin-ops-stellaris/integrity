@@ -111,23 +111,27 @@
       const target = e.target;
       if (!target || target.tagName !== 'INPUT') return;
       
+      // Only target text inputs (type="date" uses browser picker, already returns YYYY-MM-DD)
+      if (target.type !== 'text') return;
+      
       // Check if this is a smart date field
       const isSmartDate = target.classList.contains('smart-date') ||
-                          (target.id && /[Dd]ate/.test(target.id) && target.type === 'text');
+                          (target.id && /[Dd]ate/.test(target.id));
       
       if (!isSmartDate) return;
       
       const value = target.value;
-      if (!value) return;
-      
-      // Skip if already in DD/MM/YYYY format
-      if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return;
+      if (!value) {
+        delete target.dataset.isoDate;
+        return;
+      }
       
       const parsed = window.parseFlexibleDate(value);
       if (parsed) {
         target.value = parsed.display;
-        // Store ISO value in data attribute for form submission
         target.dataset.isoDate = parsed.iso;
+      } else {
+        delete target.dataset.isoDate;
       }
     }, true);
   }

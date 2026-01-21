@@ -192,12 +192,34 @@
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   };
   
-  window.parseDateInput = function(value) {
+  /**
+   * Parse date input value to ISO format for API/storage
+   * Checks for data-iso-date attribute first (set by smart date listener)
+   * Falls back to parsing DD/MM/YYYY or returning value as-is
+   * @param {string} value - Display value from input
+   * @param {HTMLElement} [inputEl] - Optional input element to check dataset
+   * @returns {string|null} ISO date (YYYY-MM-DD) or original value
+   */
+  window.parseDateInput = function(value, inputEl) {
     if (!value) return null;
+    
+    // Check for pre-parsed ISO from smart date listener
+    if (inputEl && inputEl.dataset && inputEl.dataset.isoDate) {
+      return inputEl.dataset.isoDate;
+    }
+    
+    // Try flexible parsing first (handles all formats)
+    const parsed = window.parseFlexibleDate(value);
+    if (parsed) {
+      return parsed.iso;
+    }
+    
+    // Fallback: legacy DD/MM/YYYY pattern
     const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (match) {
       return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
     }
+    
     return value;
   };
   

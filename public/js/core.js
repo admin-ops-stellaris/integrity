@@ -137,6 +137,35 @@
   }
   
   // ============================================================
+  // Global Smart Time System - Event Delegation
+  // ============================================================
+  
+  function initSmartTimeListener() {
+    document.addEventListener('change', function(e) {
+      const target = e.target;
+      if (!target || target.tagName !== 'INPUT') return;
+      if (target.type !== 'text') return;
+      
+      // Check if this is a smart time field
+      if (!target.classList.contains('smart-time')) return;
+      
+      const value = target.value;
+      if (!value) {
+        delete target.dataset.time24;
+        return;
+      }
+      
+      const parsed = window.parseFlexibleTime(value);
+      if (parsed) {
+        target.value = parsed.display;
+        target.dataset.time24 = parsed.value24;
+      } else {
+        delete target.dataset.time24;
+      }
+    }, true);
+  }
+  
+  // ============================================================
   // Expose functions globally
   // ============================================================
   
@@ -145,5 +174,6 @@
   window.initScreensaver = initScreensaver;
   window.initScrollHeader = initScrollHeader;
   window.initSmartDateListener = initSmartDateListener;
+  window.initSmartTimeListener = initSmartTimeListener;
   
 })();

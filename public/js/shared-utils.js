@@ -300,4 +300,88 @@
     return `${fromStr} - ${toStr}`;
   };
   
+  // ============================================================
+  // Smart Time Parsing - Flexible Input Formats
+  // ============================================================
+  
+  /**
+   * Parse flexible time input and return structured result
+   * Handles: 1300, 130, 1:30, 13, 1p, 1pm, 1:30pm, 13:00
+   * @param {string} inputStr - Raw user input
+   * @returns {object|null} { value24: 'HH:MM', display: 'h:mm AM/PM' } or null if invalid
+   */
+  window.parseFlexibleTime = function(inputStr) {
+    if (!inputStr || typeof inputStr !== 'string') return null;
+    
+    const str = inputStr.trim().toLowerCase();
+    if (!str) return null;
+    
+    let hours = null;
+    let minutes = 0;
+    let isPM = false;
+    let isAM = false;
+    
+    // Check for AM/PM suffix
+    if (str.includes('p')) isPM = true;
+    if (str.includes('a')) isAM = true;
+    
+    // Remove am/pm suffixes for parsing
+    const numPart = str.replace(/[ap]m?/gi, '').trim();
+    
+    // Pattern 1: HH:MM or H:MM format (e.g., 13:00, 1:30)
+    const colonMatch = numPart.match(/^(\d{1,2}):(\d{2})$/);
+    if (colonMatch) {
+      hours = parseInt(colonMatch[1], 10);
+      minutes = parseInt(colonMatch[2], 10);
+    }
+    
+    // Pattern 2: 3-4 digit military time (e.g., 1300, 130, 930)
+    if (hours === null) {
+      const militaryMatch = numPart.match(/^(\d{3,4})$/);
+      if (militaryMatch) {
+        const num = militaryMatch[1];
+        if (num.length === 4) {
+          hours = parseInt(num.substring(0, 2), 10);
+          minutes = parseInt(num.substring(2, 4), 10);
+        } else {
+          // 3 digits: first is hour, last two are minutes (e.g., 130 = 1:30)
+          hours = parseInt(num.substring(0, 1), 10);
+          minutes = parseInt(num.substring(1, 3), 10);
+        }
+      }
+    }
+    
+    // Pattern 3: 1-2 digit hour only (e.g., 9, 13)
+    if (hours === null) {
+      const hourMatch = numPart.match(/^(\d{1,2})$/);
+      if (hourMatch) {
+        hours = parseInt(hourMatch[1], 10);
+        minutes = 0;
+      }
+    }
+    
+    if (hours === null) return null;
+    
+    // Apply AM/PM modifier if hours <= 12
+    if (isPM && hours < 12) hours += 12;
+    if (isAM && hours === 12) hours = 0;
+    
+    // Validate
+    if (hours < 0 || hours > 23) return null;
+    if (minutes < 0 || minutes > 59) return null;
+    
+    // Format output
+    const hh = String(hours).padStart(2, '0');
+    const mm = String(minutes).padStart(2, '0');
+    const value24 = `${hh}:${mm}`;
+    
+    // 12-hour display format
+    let displayHour = hours % 12;
+    if (displayHour === 0) displayHour = 12;
+    const ampm = hours < 12 ? 'AM' : 'PM';
+    const display = `${displayHour}:${mm} ${ampm}`;
+    
+    return { value24, display };
+  };
+  
 })();

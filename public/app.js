@@ -63,6 +63,7 @@ window.onload = function() {
   initAllNoteFields();
   initScrollHeader();
   initSmartDateListener();
+  initSmartTimeListener();
   
   if (window.IntegrityRouter) {
     window.IntegrityRouter.init();

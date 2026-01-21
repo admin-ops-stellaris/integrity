@@ -142,6 +142,32 @@ quick-view.js → email.js → evidence.js → router.js → app.js
 - Or use ID containing 'Date' (e.g., `addressFromDate`)
 - `type="date"` inputs use browser picker (already returns ISO)
 
+### Global Smart Time System - January 2026
+
+**Goal:** Users can type times loosely (e.g., `1300`, `130`, `1:30pm`) and have them auto-format to `h:mm AM/PM`.
+
+**Implementation:**
+1. **parseFlexibleTime()** in shared-utils.js handles all formats:
+   - Military time: `1300`, `930`, `130` (3-4 digits)
+   - Colon format: `13:00`, `1:30`
+   - Hour only: `9`, `13`
+   - AM/PM suffix: `1pm`, `1:30pm`, `9a`
+   - Returns `{ value24: 'HH:MM', display: 'h:mm AM/PM' }` or null
+
+2. **Event Delegation** in core.js:
+   - Global `change` listener on document
+   - Targets: `.smart-time` class only
+   - Auto-formats value and stores 24h time in `data-time24` attribute
+
+3. **Appointment Modal Refactor**:
+   - Split single datetime field into separate Date + Time fields
+   - Date field uses `.smart-date`, Time field uses `.smart-time`
+   - On save: combines `data-iso-date` + `data-time24` into ISO string
+
+**Usage:**
+- Add `.smart-time` class to text inputs for time formatting
+- Access 24h value via `element.dataset.time24`
+
 ### Performance Optimization: Lazy Loading Contacts
 
 **Problem:** `getRecentContacts` was returning full deep records with heavy arrays (Opportunities, Connections, Address History, Spouse History, SEARCH_INDEX).

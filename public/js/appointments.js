@@ -10,7 +10,8 @@
     
     if (type === 'datetime') {
       const formatted = formatDatetimeForDisplay(value);
-      valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}" style="display:flex; justify-content:space-between; align-items:center;"><span>${formatted}</span><span class="edit-field-icon">✎</span></div>`;
+      // Datetime editing opens the full modal for better UX with split date/time fields
+      valueHtml = `<div class="detail-value appt-editable" onclick="editAppointmentInline('${apptId}')" data-appt-id="${apptId}" data-field="${fieldKey}" data-value="${value || ''}" style="display:flex; justify-content:space-between; align-items:center;"><span>${formatted}</span><span class="edit-field-icon">✎</span></div>`;
     } else if (type === 'select') {
       valueHtml = `<div class="detail-value appt-editable" onclick="editApptField('${apptId}', '${fieldKey}', '${type}', ${JSON.stringify(options).replace(/"/g, '&quot;')})" data-appt-id="${apptId}" data-field="${fieldKey}" style="display:flex; justify-content:space-between; align-items:center;"><span>${displayValue}</span><span class="edit-field-icon">✎</span></div>`;
     } else if (type === 'textarea') {
@@ -127,6 +128,25 @@
   function cancelApptEdit(apptId, fieldKey) {
     const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
     if (opportunityId) loadAppointmentsForOpportunity(opportunityId);
+  }
+  
+  // Edit appointment inline by opening the modal
+  function editAppointmentInline(apptId) {
+    const opportunityId = document.getElementById('appointmentsContainer')?.dataset.opportunityId;
+    if (!opportunityId) return;
+    
+    // Fetch the appointment to open in modal
+    google.script.run
+      .withSuccessHandler(function(appointments) {
+        const appt = appointments.find(a => a.id === apptId);
+        if (appt) {
+          openAppointmentForm(opportunityId, appt);
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.error('Error fetching appointment for edit:', err);
+      })
+      .getAppointmentsForOpportunity(opportunityId);
   }
   
   function loadAppointmentsForOpportunity(opportunityId) {
@@ -352,7 +372,40 @@
     const title = document.getElementById('appointmentFormTitle');
     title.textContent = appointment ? 'Edit Appointment' : 'New Appointment';
     
-    document.getElementById('apptFormTime').value = formatDatetimeForInput(appointment?.appointmentTime);
+    // Split datetime into separate date and time fields
+    const dateEl = document.getElementById('apptFormDate');
+    const timeEl = document.getElementById('apptFormTime');
+    
+    if (appointment?.appointmentTime) {
+      const dt = new Date(appointment.appointmentTime);
+      if (!isNaN(dt.getTime())) {
+        // Format date as DD/MM/YYYY for display
+        const dd = String(dt.getDate()).padStart(2, '0');
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const yyyy = dt.getFullYear();
+        dateEl.value = `${dd}/${mm}/${yyyy}`;
+        dateEl.dataset.isoDate = `${yyyy}-${mm}-${dd}`;
+        
+        // Format time as h:mm AM/PM for display
+        let hours = dt.getHours();
+        const mins = String(dt.getMinutes()).padStart(2, '0');
+        const ampm = hours < 12 ? 'AM' : 'PM';
+        const displayHour = hours % 12 || 12;
+        timeEl.value = `${displayHour}:${mins} ${ampm}`;
+        timeEl.dataset.time24 = `${String(hours).padStart(2, '0')}:${mins}`;
+      } else {
+        dateEl.value = '';
+        timeEl.value = '';
+        delete dateEl.dataset.isoDate;
+        delete timeEl.dataset.time24;
+      }
+    } else {
+      dateEl.value = '';
+      timeEl.value = '';
+      delete dateEl.dataset.isoDate;
+      delete timeEl.dataset.time24;
+    }
+    
     document.getElementById('apptFormType').value = appointment?.typeOfAppointment || 'Phone';
     document.getElementById('apptFormHowBooked').value = appointment?.howBooked || 'Calendly';
     document.getElementById('apptFormHowBookedOther').value = appointment?.howBookedOther || '';
@@ -371,7 +424,7 @@
     const modalContent = modal.querySelector('.modal-content');
     if (modalContent) modalContent.scrollTop = 0;
     setTimeout(() => {
-      const firstInput = document.getElementById('apptFormTime');
+      const firstInput = document.getElementById('apptFormDate');
       if (firstInput) firstInput.focus();
     }, 100);
   }
@@ -396,8 +449,27 @@
   function saveAppointment() {
     if (!state.currentAppointmentOpportunityId) return;
     
+    // Combine date and time into ISO string
+    const dateEl = document.getElementById('apptFormDate');
+    const timeEl = document.getElementById('apptFormTime');
+    
+    let appointmentTimeISO = '';
+    const isoDate = dateEl.dataset.isoDate || parseDateInput(dateEl.value, dateEl);
+    const time24 = timeEl.dataset.time24 || (function() {
+      const parsed = window.parseFlexibleTime(timeEl.value);
+      return parsed ? parsed.value24 : null;
+    })();
+    
+    if (isoDate && time24) {
+      // Combine into ISO format: YYYY-MM-DDTHH:MM
+      appointmentTimeISO = `${isoDate}T${time24}`;
+    } else if (isoDate) {
+      // Date only, default to midnight
+      appointmentTimeISO = `${isoDate}T00:00`;
+    }
+    
     const fields = {
-      "Appointment Time": document.getElementById('apptFormTime').value,
+      "Appointment Time": appointmentTimeISO,
       "Type of Appointment": document.getElementById('apptFormType').value,
       "How Booked": document.getElementById('apptFormHowBooked').value,
       "How Booked Other": document.getElementById('apptFormHowBookedOther').value,
@@ -486,6 +558,7 @@
   window.updateApptCheckbox = updateApptCheckbox;
   window.autoResizeTextarea = autoResizeTextarea;
   window.cancelApptEdit = cancelApptEdit;
+  window.editAppointmentInline = editAppointmentInline;
   window.loadAppointmentsForOpportunity = loadAppointmentsForOpportunity;
   window.formatDatetimeForInput = formatDatetimeForInput;
   window.formatDatetimeForDisplay = formatDatetimeForDisplay;

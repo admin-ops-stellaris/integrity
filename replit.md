@@ -58,3 +58,29 @@ Integrity employs a Node.js/Express backend serving a static frontend.
 - **Fly.io**: Deployment platform.
 - **Replit Gmail connector**: Manages OAuth tokens for Gmail integration.
 - **Taco (external system)**: For importing and parsing data for opportunity creation.
+
+## Perth Standard Timezone Strategy
+
+All dates/times in Integrity refer to Western Australia (UTC+8). This prevents timezone shifts when users in different locations view or edit data.
+
+**Philosophy:**
+- **Floating ISO strings** (e.g., `2026-01-21T14:30:00` without Z or offset) preserve user intent
+- Only strings ending with `Z` are treated as UTC and converted to Perth time
+- `Date()` constructor is avoided for floating strings to prevent browser timezone shifts
+
+**Key Functions in `shared-utils.js`:**
+| Function | Purpose |
+|----------|---------|
+| `constructDateForSave(dateStr, timeStr)` | Creates floating ISO: `YYYY-MM-DDTHH:mm:00` |
+| `parseFloatingDate(isoString)` | Parses floating ISO to Date for comparisons |
+| `formatDateTimeForDisplay(isoString, options)` | Display formatting; Z→Perth, floating→direct |
+| `parseDateForEditor(isoString)` | **USE FOR FORMS** - Returns `{ dateDisplay, timeDisplay, isoDate, time24 }` |
+
+**RULE:** When loading Airtable data into any form, ALWAYS use `parseDateForEditor()` to ensure Perth timezone consistency.
+
+## Recent Session Changes (January 2026)
+
+- **Centralized timezone handling**: Created `parseDateForEditor()` for consistent UTC→Perth conversion
+- **Fixed popover Tab navigation**: Date → Time → Save → Cancel flows naturally
+- **Refactored appointments.js**: Both modal and popover use centralized parser
+- **Module count**: 17 IIFE modules (no change)

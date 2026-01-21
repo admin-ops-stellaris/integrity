@@ -214,9 +214,17 @@ export async function getRecentContacts(statusFilter = null) {
       filterFormula = `{Status} = "${statusFilter}"`;
     }
     
+    // Only fetch fields needed for the search list (performance optimization)
+    const listFields = [
+      'Calculated Name', 'FirstName', 'MiddleName', 'LastName',
+      'EmailAddress1', 'Mobile', 'Status', 'Deceased', 'Modified',
+      'Modified On (Web App)'
+    ];
+    
     // Fetch contacts sorted by "Modified On (Web App)" descending at Airtable level
     const selectOptions = {
       maxRecords: 50,
+      fields: listFields,
       sort: [{ field: "Modified On (Web App)", direction: "desc" }]
     };
     if (filterFormula) {
@@ -224,7 +232,11 @@ export async function getRecentContacts(statusFilter = null) {
     }
     
     const records = await base("Contacts").select(selectOptions).all();
-    const formatted = records.map(formatRecord);
+    const formatted = records.map(r => {
+      const rec = formatRecord(r);
+      rec._isPartial = true; // Mark as partial record for lazy loading
+      return rec;
+    });
     
     // Secondary sort in JS by Modified formula field for better ordering
     formatted.sort((a, b) => {
@@ -256,8 +268,15 @@ export async function searchContacts(query, statusFilter = null) {
       formula = `AND(${formula}, {Status} = "${statusFilter}")`;
     }
     
+    // Only fetch fields needed for list display + scoring (performance optimization)
+    const searchFields = [
+      'Calculated Name', 'FirstName', 'MiddleName', 'LastName', 'PreferredName',
+      'EmailAddress1', 'EmailAddress2', 'EmailAddress3', 'Mobile', 'Notes',
+      'Status', 'Deceased', 'Modified', 'Modified On (Web App)'
+    ];
+    
     const records = await base("Contacts")
-      .select({ filterByFormula: formula })
+      .select({ filterByFormula: formula, fields: searchFields })
       .all();
     
     // Score and sort results by field priority
@@ -296,7 +315,9 @@ export async function searchContacts(query, statusFilter = null) {
         }
       }
       
-      return { record: formatRecord(record), score };
+      const rec = formatRecord(record);
+      rec._isPartial = true; // Mark as partial record for lazy loading
+      return { record: rec, score };
     });
     
     // Sort by score descending, then alphabetically by name

@@ -226,9 +226,11 @@ app.get(CALLBACK_PATH, async (req, res, next) => {
       expires_at: tokenSet.expires_at ? tokenSet.expires_at * 1000 : Date.now() + 3600000,
     };
     
+    const returnTo = req.session.returnTo || '/';
     delete req.session.oauth;
+    delete req.session.returnTo;
 
-    res.redirect("/");
+    res.redirect(returnTo);
   } catch (e) {
     next(e);
   }
@@ -247,6 +249,10 @@ function requireAuth(req, res, next) {
     return next();
   }
   if (req.session?.user?.email) return next();
+  
+  if (req.path !== '/' && !req.path.startsWith('/auth/') && !req.path.startsWith('/api/')) {
+    req.session.returnTo = req.originalUrl;
+  }
   return res.redirect("/auth/google");
 }
 
@@ -663,7 +669,8 @@ app.post("/api/processForm", async (req, res) => {
     const userEmail = req.session?.user?.email || null;
     const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
     
-    const fields = {
+    // Build fields object - text fields can be empty strings, but select fields must be omitted if empty
+    const textFields = {
       FirstName: formData.firstName || "",
       MiddleName: formData.middleName || "",
       LastName: formData.lastName || "",
@@ -677,10 +684,19 @@ app.post("/api/processForm", async (req, res) => {
       EmailAddress3: formData.email3 || "",
       EmailAddress3Comment: formData.email3Comment || "",
       Notes: formData.notes || "",
-      Gender: formData.gender || "",
-      "Gender - Other": formData.genderOther || "",
-      "Date of Birth": convertDDMMYYYYtoISO(formData.dateOfBirth)
+      "Gender - Other": formData.genderOther || ""
     };
+    
+    // Select fields - only include if they have a value (Airtable rejects empty strings for select fields)
+    const selectFields = {};
+    if (formData.gender) selectFields.Gender = formData.gender;
+    
+    // Date fields - only include if valid
+    const dateFields = {};
+    const dob = convertDDMMYYYYtoISO(formData.dateOfBirth);
+    if (dob) dateFields["Date of Birth"] = dob;
+    
+    const fields = { ...textFields, ...selectFields, ...dateFields };
     
     if (recordId) {
       for (const [field, value] of Object.entries(fields)) {

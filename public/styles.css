@@ -1477,3 +1477,93 @@
     .profile-col-middle, .profile-col-right { padding-top: 15px; margin-top: 10px; }
     .breakpoint-indicator::before { content: 'Small Mobile'; }
   }
+/* Appointment Time Mini-Popover */
+.appt-time-popover {
+  background-color: var(--color-background-card, #ffffff);
+  border: 2px solid var(--color-border, #d1d5db);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  min-width: 200px;
+}
+
+[data-theme="dark"] .appt-time-popover {
+  background-color: var(--color-background-card, #1f2937);
+  border-color: var(--color-border, #374151);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.appt-time-popover-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.appt-time-popover-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appt-time-popover-row label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.appt-time-popover-row input {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: var(--font-body);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+}
+
+.appt-time-popover-row input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(52, 120, 246, 0.2);
+}
+
+.appt-time-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.appt-popover-save,
+.appt-popover-cancel {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.appt-popover-save {
+  background-color: #22c55e;
+  color: white;
+}
+
+.appt-popover-save:hover {
+  background-color: #16a34a;
+}
+
+.appt-popover-cancel {
+  background-color: #ef4444;
+  color: white;
+}
+
+.appt-popover-cancel:hover {
+  background-color: #dc2626;
+}

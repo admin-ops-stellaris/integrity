@@ -79,7 +79,7 @@
         </div>
 
         <div id="profileContent" style="display:none; flex:1; flex-direction:column;">
-          <form id="contactForm" onsubmit="handleFormSubmit(this)" style="display:flex; flex-direction:column; flex:1;">
+          <form id="contactForm" onsubmit="handleFormSubmit(this); return false;" style="display:flex; flex-direction:column; flex:1;">
             <input type="hidden" name="recordId" id="recordId">
             <div class="profile-columns" id="profileColumns">
               <div class="profile-col profile-col-left">
@@ -441,7 +441,7 @@
         </div>
         <div class="quick-view-details" id="quickViewDetails"></div>
         <div class="quick-view-action">
-          <button type="button" class="btn-view-profile" onclick="navigateFromQuickView()">View Full Profile <span class="arrow">→</span></button>
+          <button type="button" class="btn-view-profile" onclick="navigateFromQuickView(document.getElementById('contactQuickView').dataset.contactId)">View Full Profile <span class="arrow">→</span></button>
         </div>
         <div class="quick-view-footer" id="quickViewFooter"></div>
       </div>
@@ -970,8 +970,12 @@
         <div class="modal-body" style="padding:20px;">
           <div class="form-row">
             <div class="field-group" style="flex:1;">
-              <label>Appointment Time</label>
-              <input type="datetime-local" id="apptFormTime">
+              <label>Date</label>
+              <input type="text" id="apptFormDate" class="smart-date" placeholder="DD/MM/YYYY">
+            </div>
+            <div class="field-group" style="flex:1;">
+              <label>Time</label>
+              <input type="text" id="apptFormTime" class="smart-time" placeholder="e.g. 1300, 1:30pm">
             </div>
             <div class="field-group" style="flex:1;">
               <label>Status</label>
@@ -1170,8 +1174,8 @@
               </div>
             </div>
             <div class="form-row">
-              <div class="field-group" style="flex:1;"><label>From (Move-in Date)</label><input type="text" id="addressFrom" placeholder="DD/MM/YYYY"></div>
-              <div class="field-group" style="flex:1;"><label>To (Move-out Date)</label><input type="text" id="addressTo" placeholder="DD/MM/YYYY (leave blank if current)"></div>
+              <div class="field-group" style="flex:1;"><label>From (Move-in Date)</label><input type="text" id="addressFrom" class="smart-date" placeholder="DD/MM/YYYY"></div>
+              <div class="field-group" style="flex:1;"><label>To (Move-out Date)</label><input type="text" id="addressTo" class="smart-date" placeholder="DD/MM/YYYY (leave blank if current)"></div>
             </div>
           </div>
         </div>
@@ -1453,8 +1457,31 @@
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=55"></script>
-    <script src="/app.js?v=55"></script>
+    <script src="/api-bridge.js?v=58"></script>
+    
+    <!-- Foundation modules (load order matters!) -->
+    <script src="/js/shared-state.js?v=1"></script>
+    <script src="/js/shared-utils.js?v=1"></script>
+    <script src="/js/modal-utils.js?v=1"></script>
+    
+    <!-- Feature modules -->
+    <script src="/js/contacts-search.js?v=1"></script>
+    <script src="/js/core.js?v=1"></script>
+    <script src="/js/inline-editing.js?v=1"></script>
+    <script src="/js/spouse.js?v=1"></script>
+    <script src="/js/connections.js?v=1"></script>
+    <script src="/js/notes.js?v=1"></script>
+    <script src="/js/addresses.js?v=1"></script>
+    <script src="/js/appointments.js?v=1"></script>
+    <script src="/js/opportunities.js?v=1"></script>
+    <script src="/js/settings.js?v=1"></script>
+    <script src="/js/quick-view.js?v=1"></script>
+    <script src="/js/email.js?v=1"></script>
+    <script src="/js/evidence.js?v=1"></script>
+    <script src="/js/router.js?v=1"></script>
+    
+    <!-- Main app (contains all working code) -->
+    <script src="/app.js?v=60"></script>
 
     <!-- Breakpoint Indicator (Development Helper) -->
     <div class="breakpoint-indicator"></div>

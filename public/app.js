@@ -62,6 +62,7 @@ window.onload = function() {
   initInlineEditing();
   initAllNoteFields();
   initScrollHeader();
+  initSmartDateListener();
   
   if (window.IntegrityRouter) {
     window.IntegrityRouter.init();

@@ -103,6 +103,36 @@
   }
   
   // ============================================================
+  // Global Smart Date System - Event Delegation
+  // ============================================================
+  
+  function initSmartDateListener() {
+    document.addEventListener('change', function(e) {
+      const target = e.target;
+      if (!target || target.tagName !== 'INPUT') return;
+      
+      // Check if this is a smart date field
+      const isSmartDate = target.classList.contains('smart-date') ||
+                          (target.id && /[Dd]ate/.test(target.id) && target.type === 'text');
+      
+      if (!isSmartDate) return;
+      
+      const value = target.value;
+      if (!value) return;
+      
+      // Skip if already in DD/MM/YYYY format
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return;
+      
+      const parsed = window.parseFlexibleDate(value);
+      if (parsed) {
+        target.value = parsed.display;
+        // Store ISO value in data attribute for form submission
+        target.dataset.isoDate = parsed.iso;
+      }
+    }, true);
+  }
+  
+  // ============================================================
   // Expose functions globally
   // ============================================================
   
@@ -110,5 +140,6 @@
   window.toggleDarkMode = toggleDarkMode;
   window.initScreensaver = initScreensaver;
   window.initScrollHeader = initScrollHeader;
+  window.initSmartDateListener = initSmartDateListener;
   
 })();

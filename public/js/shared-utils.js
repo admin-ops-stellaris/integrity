@@ -201,6 +201,77 @@
     return value;
   };
   
+  // ============================================================
+  // Smart Date Parsing - Flexible Input Formats
+  // ============================================================
+  
+  /**
+   * Parse flexible date input and return structured result
+   * Handles: DDMMYY, DDMMYYYY, DD/MM/YY, DD/MM/YYYY, DD.MM.YY, DD.MM.YYYY
+   * @param {string} inputStr - Raw user input
+   * @returns {object|null} { iso: 'YYYY-MM-DD', display: 'DD/MM/YYYY' } or null if invalid
+   */
+  window.parseFlexibleDate = function(inputStr) {
+    if (!inputStr || typeof inputStr !== 'string') return null;
+    
+    const str = inputStr.trim();
+    if (!str) return null;
+    
+    let day, month, year;
+    
+    // Pattern 1: No separators - DDMMYY or DDMMYYYY
+    const noSepMatch = str.match(/^(\d{2})(\d{2})(\d{2,4})$/);
+    if (noSepMatch) {
+      day = parseInt(noSepMatch[1], 10);
+      month = parseInt(noSepMatch[2], 10);
+      year = noSepMatch[3];
+    }
+    
+    // Pattern 2: With separators (/ or . or -) - D/M/YY or DD/MM/YYYY etc
+    if (!day) {
+      const sepMatch = str.match(/^(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2,4})$/);
+      if (sepMatch) {
+        day = parseInt(sepMatch[1], 10);
+        month = parseInt(sepMatch[2], 10);
+        year = sepMatch[3];
+      }
+    }
+    
+    // If still no match, return null
+    if (!day) return null;
+    
+    // Convert 2-digit year to 4-digit (00-49 = 2000s, 50-99 = 1900s)
+    if (year.length === 2) {
+      const yy = parseInt(year, 10);
+      year = yy < 50 ? 2000 + yy : 1900 + yy;
+    } else {
+      year = parseInt(year, 10);
+    }
+    
+    // Validate date components
+    if (month < 1 || month > 12) return null;
+    if (day < 1 || day > 31) return null;
+    if (year < 1900 || year > 2100) return null;
+    
+    // Check if date is actually valid (e.g., Feb 30 is invalid)
+    const testDate = new Date(year, month - 1, day);
+    if (testDate.getFullYear() !== year || 
+        testDate.getMonth() !== month - 1 || 
+        testDate.getDate() !== day) {
+      return null;
+    }
+    
+    // Format output
+    const dd = String(day).padStart(2, '0');
+    const mm = String(month).padStart(2, '0');
+    const yyyy = String(year);
+    
+    return {
+      iso: `${yyyy}-${mm}-${dd}`,
+      display: `${dd}/${mm}/${yyyy}`
+    };
+  };
+  
   window.formatAddressDateRange = function(from, to) {
     const fromStr = from ? window.formatDateDisplay(from) : '?';
     const toStr = to ? window.formatDateDisplay(to) : 'Present';

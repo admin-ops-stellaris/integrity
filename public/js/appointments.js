@@ -82,7 +82,7 @@
     
     // If setting appointment time to a future date and status is currently blank, auto-set to Scheduled
     if (fieldKey === 'appointmentTime' && value) {
-      const apptTime = new Date(value);
+      const apptTime = window.parseFloatingDate(value);
       const now = new Date();
       if (apptTime > now) {
         const statusEl = document.querySelector(`[data-appt-id="${apptId}"][data-field="appointmentStatus"]`);
@@ -146,24 +146,20 @@
     let time24 = '';
     
     if (currentValue) {
-      // Use formatDatetimeForInput to get consistent ISO format
-      const isoInput = formatDatetimeForInput(currentValue);
-      if (isoInput) {
-        // isoInput is YYYY-MM-DDTHH:MM format
-        const parts = isoInput.split('T');
-        if (parts.length === 2) {
-          isoDate = parts[0]; // YYYY-MM-DD
-          time24 = parts[1];  // HH:MM
-          
-          // Convert to display formats
-          const [year, month, day] = isoDate.split('-');
-          dateDisplay = `${day}/${month}/${year}`;
-          
-          const [h, m] = time24.split(':').map(Number);
-          const ampm = h >= 12 ? 'PM' : 'AM';
-          const displayHours = h % 12 || 12;
-          timeDisplay = `${displayHours}:${String(m).padStart(2, '0')} ${ampm}`;
-        }
+      // Parse floating ISO directly without Date conversion to avoid timezone shifts
+      const match = currentValue.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+      if (match) {
+        const [, year, month, day, hour, minute] = match;
+        isoDate = `${year}-${month}-${day}`;
+        time24 = `${hour}:${minute}`;
+        
+        // Convert to display formats
+        dateDisplay = `${day}/${month}/${year}`;
+        
+        const h = parseInt(hour, 10);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const displayHours = h % 12 || 12;
+        timeDisplay = `${displayHours}:${minute} ${ampm}`;
       }
     }
     
@@ -259,17 +255,28 @@
     const popover = document.getElementById('apptTimePopover');
     if (!popover) return;
     
+    const dateInput = popover.querySelector('.appt-popover-date');
+    const timeInput = popover.querySelector('.appt-popover-time');
+    
     if (e.key === 'Escape') {
       closeApptTimePopover();
     } else if (e.key === 'Enter') {
       e.preventDefault();
       saveApptTimePopover();
-    } else if (e.key === 'Tab' && !e.shiftKey) {
-      // Allow tab between date and time fields
-      const timeInput = popover.querySelector('.appt-popover-time');
-      if (document.activeElement === timeInput) {
-        e.preventDefault();
-        saveApptTimePopover();
+    } else if (e.key === 'Tab') {
+      if (e.shiftKey) {
+        // Shift+Tab from date field - close popover
+        if (document.activeElement === dateInput) {
+          e.preventDefault();
+          closeApptTimePopover();
+        }
+      } else {
+        // Tab from time field - save and close
+        if (document.activeElement === timeInput) {
+          e.preventDefault();
+          saveApptTimePopover();
+        }
+        // Tab from date field - let it move to time field naturally
       }
     }
   }
@@ -315,20 +322,12 @@
       return;
     }
     
-    // Build ISO datetime with timezone offset to preserve local time
-    // Perth is UTC+8, but we get the actual local offset dynamically
-    const now = new Date();
-    const offsetMinutes = -now.getTimezoneOffset(); // getTimezoneOffset returns minutes behind UTC (negative for ahead)
-    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
-    const offsetMins = Math.abs(offsetMinutes) % 60;
-    const offsetSign = offsetMinutes >= 0 ? '+' : '-';
-    const tzOffset = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
+    // Build Floating ISO string using Perth Standard
+    const appointmentTimeISO = window.constructDateForSave(isoDate, time24);
     
-    let appointmentTimeISO = '';
-    if (isoDate && time24) {
-      appointmentTimeISO = `${isoDate}T${time24}:00${tzOffset}`;
-    } else if (isoDate) {
-      appointmentTimeISO = `${isoDate}T00:00:00${tzOffset}`;
+    if (!appointmentTimeISO) {
+      closeApptTimePopover();
+      return;
     }
     
     // Delegate to saveApptField for consistent status auto-update behavior
@@ -425,15 +424,15 @@
         window.currentOpportunityAppointments = appointments;
         
         appointments.sort((a, b) => {
-          const dateA = a.appointmentTime ? new Date(a.appointmentTime).getTime() : 0;
-          const dateB = b.appointmentTime ? new Date(b.appointmentTime).getTime() : 0;
+          const dateA = a.appointmentTime ? (window.parseFloatingDate(a.appointmentTime)?.getTime() || 0) : 0;
+          const dateB = b.appointmentTime ? (window.parseFloatingDate(b.appointmentTime)?.getTime() || 0) : 0;
           return dateA - dateB;
         });
         
         let html = '';
         appointments.forEach(appt => {
           const status = appt.appointmentStatus || '';
-          const isPast = appt.appointmentTime && new Date(appt.appointmentTime) < new Date();
+          const isPast = appt.appointmentTime && window.parseFloatingDate(appt.appointmentTime) < new Date();
           const needsUpdate = isPast && (status === 'Scheduled' || status === '');
           const statusClass = needsUpdate ? 'status-needs-update' :
                              status === 'Completed' ? 'status-completed' : 
@@ -463,13 +462,13 @@
           
           let auditParts = [];
           if (appt.createdTime) {
-            const createdDate = new Date(appt.createdTime).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true });
+            const createdDate = window.formatDateTimeForDisplay(appt.createdTime);
             let createdText = `Created ${createdDate}`;
             if (appt.createdByName) createdText += ` by ${appt.createdByName}`;
             auditParts.push(createdText);
           }
           if (appt.modifiedTime && appt.modifiedTime !== appt.createdTime) {
-            const modifiedDate = new Date(appt.modifiedTime).toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true });
+            const modifiedDate = window.formatDateTimeForDisplay(appt.modifiedTime);
             let modifiedText = `Modified ${modifiedDate}`;
             if (appt.modifiedByName) modifiedText += ` by ${appt.modifiedByName}`;
             auditParts.push(modifiedText);
@@ -532,10 +531,24 @@
   
   function formatDatetimeForInput(dateStr) {
     if (!dateStr) return '';
+    
+    // For floating ISO strings (our saved data), parse directly without Date conversion
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (match) {
+      return `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}`;
+    }
+    
+    // For UTC Z strings or unknown formats, fall back to Date parsing
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return '';
-      return d.toISOString().slice(0, 16);
+      // Format as local time components
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${mins}`;
     } catch (e) {
       return '';
     }
@@ -543,21 +556,9 @@
   
   function formatDatetimeForDisplay(dateStr) {
     if (!dateStr) return 'Time not set';
-    try {
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleString('en-AU', { 
-        weekday: 'short', 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: '2-digit',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true 
-      });
-    } catch (e) {
-      return dateStr;
-    }
+    // Use global Perth Standard formatter
+    const result = window.formatDateTimeForDisplay(dateStr, { format: 'long' });
+    return result || dateStr;
   }
   
   function openAppointmentForm(opportunityId, appointment = null) {
@@ -656,19 +657,8 @@
       return parsed ? parsed.value24 : null;
     })();
     
-    // Build ISO datetime with timezone offset to preserve local time
-    const now = new Date();
-    const offsetMinutes = -now.getTimezoneOffset();
-    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
-    const offsetMins = Math.abs(offsetMinutes) % 60;
-    const offsetSign = offsetMinutes >= 0 ? '+' : '-';
-    const tzOffset = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
-    
-    if (isoDate && time24) {
-      appointmentTimeISO = `${isoDate}T${time24}:00${tzOffset}`;
-    } else if (isoDate) {
-      appointmentTimeISO = `${isoDate}T00:00:00${tzOffset}`;
-    }
+    // Build Floating ISO string using Perth Standard
+    appointmentTimeISO = window.constructDateForSave(isoDate, time24);
     
     const fields = {
       "Appointment Time": appointmentTimeISO,

@@ -1544,26 +1544,26 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
+  font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease;
 }
 
 .appt-popover-save {
-  background: var(--color-accent);
+  background-color: #22c55e;
   color: white;
 }
 
 .appt-popover-save:hover {
-  background: var(--color-accent-hover, #2563eb);
+  background-color: #16a34a;
 }
 
 .appt-popover-cancel {
-  background: var(--color-bg-alt);
-  color: var(--color-text-muted);
+  background-color: #ef4444;
+  color: white;
 }
 
 .appt-popover-cancel:hover {
-  background: var(--color-border);
+  background-color: #dc2626;
 }

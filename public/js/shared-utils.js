@@ -51,7 +51,11 @@
     if (!dateStr) return '[appointment time]';
     
     try {
-      if (dateStr.includes('T') || dateStr.includes('Z')) {
+      // Check if it's a floating ISO (our saved data) vs UTC Z (external)
+      const isUTC = dateStr.endsWith('Z');
+      
+      if (isUTC) {
+        // UTC string - convert to Perth time
         const date = new Date(dateStr);
         if (isNaN(date.getTime())) return dateStr;
         
@@ -74,6 +78,25 @@
           return formatted.replace(/(\d+)/, `${day}${suffix}`);
         }
         return formatted;
+      } else if (dateStr.includes('T')) {
+        // Floating ISO string - parse directly without conversion
+        const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+        if (!match) return dateStr;
+        
+        const [, year, month, day, hour, minute] = match;
+        const d = parseInt(day, 10);
+        const h = parseInt(hour, 10);
+        
+        // Create date for weekday/month formatting
+        const date = new Date(parseInt(year), parseInt(month) - 1, d);
+        const weekday = date.toLocaleDateString('en-AU', { weekday: 'long' });
+        const monthName = date.toLocaleDateString('en-AU', { month: 'long' });
+        
+        const suffix = window.getOrdinalSuffix(d);
+        const displayHour = h % 12 || 12;
+        const ampm = h < 12 ? 'am' : 'pm';
+        
+        return `${weekday} ${d}${suffix} ${monthName} ${displayHour}:${minute} ${ampm}`;
       }
       
       return dateStr;
@@ -93,10 +116,20 @@
     try {
       let apptDate;
       
-      if (appointmentTimeStr.includes('T') || appointmentTimeStr.includes('Z')) {
+      // Check if it's an ISO datetime string
+      if (appointmentTimeStr.includes('T')) {
+        // Use parseFloatingDate for consistent handling (falls back to Date parsing for Z strings)
+        apptDate = window.parseFloatingDate ? window.parseFloatingDate(appointmentTimeStr) : null;
+        if (!apptDate) {
+          apptDate = new Date(appointmentTimeStr);
+        }
+        if (isNaN(apptDate.getTime())) return '?';
+      } else if (appointmentTimeStr.includes('Z')) {
+        // UTC string without T (unlikely but handle it)
         apptDate = new Date(appointmentTimeStr);
         if (isNaN(apptDate.getTime())) return '?';
       } else {
+        // Legacy text format parsing
         const months = {
           'january': 0, 'jan': 0,
           'february': 1, 'feb': 1,
@@ -151,19 +184,42 @@
   // Datetime Input/Display Formatting
   // ============================================================
   
+  // DEPRECATED: Use formatDatetimeForInput in appointments.js or parseFloatingDate
+  // Kept for backward compatibility but now parses floating ISO directly
   window.formatDatetimeForInput = function(dateStr) {
     if (!dateStr) return '';
+    
+    // For floating ISO strings, parse directly without Date conversion
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (match) {
+      return `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}`;
+    }
+    
+    // Fallback for other formats
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return '';
-      return d.toISOString().slice(0, 16);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${mins}`;
     } catch (e) {
       return '';
     }
   };
   
+  // DEPRECATED: Use window.formatDateTimeForDisplay (Perth Standard) instead
+  // Kept for backward compatibility, now delegates to Perth Standard
   window.formatDatetimeForDisplay = function(dateStr) {
     if (!dateStr) return 'Time not set';
+    // Delegate to Perth Standard formatter
+    const result = window.formatDateTimeForDisplay ? 
+      window.formatDateTimeForDisplay(dateStr, { format: 'long' }) : null;
+    if (result) return result;
+    
+    // Fallback if Perth Standard not loaded yet
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return dateStr;
@@ -382,6 +438,123 @@
     const display = `${displayHour}:${mm} ${ampm}`;
     
     return { value24, display };
+  };
+  
+  // ============================================================
+  // Perth Standard - Global Date/Time Strategy
+  // ============================================================
+  
+  /**
+   * Construct a Floating ISO string for saving to Airtable
+   * Returns YYYY-MM-DDTHH:mm:00 (No Z, no timezone offset)
+   * This preserves the user's intended local time without browser conversion
+   * @param {string} dateStr - ISO date (YYYY-MM-DD)
+   * @param {string} timeStr - 24h time (HH:mm) - optional, defaults to 00:00
+   * @returns {string} Floating ISO string
+   */
+  window.constructDateForSave = function(dateStr, timeStr) {
+    if (!dateStr) return '';
+    const time = timeStr || '00:00';
+    return `${dateStr}T${time}:00`;
+  };
+  
+  /**
+   * Parse a floating ISO datetime string and return a comparable Date object
+   * This interprets the string as local Perth time for comparison purposes
+   * @param {string} isoString - Floating ISO string (YYYY-MM-DDTHH:mm:00)
+   * @returns {Date|null} Date object or null if invalid
+   */
+  window.parseFloatingDate = function(isoString) {
+    if (!isoString) return null;
+    
+    // For floating strings, parse components directly to avoid timezone shifts
+    const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!match) {
+      // Try native Date parsing as fallback
+      const d = new Date(isoString);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    
+    const [, year, month, day, hour, minute] = match;
+    // Create date using local time interpretation
+    return new Date(
+      parseInt(year, 10),
+      parseInt(month, 10) - 1,
+      parseInt(day, 10),
+      parseInt(hour, 10),
+      parseInt(minute, 10)
+    );
+  };
+  
+  /**
+   * Format any ISO datetime string for display in Perth timezone
+   * - If string ends in Z (UTC from Airtable Created/Modified): convert to Perth time
+   * - If string is Floating (our saved appointments): display as-is
+   * @param {string} isoString - ISO datetime string
+   * @param {object} options - Optional formatting options
+   * @returns {string} Formatted datetime string for display
+   */
+  window.formatDateTimeForDisplay = function(isoString, options) {
+    if (!isoString) return '';
+    
+    options = options || {};
+    const format = options.format || 'short'; // 'short' or 'long'
+    
+    try {
+      // Only Z suffix indicates true UTC (from Airtable Created/Modified fields)
+      // Timezone offsets like +08:00 should be treated as explicit local time
+      const isUTC = isoString.endsWith('Z');
+      
+      if (isUTC) {
+        // UTC string from Airtable Created/Modified - convert to Perth time
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return isoString;
+        
+        if (format === 'long') {
+          return date.toLocaleString('en-AU', {
+            timeZone: 'Australia/Perth',
+            weekday: 'short',
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+        } else {
+          return date.toLocaleString('en-AU', {
+            timeZone: 'Australia/Perth',
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+        }
+      } else {
+        // Floating string (our saved data) - parse and display as-is
+        // Format: YYYY-MM-DDTHH:mm:00
+        const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+        if (!match) return isoString;
+        
+        const [, year, month, day, hour, minute] = match;
+        const h = parseInt(hour, 10);
+        const displayHour = h % 12 || 12;
+        const ampm = h < 12 ? 'AM' : 'PM';
+        
+        if (format === 'long') {
+          const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          const weekday = date.toLocaleDateString('en-AU', { weekday: 'short' });
+          return `${weekday} ${day}/${month}/${year.slice(2)} ${displayHour}:${minute} ${ampm}`;
+        } else {
+          return `${day}/${month}/${year.slice(2)} ${displayHour}:${minute} ${ampm}`;
+        }
+      }
+    } catch (e) {
+      console.error('Error formatting datetime:', e);
+      return isoString;
+    }
   };
   
 })();

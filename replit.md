@@ -167,7 +167,7 @@ quick-view.js → email.js → evidence.js → router.js → app.js
 4. **Inline Date/Time Mini-Popover**:
    - `editApptTimeInline()` shows floating popover near the clicked field
    - Contains both `.smart-date` and `.smart-time` inputs for "Type → Tab → Type" flow
-   - Pre-fills using `formatDatetimeForInput()` for consistent timezone handling
+   - Pre-fills by parsing floating ISO directly (no Date() conversion)
    - Save: Enter key or ✓ button → parses values, delegates to `saveApptField()`
    - Cancel: Escape key or click outside → closes without saving
    - Validation: Invalid date highlights red, keeps popover open for correction
@@ -176,6 +176,41 @@ quick-view.js → email.js → evidence.js → router.js → app.js
 - Add `.smart-time` class to text inputs for time formatting
 - Access 24h value via `element.dataset.time24`
 - For inline date/time editing: call `editApptTimeInline(apptId, currentISOValue)`
+
+### Perth Standard Timezone Strategy - January 2026
+
+**Goal:** All dates/times refer to Western Australia (UTC+8). Avoid timezone shifts when editing existing appointment times.
+
+**Philosophy:**
+- **Floating ISO strings** (e.g., `2026-01-21T14:30:00` without Z or offset) preserve user intent
+- Only strings ending with `Z` are treated as UTC and converted to Perth time
+- Date() constructor is avoided for floating strings to prevent browser timezone shifts
+
+**Key Functions in shared-utils.js:**
+1. **constructDateForSave(dateStr, timeStr)** - Creates floating ISO: `YYYY-MM-DDTHH:mm:00`
+2. **parseFloatingDate(isoString)** - Parses floating ISO to Date for comparisons (treats as local time)
+3. **formatDateTimeForDisplay(isoString, options)** - Formats for display; Z-suffix → Perth conversion, floating → direct parse
+
+**Legacy Functions (DEPRECATED but compatible):**
+- `formatDatetimeForInput()` - Now parses floating ISO directly
+- `formatDatetimeForDisplay()` - Delegates to formatDateTimeForDisplay
+- `formatAppointmentTime()` - Updated to distinguish Z vs floating
+- `calculateDaysUntil()` - Uses parseFloatingDate for ISO strings
+
+**Usage Pattern:**
+```javascript
+// Saving a new appointment
+const isoDateTime = constructDateForSave('21/01/2026', '14:30');
+// Result: '2026-01-21T14:30:00' (floating, no Z)
+
+// Editing an existing appointment
+const parsed = parseFloatingDate('2026-01-21T14:30:00');
+// Result: Date object representing 2:30pm local time
+
+// Displaying
+const display = formatDateTimeForDisplay('2026-01-21T14:30:00');
+// Result: 'Tue 21/01/26 2:30 pm' (no timezone shift)
+```
 
 ### Performance Optimization: Lazy Loading Contacts
 

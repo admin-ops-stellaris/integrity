@@ -248,6 +248,8 @@
     
     const dateInput = popover.querySelector('.appt-popover-date');
     const timeInput = popover.querySelector('.appt-popover-time');
+    const saveBtn = popover.querySelector('.appt-popover-save');
+    const cancelBtn = popover.querySelector('.appt-popover-cancel');
     
     if (e.key === 'Escape') {
       closeApptTimePopover();
@@ -261,13 +263,15 @@
           e.preventDefault();
           closeApptTimePopover();
         }
+        // Shift+Tab from time -> date happens naturally
+        // Shift+Tab from save -> time happens naturally
       } else {
-        // Tab from time field - save and close
-        if (document.activeElement === timeInput) {
+        // Tab from cancel button - close popover (leaving the popover)
+        if (document.activeElement === cancelBtn) {
           e.preventDefault();
-          saveApptTimePopover();
+          closeApptTimePopover();
         }
-        // Tab from date field - let it move to time field naturally
+        // Tab from date -> time, time -> save, save -> cancel all happen naturally
       }
     }
   }

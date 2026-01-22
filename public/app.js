@@ -971,6 +971,18 @@ function forceReload(id) {
    google.script.run.withSuccessHandler(function(r) { if(r && r.fields) selectContact(r); }).getContactById(id);
 }
 
+window.loadContactById = function(contactId, addToHistory) {
+  if (addToHistory && currentContactRecord) {
+    state.contactHistory = state.contactHistory || [];
+    state.contactHistory.push(currentContactRecord.id);
+  }
+  google.script.run.withSuccessHandler(function(record) {
+    if (record && record.fields) {
+      selectContact(record);
+    }
+  }).getContactById(contactId);
+};
+
 window.goHome = function() {
   // Clear current contact and show initial empty state
   currentContactRecord = null;

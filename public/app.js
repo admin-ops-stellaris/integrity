@@ -290,6 +290,13 @@ function selectContact(record) {
   if (window.IntegrityRouter && !window._routerNavigating) {
     window.IntegrityRouter.navigateTo(record.id, null);
   }
+  
+  // Update breadcrumbs
+  const contactName = [f.FirstName, f.LastName].filter(Boolean).join(' ') || 'Contact';
+  window.updateBreadcrumbs([
+    { label: 'Contacts', action: 'goHome()' },
+    { label: contactName }
+  ]);
 }
 
 // Callback-based version for router (daisy chain pattern)
@@ -993,6 +1000,9 @@ window.goHome = function() {
   // Close opp panel without URL update (we'll update URL separately)
   document.getElementById('oppDetailPanel').classList.remove('open');
   state.panelHistory = [];
+  
+  // Hide breadcrumbs on home/dashboard
+  window.updateBreadcrumbs([]);
   
   // Update URL to home
   if (window.IntegrityRouter) {

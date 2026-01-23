@@ -619,4 +619,32 @@
     }
   };
   
+  // ============================================================
+  // Breadcrumb Navigation
+  // ============================================================
+  
+  window.renderBreadcrumbs = function(pathArray) {
+    if (!pathArray || pathArray.length === 0) return '';
+    
+    return pathArray.map((item, index) => {
+      const isLast = index === pathArray.length - 1;
+      const separator = index > 0 ? '<span class="breadcrumb-sep">›</span>' : '';
+      
+      if (isLast) {
+        return `${separator}<span class="breadcrumb-current">${window.escapeHtml(item.label)}</span>`;
+      } else {
+        const onclick = item.action ? `onclick="${item.action}"` : '';
+        return `${separator}<a class="breadcrumb-link" ${onclick}>${window.escapeHtml(item.label)}</a>`;
+      }
+    }).join('');
+  };
+  
+  window.updateBreadcrumbs = function(pathArray) {
+    const bar = document.getElementById('breadcrumb-bar');
+    if (bar) {
+      bar.innerHTML = window.renderBreadcrumbs(pathArray);
+      bar.style.display = pathArray && pathArray.length > 0 ? 'block' : 'none';
+    }
+  };
+  
 })();

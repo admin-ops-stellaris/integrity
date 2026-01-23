@@ -285,6 +285,18 @@
       updateBackButton();
       titleEl.innerText = response.title;
       
+      // Update breadcrumbs for opportunity view
+      if (table === 'Opportunities' && state.currentContactRecord) {
+        const f = state.currentContactRecord.fields;
+        const contactName = [f.FirstName, f.LastName].filter(Boolean).join(' ') || 'Contact';
+        const contactId = state.currentContactRecord.id;
+        window.updateBreadcrumbs([
+          { label: 'Contacts', action: 'goHome()' },
+          { label: contactName, action: `closeOppPanel(); window.loadContactById('${contactId}')` },
+          { label: response.title || 'Opportunity' }
+        ]);
+      }
+      
       function renderField(item, tbl, recId) {
         const tacoClass = item.tacoField ? ' taco-field' : '';
         const isEmpty = item.value === undefined || item.value === null || item.value === '' || 
@@ -502,6 +514,16 @@
     
     if (window.IntegrityRouter && state.currentContactRecord) {
       window.IntegrityRouter.navigateTo(state.currentContactRecord.id, null);
+    }
+    
+    // Restore contact breadcrumb when closing opportunity panel
+    if (state.currentContactRecord) {
+      const f = state.currentContactRecord.fields;
+      const contactName = [f.FirstName, f.LastName].filter(Boolean).join(' ') || 'Contact';
+      window.updateBreadcrumbs([
+        { label: 'Contacts', action: 'goHome()' },
+        { label: contactName }
+      ]);
     }
   };
 

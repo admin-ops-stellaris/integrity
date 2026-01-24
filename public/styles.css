@@ -19,17 +19,13 @@
 body.dark-mode .empty-value-placeholder { color: #777; }
 body.dark-mode .empty-value-placeholder:hover { color: #AAA; }
 
-/* Breadcrumb Navigation */
-#breadcrumb-bar { display: none; padding: 10px 20px 12px 20px; margin-bottom: 8px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(0,0,0,0.08); }
-body.dark-mode #breadcrumb-bar { background: rgba(0,0,0,0.15); border-bottom-color: rgba(255,255,255,0.08); }
-.breadcrumb-link { color: #888; cursor: pointer; text-decoration: none; transition: color 0.15s ease; }
+/* Breadcrumb Navigation - Eyebrow style */
+#breadcrumb-bar { display: none; padding: 0 20px; margin-bottom: 10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted, #888); }
+.breadcrumb-link { color: var(--color-text-muted, #888); cursor: pointer; text-decoration: none; transition: color 0.15s ease; }
 .breadcrumb-link:hover { color: #555; text-decoration: underline; }
-.breadcrumb-sep { color: #AAA; margin: 0 8px; }
-.breadcrumb-current { color: #444; font-weight: 600; }
-body.dark-mode .breadcrumb-link { color: #999; }
+.breadcrumb-sep { color: var(--color-text-muted, #AAA); margin: 0 6px; }
+.breadcrumb-current { color: var(--color-text-muted, #666); font-weight: 500; }
 body.dark-mode .breadcrumb-link:hover { color: #CCC; }
-body.dark-mode .breadcrumb-sep { color: #666; }
-body.dark-mode .breadcrumb-current { color: #EEE; }
 
   body { font-family: var(--font-body); margin: 0; padding: 0; height: 100vh; color: var(--color-trail); background-color: var(--color-trail); background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/01%20-%20Boranup%20Karri%20Forest%20original.jpg"); background-size: cover; background-position: center; background-attachment: fixed; display: flex; flex-direction: column; overflow: hidden; }
 

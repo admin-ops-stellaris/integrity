@@ -41,39 +41,41 @@
 
     <div class="container">
 
-      <div class="column form-section">
-        <div id="breadcrumb-bar"></div>
-        <div class="header-row">
-          <div style="display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <h2 id="formTitle">Contact</h2>
-              <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
-              <span id="deceasedBadge" class="deceased-badge" style="display:none;">DECEASED</span>
-            </div>
-            <div id="formSubtitle" class="form-subtitle"></div>
-            <button type="button" id="contactBackBtn" class="contact-back-btn" onclick="goBackToContact()" style="display:none;">← Back</button>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div class="actions-menu-wrapper" id="actionsMenuWrapper" style="display:none;">
-              <button type="button" class="actions-menu-btn" onclick="toggleActionsMenu()">Actions</button>
-              <div class="actions-dropdown" id="actionsDropdown">
-                <button type="button" onclick="markAsDeceased()">Mark as Deceased</button>
-                <button type="button" id="undoDeceasedBtn" onclick="undoDeceased()" style="display:none;">Undo Deceased Status</button>
+      <div class="column form-section layout-stack-y gap-lg">
+        <!-- Header Zone: Breadcrumb + Name + Meta Bar -->
+        <div id="profileHeaderZone" class="layout-stack-y gap-md">
+          <div id="breadcrumb-bar"></div>
+          <div class="header-row">
+            <div class="layout-stack-y gap-xs">
+              <div class="layout-stack-x gap-xs">
+                <h2 id="formTitle">Contact</h2>
+                <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
+                <span id="deceasedBadge" class="deceased-badge" style="display:none;">DECEASED</span>
               </div>
+              <div id="formSubtitle" class="form-subtitle"></div>
+              <button type="button" id="contactBackBtn" class="contact-back-btn" onclick="goBackToContact()" style="display:none;">← Back</button>
             </div>
-            <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>
+            <div class="layout-stack-x gap-sm">
+              <div class="actions-menu-wrapper" id="actionsMenuWrapper" style="display:none;">
+                <button type="button" class="actions-menu-btn" onclick="toggleActionsMenu()">Actions</button>
+                <div class="actions-dropdown" id="actionsDropdown">
+                  <button type="button" onclick="markAsDeceased()">Mark as Deceased</button>
+                  <button type="button" id="undoDeceasedBtn" onclick="undoDeceased()" style="display:none;">Undo Deceased Status</button>
+                </div>
+              </div>
+              <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>
+            </div>
           </div>
+          <div id="duplicateWarningBox">
+             <div class="layout-stack-x gap-xs">
+               <span class="warning-icon">⚠️</span> <span id="duplicateWarningText"></span>
+             </div>
+             <a class="hide-link" onclick="document.getElementById('duplicateWarningBox').style.display='none';">Hide</a>
+          </div>
+          <div id="contactMetaBar" class="contact-meta-bar"></div>
         </div>
 
-        <div id="duplicateWarningBox">
-           <div style="display:flex; align-items:center;">
-             <span class="warning-icon">⚠️</span> <span id="duplicateWarningText"></span>
-           </div>
-           <a class="hide-link" onclick="document.getElementById('duplicateWarningBox').style.display='none';">Hide</a>
-        </div>
-
-        <div id="contactMetaBar" class="contact-meta-bar"></div>
-
+        <!-- Content Zone -->
         <div id="emptyState">
            <img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:128,h:128,m" style="height:64px; width:64px; margin-bottom:15px; opacity:0.8;">
            Search for a contact or click '+ New Contact' to begin.

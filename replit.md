@@ -78,8 +78,31 @@ All dates/times in Integrity refer to Western Australia (UTC+8). This prevents t
 
 **RULE:** When loading Airtable data into any form, ALWAYS use `parseDateForEditor()` to ensure Perth timezone consistency.
 
+## Global Layout System
+
+Standardized flexbox utility classes for consistent spacing across the app (defined at top of `styles.css`).
+
+**Stack Classes:**
+| Class | Effect |
+|-------|--------|
+| `.layout-stack-y` | Vertical flex column |
+| `.layout-stack-x` | Horizontal flex row, vertically centered |
+
+**Gap Modifiers:**
+| Class | Size | Use Case |
+|-------|------|----------|
+| `.gap-xs` | 0.5rem (8px) | Tight groupings |
+| `.gap-sm` | 1rem (16px) | Related items |
+| `.gap-md` | 1.5rem (24px) | Section elements |
+| `.gap-lg` | 2.5rem (40px) | Major sections |
+| `.gap-xl` | 4rem (64px) | Page-level separation |
+
+**Usage:** Combine stack + gap classes, e.g., `class="layout-stack-y gap-md"`
+
 ## Recent Session Changes (January 2026)
 
+- **Global Layout System**: Added flexbox utility classes for consistent spacing
+- **Breadcrumb Navigation**: Hierarchy-based eyebrow navigation (Contacts > Name > Opportunity)
 - **Centralized timezone handling**: Created `parseDateForEditor()` for consistent UTC→Perth conversion
 - **Fixed popover Tab navigation**: Date → Time → Save → Cancel flows naturally
 - **Refactored appointments.js**: Both modal and popover use centralized parser

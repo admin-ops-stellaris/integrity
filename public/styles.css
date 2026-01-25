@@ -5,6 +5,29 @@
 
 :root { --font-heading: 'Libre Baskerville', serif; --font-body: 'Geist', sans-serif; --color-trail: #2C2622; --color-midnight: #19414C; --color-star: #BB9934; --color-cedar: #7B8B64; --color-salt: #F2F0E9; --color-sky: #D0DFE6; --color-white: #FFFFFF; --color-border: #D1D1D1; --shadow-soft: 0 4px 20px rgba(0,0,0,0.15); --color-scrollbar: #a89968; }
 
+/* ==========================================================================
+   GLOBAL LAYOUT UTILITY CLASSES
+   Use these standardized flexbox utilities for consistent spacing across the app.
+   
+   Stack Classes:
+   - .layout-stack-y : Vertical flex column
+   - .layout-stack-x : Horizontal flex row, vertically centered
+   
+   Gap Modifiers (apply with stack classes):
+   - .gap-xs : 0.5rem (8px)  - Tight groupings
+   - .gap-sm : 1rem (16px)   - Related items
+   - .gap-md : 1.5rem (24px) - Section elements
+   - .gap-lg : 2.5rem (40px) - Major sections
+   - .gap-xl : 4rem (64px)   - Page-level separation
+   ========================================================================== */
+.layout-stack-y { display: flex; flex-direction: column; }
+.layout-stack-x { display: flex; flex-direction: row; align-items: center; }
+.gap-xs { gap: 0.5rem; }
+.gap-sm { gap: 1rem; }
+.gap-md { gap: 1.5rem; }
+.gap-lg { gap: 2.5rem; }
+.gap-xl { gap: 4rem; }
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -20,7 +43,7 @@ body.dark-mode .empty-value-placeholder { color: #777; }
 body.dark-mode .empty-value-placeholder:hover { color: #AAA; }
 
 /* Breadcrumb Navigation - Eyebrow style */
-#breadcrumb-bar { display: none; padding: 0 20px; margin-bottom: 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
+#breadcrumb-bar { display: none; padding: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
 .breadcrumb-link { color: var(--color-text-muted, #888); cursor: pointer; text-decoration: none; transition: color 0.15s ease; }
 .breadcrumb-link:hover { color: #555; text-decoration: underline; }
 .breadcrumb-sep { color: var(--color-text-muted, #AAA); margin: 0 6px; }
@@ -79,7 +102,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   .form-section { flex: 1; display:flex; flex-direction: column; } 
   h2 { margin-top: 0; color: var(--color-trail); font-family: var(--font-heading); font-size: 16px; letter-spacing: -0.3px; margin-bottom: 0; line-height: 1; font-weight: 400; }
   .tenure-text { font-family: var(--font-body); font-size: 11px; color: #999; font-weight: 400; margin-left: 8px; }
-  .form-subtitle { font-size: 11px; color: #999; font-weight: 400; line-height: 1.6; min-height: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 1.5rem; }
+  .form-subtitle { font-size: 11px; color: #999; font-weight: 400; line-height: 1.6; min-height: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .form-subtitle:empty { display: none; }
   .name-pill { display: inline-block; padding: 3px 12px; border-radius: 14px; font-size: 11px; font-weight: 500; }
   .pill-prefers { background: rgba(123, 139, 100, 0.15); color: var(--color-cedar); }
@@ -280,7 +303,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   .note-popover-done:hover { opacity: 0.85; }
   .note-popover-done:focus { outline: 2px solid var(--color-star); outline-offset: 2px; }
 
-  .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 2rem; }
+  .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
   .fields-header { display: flex; justify-content: flex-end; margin-bottom: 2px; }
   .edit-icon { cursor: pointer; color: #888; font-size: 12px; transition: color 0.2s; visibility: hidden; }
   .edit-pencil { display: inline-block; transform: scaleX(-1); }
@@ -433,7 +456,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   body.dark-mode .confirm-modal-footer .btn-cancel:hover { background: #333; }
 
   /* CONTACT META BAR */
-  .contact-meta-bar { display: none; align-items: center; gap: 16px; padding: 1rem 12px; background: var(--color-salt); border: 1px solid var(--color-border); border-radius: 6px; margin-top: 0; margin-bottom: 3.5rem; font-size: 11px; }
+  .contact-meta-bar { display: none; align-items: center; gap: 16px; padding: 0.75rem 12px; background: var(--color-salt); border: 1px solid var(--color-border); border-radius: 6px; font-size: 11px; }
   .contact-meta-bar.visible { display: flex; }
   .meta-item { display: flex; align-items: center; gap: 6px; color: #666; }
   .meta-label { color: #999; }

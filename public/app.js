@@ -169,7 +169,13 @@ function toggleProfileView(show) {
     document.getElementById('formTitle').innerText = "Contact";
     document.getElementById('formSubtitle').innerText = '';
     document.getElementById('refreshBtn').style.display = 'none'; 
-    document.getElementById('contactMetaBar').classList.remove('visible');
+    // Reset dossier header badges
+  const statusBadge = document.getElementById('statusBadge');
+  if (statusBadge) statusBadge.style.display = 'none';
+  const marketingBadge = document.getElementById('marketingBadge');
+  if (marketingBadge) marketingBadge.style.display = 'none';
+  const dossierMeta = document.getElementById('dossierMeta');
+  if (dossierMeta) dossierMeta.innerHTML = '';
     document.getElementById('duplicateWarningBox').style.display = 'none'; 
   }
 }
@@ -1041,7 +1047,13 @@ function resetForm() {
   document.getElementById('cancelBtn').style.display = 'inline-block';
   document.getElementById('editBtn').style.visibility = 'hidden';
   document.getElementById('oppList').innerHTML = '<li style="color:#CCC; font-size:12px; font-style:italic;">No opportunities linked.</li>';
-  document.getElementById('contactMetaBar').classList.remove('visible');
+  // Reset dossier header badges
+  const statusBadge = document.getElementById('statusBadge');
+  if (statusBadge) statusBadge.style.display = 'none';
+  const marketingBadge = document.getElementById('marketingBadge');
+  if (marketingBadge) marketingBadge.style.display = 'none';
+  const dossierMeta = document.getElementById('dossierMeta');
+  if (dossierMeta) dossierMeta.innerHTML = '';
   document.getElementById('duplicateWarningBox').style.display = 'none';
   document.getElementById('spouseStatusText').innerHTML = "Single";
   document.getElementById('spouseHistoryList').innerHTML = "";
@@ -1124,38 +1136,51 @@ function renderHistory(f) {
 }
 
 function renderContactMetaBar(f) {
-  const bar = document.getElementById('contactMetaBar');
-  const isUnsubscribed = f["Unsubscribed from Marketing"] || false;
-  const marketingText = isUnsubscribed ? "Unsubscribed" : "Subscribed";
-  const marketingClass = isUnsubscribed ? "marketing-status-unsubscribed" : "marketing-status-subscribed";
-  const status = f.Status || "Active";
-  const statusClass = status === "Inactive" ? "status-inactive" : "status-active";
-  
-  // Parse Created/Modified - strip "Created:" or "Modified:" prefix if present
-  let createdDisplay = f.Created || '';
-  let modifiedDisplay = f.Modified || '';
-  if (createdDisplay.toLowerCase().startsWith('created:')) {
-    createdDisplay = createdDisplay.substring(8).trim();
-  }
-  if (modifiedDisplay.toLowerCase().startsWith('modified:')) {
-    modifiedDisplay = modifiedDisplay.substring(9).trim();
+  // Delegate to contacts.js version which handles dossier header
+  if (window.renderContactMetaBar && window.renderContactMetaBar !== renderContactMetaBar) {
+    window.renderContactMetaBar(f);
+    return;
   }
   
-  let html = '';
-  // Status badge
-  html += `<div class="meta-status ${statusClass}" onclick="toggleContactStatus()" title="Click to toggle status">${status}</div>`;
-  if (createdDisplay) {
-    html += '<div class="meta-divider"></div>';
-    html += `<div class="meta-item"><span class="meta-label">Created:</span> <span class="meta-value">${createdDisplay}</span></div>`;
+  // Fallback: Render dossier meta (right side of header)
+  const dossierMeta = document.getElementById('dossierMeta');
+  if (dossierMeta) {
+    let createdDisplay = f.Created || '';
+    let modifiedDisplay = f.Modified || '';
+    if (createdDisplay.toLowerCase().startsWith('created:')) {
+      createdDisplay = createdDisplay.substring(8).trim();
+    }
+    if (modifiedDisplay.toLowerCase().startsWith('modified:')) {
+      modifiedDisplay = modifiedDisplay.substring(9).trim();
+    }
+    
+    let html = '';
+    if (createdDisplay) {
+      html += `<span class="meta-item">Created ${createdDisplay}</span>`;
+    }
+    if (modifiedDisplay) {
+      html += `<span class="meta-item">Modified ${modifiedDisplay}</span>`;
+    }
+    dossierMeta.innerHTML = html;
   }
-  if (modifiedDisplay) {
-    html += '<div class="meta-divider"></div>';
-    html += `<div class="meta-item"><span class="meta-label">Modified:</span> <span class="meta-value">${modifiedDisplay}</span></div>`;
-  }
-  html += `<div class="meta-marketing" onclick="openUnsubscribeEdit()"><span class="meta-label">Marketing:</span><span class="${marketingClass}">${marketingText}</span></div>`;
   
-  bar.innerHTML = html;
-  bar.classList.add('visible');
+  // Render status badge
+  const statusBadge = document.getElementById('statusBadge');
+  if (statusBadge) {
+    const status = f.Status || 'Active';
+    statusBadge.textContent = status;
+    statusBadge.className = 'status-badge ' + (status === 'Active' ? 'status-active' : 'status-inactive');
+    statusBadge.style.display = 'inline-block';
+  }
+  
+  // Render marketing badge
+  const marketingBadge = document.getElementById('marketingBadge');
+  if (marketingBadge) {
+    const isUnsubscribed = f["Unsubscribed from Marketing"] || false;
+    const marketingText = isUnsubscribed ? "Unsubscribed" : "Subscribed";
+    marketingBadge.textContent = marketingText;
+    marketingBadge.style.display = 'inline-block';
+  }
 }
 
 function handleFormSubmit(formObject) {

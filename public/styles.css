@@ -127,12 +127,33 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   /* FORM */
   .save-row { width: 100%; display: none; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; margin-bottom: 25px; }
   
-  /* 3-Column Profile Layout */
-  .profile-columns { display: flex; gap: 25px; flex: 1; min-height: 0; }
-  .profile-col { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+  /* Dossier Header */
+  .dossier-header { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; }
+  .dossier-left { flex: 1; }
+  .dossier-right { text-align: right; align-items: flex-end; }
+  .dossier-badges { justify-content: flex-end; }
+  .dossier-meta { font-size: 11px; color: #888; text-align: right; }
+  .dossier-meta .meta-item { display: inline; }
+  .dossier-meta .meta-item + .meta-item::before { content: ' · '; color: #CCC; }
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-badge.status-active { background: rgba(123, 139, 100, 0.15); color: var(--color-cedar); }
+  .status-badge.status-inactive { background: rgba(0, 0, 0, 0.08); color: #888; }
+  .marketing-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 500; background: rgba(187, 153, 52, 0.12); color: #8B7028; }
+  body.dark-mode .dossier-meta { color: #999; }
+  body.dark-mode .dossier-meta .meta-item + .meta-item::before { color: #555; }
+  
+  /* 3-Column Profile Layout (CSS Grid) */
+  .profile-columns { display: grid; grid-template-columns: 280px minmax(400px, 1fr) 350px; gap: 24px; flex: 1; min-height: 0; }
+  .profile-col { display: flex; flex-direction: column; overflow-y: auto; }
   .profile-col-left { }
-  .profile-col-middle { border-left: 1px dashed var(--color-border); padding-left: 25px; }
-  .profile-col-right { border-left: 1px dashed var(--color-border); padding-left: 25px; min-height: 100px; }
+  .profile-col-center { border-left: 1px dashed var(--color-border); padding-left: 24px; }
+  .profile-col-right { border-left: 1px dashed var(--color-border); padding-left: 24px; }
+  
+  /* Activity Stream Placeholder */
+  .panel-box { background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--color-border); border-radius: 6px; padding: 16px; }
+  body.dark-mode .panel-box { background: rgba(255, 255, 255, 0.03); }
+  .text-muted { color: #888; }
+  body.dark-mode .text-muted { color: #777; }
   .row { display: flex; gap: 15px; }
   .field-group { flex: 1; }
   label { font-size: 9px; font-weight: 500; color: #AAA; display: block; margin-top: 4px; margin-bottom: 1px; text-transform: uppercase; letter-spacing: 0.5px; }

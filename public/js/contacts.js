@@ -458,25 +458,42 @@
   // ============================================================
   
   window.renderContactMetaBar = function(f) {
-    const metaBar = document.getElementById('contactMetaBar');
-    if (!metaBar) return;
-    
-    const createdOn = f['Created On (pre-Stellaris)'] || f['Created On'];
-    const createdBy = f['Created By (pre-Stellaris)'] || f['Created By'];
-    const modifiedTooltip = formatModifiedTooltip(f);
-    const modifiedShort = formatModifiedShort(f);
-    
-    let html = '';
-    if (createdOn) {
-      const createdDate = formatAuditDate(createdOn);
-      html += `<span class="meta-item" title="Created by ${createdBy || 'Unknown'}">Created: ${createdDate}</span>`;
+    // Render dossier meta (right side of header)
+    const dossierMeta = document.getElementById('dossierMeta');
+    if (dossierMeta) {
+      const createdOn = f['Created On (pre-Stellaris)'] || f['Created On'];
+      const createdBy = f['Created By (pre-Stellaris)'] || f['Created By'];
+      const modifiedTooltip = formatModifiedTooltip(f);
+      const modifiedShort = formatModifiedShort(f);
+      
+      let html = '';
+      if (createdOn) {
+        const createdDate = formatAuditDate(createdOn);
+        html += `<span class="meta-item" title="Created by ${createdBy || 'Unknown'}">Created ${createdDate}</span>`;
+      }
+      if (modifiedShort) {
+        html += `<span class="meta-item" title="${modifiedTooltip}">Modified ${modifiedShort}</span>`;
+      }
+      dossierMeta.innerHTML = html;
     }
-    if (modifiedShort) {
-      html += `<span class="meta-item" title="${modifiedTooltip}">Modified: ${modifiedShort}</span>`;
+    
+    // Render status badge
+    const statusBadge = document.getElementById('statusBadge');
+    if (statusBadge) {
+      const status = f.Status || 'Active';
+      statusBadge.textContent = status;
+      statusBadge.className = 'status-badge ' + (status === 'Active' ? 'status-active' : 'status-inactive');
+      statusBadge.style.display = 'inline-block';
     }
     
-    metaBar.innerHTML = html;
-    metaBar.classList.toggle('visible', html.length > 0);
+    // Render marketing badge
+    const marketingBadge = document.getElementById('marketingBadge');
+    if (marketingBadge) {
+      const isUnsubscribed = f['Unsubscribed from Marketing'] || false;
+      const marketingText = isUnsubscribed ? 'Unsubscribed' : 'Subscribed';
+      marketingBadge.textContent = marketingText;
+      marketingBadge.style.display = 'inline-block';
+    }
   };
   
 })();

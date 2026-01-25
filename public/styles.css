@@ -28,6 +28,13 @@
 .gap-lg { gap: 2.5rem; }
 .gap-xl { gap: 4rem; }
 
+/* Force children of stacks to rely ONLY on the gap */
+.layout-stack-y > *,
+.layout-stack-x > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

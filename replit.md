@@ -101,9 +101,12 @@ Standardized flexbox utility classes for consistent spacing across the app (defi
 
 ## Recent Session Changes (January 2026)
 
+- **Dossier Header Architecture**: Refactored contact header to left block (breadcrumb→name→badge) + right block (status badges + created/modified metadata)
+- **3-Column CSS Grid Layout**: Profile columns now use `grid-template-columns: 280px minmax(400px, 1fr) 350px` instead of flexbox
+- **Activity Stream Placeholder**: Right column (350px) reserved for future Tasks/Slack/AI integration
+- **Removed #contactMetaBar**: Functionality integrated into new dossier header
 - **Global Layout System**: Added flexbox utility classes for consistent spacing
-- **Breadcrumb Navigation**: Hierarchy-based eyebrow navigation (Contacts > Name > Opportunity)
+- **Breadcrumb Navigation**: Hierarchy-based eyebrow navigation (Contacts > Name > Opportunity), now inside dossier left block
 - **Centralized timezone handling**: Created `parseDateForEditor()` for consistent UTC→Perth conversion
-- **Fixed popover Tab navigation**: Date → Time → Save → Cancel flows naturally
-- **Refactored appointments.js**: Both modal and popover use centralized parser
+- **Marketing Badge Normalization**: Uses "Unsubscribed from Marketing" field consistently across app.js and contacts.js
 - **Module count**: 17 IIFE modules (no change)

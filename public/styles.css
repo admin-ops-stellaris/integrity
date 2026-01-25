@@ -143,11 +143,31 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   body.dark-mode .dossier-meta .meta-item + .meta-item::before { color: #555; }
   
   /* 3-Column Profile Layout (CSS Grid) */
-  .profile-columns { display: grid; grid-template-columns: 280px minmax(400px, 1fr) 350px; gap: 24px; flex: 1; min-height: 0; }
+  .profile-columns { display: grid; grid-template-columns: 320px minmax(400px, 1fr) 400px; gap: 24px; flex: 1; min-height: 0; }
   .profile-col { display: flex; flex-direction: column; overflow-y: auto; }
   .profile-col-left { }
   .profile-col-center { border-left: 1px dashed var(--color-border); padding-left: 24px; }
   .profile-col-right { border-left: 1px dashed var(--color-border); padding-left: 24px; }
+  
+  /* Responsive: Standard Laptops (2 columns) */
+  @media (max-width: 1400px) {
+    .profile-columns { grid-template-columns: 320px 1fr; }
+    .profile-col-right { 
+      grid-column: 1 / -1; 
+      border-left: none; 
+      border-top: 1px dashed var(--color-border); 
+      padding-left: 0; 
+      padding-top: 24px; 
+      margin-top: 8px;
+    }
+  }
+  
+  /* Responsive: Tablets/Mobile (1 column) */
+  @media (max-width: 900px) {
+    .profile-columns { grid-template-columns: 1fr; gap: 16px; }
+    .profile-col-center { border-left: none; padding-left: 0; border-top: 1px dashed var(--color-border); padding-top: 16px; }
+    .profile-col-right { border-top: 1px dashed var(--color-border); padding-top: 16px; margin-top: 0; }
+  }
   
   /* Activity Stream Placeholder */
   .panel-box { background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--color-border); border-radius: 6px; padding: 16px; }

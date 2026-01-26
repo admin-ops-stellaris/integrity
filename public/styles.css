@@ -213,26 +213,44 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   .clickable-badge:hover { opacity: 0.85; transform: scale(1.02); }
   
   /* NUCLEAR Mobile Override - Force single column stack */
-  @media screen and (max-width: 1023px) {
-    .profile-columns {
+  @media screen and (max-width: 1024px) {
+    /* 1. Force Container to Stack */
+    #profileContent {
       display: flex !important;
       flex-direction: column !important;
       width: 100% !important;
-      gap: 20px !important;
+      box-sizing: border-box !important;
     }
-    /* Force all columns to be full width */
+    
+    /* 2. Force Children to fit the phone - kills minmax(400px) */
+    #profileContent > div,
+    .profile-columns,
     .profile-columns > .profile-col {
       width: 100% !important;
-      max-width: none !important;
       min-width: 0 !important;
+      max-width: 100% !important;
+      flex-basis: auto !important;
+      box-sizing: border-box !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+    
+    /* 3. Force profile-columns to vertical flex */
+    .profile-columns {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 20px !important;
+    }
+    
+    /* 4. Strip borders/padding from columns */
+    .profile-columns > .profile-col {
       border-left: none !important;
       padding-left: 0 !important;
     }
-    /* Activity Stream (right col) on top */
+    
+    /* 5. Enforce Mobile Pulse Order */
     .profile-col-right { order: -10 !important; margin-bottom: 10px; }
-    /* Opportunities + Relationships (center col) second */
     .profile-col-center { order: -5 !important; }
-    /* Facts (left col) at bottom */
     .profile-col-left { order: 0 !important; }
   }
   

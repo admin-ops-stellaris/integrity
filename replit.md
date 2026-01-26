@@ -102,7 +102,7 @@ Standardized flexbox utility classes for consistent spacing across the app (defi
 ## Recent Session Changes (January 2026)
 
 - **Dossier Header Architecture**: Refactored contact header to left block (breadcrumb→name→badge) + right block (status badges + created/modified metadata)
-- **3-Column CSS Grid Layout**: Profile columns now use `grid-template-columns: 320px minmax(400px, 1fr) 400px` with responsive breakpoints (2-col at 1400px, 1-col at 900px)
+- **3-Column CSS Grid Layout**: Profile columns use `grid-template-columns: 320px minmax(400px, 1fr) 400px` with Mobile Pulse responsive layout at 1024px (Activity > Opportunities > Relationships > Facts)
 - **Activity Stream Placeholder**: Right column (400px) reserved for future Tasks/Slack/AI integration
 - **Removed #contactMetaBar**: Functionality integrated into new dossier header
 - **Global Layout System**: Added flexbox utility classes for consistent spacing

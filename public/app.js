@@ -1203,7 +1203,7 @@ function renderContactMetaBar(f) {
   if (statusBadge) {
     const status = f.Status || 'Active';
     statusBadge.textContent = status;
-    statusBadge.className = 'status-badge ' + (status === 'Active' ? 'status-active' : 'status-inactive');
+    statusBadge.className = 'status-badge clickable-badge ' + (status === 'Active' ? 'status-active' : 'status-inactive');
     statusBadge.style.display = 'inline-block';
   }
   

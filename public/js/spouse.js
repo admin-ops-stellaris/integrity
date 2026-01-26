@@ -11,14 +11,14 @@
     const badgeEl = document.getElementById('spouseBadge');
     const statusEl = document.getElementById('spouseStatusText');
     const dateEl = document.getElementById('spouseHistoryDate');
-    const accordionEl = document.getElementById('spouseHistoryAccordion');
+    const historyToggle = document.getElementById('spouseHistoryToggle');
     const historyList = document.getElementById('spouseHistoryList');
     const arrowEl = document.getElementById('spouseHistoryArrow');
 
     const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
     const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
 
-    if (accordionEl) accordionEl.style.display = 'none';
+    if (historyToggle) historyToggle.style.display = 'none';
     if (historyList) { historyList.innerHTML = ''; historyList.style.display = 'none'; }
     if (arrowEl) arrowEl.classList.remove('expanded');
 
@@ -43,9 +43,9 @@
         attachQuickViewToElement(statusEl, spouseId);
       }
       
-      if (parsedLogs.length > 1 && accordionEl && historyList) {
+      if (parsedLogs.length > 1 && historyToggle && historyList) {
         if (dateEl) dateEl.textContent = '';
-        accordionEl.style.display = 'inline-flex';
+        historyToggle.style.display = 'inline-flex';
         parsedLogs.forEach(entry => { renderHistoryItem(entry, historyList); });
       } else {
         if (dateEl) dateEl.textContent = connectionDate;

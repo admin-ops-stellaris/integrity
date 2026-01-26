@@ -238,16 +238,14 @@
                     <span id="spouseStatusText" class="connection-name">Single</span>
                     <span id="spouseHistoryDate" class="connection-date"></span>
                   </div>
-                  <div class="spouse-right-col">
-                    <div class="spouse-right-col-content">
-                      <div id="spouseHistoryAccordion" class="collapsible-header" style="display:none;" onclick="toggleSpouseHistory()">
-                        <span id="spouseHistoryArrow" class="collapsible-icon">&#9654;</span>
-                        <span class="collapsible-title">History</span>
-                      </div>
-                      <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
-                    </div>
-                    <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()">Edit</span>
+                  <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()">Edit</span>
+                </div>
+                <div id="spouseHistorySection" style="display:none;">
+                  <div id="spouseHistoryAccordion" class="collapsible-header" onclick="toggleSpouseHistory()">
+                    <span id="spouseHistoryArrow" class="collapsible-icon">&#9654;</span>
+                    <span class="collapsible-title">History</span>
                   </div>
+                  <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
                 </div>
                 <div id="connectionsSection" class="connections-section-scrollable">
                   <div id="connectionsAccordionWrapper" style="display:none;">

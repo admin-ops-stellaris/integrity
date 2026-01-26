@@ -896,27 +896,6 @@ function executeQueue(table, id, ops, callback) {
 
 // --- END LINKED EDITOR ---
 
-// ... (Spouse Modal Logic & General Logic remains the same) ...
-function openSpouseModal() {
-   const f = currentContactRecord.fields;
-   const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
-   const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
-   openModal('spouseModal');
-   document.getElementById('connectForm').style.display = 'none';
-   document.getElementById('confirmConnectForm').style.display = 'none';
-   document.getElementById('disconnectForm').style.display = 'none';
-   if (spouseId) {
-      document.getElementById('disconnectForm').style.display = 'flex';
-      document.getElementById('currentSpouseName').innerText = spouseName;
-      document.getElementById('currentSpouseId').value = spouseId;
-   } else {
-      document.getElementById('connectForm').style.display = 'flex';
-      document.getElementById('spouseSearchInput').value = '';
-      document.getElementById('spouseSearchResults').innerHTML = '';
-      document.getElementById('spouseSearchResults').style.display = 'none';
-      loadRecentContactsForModal();
-   }
-}
 // Spouse modal functions moved to spouse.js module
 
 window.loadContactById = function(contactId, addToHistory) {

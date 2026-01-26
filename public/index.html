@@ -378,7 +378,7 @@
           </div>
           <div class="modal-body">
 
-            <div id="connectForm" style="display:none; flex:1; display:flex; flex-direction:column;">
+            <div id="connectForm" style="display:none; flex:1; flex-direction:column;">
                <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Connect Spouse</h3>
                <p style="font-size:13px; margin-bottom:10px; color:#666;">Search for the contact to connect:</p>
                <input type="text" id="spouseSearchInput" placeholder="Start typing name..." onkeyup="handleSpouseSearch(event)" onfocus="loadRecentContactsForModal()">
@@ -388,7 +388,7 @@
                </div>
             </div>
 
-            <div id="confirmConnectForm" style="display:none; flex:1; flex-direction:column;">
+            <div id="confirmConnectForm" style="display:none; flex-direction:column;">
                <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Confirm Connection</h3>
                <p style="font-size:13px; color:#666; margin-bottom:20px;">Are you sure you want to set <strong id="targetSpouseName" style="color:var(--color-trail);"></strong> as the spouse?</p>
                <input type="hidden" id="targetSpouseId">
@@ -398,7 +398,7 @@
                </div>
             </div>
 
-            <div id="disconnectForm" style="display:none; flex:1; flex-direction:column;">
+            <div id="disconnectForm" style="display:none; flex-direction:column;">
                <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Disconnect Spouse</h3>
                <p style="font-size:13px; color:#666; margin-bottom:20px;">Are you sure you want to disconnect <strong id="currentSpouseName" style="color:var(--color-trail);"></strong>?</p>
                <input type="hidden" id="currentSpouseId">

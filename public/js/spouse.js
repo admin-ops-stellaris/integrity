@@ -70,10 +70,18 @@
   }
   
   function parseSpouseHistoryEntry(logString) {
-    const match = logString.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2}):\s*(connected as spouse to|disconnected as spouse from)\s+(.+)$/);
-    if (!match) return null;
-    const [, year, month, day, hours, mins, secs, action, spouseName] = match;
-    const timestamp = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(mins), parseInt(secs));
+    // Format: "5:55 AM 17/03/2023: connected as spouse to Kristy Ann Hibble"
+    const match = logString.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)\s+(\d{2})\/(\d{2})\/(\d{4}):\s*(connected as spouse to|disconnected as spouse from)\s+(.+)$/i);
+    if (!match) {
+      console.log('Spouse history entry did not match pattern:', logString);
+      return null;
+    }
+    let [, hours, mins, ampm, day, month, year, action, spouseName] = match;
+    // Convert 12-hour to 24-hour format
+    hours = parseInt(hours);
+    if (ampm.toUpperCase() === 'PM' && hours !== 12) hours += 12;
+    if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+    const timestamp = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), hours, parseInt(mins));
     const displayDate = `${day}/${month}/${year}`;
     const shortAction = action.replace(' as spouse', '');
     const displayText = `${shortAction} ${spouseName}`;

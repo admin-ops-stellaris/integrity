@@ -846,9 +846,15 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
     white-space: nowrap;
     flex-shrink: 0;
   }
-  #spouseHistoryToggle { display: inline-flex; align-items: center; gap: 4px; }
-  #spouseHistoryToggle .spouse-history-arrow { font-size: 8px; transition: transform 0.2s; }
-  #spouseHistoryToggle .spouse-history-arrow.expanded { transform: rotate(90deg); }
+  #spouseHistoryToggle { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 4px; 
+    cursor: pointer;
+    user-select: none;
+    margin-left: auto;
+  }
+  #spouseHistoryToggle:hover .collapsible-title { color: var(--color-star); }
   .spouse-history-list { margin-top: 8px; padding-left: 8px; }
   .spouse-history-accordion { display: inline-flex; align-items: center; }
   .spouse-history-toggle { cursor: pointer; color: #666; font-size: 11px; display: flex; align-items: center; gap: 4px; }

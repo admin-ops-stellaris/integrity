@@ -1,0 +1,30 @@
+Two issues to fix: The header buttons stopped working, and the mobile layout needs a complete rethink to prioritize 'Activity'.
+​Part 1: Restore Badge Functionality (Fix Regression)
+The 'Active' and 'Marketing' badges in the new header are currently static text. They need to be interactive triggers again.
+​Fix in renderContactHeader:
+​Add onclick="toggleContactStatus()" to the Active/Inactive badge container.
+​Add onclick="toggleMarketingStatus()" to the Marketing badge container.
+​Crucial: Ensure these elements have the specific IDs that the existing toggle functions expect (e.g., #active-badge or #marketing-badge). If the toggle functions rely on querySelector, update them to match the new structure.
+​Visuals: Add cursor: pointer to these badges so they look clickable.
+​Part 2: The 'Mobile Pulse' Layout (Responsive Overhaul)
+On screens smaller than 1024px (Tablets/Mobile), I want a completely different hierarchy.
+​1. Reorder the Stack (Flex/Grid Order):
+On Mobile/Tablet view:
+​Rank 1 (Top): The Activity Stream (Right Column). This must be the first thing seen after the header.
+​Rank 2: The Opportunities.
+​Rank 3: The Relationships (Center Column).
+​Rank 4 (Bottom): The Facts (Left Column).
+​2. The 'Master Accordion' Trick (HTML/CSS):
+We don't want to scroll past miles of 'Facts' to get to the data.
+​Wrap the Columns: In index.html (or the render logic), wrap the Left Column (Facts) content in a <details id="mobile-facts-accordion" open> tag.
+​Wrap the Center Column (Relationships) content in a <details id="mobile-relationships-accordion" open> tag.
+​Add Summaries: Add <summary class="mobile-only-summary">Contact Details</summary> (and 'Relationships') to these wrappers.
+​3. CSS Magic (style.css):
+​Desktop (>= 1024px):
+​.mobile-only-summary -> display: none (Hide the toggle button).
+​details -> pointer-events: none (Lock it open).
+​Mobile (< 1024px):
+​.mobile-only-summary -> display: block (Show the toggle button).
+​details -> Default to closed (User clicks to open).
+​Grid: Change #profileContent to display: flex; flex-direction: column. Use the order property to enforce the Ranks defined above (Activity order: -1).
+​Action: Fix the badge interactivity and implement this prioritized mobile layout.

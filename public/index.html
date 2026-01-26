@@ -59,8 +59,8 @@
             <!-- Right Block: Status & Metadata -->
             <div class="dossier-right layout-stack-y gap-xs">
               <div class="dossier-badges layout-stack-x gap-xs">
-                <span id="statusBadge" class="status-badge status-active" style="display:none;">Active</span>
-                <span id="marketingBadge" class="marketing-badge" style="display:none;"></span>
+                <span id="statusBadge" class="status-badge status-active clickable-badge" style="display:none;" onclick="toggleContactStatus()" title="Click to toggle status">Active</span>
+                <span id="marketingBadge" class="marketing-badge clickable-badge" style="display:none;" onclick="openUnsubscribeEdit()" title="Click to edit marketing preferences"></span>
                 <div class="actions-menu-wrapper" id="actionsMenuWrapper" style="display:none;">
                   <button type="button" class="actions-menu-btn" onclick="toggleActionsMenu()">Actions</button>
                   <div class="actions-dropdown" id="actionsDropdown">
@@ -92,6 +92,8 @@
             <input type="hidden" name="recordId" id="recordId">
             <div class="profile-columns" id="profileColumns">
               <div class="profile-col profile-col-left">
+                <details id="mobile-facts-accordion">
+                  <summary class="mobile-only-summary">Contact Details</summary>
                 <span id="editBtn" style="display:none;"></span>
                 
                 <div class="collapsible-section" id="nameSection">
@@ -223,9 +225,20 @@
                 <div id="deleteSection" style="margin-top:auto; padding-top:20px;">
                   <button type="button" class="btn-delete" onclick="confirmDeleteContact()">Delete Contact</button>
                 </div>
+                </details>
               </div>
 
               <div class="profile-col profile-col-center">
+                <div id="opportunitiesWrapper" class="mobile-orderable">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
+                    <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New Opportunity</button>
+                  </div>
+                  <div id="oppLoading" style="display:none;">Loading...</div>
+                  <ul id="oppList" class="opp-list"></ul>
+                </div>
+                <details id="mobile-relationships-accordion">
+                  <summary class="mobile-only-summary">Relationships</summary>
                 <div id="spouseSection" class="spouse-two-col-row">
                   <div class="spouse-left-col">
                     <span id="spouseBadge" class="connection-role-badge spouse">Spouse</span>
@@ -259,12 +272,7 @@
                     <ul id="connectionsListRight" class="connections-list connections-col"></ul>
                   </div>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                  <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
-                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New Opportunity</button>
-                </div>
-                <div id="oppLoading" style="display:none;">Loading...</div>
-                <ul id="oppList" class="opp-list"></ul>
+                </details>
               </div>
 
               <div class="profile-col profile-col-right">

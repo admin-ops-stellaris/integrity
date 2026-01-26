@@ -354,6 +354,40 @@ function updateUnsubscribeDisplay(isUnsubscribed) {
   }
 }
 
+function toggleContactStatus() {
+  if (!currentContactRecord) return;
+  const currentStatus = currentContactRecord.fields.Status || 'Active';
+  const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+  const confirmMsg = newStatus === 'Inactive' 
+    ? 'Mark this contact as Inactive? They will be hidden from the default contact list.'
+    : 'Mark this contact as Active again?';
+  
+  if (!confirm(confirmMsg)) return;
+  
+  fetch('/api/contacts/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recordId: currentContactRecord.id, fields: { Status: newStatus } })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      currentContactRecord.fields.Status = newStatus;
+      // Update badge
+      const badge = document.getElementById('statusBadge');
+      if (badge) {
+        badge.textContent = newStatus;
+        badge.className = 'status-badge clickable-badge ' + (newStatus === 'Active' ? 'status-active' : 'status-inactive');
+      }
+      // Refresh list if needed
+      if (typeof refreshContactList === 'function') refreshContactList();
+    } else {
+      alert('Failed to update status: ' + (data.error || 'Unknown error'));
+    }
+  })
+  .catch(err => alert('Error updating status: ' + err.message));
+}
+
 function openUnsubscribeEdit() {
   if (!currentContactRecord) return;
   const currentValue = currentContactRecord.fields["Unsubscribed from Marketing"] || false;

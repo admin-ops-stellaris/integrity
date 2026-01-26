@@ -162,12 +162,55 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
     }
   }
   
-  /* Responsive: Tablets/Mobile (1 column) */
-  @media (max-width: 900px) {
-    .profile-columns { grid-template-columns: 1fr; gap: 16px; }
-    .profile-col-center { border-left: none; padding-left: 0; border-top: 1px dashed var(--color-border); padding-top: 16px; }
-    .profile-col-right { border-top: 1px dashed var(--color-border); padding-top: 16px; margin-top: 0; }
+  /* Responsive: Tablets/Mobile (1 column, reordered) */
+  @media (max-width: 1024px) {
+    .profile-columns { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 16px; 
+    }
+    /* Mobile Pulse Layout: Activity(-3) > Opportunities(-2) > Relationships(-1) > Facts(0) */
+    .profile-col-right { order: -3; border-left: none; padding-left: 0; }
+    .profile-col-center { order: -1; border-left: none; padding-left: 0; border-top: 1px dashed var(--color-border); padding-top: 16px; display: flex; flex-direction: column; }
+    #opportunitiesWrapper { order: -2; padding-bottom: 16px; border-bottom: 1px dashed var(--color-border); margin-bottom: 8px; }
+    #mobile-relationships-accordion { order: -1; }
+    .profile-col-left { order: 0; border-top: 1px dashed var(--color-border); padding-top: 16px; }
+    
+    /* Mobile Accordion Summaries */
+    .mobile-only-summary { 
+      display: block; 
+      font-size: 14px; 
+      font-weight: 600; 
+      color: var(--color-trail); 
+      cursor: pointer; 
+      padding: 12px 0; 
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 12px;
+      user-select: none;
+      list-style: none;
+    }
+    .mobile-only-summary::-webkit-details-marker { display: none; }
+    .mobile-only-summary::before { content: '▶ '; font-size: 10px; margin-right: 6px; }
+    details[open] > .mobile-only-summary::before { content: '▼ '; }
+    
+    /* Default to closed on mobile - hide content when not open */
+    #mobile-facts-accordion:not([open]) > *:not(summary),
+    #mobile-relationships-accordion:not([open]) > *:not(summary) { display: none; }
   }
+  
+  /* Desktop: Hide mobile summaries, show all content */
+  @media (min-width: 1025px) {
+    .mobile-only-summary { display: none; }
+    /* Force all details content visible on desktop */
+    #mobile-facts-accordion > *:not(summary), 
+    #mobile-relationships-accordion > *:not(summary) { display: block !important; }
+    /* Reset mobile ordering */
+    #opportunitiesWrapper { order: unset; padding-bottom: 0; border-bottom: none; margin-bottom: 0; }
+  }
+  
+  /* Clickable badges */
+  .clickable-badge { cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
+  .clickable-badge:hover { opacity: 0.85; transform: scale(1.02); }
   
   /* Activity Stream Placeholder */
   .panel-box { background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--color-border); border-radius: 6px; padding: 16px; }

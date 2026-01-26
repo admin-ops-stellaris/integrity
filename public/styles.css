@@ -208,7 +208,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
     #mobile-relationships-accordion > *:not(summary) { visibility: visible !important; }
     #mobile-facts-accordion > .collapsible-section { display: block !important; }
     #mobile-relationships-accordion > #spouseSection { display: flex !important; }
-    #mobile-relationships-accordion > #spouseHistorySection { display: none; }
+    #mobile-relationships-accordion > #spouseHistorySection { /* JS controls visibility */ }
     #mobile-relationships-accordion > #connectionsSection { display: block !important; }
     
     /* Prevent clicking the details tag to close it */

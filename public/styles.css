@@ -150,7 +150,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   .profile-col-right { border-left: 1px dashed var(--color-border); padding-left: 24px; }
   
   /* Responsive: Standard Laptops (2 columns) */
-  @media (max-width: 1400px) {
+  @media (max-width: 1200px) {
     .profile-columns { grid-template-columns: 320px 1fr; }
     .profile-col-right { 
       grid-column: 1 / -1; 
@@ -163,7 +163,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   }
   
   /* Responsive: Tablets/Mobile (1 column, reordered) */
-  @media (max-width: 1024px) {
+  @media (max-width: 900px) {
     .profile-columns { 
       display: flex; 
       flex-direction: column; 
@@ -213,7 +213,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   .clickable-badge:hover { opacity: 0.85; transform: scale(1.02); }
   
   /* NUCLEAR Mobile Override - Force single column stack */
-  @media screen and (max-width: 1024px) {
+  @media screen and (max-width: 900px) {
     /* 1. Force Container to Stack */
     #profileContent {
       display: flex !important;

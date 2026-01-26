@@ -200,10 +200,21 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   
   /* Desktop/Laptop: Hide mobile summaries, show all content (> 900px) */
   @media (min-width: 901px) {
-    .mobile-only-summary { display: none; }
+    /* Hide the toggle button on Laptop/Desktop */
+    .mobile-only-summary { display: none !important; }
+    
     /* Force all details content visible on desktop/laptop */
     #mobile-facts-accordion > *:not(summary), 
     #mobile-relationships-accordion > *:not(summary) { display: block !important; }
+    
+    /* Prevent clicking the details tag to close it */
+    #mobile-facts-accordion,
+    #mobile-relationships-accordion { pointer-events: none; }
+    
+    /* Re-enable clicks for the content inside */
+    #mobile-facts-accordion > *,
+    #mobile-relationships-accordion > * { pointer-events: auto; }
+    
     /* Reset mobile ordering */
     #opportunitiesWrapper { order: unset; padding-bottom: 0; border-bottom: none; margin-bottom: 0; }
   }

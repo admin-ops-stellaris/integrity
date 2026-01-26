@@ -207,7 +207,8 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
     #mobile-facts-accordion > *:not(summary), 
     #mobile-relationships-accordion > *:not(summary) { visibility: visible !important; }
     #mobile-facts-accordion > .collapsible-section { display: block !important; }
-    #mobile-relationships-accordion > #spouseSection { display: flex !important; }
+    #mobile-relationships-accordion > #spouseSection { display: block !important; }
+    #spouseSection .spouse-two-col-row { display: flex !important; }
     #mobile-relationships-accordion > #spouseHistorySection { /* JS controls visibility */ }
     #mobile-relationships-accordion > #connectionsSection { display: block !important; }
     
@@ -825,15 +826,17 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   #loading a:hover { color: var(--color-trail); border-color: var(--color-trail); }
 
   /* SPOUSE STYLES - Two column layout */
+  .spouse-section-wrapper {
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #DDD;
+  }
   .spouse-two-col-row { 
     display: flex; 
     flex-wrap: nowrap;
     align-items: center; 
     gap: 12px;
     padding: 6px 0; 
-    margin-bottom: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #DDD;
   }
   .spouse-left-col { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
   .spouse-left-col .connection-date { margin-left: 4px; }

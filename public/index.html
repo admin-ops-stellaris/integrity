@@ -232,20 +232,22 @@
               <div class="profile-col profile-col-center">
                 <details id="mobile-relationships-accordion" open>
                   <summary class="mobile-only-summary">Relationships</summary>
-                <div id="spouseSection" class="spouse-two-col-row">
-                  <div class="spouse-left-col">
-                    <span id="spouseBadge" class="connection-role-badge spouse">Spouse</span>
-                    <span id="spouseStatusText" class="connection-name">Single</span>
-                    <span id="spouseHistoryDate" class="connection-date"></span>
+                <div id="spouseSection" class="spouse-section-wrapper">
+                  <div class="spouse-two-col-row">
+                    <div class="spouse-left-col">
+                      <span id="spouseBadge" class="connection-role-badge spouse">Spouse</span>
+                      <span id="spouseStatusText" class="connection-name">Single</span>
+                      <span id="spouseHistoryDate" class="connection-date"></span>
+                    </div>
+                    <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()">Edit</span>
                   </div>
-                  <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()">Edit</span>
-                </div>
-                <div id="spouseHistorySection">
-                  <div id="spouseHistoryAccordion" class="collapsible-header" onclick="toggleSpouseHistory()">
-                    <span id="spouseHistoryArrow" class="collapsible-icon">&#9654;</span>
-                    <span class="collapsible-title">History</span>
+                  <div id="spouseHistorySection">
+                    <div id="spouseHistoryAccordion" class="collapsible-header" onclick="toggleSpouseHistory()">
+                      <span id="spouseHistoryArrow" class="collapsible-icon">&#9654;</span>
+                      <span class="collapsible-title">History</span>
+                    </div>
+                    <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
                   </div>
-                  <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
                 </div>
                 <div id="connectionsSection" class="connections-section-scrollable">
                   <div id="connectionsAccordionWrapper" style="display:none;">

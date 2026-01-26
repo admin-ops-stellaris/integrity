@@ -824,7 +824,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   .spouse-two-col-row { 
     display: flex; 
     flex-wrap: wrap;
-    align-items: flex-start; 
+    align-items: center; 
     justify-content: space-between;
     padding: 6px 0; 
     margin-bottom: 10px;
@@ -833,7 +833,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   }
   .spouse-left-col { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
   .spouse-left-col .connection-date { margin-left: 4px; }
-  .spouse-right-col { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; }
+  .spouse-right-col { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
   .spouse-right-col-content { display: flex; flex-direction: column; gap: 4px; }
   .spouse-right-col .spouse-action-link { margin-left: auto; }
   .spouse-history-accordion { display: inline-flex; align-items: center; }

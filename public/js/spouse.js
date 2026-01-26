@@ -25,8 +25,10 @@
     let connectionDate = '';
     const rawLogs = f['Spouse History Text']; 
     let parsedLogs = [];
+    console.log('Spouse History Text raw:', rawLogs);
     if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
       parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
+      console.log('Parsed spouse history logs:', parsedLogs.length, parsedLogs);
       parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
       const connLog = parsedLogs.find(e => e.displayText.toLowerCase().includes('connected to'));
       if (connLog) connectionDate = connLog.displayDate;

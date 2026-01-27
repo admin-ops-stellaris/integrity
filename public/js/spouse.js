@@ -7,7 +7,18 @@
   
   const state = window.IntegrityState;
   
-  function renderSpouseSection(f) {
+  // Verify state is available
+  if (!state) {
+    console.error('[Spouse Module] ERROR: IntegrityState not found! Module will not work.');
+    return;
+  }
+  console.log('[Spouse Module] Loaded successfully, state available');
+
+  // ============================================================
+  // SPOUSE SECTION RENDERING
+  // ============================================================
+  
+  window.renderSpouseSection = function(f) {
     const badgeEl = document.getElementById('spouseBadge');
     const statusEl = document.getElementById('spouseStatusText');
     const dateEl = document.getElementById('spouseHistoryDate');
@@ -25,10 +36,8 @@
     let connectionDate = '';
     const rawLogs = f['Spouse History Text']; 
     let parsedLogs = [];
-    console.log('Spouse History Text raw:', rawLogs);
     if (rawLogs && Array.isArray(rawLogs) && rawLogs.length > 0) {
-      parsedLogs = rawLogs.map(parseSpouseHistoryEntry).filter(Boolean);
-      console.log('Parsed spouse history logs:', parsedLogs.length, parsedLogs);
+      parsedLogs = rawLogs.map(window.parseSpouseHistoryEntry).filter(Boolean);
       parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
       const connLog = parsedLogs.find(e => e.displayText.toLowerCase().includes('connected to'));
       if (connLog) connectionDate = connLog.displayDate;
@@ -46,7 +55,7 @@
       if (parsedLogs.length > 1 && historyToggle && historyList) {
         if (dateEl) dateEl.textContent = '';
         historyToggle.style.display = 'inline-flex';
-        parsedLogs.forEach(entry => { renderHistoryItem(entry, historyList); });
+        parsedLogs.forEach(entry => { window.renderHistoryItem(entry, historyList); });
       } else {
         if (dateEl) dateEl.textContent = connectionDate;
       }
@@ -57,9 +66,9 @@
       statusEl.removeAttribute('data-contact-id');
       if (dateEl) dateEl.textContent = '';
     }
-  }
+  };
   
-  function toggleSpouseHistory() {
+  window.toggleSpouseHistory = function() {
     const historyList = document.getElementById('spouseHistoryList');
     const arrowEl = document.getElementById('spouseHistoryArrow');
     if (historyList && arrowEl) {
@@ -67,17 +76,14 @@
       historyList.style.display = isExpanded ? 'none' : 'block';
       arrowEl.classList.toggle('expanded');
     }
-  }
+  };
   
-  function parseSpouseHistoryEntry(logString) {
-    // Format: "5:55 AM 17/03/2023: connected as spouse to Kristy Ann Hibble"
+  window.parseSpouseHistoryEntry = function(logString) {
     const match = logString.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)\s+(\d{2})\/(\d{2})\/(\d{4}):\s*(connected as spouse to|disconnected as spouse from)\s+(.+)$/i);
     if (!match) {
-      console.log('Spouse history entry did not match pattern:', logString);
       return null;
     }
     let [, hours, mins, ampm, day, month, year, action, spouseName] = match;
-    // Convert 12-hour to 24-hour format
     hours = parseInt(hours);
     if (ampm.toUpperCase() === 'PM' && hours !== 12) hours += 12;
     if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
@@ -86,24 +92,35 @@
     const shortAction = action.replace(' as spouse', '');
     const displayText = `${shortAction} ${spouseName}`;
     return { timestamp, displayDate, displayText };
-  }
+  };
 
-  function renderHistoryItem(entry, container) {
+  window.renderHistoryItem = function(entry, container) {
     const li = document.createElement('li');
     li.className = 'spouse-history-item';
     li.innerText = `${entry.displayDate}: ${entry.displayText}`;
     const expandLink = container.querySelector('.expand-link');
     if(expandLink) { container.insertBefore(li, expandLink); } else { container.appendChild(li); }
-  }
+  };
 
-  function openSpouseModal() {
+  // ============================================================
+  // SPOUSE MODAL FUNCTIONS
+  // ============================================================
+
+  window.openSpouseModal = function() {
+    console.log('[Spouse] openSpouseModal called');
+    if (!state.currentContactRecord) {
+      console.error('[Spouse] No current contact record!');
+      return;
+    }
     const f = state.currentContactRecord.fields;
     const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
     const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
+    
     openModal('spouseModal');
     document.getElementById('connectForm').style.display = 'none';
     document.getElementById('confirmConnectForm').style.display = 'none';
     document.getElementById('disconnectForm').style.display = 'none';
+    
     if (spouseId) {
       document.getElementById('disconnectForm').style.display = 'flex';
       document.getElementById('currentSpouseName').innerText = spouseName;
@@ -113,61 +130,98 @@
       document.getElementById('spouseSearchInput').value = '';
       document.getElementById('spouseSearchResults').innerHTML = '';
       document.getElementById('spouseSearchResults').style.display = 'none';
-      loadRecentContactsForModal();
+      window.loadRecentContactsForModal();
     }
-  }
+  };
 
-  function closeSpouseModal() { 
+  window.closeSpouseModal = function() { 
     closeModal('spouseModal'); 
-  }
+  };
 
-  function backToSearch() {
+  window.backToSearch = function() {
     document.getElementById('confirmConnectForm').style.display = 'none';
     document.getElementById('connectForm').style.display = 'flex';
-  }
+  };
 
-  function loadRecentContactsForModal() {
+  // ============================================================
+  // SPOUSE SEARCH FUNCTIONS - CRITICAL
+  // ============================================================
+
+  window.loadRecentContactsForModal = function() {
+    console.log('[Spouse] loadRecentContactsForModal called');
     const resultsDiv = document.getElementById('spouseSearchResults');
+    if (!resultsDiv) {
+      console.error('[Spouse] spouseSearchResults element not found!');
+      return;
+    }
     const inputVal = document.getElementById('spouseSearchInput').value;
-    if(inputVal.length > 0) return; 
+    if(inputVal.length > 0) {
+      console.log('[Spouse] Input has value, skipping recent load');
+      return;
+    }
     resultsDiv.style.display = 'block';
     resultsDiv.innerHTML = '<div style="padding:10px; color:#999; font-style:italic;">Loading recent...</div>';
+    
+    console.log('[Spouse] Calling API: getRecentContacts');
     google.script.run.withSuccessHandler(function(records) {
+      console.log('[Spouse] getRecentContacts returned:', records ? records.length : 0, 'records');
       resultsDiv.innerHTML = '<div style="padding:5px 10px; font-size:10px; color:#999; text-transform:uppercase; font-weight:700;">Recently Modified</div>';
       if (!records || records.length === 0) { 
         resultsDiv.innerHTML += '<div style="padding:8px; font-style:italic; color:#999;">No recent contacts</div>'; 
       } else {
         records.forEach(r => {
-          if(r.id === state.currentContactRecord.id) return;
-          renderSearchResultItem(r, resultsDiv);
+          if(state.currentContactRecord && r.id === state.currentContactRecord.id) return;
+          window.renderSearchResultItem(r, resultsDiv);
         });
       }
+    }).withFailureHandler(function(err) {
+      console.error('[Spouse] getRecentContacts error:', err);
+      resultsDiv.innerHTML = '<div style="padding:8px; color:#A00;">Error loading contacts</div>';
     }).getRecentContacts();
-  }
+  };
 
-  function handleSpouseSearch(event) {
+  window.handleSpouseSearch = function(event) {
     const query = event.target.value;
+    console.log('[Spouse] handleSpouseSearch called with query:', query);
+    
     const resultsDiv = document.getElementById('spouseSearchResults');
+    if (!resultsDiv) {
+      console.error('[Spouse] spouseSearchResults element not found!');
+      return;
+    }
+    
     clearTimeout(state.spouseSearchTimeout);
-    if(query.length === 0) { loadRecentContactsForModal(); return; }
+    
+    if(query.length === 0) { 
+      console.log('[Spouse] Empty query, loading recent contacts');
+      window.loadRecentContactsForModal(); 
+      return; 
+    }
+    
     resultsDiv.style.display = 'block';
     resultsDiv.innerHTML = '<div style="padding:10px; color:#999; font-style:italic;">Searching...</div>';
+    
     state.spouseSearchTimeout = setTimeout(() => {
+      console.log('[Spouse] Calling API: searchContacts with query:', query);
       google.script.run.withSuccessHandler(function(records) {
+        console.log('[Spouse] searchContacts returned:', records ? records.length : 0, 'records');
         resultsDiv.innerHTML = '';
-        if (records.length === 0) { 
+        if (!records || records.length === 0) { 
           resultsDiv.innerHTML = '<div style="padding:8px; font-style:italic; color:#999;">No results</div>'; 
         } else {
           records.forEach(r => {
-            if(r.id === state.currentContactRecord.id) return;
-            renderSearchResultItem(r, resultsDiv);
+            if(state.currentContactRecord && r.id === state.currentContactRecord.id) return;
+            window.renderSearchResultItem(r, resultsDiv);
           });
         }
+      }).withFailureHandler(function(err) {
+        console.error('[Spouse] searchContacts error:', err);
+        resultsDiv.innerHTML = '<div style="padding:8px; color:#A00;">Search error</div>';
       }).searchContacts(query);
     }, 500);
-  }
+  };
 
-  function renderSearchResultItem(r, container) {
+  window.renderSearchResultItem = function(r, container) {
     const name = formatName(r.fields);
     const details = formatDetailsRow(r.fields); 
     const div = document.createElement('div');
@@ -180,13 +234,23 @@
       document.getElementById('confirmConnectForm').style.display = 'flex';
     };
     container.appendChild(div);
-  }
+  };
 
-  function executeSpouseChange(action) {
+  // ============================================================
+  // SPOUSE CHANGE EXECUTION
+  // ============================================================
+
+  window.executeSpouseChange = function(action) {
+    console.log('[Spouse] executeSpouseChange called with action:', action);
+    if (!state.currentContactRecord) {
+      console.error('[Spouse] No current contact record!');
+      return;
+    }
     const myId = state.currentContactRecord.id;
     let statusStr = ""; 
     let otherId = ""; 
     let expectHasSpouse = false; 
+    
     if (action === 'disconnect') {
       statusStr = "disconnected as spouse from";
       otherId = document.getElementById('currentSpouseId').value;
@@ -196,17 +260,19 @@
       otherId = document.getElementById('targetSpouseId').value;
       expectHasSpouse = true;
     }
-    closeSpouseModal();
+    
+    window.closeSpouseModal();
     const statusEl = document.getElementById('spouseStatusText');
     statusEl.innerHTML = `<span style="color:var(--color-star); font-style:italic; font-weight:700; display:inline-flex; align-items:center;">Updating <span class="pulse-dot"></span><span class="pulse-dot"></span><span class="pulse-dot"></span></span>`;
     document.getElementById('spouseEditLink').style.display = 'none'; 
+    
     google.script.run.withSuccessHandler(function(res) {
       state.pollAttempts = 0; 
-      startPolling(myId, expectHasSpouse);
+      window.startPolling(myId, expectHasSpouse);
     }).setSpouseStatus(myId, otherId, statusStr);
-  }
+  };
 
-  function startPolling(contactId, expectHasSpouse) {
+  window.startPolling = function(contactId, expectHasSpouse) {
     if(state.pollInterval) clearInterval(state.pollInterval);
     state.pollInterval = setInterval(() => {
       state.pollAttempts++;
@@ -214,7 +280,7 @@
         clearInterval(state.pollInterval);
         const statusEl = document.getElementById('spouseStatusText');
         if(statusEl) { 
-          statusEl.innerHTML = `<span style="color:#A00;">Update delayed.</span> <a class="data-link" onclick="forceReload('${contactId}')">Refresh</a>`; 
+          statusEl.innerHTML = `<span style="color:#A00;">Update delayed.</span> <a class="data-link" onclick="window.forceReload('${contactId}')">Refresh</a>`; 
         }
         return;
       }
@@ -231,27 +297,14 @@
         }
       }).getContactById(contactId); 
     }, 2000); 
-  }
+  };
 
-  function forceReload(id) {
+  window.forceReload = function(id) {
     clearInterval(state.pollInterval);
     google.script.run.withSuccessHandler(function(r) { 
       if(r && r.fields) selectContact(r); 
     }).getContactById(id);
-  }
+  };
 
-  window.renderSpouseSection = renderSpouseSection;
-  window.toggleSpouseHistory = toggleSpouseHistory;
-  window.parseSpouseHistoryEntry = parseSpouseHistoryEntry;
-  window.renderHistoryItem = renderHistoryItem;
-  window.openSpouseModal = openSpouseModal;
-  window.closeSpouseModal = closeSpouseModal;
-  window.backToSearch = backToSearch;
-  window.loadRecentContactsForModal = loadRecentContactsForModal;
-  window.handleSpouseSearch = handleSpouseSearch;
-  window.renderSearchResultItem = renderSearchResultItem;
-  window.executeSpouseChange = executeSpouseChange;
-  window.startPolling = startPolling;
-  window.forceReload = forceReload;
-  
+  console.log('[Spouse Module] All functions exposed to window');
 })();

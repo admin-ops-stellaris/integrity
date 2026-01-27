@@ -1,6 +1,5 @@
 // Timeouts - now using IntegrityState but keeping local refs for backward compat
 let searchTimeout;
-let spouseSearchTimeout;
 let linkedSearchTimeout;
 let loadingTimer;
 // contactStatusFilter MOVED to IntegrityState - use window.IntegrityState.contactStatusFilter

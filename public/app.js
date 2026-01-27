@@ -278,9 +278,21 @@ function selectContact(record) {
   
   renderHistory(f);
   loadOpportunities(f);
-  renderSpouseSection(f);
-  loadConnections(record.id);
-  loadAddressHistory(record.id);
+  if (window.renderSpouseSection) {
+    renderSpouseSection(f);
+  } else {
+    console.error('Critical: renderSpouseSection missing');
+  }
+  if (window.loadConnections) {
+    loadConnections(record.id);
+  } else {
+    console.error('Critical: loadConnections missing');
+  }
+  if (window.loadAddressHistory) {
+    loadAddressHistory(record.id);
+  } else {
+    console.error('Critical: loadAddressHistory missing');
+  }
   closeOppPanel();
   
   // Show Actions menu for existing contacts

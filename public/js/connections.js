@@ -386,5 +386,8 @@
   // Expose helper functions
   window.escapeHtmlForAttr = escapeHtmlForAttr;
 
+  // Alias for backward compatibility
+  window.loadConnections = window.renderConnectionsSection;
+
   console.log('[Connections Module] All functions exposed to window');
 })();

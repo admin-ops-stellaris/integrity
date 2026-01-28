@@ -207,18 +207,27 @@ function handleSpouseSearch(event) {
 }
 
 function renderSearchResultItem(r, container) {
-  const name = formatName(r.fields);
-  const details = formatDetailsRow(r.fields); 
-  const div = document.createElement('div');
-  div.className = 'search-option';
-  div.innerHTML = `<span style="font-weight:700; display:block;">${name}</span><span style="font-size:11px; color:#666;">${details}</span>`;
-  div.onclick = function() {
-    document.getElementById('targetSpouseName').innerText = name;
-    document.getElementById('targetSpouseId').value = r.id;
-    document.getElementById('connectForm').style.display = 'none';
-    document.getElementById('confirmConnectForm').style.display = 'flex';
-  };
-  container.appendChild(div);
+  try {
+    const f = r.fields || r;
+    const name = typeof formatName === 'function' 
+      ? formatName(f) 
+      : `${f.FirstName || ''} ${f.LastName || ''}`.trim() || 'Unknown';
+    const details = typeof formatDetailsRow === 'function' 
+      ? formatDetailsRow(f) 
+      : f.EmailAddress1 || '';
+    const div = document.createElement('div');
+    div.className = 'search-option';
+    div.innerHTML = `<span style="font-weight:700; display:block;">${name}</span><span style="font-size:11px; color:#666;">${details}</span>`;
+    div.onclick = function() {
+      document.getElementById('targetSpouseName').innerText = name;
+      document.getElementById('targetSpouseId').value = r.id;
+      document.getElementById('connectForm').style.display = 'none';
+      document.getElementById('confirmConnectForm').style.display = 'flex';
+    };
+    container.appendChild(div);
+  } catch (err) {
+    console.error('[Spouse] renderSearchResultItem error:', err, r);
+  }
 }
 
 function executeSpouseChange(action) {

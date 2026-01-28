@@ -162,6 +162,9 @@ function toggleProfileView(show) {
   if(show) {
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('profileContent').style.display = 'flex';
+    // Show dossier-right when viewing a contact
+    const dossierRight = document.querySelector('.dossier-right');
+    if (dossierRight) dossierRight.style.display = '';
   } else {
     document.getElementById('emptyState').style.display = 'flex';
     document.getElementById('profileContent').style.display = 'none';
@@ -169,13 +172,9 @@ function toggleProfileView(show) {
     document.getElementById('formSubtitle').innerText = '';
     document.getElementById('contactQuickInfo').innerHTML = '';
     document.getElementById('refreshBtn').style.display = 'none'; 
-    // Reset dossier header badges
-  const statusBadge = document.getElementById('statusBadge');
-  if (statusBadge) statusBadge.style.display = 'none';
-  const marketingBadge = document.getElementById('marketingBadge');
-  if (marketingBadge) marketingBadge.style.display = 'none';
-  const dossierMeta = document.getElementById('dossierMeta');
-  if (dossierMeta) dossierMeta.innerHTML = '';
+    // Hide the entire dossier-right block (contains badges)
+  const dossierRight = document.querySelector('.dossier-right');
+  if (dossierRight) dossierRight.style.display = 'none';
     document.getElementById('duplicateWarningBox').style.display = 'none'; 
   }
 }

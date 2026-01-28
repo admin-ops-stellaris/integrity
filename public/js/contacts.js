@@ -490,7 +490,7 @@
     const marketingBadge = document.getElementById('marketingBadge');
     if (marketingBadge) {
       const isUnsubscribed = f['Unsubscribed from Marketing'] || false;
-      const marketingText = isUnsubscribed ? 'Unsubscribed' : 'Subscribed';
+      const marketingText = isUnsubscribed ? 'UNSUBSCRIBED' : 'SUBSCRIBED';
       marketingBadge.textContent = marketingText;
       marketingBadge.style.display = 'inline-block';
     }

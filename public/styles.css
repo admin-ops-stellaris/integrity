@@ -135,10 +135,10 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   .dossier-meta { font-size: 11px; color: #999; text-align: right; }
   .dossier-meta .meta-item { display: inline; }
   .dossier-meta .meta-item + .meta-item::before { content: ' · '; color: #CCC; }
-  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-badge { padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
   .status-badge.status-active { background: rgba(123, 139, 100, 0.15); color: var(--color-cedar); }
   .status-badge.status-inactive { background: rgba(0, 0, 0, 0.08); color: #888; }
-  .marketing-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 500; background: rgba(187, 153, 52, 0.12); color: #8B7028; }
+  .marketing-badge { padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 500; background: rgba(187, 153, 52, 0.12); color: #8B7028; }
   body.dark-mode .dossier-meta { color: #999; }
   body.dark-mode .dossier-meta .meta-item + .meta-item::before { color: #555; }
   

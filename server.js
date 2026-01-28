@@ -338,9 +338,15 @@ const LINK_FIELDS = {
 
 app.post("/api/updateRecord", async (req, res) => {
   try {
-    const [table, id, field, value] = req.body.args || [];
+    let [table, id, field, value] = req.body.args || [];
     const userEmail = req.session?.user?.email || null;
     const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    
+    // Strip phone numbers for Contacts table phone fields
+    const phoneFields = ['Mobile', 'Telephone1', 'Telephone2'];
+    if (table === 'Contacts' && phoneFields.includes(field) && typeof value === 'string') {
+      value = value.replace(/\D/g, '');
+    }
     
     const linkConfig = LINK_FIELDS[table]?.[field];
     if (linkConfig && userContext && Array.isArray(value)) {

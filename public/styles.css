@@ -127,8 +127,9 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   /* FORM */
   .save-row { width: 100%; display: none; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; margin-bottom: 25px; }
   
-  /* Dossier Header */
-  .dossier-header { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; }
+  /* Dossier Header - hidden by default until contact loaded */
+  .dossier-header { display: none; justify-content: space-between; align-items: flex-end; width: 100%; }
+  .dossier-header.visible { display: flex; }
   .dossier-left { flex: 1; }
   .dossier-right { text-align: right; align-items: flex-end; }
   .dossier-badges { justify-content: flex-end; }

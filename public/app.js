@@ -170,19 +170,18 @@ function updateHeaderTitle(isEditing) {
 }
 
 function toggleProfileView(show) {
+  const dossierHeader = document.querySelector('.dossier-header');
   if(show) {
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('profileContent').style.display = 'flex';
     // Show dossier-header when viewing a contact
-    const dossierHeader = document.querySelector('.dossier-header');
-    if (dossierHeader) dossierHeader.style.display = '';
+    if (dossierHeader) dossierHeader.classList.add('visible');
   } else {
     document.getElementById('emptyState').style.display = 'flex';
     document.getElementById('profileContent').style.display = 'none';
     document.getElementById('refreshBtn').style.display = 'none'; 
     // Hide the entire dossier-header block on home screen
-    const dossierHeader = document.querySelector('.dossier-header');
-    if (dossierHeader) dossierHeader.style.display = 'none';
+    if (dossierHeader) dossierHeader.classList.remove('visible');
     document.getElementById('duplicateWarningBox').style.display = 'none'; 
   }
 }

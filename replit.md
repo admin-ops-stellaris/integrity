@@ -99,8 +99,30 @@ Standardized flexbox utility classes for consistent spacing across the app (defi
 
 **Usage:** Combine stack + gap classes, e.g., `class="layout-stack-y gap-md"`
 
+## Phone Number Formatting System
+
+Australian phone numbers are formatted for readability while storing raw digits in Airtable.
+
+**Philosophy:**
+- **Display with spaces** for readability: `0412 345 678`
+- **Store without spaces** in Airtable: `0412345678`
+- **Copy to clipboard** respects user preference (with or without spaces)
+- **Input flexibility**: Users can type/paste with or without spaces
+
+**Key Functions in `shared-utils.js`:**
+| Function | Purpose |
+|----------|---------|
+| `stripPhoneForStorage(phone)` | Removes all non-digits for Airtable storage |
+| `formatPhoneForDisplay(phone)` | Formats AU mobiles as `0412 345 678`, landlines as `08 9123 4567` |
+| `getPhoneCopyPreference()` | Returns user's localStorage preference for copy format |
+| `setPhoneCopyPreference(bool)` | Sets user preference (true = with spaces) |
+| `copyPhoneToClipboard(phone, el)` | Copies to clipboard using preference, shows "Copied!" feedback |
+
+**User Preference:** Accessible via Settings cog → "Phone Number Copy Format" checkbox.
+
 ## Recent Session Changes (January 2026)
 
+- **Phone Number Formatting**: Display with spaces, store without, click-to-copy with user preference
 - **Dossier Header Architecture**: Refactored contact header to left block (breadcrumb→name→badge) + right block (status badges + created/modified metadata)
 - **3-Column CSS Grid Layout**: Profile columns use `grid-template-columns: 320px minmax(400px, 1fr) 400px` with Mobile Pulse responsive layout at 1024px (Activity > Opportunities > Relationships > Facts)
 - **Activity Stream Placeholder**: Right column (400px) reserved for future Tasks/Slack/AI integration
@@ -111,4 +133,5 @@ Standardized flexbox utility classes for consistent spacing across the app (defi
 - **Marketing Badge Normalization**: Uses "Unsubscribed from Marketing" field consistently across app.js and contacts.js
 - **Modal Search Dropdown Fix**: Changed to `position: static` with `max-height: 150px` and bottom margin to prevent covering Cancel buttons
 - **Connections Empty State**: Added "Connections" label visible when no connections exist
+- **Home Screen Cleanup**: Hide dossier-header on home screen (no "Contact" title when no contact selected)
 - **Module count**: 19 JS modules in public/js/ (addresses, appointments, connections, contacts, contacts-search, core, email, evidence, inline-editing, modal-utils, notes, opportunities, quick-view, router, settings, shared-state, shared-utils, spouse, ui-utils)

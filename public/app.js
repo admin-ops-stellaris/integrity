@@ -65,11 +65,40 @@ window.onload = function() {
   initSmartTimeListener();
   initSmartFieldEnterGuard();
   initPhoneClickHandler();
+  initHeaderButtons();
   
   if (window.IntegrityRouter) {
     window.IntegrityRouter.init();
   }
 };
+
+// Initialize header button click handlers (more reliable than inline onclick)
+function initHeaderButtons() {
+  const settingsCog = document.querySelector('.settings-cog');
+  const shortcutsHelp = document.querySelector('.shortcuts-help');
+  
+  if (settingsCog) {
+    settingsCog.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[Header] Settings cog clicked');
+      if (typeof openGlobalSettings === 'function') {
+        openGlobalSettings();
+      } else {
+        console.error('openGlobalSettings not defined');
+      }
+    });
+  }
+  
+  if (shortcutsHelp) {
+    shortcutsHelp.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[Header] Shortcuts help clicked');
+      showShortcutsHelp();
+    });
+  }
+}
 
 // Phone number click-to-copy handler (event delegation)
 function initPhoneClickHandler() {

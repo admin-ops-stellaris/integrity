@@ -40,20 +40,34 @@ function renderConnectionsList() {
   const state = window.IntegrityState;
   if (!state) return;
   
-  const container = document.getElementById('connectionsList');
-  if (!container) return;
+  const leftCol = document.getElementById('connectionsListLeft');
+  const rightCol = document.getElementById('connectionsListRight');
+  const accordionWrapper = document.getElementById('connectionsAccordionWrapper');
+  const noAccordionAdd = document.getElementById('connectionsNoAccordionAdd');
+  
+  if (!leftCol || !rightCol) {
+    console.error('[Connections] Connection list columns not found');
+    return;
+  }
   
   const connections = state.allConnectionsData;
   
+  leftCol.innerHTML = '';
+  rightCol.innerHTML = '';
+  
   if (!connections || connections.length === 0) {
-    container.innerHTML = '<div style="font-size: 11px; color: #999; font-style: italic;">No connections</div>';
+    leftCol.innerHTML = '<li style="font-size: 11px; color: #999; font-style: italic;">No connections</li>';
+    if (accordionWrapper) accordionWrapper.style.display = 'none';
+    if (noAccordionAdd) noAccordionAdd.style.display = 'flex';
     return;
   }
   
   const activeConnections = connections.filter(c => c.fields && c.fields.Status === 'Active');
   
   if (activeConnections.length === 0) {
-    container.innerHTML = '<div style="font-size: 11px; color: #999; font-style: italic;">No active connections</div>';
+    leftCol.innerHTML = '<li style="font-size: 11px; color: #999; font-style: italic;">No active connections</li>';
+    if (accordionWrapper) accordionWrapper.style.display = 'none';
+    if (noAccordionAdd) noAccordionAdd.style.display = 'flex';
     return;
   }
   
@@ -67,12 +81,10 @@ function renderConnectionsList() {
     return aName.localeCompare(bName);
   });
   
-  const initialDisplay = state.connectionsExpanded ? activeConnections : activeConnections.slice(0, 3);
-  const hasMore = activeConnections.length > 3;
+  const initialDisplay = state.connectionsExpanded ? activeConnections : activeConnections.slice(0, 6);
+  const hasMore = activeConnections.length > 6;
   
-  container.innerHTML = '';
-  
-  initialDisplay.forEach(conn => {
+  initialDisplay.forEach((conn, index) => {
     const f = conn.fields;
     const relatedName = f['Related Contact Name']?.[0] || 'Unknown';
     const relatedId = f['Related Contact']?.[0] || null;
@@ -80,9 +92,9 @@ function renderConnectionsList() {
     const notes = f.Notes || '';
     const roleClass = getRoleBadgeClass(role);
     
-    const div = document.createElement('div');
-    div.className = 'connection-item';
-    div.innerHTML = `
+    const li = document.createElement('li');
+    li.className = 'connection-item';
+    li.innerHTML = `
       <div class="connection-item-main">
         <span class="connection-role-badge ${roleClass}">${role}</span>
         <span class="connection-name" data-contact-id="${relatedId || ''}">${relatedName}</span>
@@ -91,37 +103,47 @@ function renderConnectionsList() {
       <span class="connection-deactivate" onclick="window.openDeactivateConnectionModal('${conn.id}', '${escapeHtmlForAttr(relatedName)}', '${escapeHtmlForAttr(role)}')" title="Deactivate connection">×</span>
     `;
     
-    const nameEl = div.querySelector('.connection-name');
+    const nameEl = li.querySelector('.connection-name');
     if (nameEl && relatedId && typeof attachQuickViewToElement === 'function') {
       attachQuickViewToElement(nameEl, relatedId);
     }
     
-    container.appendChild(div);
+    if (index % 2 === 0) {
+      leftCol.appendChild(li);
+    } else {
+      rightCol.appendChild(li);
+    }
   });
   
   if (hasMore) {
-    const toggleDiv = document.createElement('div');
-    toggleDiv.className = 'connections-toggle';
+    const toggleLi = document.createElement('li');
+    toggleLi.className = 'connections-toggle';
     if (state.connectionsExpanded) {
-      toggleDiv.innerHTML = '<span class="connections-toggle-link" onclick="window.collapseConnections()">Show less</span>';
+      toggleLi.innerHTML = '<span class="connections-toggle-link" onclick="window.collapseConnections()">Show less</span>';
     } else {
-      const remaining = activeConnections.length - 3;
-      toggleDiv.innerHTML = `<span class="connections-toggle-link" onclick="window.expandConnections()">+${remaining} more</span>`;
+      const remaining = activeConnections.length - 6;
+      toggleLi.innerHTML = `<span class="connections-toggle-link" onclick="window.expandConnections()">+${remaining} more</span>`;
     }
-    container.appendChild(toggleDiv);
+    leftCol.appendChild(toggleLi);
   }
+  
+  if (accordionWrapper) accordionWrapper.style.display = activeConnections.length > 3 ? 'block' : 'none';
+  if (noAccordionAdd) noAccordionAdd.style.display = activeConnections.length <= 3 ? 'flex' : 'none';
 }
 
 function loadConnections(contactId) {
   console.log('[Connections] loadConnections called with contactId:', contactId);
   const state = window.IntegrityState;
-  const container = document.getElementById('connectionsList');
-  if (!container) {
-    console.error('[Connections] connectionsList container not found!');
+  const leftCol = document.getElementById('connectionsListLeft');
+  const rightCol = document.getElementById('connectionsListRight');
+  
+  if (!leftCol || !rightCol) {
+    console.error('[Connections] Connection list columns not found!');
     return;
   }
   
-  container.innerHTML = '<div style="font-size: 11px; color: #999; font-style: italic;">Loading connections...</div>';
+  leftCol.innerHTML = '<li style="font-size: 11px; color: #999; font-style: italic;">Loading connections...</li>';
+  rightCol.innerHTML = '';
   
   google.script.run.withSuccessHandler(function(connections) {
     console.log('[Connections] getConnectionsForContact returned:', connections ? connections.length : 0, 'connections');
@@ -129,7 +151,7 @@ function loadConnections(contactId) {
     renderConnectionsList();
   }).withFailureHandler(function(err) {
     console.error('[Connections] getConnectionsForContact error:', err);
-    container.innerHTML = '<div style="font-size: 11px; color: #A00;">Error loading connections</div>';
+    leftCol.innerHTML = '<li style="font-size: 11px; color: #A00;">Error loading connections</li>';
   }).getConnectionsForContact(contactId);
 }
 

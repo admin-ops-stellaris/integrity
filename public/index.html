@@ -48,7 +48,10 @@
           <div class="dossier-header">
             <!-- Left Block: Breadcrumb + Name + Badge -->
             <div class="dossier-left layout-stack-y gap-xs">
-              <div id="breadcrumb-bar"></div>
+              <div class="breadcrumb-row layout-stack-x" style="justify-content:space-between; width:100%;">
+                <div id="breadcrumb-bar"></div>
+                <button type="button" class="new-contact-btn" onclick="resetForm()">+ NEW CONTACT</button>
+              </div>
               <div class="layout-stack-x gap-xs">
                 <h2 id="formTitle">Contact</h2>
                 <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
@@ -70,7 +73,6 @@
                     <button type="button" id="undoDeceasedBtn" onclick="undoDeceased()" style="display:none;">Undo Deceased Status</button>
                   </div>
                 </div>
-                <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>
               </div>
               <div id="dossierMeta" class="dossier-meta"></div>
             </div>

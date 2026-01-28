@@ -381,26 +381,24 @@ function toggleContactStatus() {
     : 'Mark this contact as Active again?';
   
   showCustomConfirm(confirmMsg, function() {
-    fetch('/api/contacts/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recordId: currentContactRecord.id, fields: { Status: newStatus } })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        currentContactRecord.fields.Status = newStatus;
-        const badge = document.getElementById('statusBadge');
-        if (badge) {
-          badge.textContent = newStatus;
-          badge.className = 'status-badge clickable-badge ' + (newStatus === 'Active' ? 'status-active' : 'status-inactive');
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result && result.success) {
+          currentContactRecord.fields.Status = newStatus;
+          const badge = document.getElementById('statusBadge');
+          if (badge) {
+            badge.textContent = newStatus;
+            badge.className = 'status-badge clickable-badge ' + (newStatus === 'Active' ? 'status-active' : 'status-inactive');
+          }
+          if (typeof refreshContactList === 'function') refreshContactList();
+        } else {
+          showAlert('Error', 'Failed to update status', 'error');
         }
-        if (typeof refreshContactList === 'function') refreshContactList();
-      } else {
-        showAlert('Error', 'Failed to update status: ' + (data.error || 'Unknown error'), 'error');
-      }
-    })
-    .catch(err => showAlert('Error', 'Error updating status: ' + err.message, 'error'));
+      })
+      .withFailureHandler(function(err) {
+        showAlert('Error', 'Error updating status: ' + err.message, 'error');
+      })
+      .updateRecord('Contacts', currentContactRecord.id, 'Status', newStatus);
   });
 }
 
@@ -1104,7 +1102,7 @@ function renderContactMetaBar(f) {
   const marketingBadge = document.getElementById('marketingBadge');
   if (marketingBadge) {
     const isUnsubscribed = f["Unsubscribed from Marketing"] || false;
-    const marketingText = isUnsubscribed ? "Unsubscribed" : "Subscribed";
+    const marketingText = isUnsubscribed ? "UNSUBSCRIBED" : "SUBSCRIBED";
     marketingBadge.textContent = marketingText;
     marketingBadge.style.display = 'inline-block';
   }

@@ -706,6 +706,16 @@
               </div>
               <button type="button" onclick="closeEmailSettings(); openEvidenceTemplatesModal();" style="padding:8px 16px; background:var(--color-cedar); color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:500;">Manage Evidence</button>
             </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; background:#f0f8f0; border-radius:6px; margin-bottom:15px; border:1px solid var(--color-cedar);">
+              <div>
+                <div style="font-weight:600; font-size:13px;">Phone Number Copy Format</div>
+                <div style="font-size:11px; color:#666;">When you click a phone number to copy it</div>
+              </div>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px;">
+                <input type="checkbox" id="settingPhoneCopySpaces" onchange="window.setPhoneCopyPreference(this.checked)">
+                <span>Include spaces</span>
+              </label>
+            </div>
             <div class="email-settings-form">
               <div class="setting-row">
                 <label>Office Map Link</label>

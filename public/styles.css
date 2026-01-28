@@ -638,6 +638,8 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   body.dark-mode .meta-status.status-inactive { background: rgba(255, 255, 255, 0.1); color: #999; }
   body.dark-mode .contact-meta-bar { background: #2a2a2a; border-color: #444; }
   body.dark-mode .meta-item { color: #AAA; }
+  .phone-copyable { cursor: pointer; transition: color 0.15s ease; }
+  .phone-copyable:hover { color: var(--color-cedar); }
   body.dark-mode .meta-label { color: #777; }
   body.dark-mode .meta-value { color: #DDD; }
   body.dark-mode .meta-divider { background: #444; }

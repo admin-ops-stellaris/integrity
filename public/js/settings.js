@@ -111,6 +111,11 @@
   }
 
   function openGlobalSettings() {
+    // Initialize phone copy preference checkbox
+    const phoneCopyCheckbox = document.getElementById('settingPhoneCopySpaces');
+    if (phoneCopyCheckbox) {
+      phoneCopyCheckbox.checked = window.getPhoneCopyPreference();
+    }
     openEmailSettings();
   }
 

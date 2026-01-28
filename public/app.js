@@ -64,11 +64,22 @@ window.onload = function() {
   initSmartDateListener();
   initSmartTimeListener();
   initSmartFieldEnterGuard();
+  initPhoneClickHandler();
   
   if (window.IntegrityRouter) {
     window.IntegrityRouter.init();
   }
 };
+
+// Phone number click-to-copy handler (event delegation)
+function initPhoneClickHandler() {
+  document.addEventListener('click', function(e) {
+    const phoneEl = e.target.closest('.phone-copyable');
+    if (phoneEl && phoneEl.dataset.phone) {
+      window.copyPhoneToClipboard(phoneEl.dataset.phone, phoneEl);
+    }
+  });
+}
 
 // --- KEYBOARD SHORTCUTS ---
 function initKeyboardShortcuts() {
@@ -213,7 +224,7 @@ function selectContact(record) {
   document.getElementById('doesNotLike').value = f["Does Not Like Being Called"] || "";
   document.getElementById('mothersMaidenName').value = f["Mother's Maiden Name"] || "";
   document.getElementById('previousNames').value = f["Previous Names"] || "";
-  document.getElementById('mobilePhone').value = f.Mobile || "";
+  document.getElementById('mobilePhone').value = window.formatPhoneForDisplay(f.Mobile) || "";
   
   // Email fields
   document.getElementById('email1').value = f.EmailAddress1 || "";
@@ -266,8 +277,12 @@ function selectContact(record) {
   
   // Quick info line (mobile & email) - uses same styling as Created/Modified
   let quickInfoHtml = '';
-  if (f.Mobile) quickInfoHtml += `<span class="meta-item">${f.Mobile}</span>`;
-  if (f.EmailAddress1) quickInfoHtml += `<span class="meta-item">${f.EmailAddress1}</span>`;
+  if (f.Mobile) {
+    const formattedPhone = window.formatPhoneForDisplay(f.Mobile);
+    const rawPhone = window.stripPhoneForStorage(f.Mobile);
+    quickInfoHtml += `<span class="meta-item phone-copyable" data-phone="${escapeHtml(rawPhone)}" title="Click to copy">${escapeHtml(formattedPhone)}</span>`;
+  }
+  if (f.EmailAddress1) quickInfoHtml += `<span class="meta-item">${escapeHtml(f.EmailAddress1)}</span>`;
   document.getElementById('contactQuickInfo').innerHTML = quickInfoHtml;
   
   // Set title with tenure info
@@ -496,24 +511,7 @@ function executeDeleteContact() {
   });
 }
 
-function openModal(modalId) {
-  const modal = document.getElementById(modalId);
-  modal.classList.add('visible');
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      modal.classList.add('showing');
-    });
-  });
-}
-
-function closeModal(modalId, callback) {
-  const modal = document.getElementById(modalId);
-  modal.classList.remove('showing');
-  setTimeout(() => {
-    modal.classList.remove('visible');
-    if (callback) callback();
-  }, 250);
-}
+// openModal and closeModal are defined in modal-utils.js
 
 function showAlert(title, message, type) {
   const modal = document.getElementById('alertModal');
@@ -1115,7 +1113,7 @@ function handleFormSubmit(formObject) {
     lastName: formObject.lastName.value,
     preferredName: formObject.preferredName.value,
     doesNotLike: formObject.doesNotLike.value,
-    mobilePhone: formObject.mobilePhone.value,
+    mobilePhone: window.stripPhoneForStorage(formObject.mobilePhone.value),
     email1: formObject.email1.value,
     email1Comment: formObject.email1Comment.value,
     email2: formObject.email2.value,

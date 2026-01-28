@@ -118,8 +118,7 @@ function renderConnectionsList() {
   
   if (hasMore) {
     const toggleLi = document.createElement('li');
-    toggleLi.className = 'connections-toggle';
-    toggleLi.style.paddingTop = '6px';
+    toggleLi.className = 'connections-toggle gap-xs';
     if (state.connectionsExpanded) {
       toggleLi.innerHTML = '<span class="expand-link" onclick="window.collapseConnections()">Show less</span>';
     } else {
@@ -167,6 +166,16 @@ function collapseConnections() {
   const state = window.IntegrityState;
   if (state) state.connectionsExpanded = false;
   renderConnectionsList();
+}
+
+function toggleConnectionsAccordion() {
+  const content = document.getElementById('connectionsContent');
+  const arrow = document.getElementById('connectionsAccordionArrow');
+  if (content && arrow) {
+    const isExpanded = arrow.classList.contains('expanded');
+    content.style.display = isExpanded ? 'none' : 'flex';
+    arrow.classList.toggle('expanded');
+  }
 }
 
 function openDeactivateConnectionModal(connectionId, contactName, role) {
@@ -411,6 +420,7 @@ window.loadConnections = loadConnections;
 window.renderConnectionsSection = loadConnections;
 window.expandConnections = expandConnections;
 window.collapseConnections = collapseConnections;
+window.toggleConnectionsAccordion = toggleConnectionsAccordion;
 window.openDeactivateConnectionModal = openDeactivateConnectionModal;
 window.closeDeactivateConnectionModal = closeDeactivateConnectionModal;
 window.executeDeactivateConnection = executeDeactivateConnection;

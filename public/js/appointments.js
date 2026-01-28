@@ -715,17 +715,17 @@
   }
   
   function deleteAppointment(appointmentId, opportunityId) {
-    if (!confirm('Are you sure you want to delete this appointment?')) return;
-    
-    google.script.run
-      .withSuccessHandler(function() {
-        loadAppointmentsForOpportunity(opportunityId);
-      })
-      .withFailureHandler(function(err) {
-        console.error('Error deleting appointment:', err);
-        alert('Error deleting appointment: ' + (err.message || err));
-      })
-      .deleteAppointment(appointmentId);
+    showCustomConfirm('Are you sure you want to delete this appointment?', function() {
+      google.script.run
+        .withSuccessHandler(function() {
+          loadAppointmentsForOpportunity(opportunityId);
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error deleting appointment:', err);
+          showAlert('Error', 'Error deleting appointment: ' + (err.message || err), 'error');
+        })
+        .deleteAppointment(appointmentId);
+    });
   }
   
   // Expose functions to window for onclick handlers and opportunities.js usage

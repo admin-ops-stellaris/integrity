@@ -774,9 +774,9 @@ ${evidenceListHtml}`;
   };
   
   window.resetEmailToTemplate = function() {
-    if (confirm('Reset email to the original template? Your edits will be lost.')) {
+    showCustomConfirm('Reset email to the original template? Your edits will be lost.', function() {
       initEmailEditorIframe(window.pendingEvidenceEmailBodyBase || '');
-    }
+    });
   };
   
   function getEmailEditorContent() {

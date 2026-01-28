@@ -373,30 +373,28 @@ function toggleContactStatus() {
     ? 'Mark this contact as Inactive? They will be hidden from the default contact list.'
     : 'Mark this contact as Active again?';
   
-  if (!confirm(confirmMsg)) return;
-  
-  fetch('/api/contacts/update', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ recordId: currentContactRecord.id, fields: { Status: newStatus } })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) {
-      currentContactRecord.fields.Status = newStatus;
-      // Update badge
-      const badge = document.getElementById('statusBadge');
-      if (badge) {
-        badge.textContent = newStatus;
-        badge.className = 'status-badge clickable-badge ' + (newStatus === 'Active' ? 'status-active' : 'status-inactive');
+  showCustomConfirm(confirmMsg, function() {
+    fetch('/api/contacts/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recordId: currentContactRecord.id, fields: { Status: newStatus } })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        currentContactRecord.fields.Status = newStatus;
+        const badge = document.getElementById('statusBadge');
+        if (badge) {
+          badge.textContent = newStatus;
+          badge.className = 'status-badge clickable-badge ' + (newStatus === 'Active' ? 'status-active' : 'status-inactive');
+        }
+        if (typeof refreshContactList === 'function') refreshContactList();
+      } else {
+        showAlert('Error', 'Failed to update status: ' + (data.error || 'Unknown error'), 'error');
       }
-      // Refresh list if needed
-      if (typeof refreshContactList === 'function') refreshContactList();
-    } else {
-      alert('Failed to update status: ' + (data.error || 'Unknown error'));
-    }
-  })
-  .catch(err => alert('Error updating status: ' + err.message));
+    })
+    .catch(err => showAlert('Error', 'Error updating status: ' + err.message, 'error'));
+  });
 }
 
 function openUnsubscribeEdit() {
@@ -841,26 +839,25 @@ function addPendingLink(key, newLink) {
       }
       // 3. Enforce Mutually Exclusive Logic WITH PROMPT
       const exclusiveKeys = ['Primary Applicant', 'Applicants', 'Guarantors'];
-      let conflictFound = false;
+      let conflictKey = null;
 
-      exclusiveKeys.forEach(otherKey => {
-         if(otherKey === key) return;
+      for (const otherKey of exclusiveKeys) {
+         if(otherKey === key) continue;
          const otherLinks = currentPanelData[otherKey] || [];
          if(otherLinks.some(l => l.id === newLink.id)) {
-            conflictFound = true;
-            if(confirm(`${newLink.name} is currently a '${otherKey}'.\n\nDo you want to move them to '${key}'?`)) {
-               if(!pendingRemovals[otherKey]) pendingRemovals[otherKey] = [];
-               pendingRemovals[otherKey].push(newLink.id);
-               pendingLinkedEdits[key].push(newLink);
-            } else {
-               return; 
-            }
+            conflictKey = otherKey;
+            break;
          }
-      });
+      }
 
-      if(conflictFound) {
-         renderLinkedEditorState(key);
-         return; 
+      if(conflictKey) {
+         showCustomConfirm(`${newLink.name} is currently a '${conflictKey}'.\n\nDo you want to move them to '${key}'?`, function() {
+            if(!pendingRemovals[conflictKey]) pendingRemovals[conflictKey] = [];
+            pendingRemovals[conflictKey].push(newLink.id);
+            pendingLinkedEdits[key].push(newLink);
+            renderLinkedEditorState(key);
+         });
+         return;
       }
 
       pendingLinkedEdits[key].push(newLink);

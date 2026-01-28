@@ -434,16 +434,16 @@ function saveUnsubscribePreference() {
     
     google.script.run
       .withSuccessHandler(function(result) {
-        if (result && result.fields) {
-          currentContactRecord = result;
-          updateUnsubscribeDisplay(result.fields["Unsubscribed from Marketing"] || false);
+        if (result && result.success) {
+          currentContactRecord.fields["Unsubscribed from Marketing"] = newValue;
+          updateUnsubscribeDisplay(newValue);
           showAlert('Success', 'Marketing preference updated.', 'success');
         }
       })
       .withFailureHandler(function(err) {
         showAlert('Error', err.message, 'error');
       })
-      .updateContact(currentContactRecord.id, "Unsubscribed from Marketing", newValue);
+      .updateRecord('Contacts', currentContactRecord.id, "Unsubscribed from Marketing", newValue);
   });
 }
 

@@ -65,14 +65,6 @@ window.onload = function() {
   initSmartTimeListener();
   initSmartFieldEnterGuard();
   
-  // Hide badges on initial load (before any contact is selected)
-  const statusBadge = document.getElementById('statusBadge');
-  if (statusBadge) statusBadge.style.display = 'none';
-  const marketingBadge = document.getElementById('marketingBadge');
-  if (marketingBadge) marketingBadge.style.display = 'none';
-  const actionsMenu = document.getElementById('actionsMenuWrapper');
-  if (actionsMenu) actionsMenu.style.display = 'none';
-  
   if (window.IntegrityRouter) {
     window.IntegrityRouter.init();
   }

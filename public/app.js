@@ -167,6 +167,7 @@ function toggleProfileView(show) {
     document.getElementById('profileContent').style.display = 'none';
     document.getElementById('formTitle').innerText = "Contact";
     document.getElementById('formSubtitle').innerText = '';
+    document.getElementById('contactQuickInfo').textContent = '';
     document.getElementById('refreshBtn').style.display = 'none'; 
     // Reset dossier header badges
   const statusBadge = document.getElementById('statusBadge');
@@ -266,6 +267,12 @@ function selectContact(record) {
   }
 
   document.getElementById('formSubtitle').innerHTML = formatSubtitle(f);
+  
+  // Quick info line (mobile & email)
+  const quickInfoParts = [];
+  if (f.Mobile) quickInfoParts.push(f.Mobile);
+  if (f.EmailAddress1) quickInfoParts.push(f.EmailAddress1);
+  document.getElementById('contactQuickInfo').textContent = quickInfoParts.join('  ·  ');
   
   // Set title with tenure info
   const fullName = formatName(f);
@@ -962,6 +969,7 @@ function resetForm() {
   }
   document.getElementById('formTitle').innerText = "New Contact";
   document.getElementById('formSubtitle').innerText = '';
+  document.getElementById('contactQuickInfo').textContent = '';
   document.getElementById('submitBtn').innerText = "Create Contact";
   document.getElementById('cancelBtn').style.display = 'inline-block';
   document.getElementById('editBtn').style.visibility = 'hidden';

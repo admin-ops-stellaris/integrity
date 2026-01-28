@@ -119,11 +119,12 @@ function renderConnectionsList() {
   if (hasMore) {
     const toggleLi = document.createElement('li');
     toggleLi.className = 'connections-toggle';
+    toggleLi.style.paddingTop = '6px';
     if (state.connectionsExpanded) {
-      toggleLi.innerHTML = '<span class="connections-toggle-link" onclick="window.collapseConnections()">Show less</span>';
+      toggleLi.innerHTML = '<span class="expand-link" onclick="window.collapseConnections()">Show less</span>';
     } else {
       const remaining = activeConnections.length - 6;
-      toggleLi.innerHTML = `<span class="connections-toggle-link" onclick="window.expandConnections()">+${remaining} more</span>`;
+      toggleLi.innerHTML = `<span class="expand-link" onclick="window.expandConnections()">+${remaining} more</span>`;
     }
     leftCol.appendChild(toggleLi);
   }

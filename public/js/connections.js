@@ -113,15 +113,23 @@ function renderConnectionsList() {
 }
 
 function loadConnections(contactId) {
+  console.log('[Connections] loadConnections called with contactId:', contactId);
   const state = window.IntegrityState;
   const container = document.getElementById('connectionsList');
-  if (!container) return;
+  if (!container) {
+    console.error('[Connections] connectionsList container not found!');
+    return;
+  }
   
   container.innerHTML = '<div style="font-size: 11px; color: #999; font-style: italic;">Loading connections...</div>';
   
   google.script.run.withSuccessHandler(function(connections) {
+    console.log('[Connections] getConnectionsForContact returned:', connections ? connections.length : 0, 'connections');
     if (state) state.allConnectionsData = connections || [];
     renderConnectionsList();
+  }).withFailureHandler(function(err) {
+    console.error('[Connections] getConnectionsForContact error:', err);
+    container.innerHTML = '<div style="font-size: 11px; color: #A00;">Error loading connections</div>';
   }).getConnectionsForContact(contactId);
 }
 

@@ -69,6 +69,9 @@
     if (modal) modal.style.display = 'none';
   };
   
+  // Alias for consistency - use this name going forward
+  window.showCustomConfirm = window.showConfirmModal;
+  
   // ============================================================
   // Alert Modal
   // ============================================================

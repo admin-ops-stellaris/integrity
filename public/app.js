@@ -424,30 +424,27 @@ function saveUnsubscribePreference() {
   // Different warnings for subscribe vs unsubscribe
   let confirmMsg;
   if (newValue) {
-    // Unsubscribing someone who is subscribed
     confirmMsg = "If you proceed, this person won't receive any marketing communications from us again. Are you sure you want that?";
   } else {
-    // Subscribing someone who is unsubscribed - SPAM Act warning
     confirmMsg = "Are you sure you want to change this client's marketing preferences? If they expressed an opinion and you're going against that, it's a breach of the SPAM Act among other things.";
   }
-  if (!confirm(confirmMsg)) {
-    return;
-  }
   
-  closeUnsubscribeModal();
-  
-  google.script.run
-    .withSuccessHandler(function(result) {
-      if (result && result.fields) {
-        currentContactRecord = result;
-        updateUnsubscribeDisplay(result.fields["Unsubscribed from Marketing"] || false);
-        showAlert('Success', 'Marketing preference updated.', 'success');
-      }
-    })
-    .withFailureHandler(function(err) {
-      showAlert('Error', err.message, 'error');
-    })
-    .updateContact(currentContactRecord.id, "Unsubscribed from Marketing", newValue);
+  showCustomConfirm(confirmMsg, function() {
+    closeUnsubscribeModal();
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result && result.fields) {
+          currentContactRecord = result;
+          updateUnsubscribeDisplay(result.fields["Unsubscribed from Marketing"] || false);
+          showAlert('Success', 'Marketing preference updated.', 'success');
+        }
+      })
+      .withFailureHandler(function(err) {
+        showAlert('Error', err.message, 'error');
+      })
+      .updateContact(currentContactRecord.id, "Unsubscribed from Marketing", newValue);
+  });
 }
 
 function refreshCurrentContact() {

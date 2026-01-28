@@ -1155,7 +1155,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   .modal-sidebar { width: 100px; background: var(--color-trail); display: flex; align-items: center; justify-content: center; flex-direction: column; }
   .modal-sidebar img { width: 48px; height: auto; opacity: 0.9; }
   .modal-body { flex: 1; padding: 30px; display: flex; flex-direction: column; position: relative; min-width: 0; overflow: hidden; }
-  .modal .search-dropdown { border: 1px solid #DDD; max-height: 150px; overflow-y: auto; margin-top: 5px; display: none; border-radius: 4px; }
+  .modal .search-dropdown { position: static; border: 1px solid #DDD; max-height: 200px; overflow-y: auto; margin-top: 5px; display: none; border-radius: 4px; background: #FFF; }
   .search-option { padding: 10px; cursor: pointer; border-bottom: 1px solid #EEE; }
   .search-option:hover { background-color: #F5F5F5; }
   .btn-cancel { background: transparent; border: 1px solid #CCC; color: #666; width: auto; margin: 0; font-size: 11px; padding: 8px 12px; }

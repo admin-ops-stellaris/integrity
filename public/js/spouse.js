@@ -148,13 +148,17 @@ function loadRecentContactsForModal() {
   google.script.run.withSuccessHandler(function(records) {
     console.log('[Spouse] getRecentContacts returned:', records ? records.length : 0, 'records');
     resultsDiv.innerHTML = '<div style="padding:5px 10px; font-size:10px; color:#999; text-transform:uppercase; font-weight:700;">Recently Modified</div>';
+    resultsDiv.style.display = 'block';
     if (!records || records.length === 0) { 
       resultsDiv.innerHTML += '<div style="padding:8px; font-style:italic; color:#999;">No recent contacts</div>'; 
     } else {
+      let addedCount = 0;
       records.forEach(r => {
         if(state?.currentContactRecord && r.id === state.currentContactRecord.id) return;
         renderSearchResultItem(r, resultsDiv);
+        addedCount++;
       });
+      console.log('[Spouse] Added', addedCount, 'items to results div, display:', resultsDiv.style.display, 'children:', resultsDiv.childElementCount);
     }
   }).withFailureHandler(function(err) {
     console.error('[Spouse] getRecentContacts error:', err);

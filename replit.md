@@ -109,4 +109,6 @@ Standardized flexbox utility classes for consistent spacing across the app (defi
 - **Breadcrumb Navigation**: Hierarchy-based eyebrow navigation (Contacts > Name > Opportunity), now inside dossier left block
 - **Centralized timezone handling**: Created `parseDateForEditor()` for consistent UTC→Perth conversion
 - **Marketing Badge Normalization**: Uses "Unsubscribed from Marketing" field consistently across app.js and contacts.js
+- **Modal Search Dropdown Fix**: Changed to `position: static` with `max-height: 150px` and bottom margin to prevent covering Cancel buttons
+- **Connections Empty State**: Added "Connections" label visible when no connections exist
 - **Module count**: 17 IIFE modules (no change)

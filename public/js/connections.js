@@ -62,7 +62,9 @@ function renderConnectionsList() {
     return;
   }
   
-  const activeConnections = connections.filter(c => c.fields && c.fields.Status === 'Active');
+  // Server already filters to active, but check status field just in case
+  // Data is flattened: { id, status, myRole, otherContactName, ... }
+  const activeConnections = connections.filter(c => c.status === 'Active' || !c.status);
   
   if (activeConnections.length === 0) {
     leftCol.innerHTML = '<li style="font-size: 11px; color: #999; font-style: italic;">No active connections</li>';
@@ -73,11 +75,11 @@ function renderConnectionsList() {
   
   activeConnections.sort((a, b) => {
     const roleOrder = { 'Spouse': 0, 'Partner': 1, 'Child': 2, 'Parent': 3, 'Sibling': 4 };
-    const aOrder = roleOrder[a.fields.Role] ?? 99;
-    const bOrder = roleOrder[b.fields.Role] ?? 99;
+    const aOrder = roleOrder[a.myRole] ?? 99;
+    const bOrder = roleOrder[b.myRole] ?? 99;
     if (aOrder !== bOrder) return aOrder - bOrder;
-    const aName = a.fields['Related Contact Name']?.[0] || '';
-    const bName = b.fields['Related Contact Name']?.[0] || '';
+    const aName = a.otherContactName || '';
+    const bName = b.otherContactName || '';
     return aName.localeCompare(bName);
   });
   
@@ -85,11 +87,10 @@ function renderConnectionsList() {
   const hasMore = activeConnections.length > 6;
   
   initialDisplay.forEach((conn, index) => {
-    const f = conn.fields;
-    const relatedName = f['Related Contact Name']?.[0] || 'Unknown';
-    const relatedId = f['Related Contact']?.[0] || null;
-    const role = f.Role || 'Connection';
-    const notes = f.Notes || '';
+    const relatedName = conn.otherContactName || 'Unknown';
+    const relatedId = conn.otherContactId || null;
+    const role = conn.myRole || 'Connection';
+    const notes = conn.note || '';
     const roleClass = getRoleBadgeClass(role);
     
     const li = document.createElement('li');

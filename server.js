@@ -294,6 +294,18 @@ app.post("/api/updateUserSignature", async (req, res) => {
   }
 });
 
+app.post("/api/updateUserPreference", async (req, res) => {
+  try {
+    const email = req.session?.user?.email || "admin.ops@stellaris.loans";
+    const [preferenceName, value] = req.body.args || [];
+    const result = await airtable.updateUserPreference(email, preferenceName, value);
+    res.json(result);
+  } catch (err) {
+    console.error("updateUserPreference error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/getRecentContacts", async (req, res) => {
   try {
     const statusFilter = req.body.args?.[0] || null;

@@ -114,11 +114,26 @@ Australian phone numbers are formatted for readability while storing raw digits 
 |----------|---------|
 | `stripPhoneForStorage(phone)` | Removes all non-digits for Airtable storage |
 | `formatPhoneForDisplay(phone)` | Formats AU mobiles as `0412 345 678`, landlines as `08 9123 4567` |
-| `getPhoneCopyPreference()` | Returns user's localStorage preference for copy format |
-| `setPhoneCopyPreference(bool)` | Sets user preference (true = with spaces) |
+| `getPhoneCopyPreference()` | Returns user's Airtable preference for copy format |
+| `setPhoneCopyPreference(bool)` | Saves user preference to Airtable (true = with spaces) |
 | `copyPhoneToClipboard(phone, el)` | Copies to clipboard using preference, shows "Copied!" feedback |
 
-**User Preference:** Accessible via Settings cog → "Phone Number Copy Format" checkbox.
+**User Preference:** Accessible via Settings cog → "Phone Number Copy Format" checkbox. Stored in Airtable Users table.
+
+## User Preferences Storage
+
+All user preferences are stored in the **Users table in Airtable** (not localStorage) to ensure they sync across devices and persist through cache clears.
+
+**Current User Preference Fields:**
+| Field Name | Type | Purpose |
+|------------|------|---------|
+| `Phone Copy With Spaces` | Checkbox | When checked, phone numbers copy with spaces |
+
+**Adding New User Preferences:**
+1. Add field to Users table in Airtable
+2. Add mapping in `updateUserPreference()` fieldMap in `services/airtable.js`
+3. Include field in `getUserSignature()` and `getUserProfileByEmail()` return objects
+4. Access via `window.currentUserProfile.[preferenceName]` on frontend
 
 ## Recent Session Changes (January 2026)
 
@@ -136,4 +151,5 @@ Australian phone numbers are formatted for readability while storing raw digits 
 - **Home Screen Cleanup**: Hide dossier-header on home screen (no "Contact" title when no contact selected)
 - **Duplicate Warning System**: Manual warnings displayed in left column with EDIT/HIDE links, Add/Delete options in ACTIONS menu
 - **Duplicate Detection**: Auto-checks for duplicates on new contact creation (mobile, email, name matching), shows modal with potential matches and "Create Anyway" option
+- **User Preferences in Airtable**: Migrated user preferences (e.g., phone copy format) from localStorage to Airtable Users table for cross-device sync
 - **Module count**: 19 JS modules in public/js/ (addresses, appointments, connections, contacts, contacts-search, core, email, evidence, inline-editing, modal-utils, notes, opportunities, quick-view, router, settings, shared-state, shared-utils, spouse, ui-utils)

@@ -690,19 +690,31 @@
   };
   
   /**
-   * Get user preference for phone copy format
+   * Get user preference for phone copy format (from cached user profile)
    * @returns {boolean} true = copy with spaces, false = copy without spaces
    */
   window.getPhoneCopyPreference = function() {
-    return localStorage.getItem('integrity-phone-copy-spaces') === 'true';
+    if (window.currentUserProfile) {
+      return window.currentUserProfile.phoneCopyWithSpaces === true;
+    }
+    return false;
   };
   
   /**
-   * Set user preference for phone copy format
+   * Set user preference for phone copy format (saves to Airtable)
    * @param {boolean} withSpaces - true = copy with spaces
    */
-  window.setPhoneCopyPreference = function(withSpaces) {
-    localStorage.setItem('integrity-phone-copy-spaces', withSpaces ? 'true' : 'false');
+  window.setPhoneCopyPreference = async function(withSpaces) {
+    try {
+      const result = await window.apiBridge.call('updateUserPreference', 'phoneCopyWithSpaces', withSpaces);
+      if (result && result.success && window.currentUserProfile) {
+        window.currentUserProfile.phoneCopyWithSpaces = withSpaces;
+      }
+      return result;
+    } catch (err) {
+      console.error('Failed to save phone copy preference:', err);
+      return { success: false, error: err.message };
+    }
   };
   
   /**

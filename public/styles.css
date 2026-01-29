@@ -1179,7 +1179,7 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   #alertModal { z-index: 2000; }
   #duplicateDetectionModal { z-index: 10000; }
   #duplicateWarningModal { z-index: 10000; }
-  .modal.visible { display: flex; }
+  .modal.visible { display: flex !important; opacity: 1 !important; }
   .modal.showing { opacity: 1; }
   .modal-content { background-color: #fefefe; margin: 10% auto; padding: 0; border: none; width: 550px; height: 350px; border-radius: 8px; box-shadow: 0 4px 25px rgba(0,0,0,0.25); font-family: var(--font-body); overflow: hidden; display: flex; flex-direction: row; transform: scale(0.95); transition: transform 0.25s ease-in-out; }
   .modal.showing .modal-content { transform: scale(1); }

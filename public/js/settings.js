@@ -178,7 +178,7 @@
           showAlert('Error', 'Settings saved, but signature failed: ' + err, 'error');
         }).updateUserSignature(newSignature);
       } else {
-        showAlert('Saved', 'Email template links updated for the whole team', 'success');
+        showAlert('Saved', 'Changes saved. Any email template changes have applied to the whole team.', 'success');
       }
       closeEmailSettings();
       if (typeof updateEmailPreview === 'function') updateEmailPreview();

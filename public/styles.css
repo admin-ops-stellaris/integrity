@@ -1702,8 +1702,8 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   }
   .breakpoint-indicator::before { content: 'Desktop'; }
 
-  /* Ultra Wide (min-width: 2000px) - Dual monitor / command centre mode */
-  @media (min-width: 2000px) {
+  /* Ultra Wide (min-width: 2401px) - Dual monitor / command centre mode */
+  @media (min-width: 2401px) {
     .breakpoint-indicator::before { content: 'Ultra'; }
     
     /* Expand to use full width */

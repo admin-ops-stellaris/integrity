@@ -1227,7 +1227,7 @@ function showDuplicateDetectionModal(duplicates, btn, status) {
         </div>
         <div class="duplicate-item-actions">
           ${matchBadge}
-          <a href="/contact/${d.id}" target="_blank" class="btn-view-duplicate" title="Open in new tab">View</a>
+          <a href="/contact/${d.id}" target="_blank" class="btn-view-duplicate">View in new tab</a>
         </div>
       </div>
     `;

@@ -613,6 +613,24 @@
         </div>
       </div>
 
+      <!-- Duplicate Detection Modal (for new contact creation) -->
+      <div id="duplicateDetectionModal" class="modal">
+        <div class="modal-content" style="width:600px; height:auto; max-height:80vh;">
+          <div class="modal-sidebar" style="background:var(--color-star); width:60px; min-width:60px;">
+            <span style="font-size:24px;">⚠️</span>
+          </div>
+          <div class="modal-body" style="overflow-y:auto;">
+            <h3 style="margin-top:0; margin-bottom:10px; font-size:16px;">Potential Duplicate Found</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">We found existing contacts that may match the one you're creating. Please review before proceeding.</p>
+            <div id="duplicateDetectionList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+              <button type="button" class="btn-cancel" onclick="closeDuplicateDetectionModal()">Cancel</button>
+              <button type="button" class="btn-secondary" onclick="proceedWithDuplicate()">Create Anyway</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="shortcutsModal" class="modal">
         <div class="modal-content" style="max-width:320px;">
           <div class="modal-sidebar">

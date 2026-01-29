@@ -543,6 +543,23 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
   .status-success { color: var(--color-cedar); font-weight: 700; font-size: 14px; letter-spacing: 0.5px; }
   .status-error { color: #A00; font-weight: 700; font-size: 13px; } 
 
+  /* DUPLICATE DETECTION BADGES */
+  .match-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .match-mobile { background: #FFE4CC; color: #CC5500; }
+  .match-email { background: #D4EDFF; color: #0066CC; }
+  .match-name { background: #E8F5E9; color: #2E7D32; }
+  .match-both { background: #FFF3CD; color: #856404; }
+  .match-all { background: #F8D7DA; color: #721C24; }
+  body.dark-mode .match-mobile { background: #5C3D1E; color: #FFB366; }
+  body.dark-mode .match-email { background: #1E3A5C; color: #66B3FF; }
+  body.dark-mode .match-name { background: #1E3D1E; color: #81C784; }
+  body.dark-mode .match-both { background: #5C4A1E; color: #FFD666; }
+  body.dark-mode .match-all { background: #5C1E1E; color: #FF6666; }
+  .btn-secondary { background: var(--color-mist); color: var(--color-trail); border: none; padding: 8px 16px; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+  .btn-secondary:hover { background: #CCC; }
+  body.dark-mode .btn-secondary { background: #444; color: #EEE; }
+  body.dark-mode .btn-secondary:hover { background: #555; }
+
   /* OPP LIST */
   .opp-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 400px; padding-right: 5px; }
   .opp-item { background: #FFF; padding: 10px; margin-bottom: 6px; border-radius: 4px; border: 1px solid #E0E0E0; font-size: 13px; cursor: pointer; transition: background 0.2s; display: flex; flex-direction: column; gap: 6px; }

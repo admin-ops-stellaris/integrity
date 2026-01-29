@@ -134,4 +134,6 @@ Australian phone numbers are formatted for readability while storing raw digits 
 - **Modal Search Dropdown Fix**: Changed to `position: static` with `max-height: 150px` and bottom margin to prevent covering Cancel buttons
 - **Connections Empty State**: Added "Connections" label visible when no connections exist
 - **Home Screen Cleanup**: Hide dossier-header on home screen (no "Contact" title when no contact selected)
+- **Duplicate Warning System**: Manual warnings displayed in left column with EDIT/HIDE links, Add/Delete options in ACTIONS menu
+- **Duplicate Detection**: Auto-checks for duplicates on new contact creation (mobile, email, name matching), shows modal with potential matches and "Create Anyway" option
 - **Module count**: 19 JS modules in public/js/ (addresses, appointments, connections, contacts, contacts-search, core, email, evidence, inline-editing, modal-utils, notes, opportunities, quick-view, router, settings, shared-state, shared-utils, spouse, ui-utils)

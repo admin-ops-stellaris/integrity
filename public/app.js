@@ -1137,6 +1137,8 @@ function renderContactMetaBar(f) {
   }
 }
 
+let pendingFormData = null;
+
 function handleFormSubmit(formObject) {
   if (window.event) window.event.preventDefault();
   const btn = document.getElementById('submitBtn'); const status = document.getElementById('status');
@@ -1160,16 +1162,120 @@ function handleFormSubmit(formObject) {
     genderOther: formObject.genderOther.value,
     dateOfBirth: formObject.dateOfBirth.value
   };
+  
+  if (!formData.recordId) {
+    checkForDuplicates(formData, btn, status);
+  } else {
+    submitFormData(formData, btn, status);
+  }
+}
+
+async function checkForDuplicates(formData, btn, status) {
+  try {
+    const response = await fetch('/api/checkDuplicates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mobile: formData.mobilePhone,
+        email: formData.email1,
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      })
+    });
+    const result = await response.json();
+    
+    if (result.duplicates && result.duplicates.length > 0) {
+      pendingFormData = formData;
+      showDuplicateDetectionModal(result.duplicates, btn, status);
+    } else {
+      submitFormData(formData, btn, status);
+    }
+  } catch (err) {
+    console.error('Duplicate check failed:', err);
+    submitFormData(formData, btn, status);
+  }
+}
+
+function showDuplicateDetectionModal(duplicates, btn, status) {
+  const list = document.getElementById('duplicateDetectionList');
+  list.innerHTML = duplicates.map(d => {
+    const name = d.fields['Calculated Name'] || `${d.fields.FirstName} ${d.fields.LastName}`;
+    const mobile = d.fields.Mobile ? window.formatPhoneForDisplay(d.fields.Mobile) : '';
+    const email = d.fields.EmailAddress1 || '';
+    const matchBadge = getMatchBadge(d.matchType);
+    return `
+      <div class="duplicate-item" style="padding:12px; border:1px solid var(--color-mist); border-radius:8px; margin-bottom:8px; background:var(--color-background);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div style="font-weight:600; font-size:14px; margin-bottom:4px;">${name}</div>
+            <div style="font-size:12px; color:#666;">
+              ${mobile ? `<span style="margin-right:12px;">${mobile}</span>` : ''}
+              ${email ? `<span>${email}</span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            ${matchBadge}
+            <button type="button" class="btn-link" style="font-size:12px;" onclick="viewExistingContact('${d.id}')">View</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  document.getElementById('duplicateDetectionModal').classList.add('visible');
+  btn.disabled = false;
+  btn.innerText = "Create Contact";
+}
+
+function getMatchBadge(matchType) {
+  const badges = {
+    'mobile': '<span class="match-badge match-mobile">Mobile Match</span>',
+    'email': '<span class="match-badge match-email">Email Match</span>',
+    'name': '<span class="match-badge match-name">Name Match</span>',
+    'mobile+email': '<span class="match-badge match-both">Mobile + Email</span>',
+    'mobile+name': '<span class="match-badge match-both">Mobile + Name</span>',
+    'email+name': '<span class="match-badge match-both">Email + Name</span>',
+    'mobile+email+name': '<span class="match-badge match-all">All Match</span>'
+  };
+  return badges[matchType] || '';
+}
+
+function closeDuplicateDetectionModal() {
+  document.getElementById('duplicateDetectionModal').classList.remove('visible');
+  pendingFormData = null;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = false;
+  btn.innerText = "Create Contact";
+}
+
+function viewExistingContact(contactId) {
+  closeDuplicateDetectionModal();
+  cancelNewContact();
+  google.script.run.withSuccessHandler(function(contact) {
+    if (contact) selectContact(contact);
+  }).getContactById(contactId);
+}
+
+function proceedWithDuplicate() {
+  if (!pendingFormData) return;
+  const btn = document.getElementById('submitBtn');
+  const status = document.getElementById('status');
+  document.getElementById('duplicateDetectionModal').classList.remove('visible');
+  submitFormData(pendingFormData, btn, status);
+  pendingFormData = null;
+}
+
+function submitFormData(formData, btn, status) {
+  btn.disabled = true;
+  btn.innerText = "Saving...";
   google.script.run.withSuccessHandler(function(response) {
        loadContacts();
        btn.disabled = false;
        btn.innerText = "Update Contact";
        disableEditMode();
        if (response.type === 'create' && response.record) {
-         // New contact created - navigate to view it
          selectContact(response.record);
        } else if (formData.recordId) {
-         // For updates, refresh the contact to show updated Modified date
          google.script.run.withSuccessHandler(function(r) {
            if (r && r.fields) selectContact(r);
          }).getContactById(formData.recordId);

@@ -335,6 +335,66 @@ export async function searchContacts(query, statusFilter = null) {
   }
 }
 
+export async function findContactsByField(fieldName, value) {
+  if (!base || !value) return [];
+  try {
+    let formula;
+    if (fieldName === 'Mobile') {
+      const cleanValue = value.replace(/\D/g, '');
+      formula = `SUBSTITUTE(SUBSTITUTE({Mobile}, " ", ""), "-", "") = "${cleanValue}"`;
+    } else {
+      formula = `LOWER({${fieldName}}) = LOWER("${value.replace(/"/g, '\\"')}")`;
+    }
+    const records = await base("Contacts").select({
+      filterByFormula: formula,
+      maxRecords: 10,
+      fields: ['FirstName', 'MiddleName', 'LastName', 'Mobile', 'EmailAddress1', 'Calculated Name', 'Status']
+    }).all();
+    return records.map(r => ({
+      id: r.id,
+      fields: {
+        FirstName: r.fields.FirstName || '',
+        MiddleName: r.fields.MiddleName || '',
+        LastName: r.fields.LastName || '',
+        Mobile: r.fields.Mobile || '',
+        EmailAddress1: r.fields.EmailAddress1 || '',
+        'Calculated Name': r.fields['Calculated Name'] || '',
+        Status: r.fields.Status || 'Active'
+      }
+    }));
+  } catch (err) {
+    console.error("findContactsByField error:", err.message);
+    return [];
+  }
+}
+
+export async function findContactsByName(firstName, lastName) {
+  if (!base || !firstName || !lastName) return [];
+  try {
+    const formula = `AND(LOWER({FirstName}) = LOWER("${firstName.replace(/"/g, '\\"')}"), LOWER({LastName}) = LOWER("${lastName.replace(/"/g, '\\"')}"))`;
+    const records = await base("Contacts").select({
+      filterByFormula: formula,
+      maxRecords: 10,
+      fields: ['FirstName', 'MiddleName', 'LastName', 'Mobile', 'EmailAddress1', 'Calculated Name', 'Status']
+    }).all();
+    return records.map(r => ({
+      id: r.id,
+      fields: {
+        FirstName: r.fields.FirstName || '',
+        MiddleName: r.fields.MiddleName || '',
+        LastName: r.fields.LastName || '',
+        Mobile: r.fields.Mobile || '',
+        EmailAddress1: r.fields.EmailAddress1 || '',
+        'Calculated Name': r.fields['Calculated Name'] || '',
+        Status: r.fields.Status || 'Active'
+      }
+    }));
+  } catch (err) {
+    console.error("findContactsByName error:", err.message);
+    return [];
+  }
+}
+
 export async function updateContact(id, field, value, userContext = null) {
   if (!base) return null;
   try {

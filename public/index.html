@@ -2,6 +2,7 @@
 <html>
   <head>
     <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Integrity - Stellaris FB</title>
     <link rel="icon" href="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:64,h:64,m?v=3" type="image/png">
 
@@ -9,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="/styles.css?v=28">
+    <link rel="stylesheet" href="/styles.css?v=33">
   </head>
   <body>
     <div class="app-header">
@@ -41,38 +42,46 @@
 
     <div class="container">
 
-      <div class="column form-section">
-        <div class="header-row">
-          <div style="display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <h2 id="formTitle">Contact</h2>
-              <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
-              <span id="deceasedBadge" class="deceased-badge" style="display:none;">DECEASED</span>
-            </div>
-            <div id="formSubtitle" class="form-subtitle"></div>
-            <button type="button" id="contactBackBtn" class="contact-back-btn" onclick="goBackToContact()" style="display:none;">← Back</button>
+      <div class="column form-section layout-stack-y gap-md">
+        <!-- Header Zone: Dossier Style -->
+        <div id="profileHeaderZone" class="layout-stack-y gap-sm">
+          <div class="breadcrumb-row layout-stack-x" style="justify-content:space-between; width:100%; margin-bottom:8px;">
+            <div id="breadcrumb-bar"></div>
+            <button type="button" class="new-contact-btn" onclick="resetForm()" style="margin-left:auto;">+ NEW CONTACT</button>
           </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div class="actions-menu-wrapper" id="actionsMenuWrapper" style="display:none;">
-              <button type="button" class="actions-menu-btn" onclick="toggleActionsMenu()">Actions</button>
-              <div class="actions-dropdown" id="actionsDropdown">
-                <button type="button" onclick="markAsDeceased()">Mark as Deceased</button>
-                <button type="button" id="undoDeceasedBtn" onclick="undoDeceased()" style="display:none;">Undo Deceased Status</button>
+          <div class="dossier-header">
+            <!-- Left Block: Breadcrumb + Name + Badge -->
+            <div class="dossier-left layout-stack-y gap-xs">
+              <div class="layout-stack-x gap-xs">
+                <h2 id="formTitle">Contact</h2>
+                <span id="refreshBtn" class="refresh-icon" onclick="refreshCurrentContact()" title="Refresh Record">↻</span>
+                <span id="deceasedBadge" class="deceased-badge" style="display:none;">DECEASED</span>
               </div>
+              <div id="formSubtitle" class="form-subtitle"></div>
+              <div id="contactQuickInfo" class="dossier-meta" style="text-align:left;"></div>
+              <button type="button" id="contactBackBtn" class="contact-back-btn" onclick="goBackToContact()" style="display:none;">← Back</button>
             </div>
-            <button type="button" class="new-contact-btn" onclick="resetForm()">+ New Contact</button>
+            <!-- Right Block: Status & Metadata -->
+            <div class="dossier-right layout-stack-y gap-xs">
+              <div class="dossier-badges layout-stack-x gap-xs">
+                <span id="statusBadge" class="status-badge status-active clickable-badge" style="display:none;" onclick="toggleContactStatus()" title="Click to toggle status">Active</span>
+                <span id="marketingBadge" class="marketing-badge clickable-badge" style="display:none;" onclick="openUnsubscribeEdit()" title="Click to edit marketing preferences"></span>
+                <div class="actions-menu-wrapper" id="actionsMenuWrapper" style="display:none;">
+                  <button type="button" class="actions-menu-btn" onclick="toggleActionsMenu()">Actions</button>
+                  <div class="actions-dropdown" id="actionsDropdown">
+                    <button type="button" onclick="markAsDeceased()">Mark as Deceased</button>
+                    <button type="button" id="undoDeceasedBtn" onclick="undoDeceased()" style="display:none;">Undo Deceased Status</button>
+                    <button type="button" id="addDuplicateWarningBtn" onclick="openAddDuplicateWarning()">Add Duplicate Warning</button>
+                    <button type="button" id="deleteDuplicateWarningBtn" onclick="confirmDeleteDuplicateWarning()" style="display:none;">Delete Duplicate Warning</button>
+                  </div>
+                </div>
+              </div>
+              <div id="dossierMeta" class="dossier-meta"></div>
+            </div>
           </div>
         </div>
 
-        <div id="duplicateWarningBox">
-           <div style="display:flex; align-items:center;">
-             <span class="warning-icon">⚠️</span> <span id="duplicateWarningText"></span>
-           </div>
-           <a class="hide-link" onclick="document.getElementById('duplicateWarningBox').style.display='none';">Hide</a>
-        </div>
-
-        <div id="contactMetaBar" class="contact-meta-bar"></div>
-
+        <!-- Content Zone -->
         <div id="emptyState">
            <img src="https://img1.wsimg.com/isteam/ip/2c5f94ee-4964-4e9b-9b9c-a55121f8611b/favicon/31eb51a1-8979-4194-bfa2-e4b30ee1178d/2437d5de-854d-40b2-86b2-fd879f3469f0.png/:/rs=w:128,h:128,m" style="height:64px; width:64px; margin-bottom:15px; opacity:0.8;">
            Search for a contact or click '+ New Contact' to begin.
@@ -83,7 +92,21 @@
             <input type="hidden" name="recordId" id="recordId">
             <div class="profile-columns" id="profileColumns">
               <div class="profile-col profile-col-left">
+                <details id="mobile-facts-accordion" open>
+                  <summary class="mobile-only-summary">Contact Details</summary>
                 <span id="editBtn" style="display:none;"></span>
+                
+                <!-- Duplicate Warning Box (left column) -->
+                <div id="duplicateWarningBox" class="duplicate-warning-box">
+                  <div class="warning-content">
+                    <span class="warning-icon">⚠️</span>
+                    <span id="duplicateWarningText"></span>
+                  </div>
+                  <div class="warning-actions">
+                    <a class="warning-link" onclick="openEditDuplicateWarning()">EDIT</a>
+                    <a class="warning-link" onclick="hideDuplicateWarning()">HIDE</a>
+                  </div>
+                </div>
                 
                 <div class="collapsible-section" id="nameSection">
                   <div class="collapsible-header" onclick="toggleCollapsible('nameSection')">
@@ -214,25 +237,26 @@
                 <div id="deleteSection" style="margin-top:auto; padding-top:20px;">
                   <button type="button" class="btn-delete" onclick="confirmDeleteContact()">Delete Contact</button>
                 </div>
+                </details>
               </div>
 
-              <div class="profile-col profile-col-middle">
-                <div id="spouseSection" class="spouse-two-col-row">
-                  <div class="spouse-left-col">
-                    <span id="spouseBadge" class="connection-role-badge spouse">Spouse</span>
-                    <span id="spouseStatusText" class="connection-name">Single</span>
-                    <span id="spouseHistoryDate" class="connection-date"></span>
-                  </div>
-                  <div class="spouse-right-col">
-                    <div class="spouse-right-col-content">
-                      <div id="spouseHistoryAccordion" class="collapsible-header" style="display:none;" onclick="toggleSpouseHistory()">
-                        <span id="spouseHistoryArrow" class="collapsible-icon">&#9654;</span>
-                        <span class="collapsible-title">History</span>
-                      </div>
-                      <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
+              <div class="profile-col profile-col-center">
+                <details id="mobile-relationships-accordion" open>
+                  <summary class="mobile-only-summary">Relationships</summary>
+                <div id="spouseSection" class="spouse-section-wrapper">
+                  <div class="spouse-two-col-row">
+                    <div class="spouse-left-col">
+                      <span id="spouseBadge" class="connection-role-badge spouse">Spouse</span>
+                      <span id="spouseStatusText" class="connection-name">Single</span>
+                      <span id="spouseHistoryDate" class="connection-date"></span>
                     </div>
+                    <span id="spouseHistoryToggle" class="spouse-history-toggle" onclick="toggleSpouseHistory()" style="display:none;">
+                      <span id="spouseHistoryArrow" class="collapsible-icon">&#9654;</span>
+                      <span class="collapsible-title">History</span>
+                    </span>
                     <span id="spouseEditLink" class="spouse-action-link" onclick="openSpouseModal()">Edit</span>
                   </div>
+                  <ul id="spouseHistoryList" class="spouse-history-list" style="display:none;"></ul>
                 </div>
                 <div id="connectionsSection" class="connections-section-scrollable">
                   <div id="connectionsAccordionWrapper" style="display:none;">
@@ -242,7 +266,8 @@
                       <span id="addConnectionLink" class="spouse-action-link" onclick="event.stopPropagation(); openAddConnectionModal()">+ Add</span>
                     </div>
                   </div>
-                  <div id="connectionsNoAccordionAdd" class="connections-add-row">
+                  <div id="connectionsNoAccordionAdd" class="connections-add-row" style="justify-content: space-between; align-items: center;">
+                    <span class="collapsible-title" style="margin: 0;">Connections</span>
                     <span class="spouse-action-link" onclick="openAddConnectionModal()">+ Add</span>
                   </div>
                   <div id="connectionsContent" class="connections-two-col">
@@ -250,16 +275,22 @@
                     <ul id="connectionsListRight" class="connections-list connections-col"></ul>
                   </div>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                  <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
-                  <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New Opportunity</button>
+                </details>
+                <div id="opportunitiesWrapper" class="mobile-orderable">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h2 style="font-size:15px; margin-bottom:0;">Opportunities <span id="oppSortBtn" class="sort-icon" onclick="toggleOppSort()">⇅</span></h2>
+                    <button type="button" class="quick-add-btn" onclick="quickAddOpportunity()" title="Add new opportunity">+ New Opportunity</button>
+                  </div>
+                  <div id="oppLoading" style="display:none;">Loading...</div>
+                  <ul id="oppList" class="opp-list"></ul>
                 </div>
-                <div id="oppLoading" style="display:none;">Loading...</div>
-                <ul id="oppList" class="opp-list"></ul>
               </div>
 
               <div class="profile-col profile-col-right">
-                <!-- Future: Tasks and Notes -->
+                <div id="activityFeedPlaceholder" class="panel-box">
+                  <h3 style="margin: 0 0 8px 0; font-size: 14px; color: var(--color-trail);">Activity Stream</h3>
+                  <p class="text-muted" style="margin: 0; font-size: 12px;">Tasks, Slack, & AI coming soon...</p>
+                </div>
               </div>
             </div>
             <div id="actionRow" class="save-row" style="display:none;">
@@ -359,7 +390,7 @@
           </div>
           <div class="modal-body">
 
-            <div id="connectForm" style="display:none; flex:1; display:flex; flex-direction:column;">
+            <div id="connectForm" style="display:none; flex:1; flex-direction:column;">
                <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Connect Spouse</h3>
                <p style="font-size:13px; margin-bottom:10px; color:#666;">Search for the contact to connect:</p>
                <input type="text" id="spouseSearchInput" placeholder="Start typing name..." onkeyup="handleSpouseSearch(event)" onfocus="loadRecentContactsForModal()">
@@ -369,7 +400,7 @@
                </div>
             </div>
 
-            <div id="confirmConnectForm" style="display:none; flex:1; flex-direction:column;">
+            <div id="confirmConnectForm" style="display:none; flex-direction:column;">
                <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Confirm Connection</h3>
                <p style="font-size:13px; color:#666; margin-bottom:20px;">Are you sure you want to set <strong id="targetSpouseName" style="color:var(--color-trail);"></strong> as the spouse?</p>
                <input type="hidden" id="targetSpouseId">
@@ -379,7 +410,7 @@
                </div>
             </div>
 
-            <div id="disconnectForm" style="display:none; flex:1; flex-direction:column;">
+            <div id="disconnectForm" style="display:none; flex-direction:column;">
                <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Disconnect Spouse</h3>
                <p style="font-size:13px; color:#666; margin-bottom:20px;">Are you sure you want to disconnect <strong id="currentSpouseName" style="color:var(--color-trail);"></strong>?</p>
                <input type="hidden" id="currentSpouseId">
@@ -405,7 +436,7 @@
               <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">Add Connection</h3>
               <p style="font-size:13px; margin-bottom:10px; color:#666;">Search for a contact or select from recent:</p>
               <input type="text" id="connectionSearchInput" placeholder="Start typing name..." onkeyup="handleConnectionSearch(event)" onfocus="loadRecentContactsForConnectionModal()" style="margin-bottom:10px;">
-              <div id="connectionSearchResults" class="search-dropdown" style="max-height:200px; overflow-y:auto;"></div>
+              <div id="connectionSearchResults" class="search-dropdown"></div>
               <div style="margin-top:auto; display:flex; gap:10px; justify-content:flex-end; padding-top:15px;">
                 <button type="button" class="btn-cancel" onclick="closeAddConnectionModal()">Cancel</button>
               </div>
@@ -682,6 +713,16 @@
                 <div style="font-size:11px; color:#666;">Master templates for evidence/document requests</div>
               </div>
               <button type="button" onclick="closeEmailSettings(); openEvidenceTemplatesModal();" style="padding:8px 16px; background:var(--color-cedar); color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px; font-weight:500;">Manage Evidence</button>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; background:#f0f8f0; border-radius:6px; margin-bottom:15px; border:1px solid var(--color-cedar);">
+              <div>
+                <div style="font-weight:600; font-size:13px;">Phone Number Copy Format</div>
+                <div style="font-size:11px; color:#666;">When you click a phone number to copy it</div>
+              </div>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px;">
+                <input type="checkbox" id="settingPhoneCopySpaces" onchange="window.setPhoneCopyPreference(this.checked)">
+                <span>Include spaces</span>
+              </label>
             </div>
             <div class="email-settings-form">
               <div class="setting-row">
@@ -1453,35 +1494,84 @@
       </div>
     </div>
 
+    <!-- Duplicate Warning Modal (at body level for proper z-index) -->
+    <div id="duplicateWarningModal" class="modal">
+      <div class="modal-content" style="width:500px; height:auto; max-height:80vh;">
+        <div class="modal-sidebar" style="background:var(--color-star); width:60px; min-width:60px;">
+          <span style="font-size:24px;">⚠️</span>
+        </div>
+        <div class="modal-body" style="overflow-y:auto;">
+          <h3 id="duplicateWarningModalTitle" style="margin-top:0; margin-bottom:15px; font-size:16px;">Duplicate Warning</h3>
+          <p style="font-size:12px; color:#666; margin-bottom:15px;">Enter a warning message to help distinguish this contact from others with similar names.</p>
+          <div class="field-group">
+            <label>Warning Message</label>
+            <textarea id="duplicateWarningInput" rows="3" style="width:100%; resize:vertical; font-size:13px;" placeholder="e.g. This is Clare with middle name Louise, not the other Clare Mitchell."></textarea>
+          </div>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+            <button type="button" class="btn-cancel" onclick="closeDuplicateWarningModal()">Cancel</button>
+            <button type="button" class="btn-confirm" onclick="saveDuplicateWarning()">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Duplicate Detection Modal (at body level for proper z-index) -->
+    <div id="duplicateDetectionModal" class="modal">
+      <div class="modal-content duplicate-detection-modal">
+        <div class="modal-sidebar warning-sidebar">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="modal-body">
+          <h3 class="duplicate-modal-title">Potential Duplicate Found</h3>
+          <p class="duplicate-modal-subtitle">We found existing contacts that may match the one you're creating. Please review before proceeding.</p>
+          <div id="duplicateDetectionList" class="duplicate-list"></div>
+          <div id="duplicateWarningPrompt" class="duplicate-warning-prompt">
+            <label class="duplicate-checkbox-label">
+              <input type="checkbox" id="addWarningAfterCreate" checked>
+              <span>Add a Duplicate Warning to both Contacts after creation (recommended)</span>
+            </label>
+          </div>
+          <div class="duplicate-modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDuplicateDetectionModal()">Cancel</button>
+            <button type="button" class="btn-primary" onclick="proceedWithDuplicate()">Create Anyway</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Quill WYSIWYG Editor -->
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
-    <script src="/api-bridge.js?v=58"></script>
+    <script src="/api-bridge.js?v=100"></script>
     
     <!-- Foundation modules (load order matters!) -->
-    <script src="/js/shared-state.js?v=1"></script>
-    <script src="/js/shared-utils.js?v=1"></script>
-    <script src="/js/modal-utils.js?v=1"></script>
+    <script src="/js/shared-state.js?v=100"></script>
+    <script src="/js/shared-utils.js?v=100"></script>
+    <script src="/js/modal-utils.js?v=100"></script>
     
     <!-- Feature modules -->
-    <script src="/js/contacts-search.js?v=1"></script>
-    <script src="/js/core.js?v=1"></script>
-    <script src="/js/inline-editing.js?v=1"></script>
-    <script src="/js/spouse.js?v=1"></script>
-    <script src="/js/connections.js?v=1"></script>
-    <script src="/js/notes.js?v=1"></script>
-    <script src="/js/addresses.js?v=1"></script>
-    <script src="/js/appointments.js?v=1"></script>
-    <script src="/js/opportunities.js?v=1"></script>
-    <script src="/js/settings.js?v=1"></script>
-    <script src="/js/quick-view.js?v=1"></script>
-    <script src="/js/email.js?v=1"></script>
-    <script src="/js/evidence.js?v=1"></script>
-    <script src="/js/router.js?v=1"></script>
+    <script src="/js/contacts-search.js?v=100"></script>
+    <script src="/js/core.js?v=100"></script>
+    <script src="/js/inline-editing.js?v=100"></script>
+    <script src="/js/spouse.js?v=103"></script>
+    <script src="/js/connections.js?v=106"></script>
+    <script src="/js/notes.js?v=100"></script>
+    <script src="/js/addresses.js?v=100"></script>
+    <script src="/js/appointments.js?v=100"></script>
+    <script src="/js/opportunities.js?v=100"></script>
+    <script src="/js/settings.js?v=100"></script>
+    <script src="/js/quick-view.js?v=100"></script>
+    <script src="/js/email.js?v=100"></script>
+    <script src="/js/evidence.js?v=100"></script>
+    <script src="/js/router.js?v=100"></script>
     
     <!-- Main app (contains all working code) -->
-    <script src="/app.js?v=60"></script>
+    <script src="/app.js?v=101"></script>
 
     <!-- Breakpoint Indicator (Development Helper) -->
     <div class="breakpoint-indicator"></div>

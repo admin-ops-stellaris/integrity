@@ -1,482 +1,369 @@
 /**
  * Connections Module
- * Connection management between contacts with role-based relationships
+ * Handles relationship/connection management between contacts
+ * Functions exposed synchronously to window object
  */
-(function() {
-  'use strict';
-  
+'use strict';
+
+function escapeHtmlForAttr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function getRoleBadgeClass(role) {
+  const roleClasses = {
+    'Spouse': 'spouse',
+    'Partner': 'spouse',
+    'Child': 'family',
+    'Parent': 'family',
+    'Sibling': 'family',
+    'Grandchild': 'family',
+    'Grandparent': 'family',
+    'Accountant': 'professional',
+    'Referred By': 'professional',
+    'Financial Planner': 'professional',
+    'Lawyer / Solicitor': 'professional',
+    'Real Estate Agent': 'professional',
+    'Friend': 'personal',
+    'Colleague': 'personal',
+    'Other': 'other'
+  };
+  return roleClasses[role] || 'other';
+}
+
+function renderConnectionsList() {
   const state = window.IntegrityState;
-  const CONNECTIONS_COLLAPSED_LIMIT = 8;
+  if (!state) return;
   
-  function toggleConnectionsAccordion() {
-    const content = document.getElementById('connectionsContent');
-    const arrowEl = document.getElementById('connectionsAccordionArrow');
-    if (content && arrowEl) {
-      const isExpanded = arrowEl.classList.contains('expanded');
-      content.style.display = isExpanded ? 'none' : 'flex';
-      arrowEl.classList.toggle('expanded');
-    }
+  const leftCol = document.getElementById('connectionsListLeft');
+  const rightCol = document.getElementById('connectionsListRight');
+  const accordionWrapper = document.getElementById('connectionsAccordionWrapper');
+  const noAccordionAdd = document.getElementById('connectionsNoAccordionAdd');
+  
+  if (!leftCol || !rightCol) {
+    console.error('[Connections] Connection list columns not found');
+    return;
   }
   
-  function loadConnections(contactId) {
-    const leftList = document.getElementById('connectionsListLeft');
-    const rightList = document.getElementById('connectionsListRight');
-    if (!leftList || !rightList) return;
-    leftList.innerHTML = '<li class="connections-empty">Loading...</li>';
-    rightList.innerHTML = '';
-    
-    google.script.run.withSuccessHandler(function(connections) {
-      state.allConnectionsData = connections || [];
-      state.connectionsExpanded = false;
-      renderConnectionsList(state.allConnectionsData);
-    }).withFailureHandler(function(err) {
-      leftList.innerHTML = '<li class="connections-empty">Error loading connections</li>';
-    }).getConnectionsForContact(contactId);
+  const connections = state.allConnectionsData;
+  
+  leftCol.innerHTML = '';
+  rightCol.innerHTML = '';
+  
+  if (!connections || connections.length === 0) {
+    leftCol.innerHTML = '<li style="font-size: 11px; color: #999; font-style: italic;">No connections</li>';
+    if (accordionWrapper) accordionWrapper.style.display = 'none';
+    if (noAccordionAdd) noAccordionAdd.style.display = 'flex';
+    return;
   }
   
-  function toggleConnectionsExpand() {
-    state.connectionsExpanded = !state.connectionsExpanded;
-    renderConnectionsList(state.allConnectionsData);
+  // Server already filters to active, but check status field just in case
+  // Data is flattened: { id, status, myRole, otherContactName, ... }
+  const activeConnections = connections.filter(c => c.status === 'Active' || !c.status);
+  
+  if (activeConnections.length === 0) {
+    leftCol.innerHTML = '<li style="font-size: 11px; color: #999; font-style: italic;">No active connections</li>';
+    if (accordionWrapper) accordionWrapper.style.display = 'none';
+    if (noAccordionAdd) noAccordionAdd.style.display = 'flex';
+    return;
   }
   
-  function renderConnectionsPills(connections) {
-    const container = document.getElementById('connectionsPillContainer');
-    if (!container) return;
-    container.innerHTML = '';
-    
-    if (!connections || connections.length === 0) {
-      container.innerHTML = '<span class="connections-empty">No connections yet</span>';
-      return;
-    }
-    
-    const pillRoleLabels = {
-      'parent': 'Parent',
-      'child': 'Child',
-      'sibling': 'Sibling',
-      'friend': 'Friend',
-      'employer of': 'Employer',
-      'employee of': 'Employee',
-      'referred by': 'Referrer',
-      'has referred': 'Referred',
-      'family': 'Family'
-    };
-    
-    const getPillRoleLabel = (role) => {
-      const r = (role || '').toLowerCase().trim();
-      return pillRoleLabels[r] || role;
-    };
-    
-    const getPillRoleClass = (role) => {
-      const r = (role || '').toLowerCase();
-      if (r.includes('parent') || r.includes('child')) return 'parent';
-      if (r.includes('sibling')) return 'sibling';
-      if (r.includes('friend')) return 'friend';
-      if (r.includes('employer') || r.includes('employee')) return 'employer';
-      if (r.includes('referred') || r.includes('referral')) return 'referred';
-      if (r.includes('household')) return 'household';
-      if (r.includes('family')) return 'family';
-      return '';
-    };
-    
-    const roleOrder = ['referred by', 'parent', 'child', 'sibling', 'employer of', 'employee of', 'family', 'friend', 'has referred'];
-    connections.sort((a, b) => {
-      const aRole = (a.myRole || '').toLowerCase();
-      const bRole = (b.myRole || '').toLowerCase();
-      const aIdx = roleOrder.findIndex(r => aRole.includes(r));
-      const bIdx = roleOrder.findIndex(r => bRole.includes(r));
-      if (aIdx !== bIdx) return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
-      return (a.otherContactName || '').localeCompare(b.otherContactName || '');
-    });
-    
-    connections.forEach(conn => {
-      const pill = document.createElement('div');
-      pill.className = 'connection-pill' + (conn.note && conn.note.trim() ? ' has-note' : '');
-      pill.setAttribute('data-conn-id', conn.id);
-      pill.setAttribute('data-contact-id', conn.otherContactId || '');
-      
-      const roleClass = getPillRoleClass(conn.myRole);
-      const roleLabel = getPillRoleLabel(conn.myRole);
-      
-      const deceasedSuffix = conn.otherContactDeceased ? ' (DECEASED)' : '';
-      pill.innerHTML = `
-        <span class="pill-role ${roleClass}">${roleLabel}</span>
-        <span class="pill-name">${conn.otherContactName || 'Unknown'}${deceasedSuffix}</span>
-      `;
-      if (conn.otherContactDeceased) pill.style.opacity = '0.6';
-      
-      pill.addEventListener('click', function(e) {
-        openConnectionDetailsModal(conn);
-      });
-      
-      if (conn.otherContactId && typeof attachQuickViewToElement === 'function') {
-        attachQuickViewToElement(pill, conn.otherContactId);
-      }
-      
-      container.appendChild(pill);
-    });
-  }
+  activeConnections.sort((a, b) => {
+    const roleOrder = { 'Spouse': 0, 'Partner': 1, 'Child': 2, 'Parent': 3, 'Sibling': 4 };
+    const aOrder = roleOrder[a.myRole] ?? 99;
+    const bOrder = roleOrder[b.myRole] ?? 99;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    const aName = a.otherContactName || '';
+    const bName = b.otherContactName || '';
+    return aName.localeCompare(bName);
+  });
   
-  function renderConnectionsList(connections) {
-    const leftList = document.getElementById('connectionsListLeft');
-    const rightList = document.getElementById('connectionsListRight');
-    const accordionWrapper = document.getElementById('connectionsAccordionWrapper');
-    const noAccordionAdd = document.getElementById('connectionsNoAccordionAdd');
-    const connectionsContent = document.getElementById('connectionsContent');
-    const accordionArrow = document.getElementById('connectionsAccordionArrow');
-    if (!leftList || !rightList) return;
-    leftList.innerHTML = '';
-    rightList.innerHTML = '';
-    
-    let friendCount = 0;
-    let refersCount = 0;
-    if (connections && connections.length > 0) {
-      connections.forEach(conn => {
-        const role = (conn.myRole || '').toLowerCase().trim();
-        if (role === 'friend') friendCount++;
-        if (role === 'has referred') refersCount++;
-      });
-    }
-    const needsAccordion = friendCount >= 6 || refersCount >= 6;
-    
-    if (accordionWrapper) accordionWrapper.style.display = needsAccordion ? 'block' : 'none';
-    if (noAccordionAdd) noAccordionAdd.style.display = needsAccordion ? 'none' : 'flex';
-    
-    if (needsAccordion && connectionsContent && accordionArrow) {
-      connectionsContent.style.display = 'flex';
-      accordionArrow.classList.add('expanded');
-    }
-    
-    if (!connections || connections.length === 0) {
-      leftList.innerHTML = '<li class="connections-empty">No connections yet</li>';
-      return;
-    }
-    
-    const roleDisplayMap = {
-      'parent': 'Parent of',
-      'child': 'Child of',
-      'sibling': 'Sibling of',
-      'friend': 'Friend of',
-      'employer of': 'Employer of',
-      'employee of': 'Employee of',
-      'referred by': 'Referred by',
-      'has referred': 'Has Referred'
-    };
-    
-    const getDisplayRole = (role) => {
-      const r = (role || '').toLowerCase().trim();
-      return roleDisplayMap[r] || role;
-    };
-    
-    const formatConnectionDate = (dateStr) => {
-      if (!dateStr) return '';
-      try {
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return '';
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
-      } catch (e) {
-        return '';
-      }
-    };
-    
-    const rolesWithDate = ['referred by', 'has referred'];
-    const leftRoles = ['Referred by', 'Parent', 'Child', 'Sibling', 'Employer of', 'Employee of'];
-    const rightRoles = ['Friend', 'Has Referred'];
-    const groupableRoles = ['friend', 'has referred'];
-    
-    const leftConns = [];
-    const rightConns = [];
-    
-    connections.forEach(conn => {
-      const role = (conn.myRole || '').trim();
-      const isLeft = leftRoles.some(r => role.toLowerCase().includes(r.toLowerCase()));
-      const isRight = rightRoles.some(r => role.toLowerCase().includes(r.toLowerCase()));
-      
-      if (isLeft) {
-        leftConns.push(conn);
-      } else if (isRight) {
-        rightConns.push(conn);
-      } else {
-        leftConns.push(conn);
-      }
-    });
-    
-    const sortByRolePriority = (conns, roles, sortHasReferredByDate = false) => {
-      return conns.sort((a, b) => {
-        const aRole = (a.myRole || '').toLowerCase();
-        const bRole = (b.myRole || '').toLowerCase();
-        const aIdx = roles.findIndex(r => aRole.includes(r.toLowerCase()));
-        const bIdx = roles.findIndex(r => bRole.includes(r.toLowerCase()));
-        if (aIdx !== bIdx) return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
-        
-        if (sortHasReferredByDate && aRole === 'has referred' && bRole === 'has referred') {
-          const dateA = a.createdOn ? new Date(a.createdOn) : new Date(0);
-          const dateB = b.createdOn ? new Date(b.createdOn) : new Date(0);
-          return dateB - dateA;
-        }
-        
-        return (a.otherContactName || '').localeCompare(b.otherContactName || '');
-      });
-    };
-    
-    sortByRolePriority(leftConns, leftRoles);
-    sortByRolePriority(rightConns, rightRoles, true);
-    
-    const renderSingleConnection = (list, conn) => {
-      const li = document.createElement('li');
-      li.className = 'connection-item connection-clickable';
-      li.setAttribute('data-conn-id', conn.id);
-      li.setAttribute('data-conn-name', conn.otherContactName || '');
-      li.setAttribute('data-conn-created', conn.createdOn || '');
-      li.setAttribute('data-conn-modified', conn.modifiedOn || '');
-      li.setAttribute('data-conn-note', conn.note || '');
-      
-      const badgeClass = getRoleBadgeClass(conn.myRole);
-      const displayRole = getDisplayRole(conn.myRole);
-      const role = (conn.myRole || '').toLowerCase().trim();
-      const showDate = rolesWithDate.includes(role);
-      const dateDisplay = showDate ? formatConnectionDate(conn.createdOn) : '';
-      const hasNote = conn.note && conn.note.trim();
-      const deceasedSuffix = conn.otherContactDeceased ? ' (DECEASED)' : '';
-      
-      li.innerHTML = `
-        <div class="connection-info">
-          <span class="connection-role-badge ${badgeClass}">${displayRole}</span>
-          <span class="connection-name" data-contact-id="${conn.otherContactId || ''}">${conn.otherContactName}${deceasedSuffix}</span>
-          ${dateDisplay ? `<span class="connection-date">${dateDisplay}</span>` : ''}
-        </div>
-        <button type="button" class="conn-note-icon ${hasNote ? 'has-note' : ''}" data-conn-id="${conn.id}" title="Add/view note"></button>
-      `;
-      if (conn.otherContactDeceased) li.style.opacity = '0.6';
-      
-      const noteIcon = li.querySelector('.conn-note-icon');
-      if (noteIcon) {
-        noteIcon.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const currentNote = li.getAttribute('data-conn-note') || '';
-          openConnectionNotePopover(this, conn.id, currentNote);
-        });
-      }
-      
-      li.addEventListener('click', function(e) {
-        if (e.target.classList.contains('connection-name') || e.target.classList.contains('conn-note-icon')) {
-          e.stopPropagation();
-        } else {
-          openConnectionDetailsModal(conn);
-        }
-      });
-      
-      const nameEl = li.querySelector('.connection-name');
-      if (nameEl && conn.otherContactId && typeof attachQuickViewToElement === 'function') {
-        attachQuickViewToElement(nameEl, conn.otherContactId);
-      }
-      
-      list.appendChild(li);
-    };
-    
-    leftConns.forEach(conn => renderSingleConnection(leftList, conn));
-    rightConns.forEach(conn => renderSingleConnection(rightList, conn));
-  }
+  const initialDisplay = state.connectionsExpanded ? activeConnections : activeConnections.slice(0, 6);
+  const hasMore = activeConnections.length > 6;
   
-  function openConnectionDetailsModal(conn) {
-    const modal = document.getElementById('deactivateConnectionModal');
-    const title = modal.querySelector('.modal-title');
-    const body = modal.querySelector('.modal-body-content');
+  initialDisplay.forEach((conn, index) => {
+    const relatedName = conn.otherContactName || 'Unknown';
+    const relatedId = conn.otherContactId || null;
+    const role = conn.myRole || 'Connection';
+    const notes = conn.note || '';
+    const roleClass = getRoleBadgeClass(role);
     
-    let currentContactName = 'Contact';
-    if (state.currentContactRecord && state.currentContactRecord.fields) {
-      const f = state.currentContactRecord.fields;
-      currentContactName = f['Calculated Name'] || 
-        `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
-    }
-    
-    const roleDisplayMap = {
-      'parent': 'Parent of',
-      'child': 'Child of',
-      'sibling': 'Sibling of',
-      'friend': 'Friend of',
-      'employer of': 'Employer of',
-      'employee of': 'Employee of',
-      'referred by': 'Referred by',
-      'has referred': 'Has Referred'
-    };
-    const myRoleLower = (conn.myRole || '').toLowerCase().trim();
-    const displayRole = roleDisplayMap[myRoleLower] || conn.myRole;
-    
-    const formatAuditDateTime = (dateStr) => {
-      if (!dateStr) return '';
-      try {
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return '';
-        const perthOffset = 8 * 60;
-        const localOffset = d.getTimezoneOffset();
-        const perthTime = new Date(d.getTime() + (perthOffset + localOffset) * 60000);
-        const hours = String(perthTime.getHours()).padStart(2, '0');
-        const mins = String(perthTime.getMinutes()).padStart(2, '0');
-        const day = String(perthTime.getDate()).padStart(2, '0');
-        const month = String(perthTime.getMonth() + 1).padStart(2, '0');
-        const year = perthTime.getFullYear();
-        return `${hours}:${mins} ${day}/${month}/${year}`;
-      } catch (e) {
-        return '';
-      }
-    };
-    
-    const createdDateTime = formatAuditDateTime(conn.createdOn);
-    const modifiedDateTime = formatAuditDateTime(conn.modifiedOn);
-    const createdBy = conn.createdByName || '';
-    const modifiedBy = conn.modifiedByName || '';
-    
-    const createdText = createdDateTime ? `${createdDateTime}${createdBy ? ' by ' + createdBy : ''}` : 'Unknown';
-    const modifiedText = modifiedDateTime ? `${modifiedDateTime}${modifiedBy ? ' by ' + modifiedBy : ''}` : 'Unknown';
-    
-    title.textContent = `${currentContactName}: ${displayRole} ${conn.otherContactName}`;
-    
-    body.innerHTML = `
-      <div class="panel-audit-section" style="margin-bottom: 15px; text-align: left;">
-        <div><span class="audit-label">Created</span> <span class="audit-value">${createdText}</span></div>
-        <div><span class="audit-label">Modified</span> <span class="audit-value">${modifiedText}</span></div>
+    const li = document.createElement('li');
+    li.className = 'connection-item';
+    li.innerHTML = `
+      <div class="connection-item-main">
+        <span class="connection-role-badge ${roleClass}">${role}</span>
+        <span class="connection-name" data-contact-id="${relatedId || ''}">${relatedName}</span>
+        ${notes ? `<span class="connection-notes-indicator" title="${escapeHtmlForAttr(notes)}">📝</span>` : ''}
       </div>
-      <div class="connection-modal-remove">
-        <span class="remove-label">Remove this connection?</span>
-        <button type="button" class="btn-danger conn-modal-btn" onclick="executeDeactivateConnection()">Remove</button>
-      </div>
+      <span class="connection-deactivate" onclick="window.openDeactivateConnectionModal('${conn.id}', '${escapeHtmlForAttr(relatedName)}', '${escapeHtmlForAttr(role)}')" title="Deactivate connection">×</span>
     `;
     
-    const modalBody = modal.querySelector('.modal-body');
-    let closeDiv = modalBody.querySelector('.connection-modal-close');
-    if (!closeDiv) {
-      closeDiv = document.createElement('div');
-      closeDiv.className = 'connection-modal-close';
-      closeDiv.innerHTML = '<button type="button" class="btn-secondary conn-modal-btn" onclick="closeDeactivateConnectionModal()">Close</button>';
-      modalBody.appendChild(closeDiv);
+    const nameEl = li.querySelector('.connection-name');
+    if (nameEl && relatedId && typeof attachQuickViewToElement === 'function') {
+      attachQuickViewToElement(nameEl, relatedId);
     }
     
-    modal.setAttribute('data-conn-id', conn.id);
-    modal.setAttribute('data-conn-name', conn.otherContactName || '');
-    
-    modal.classList.add('visible');
-    setTimeout(() => modal.classList.add('showing'), 10);
-  }
-  
-  function getRoleBadgeClass(role) {
-    if (!role) return '';
-    const r = role.toLowerCase();
-    if (r === 'parent' || r === 'child') return r;
-    if (r === 'sibling') return 'sibling';
-    if (r === 'friend') return 'friend';
-    if (r.includes('employer')) return 'employer';
-    if (r.includes('employee')) return 'employee';
-    if (r.includes('referred') || r.includes('referral')) return 'referred';
-    if (r.includes('household')) return 'household';
-    return '';
-  }
-  
-  function escapeHtmlForAttr(str) {
-    if (!str) return '';
-    return str.replace(/'/g, "&#39;").replace(/"/g, '&quot;');
-  }
-  
-  function openAddConnectionModal() {
-    if (!state.currentContactRecord) return;
-    
-    const modal = document.getElementById('addConnectionModal');
-    document.getElementById('connectionStep1').style.display = 'flex';
-    document.getElementById('connectionStep2').style.display = 'none';
-    document.getElementById('connectionSearchInput').value = '';
-    document.getElementById('connectionSearchResults').innerHTML = '';
-    document.getElementById('connectionSearchResults').style.display = 'none';
-    
-    if (state.connectionRoleTypes.length === 0) {
-      google.script.run.withSuccessHandler(function(types) {
-        state.connectionRoleTypes = types || [];
-        populateConnectionRoleSelect();
-      }).getConnectionRoleTypes();
+    if (index % 2 === 0) {
+      leftCol.appendChild(li);
+    } else {
+      rightCol.appendChild(li);
     }
-    
-    modal.classList.add('visible');
-    setTimeout(() => modal.classList.add('showing'), 10);
-    
+  });
+  
+  if (hasMore) {
+    const toggleLi = document.createElement('li');
+    toggleLi.className = 'connections-toggle gap-xs';
+    if (state.connectionsExpanded) {
+      toggleLi.innerHTML = '<span class="expand-link" onclick="window.collapseConnections()">Show less</span>';
+    } else {
+      const remaining = activeConnections.length - 6;
+      toggleLi.innerHTML = `<span class="expand-link" onclick="window.expandConnections()">+${remaining} more</span>`;
+    }
+    leftCol.appendChild(toggleLi);
+  }
+  
+  if (accordionWrapper) accordionWrapper.style.display = activeConnections.length > 3 ? 'block' : 'none';
+  if (noAccordionAdd) noAccordionAdd.style.display = activeConnections.length <= 3 ? 'flex' : 'none';
+}
+
+function loadConnections(contactId) {
+  console.log('[Connections] loadConnections called with contactId:', contactId);
+  const state = window.IntegrityState;
+  const leftCol = document.getElementById('connectionsListLeft');
+  const rightCol = document.getElementById('connectionsListRight');
+  
+  if (!leftCol || !rightCol) {
+    console.error('[Connections] Connection list columns not found!');
+    return;
+  }
+  
+  leftCol.innerHTML = '<li style="font-size: 11px; color: #999; font-style: italic;">Loading connections...</li>';
+  rightCol.innerHTML = '';
+  
+  google.script.run.withSuccessHandler(function(connections) {
+    console.log('[Connections] getConnectionsForContact returned:', connections ? connections.length : 0, 'connections');
+    if (state) state.allConnectionsData = connections || [];
+    renderConnectionsList();
+  }).withFailureHandler(function(err) {
+    console.error('[Connections] getConnectionsForContact error:', err);
+    leftCol.innerHTML = '<li style="font-size: 11px; color: #A00;">Error loading connections</li>';
+  }).getConnectionsForContact(contactId);
+}
+
+function expandConnections() {
+  const state = window.IntegrityState;
+  if (state) state.connectionsExpanded = true;
+  renderConnectionsList();
+}
+
+function collapseConnections() {
+  const state = window.IntegrityState;
+  if (state) state.connectionsExpanded = false;
+  renderConnectionsList();
+}
+
+function toggleConnectionsAccordion() {
+  const content = document.getElementById('connectionsContent');
+  const arrow = document.getElementById('connectionsAccordionArrow');
+  if (content && arrow) {
+    const isExpanded = arrow.classList.contains('expanded');
+    content.style.display = isExpanded ? 'none' : 'flex';
+    arrow.classList.toggle('expanded');
+  }
+}
+
+function openDeactivateConnectionModal(connectionId, contactName, role) {
+  const state = window.IntegrityState;
+  if (state) state.deactivatingConnectionId = connectionId;
+  document.getElementById('deactivateConnectionName').innerText = contactName;
+  document.getElementById('deactivateConnectionRole').innerText = role;
+  
+  const modal = document.getElementById('deactivateConnectionModal');
+  modal.classList.add('visible');
+  setTimeout(() => modal.classList.add('showing'), 10);
+}
+
+function closeDeactivateConnectionModal() {
+  const state = window.IntegrityState;
+  const modal = document.getElementById('deactivateConnectionModal');
+  modal.classList.remove('showing');
+  setTimeout(() => modal.classList.remove('visible'), 250);
+  if (state) state.deactivatingConnectionId = null;
+}
+
+function executeDeactivateConnection() {
+  const state = window.IntegrityState;
+  if (!state) return;
+  const connectionId = state.deactivatingConnectionId;
+  if (!connectionId) return;
+  
+  const btn = document.querySelector('#deactivateConnectionModal .btn-danger');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Deactivating...';
+  }
+  
+  google.script.run.withSuccessHandler(function(result) {
+    closeDeactivateConnectionModal();
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Deactivate';
+    }
+    if (state.currentContactRecord) {
+      loadConnections(state.currentContactRecord.id);
+    }
+  }).withFailureHandler(function(err) {
+    console.error('Deactivate connection error:', err);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Deactivate';
+    }
+    alert('Error deactivating connection: ' + (err.message || err));
+  }).deactivateConnection(connectionId);
+}
+
+function openAddConnectionModal() {
+  console.log('[Connections] openAddConnectionModal called');
+  const state = window.IntegrityState;
+  if (!state || !state.currentContactRecord) {
+    console.error('[Connections] No current contact record!');
+    return;
+  }
+  
+  const modal = document.getElementById('addConnectionModal');
+  document.getElementById('connectionStep1').style.display = 'flex';
+  document.getElementById('connectionStep2').style.display = 'none';
+  document.getElementById('connectionSearchInput').value = '';
+  document.getElementById('connectionSearchResults').innerHTML = '';
+  document.getElementById('connectionSearchResults').style.display = 'none';
+  
+  if (state.connectionRoleTypes.length === 0) {
+    google.script.run.withSuccessHandler(function(types) {
+      state.connectionRoleTypes = types || [];
+      populateConnectionRoleSelect();
+    }).getConnectionRoleTypes();
+  }
+  
+  modal.classList.add('visible');
+  setTimeout(() => modal.classList.add('showing'), 10);
+  
+  loadRecentContactsForConnectionModal();
+}
+
+function closeAddConnectionModal() {
+  const modal = document.getElementById('addConnectionModal');
+  modal.classList.remove('showing');
+  setTimeout(() => modal.classList.remove('visible'), 250);
+}
+
+function loadRecentContactsForConnectionModal() {
+  console.log('[Connections] loadRecentContactsForConnectionModal called');
+  const results = document.getElementById('connectionSearchResults');
+  if (!results) {
+    console.error('[Connections] connectionSearchResults element not found!');
+    return;
+  }
+  results.innerHTML = '<div class="search-option" style="color:#999; font-style:italic;">Loading recent contacts...</div>';
+  results.style.display = 'block';
+  
+  console.log('[Connections] Calling API: getRecentContacts');
+  google.script.run.withSuccessHandler(function(contacts) {
+    console.log('[Connections] getRecentContacts returned:', contacts ? contacts.length : 0, 'contacts');
+    renderConnectionSearchResults(contacts);
+  }).withFailureHandler(function(err) {
+    console.error('[Connections] getRecentContacts error:', err);
+    results.innerHTML = '<div class="search-option" style="color:#A00;">Error loading contacts</div>';
+  }).getRecentContacts();
+}
+
+function handleConnectionSearch(event) {
+  const query = event.target.value.trim();
+  console.log('[Connections] handleConnectionSearch called with query:', query);
+  
+  const results = document.getElementById('connectionSearchResults');
+  if (!results) {
+    console.error('[Connections] connectionSearchResults element not found!');
+    return;
+  }
+  
+  if (query.length < 2) {
+    console.log('[Connections] Query too short, loading recent contacts');
     loadRecentContactsForConnectionModal();
+    return;
   }
   
-  function closeAddConnectionModal() {
-    const modal = document.getElementById('addConnectionModal');
-    modal.classList.remove('showing');
-    setTimeout(() => modal.classList.remove('visible'), 250);
+  results.innerHTML = '<div class="search-option" style="color:#999; font-style:italic;">Searching...</div>';
+  results.style.display = 'block';
+  
+  console.log('[Connections] Calling API: searchContacts with query:', query);
+  google.script.run.withSuccessHandler(function(contacts) {
+    console.log('[Connections] searchContacts returned:', contacts ? contacts.length : 0, 'contacts');
+    renderConnectionSearchResults(contacts);
+  }).withFailureHandler(function(err) {
+    console.error('[Connections] searchContacts error:', err);
+    results.innerHTML = '<div class="search-option" style="color:#A00;">Search error</div>';
+  }).searchContacts(query);
+}
+
+function renderConnectionSearchResults(contacts) {
+  const state = window.IntegrityState;
+  const results = document.getElementById('connectionSearchResults');
+  results.innerHTML = '';
+  results.style.display = 'block';
+  
+  if (!contacts || contacts.length === 0) {
+    results.innerHTML = '<div class="search-option" style="color:#999;">No contacts found</div>';
+    return;
   }
   
-  function loadRecentContactsForConnectionModal() {
-    const results = document.getElementById('connectionSearchResults');
-    results.innerHTML = '<div class="search-option" style="color:#999; font-style:italic;">Loading recent contacts...</div>';
-    results.style.display = 'block';
-    
-    google.script.run.withSuccessHandler(function(contacts) {
-      renderConnectionSearchResults(contacts);
-    }).getRecentContacts();
+  const currentId = state?.currentContactRecord?.id;
+  const filtered = contacts.filter(c => c.id !== currentId);
+  
+  if (filtered.length === 0) {
+    results.innerHTML = '<div class="search-option" style="color:#999;">No other contacts found</div>';
+    return;
   }
   
-  function handleConnectionSearch(event) {
-    const query = event.target.value.trim();
-    if (query.length < 2) {
-      loadRecentContactsForConnectionModal();
-      return;
-    }
-    
-    google.script.run.withSuccessHandler(function(contacts) {
-      renderConnectionSearchResults(contacts);
-    }).searchContacts(query);
-  }
+  filtered.slice(0, 15).forEach(contact => {
+    const f = contact.fields;
+    const name = `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
+    const div = document.createElement('div');
+    div.className = 'search-option';
+    div.innerHTML = `<strong>${name}</strong>${f.EmailAddress1 ? `<br><span style="font-size:11px; color:#666;">${f.EmailAddress1}</span>` : ''}`;
+    div.onclick = function() { selectConnectionTarget(contact.id, name); };
+    results.appendChild(div);
+  });
+}
+
+function selectConnectionTarget(contactId, contactName) {
+  const state = window.IntegrityState;
+  document.getElementById('targetConnectionContactId').value = contactId;
+  document.getElementById('targetContactNameConn').innerText = contactName;
   
-  function renderConnectionSearchResults(contacts) {
-    const results = document.getElementById('connectionSearchResults');
-    results.innerHTML = '';
-    results.style.display = 'block';
-    
-    if (!contacts || contacts.length === 0) {
-      results.innerHTML = '<div class="search-option" style="color:#999;">No contacts found</div>';
-      return;
-    }
-    
-    const currentId = state.currentContactRecord?.id;
-    const filtered = contacts.filter(c => c.id !== currentId);
-    
-    if (filtered.length === 0) {
-      results.innerHTML = '<div class="search-option" style="color:#999;">No other contacts found</div>';
-      return;
-    }
-    
-    filtered.slice(0, 15).forEach(contact => {
-      const f = contact.fields;
-      const name = `${f.FirstName || ''} ${f.MiddleName || ''} ${f.LastName || ''}`.replace(/\s+/g, ' ').trim();
-      const div = document.createElement('div');
-      div.className = 'search-option';
-      div.innerHTML = `<strong>${name}</strong>${f.EmailAddress1 ? `<br><span style="font-size:11px; color:#666;">${f.EmailAddress1}</span>` : ''}`;
-      div.onclick = function() { selectConnectionTarget(contact.id, name); };
-      results.appendChild(div);
-    });
-  }
-  
-  function selectConnectionTarget(contactId, contactName) {
-    document.getElementById('targetConnectionContactId').value = contactId;
-    document.getElementById('targetContactNameConn').innerText = contactName;
-    
+  if (state?.currentContactRecord) {
     const f = state.currentContactRecord.fields;
     const currentName = `${f.FirstName || ''} ${f.LastName || ''}`.trim();
     document.getElementById('currentContactNameConn').innerText = currentName;
-    
-    populateConnectionRoleSelect();
-    
-    document.getElementById('connectionStep1').style.display = 'none';
-    document.getElementById('connectionStep2').style.display = 'flex';
   }
   
-  function populateConnectionRoleSelect() {
-    const select = document.getElementById('connectionRoleSelect');
-    select.innerHTML = '<option value="">-- Select relationship --</option>';
-    
+  populateConnectionRoleSelect();
+  
+  document.getElementById('connectionStep1').style.display = 'none';
+  document.getElementById('connectionStep2').style.display = 'flex';
+}
+
+function populateConnectionRoleSelect() {
+  const state = window.IntegrityState;
+  const select = document.getElementById('connectionRoleSelect');
+  select.innerHTML = '<option value="">-- Select relationship --</option>';
+  
+  if (state?.connectionRoleTypes) {
     state.connectionRoleTypes.forEach((pair, index) => {
       const option = document.createElement('option');
       option.value = index;
@@ -484,100 +371,69 @@
       select.appendChild(option);
     });
   }
+}
+
+function backToConnectionStep1() {
+  document.getElementById('connectionStep1').style.display = 'flex';
+  document.getElementById('connectionStep2').style.display = 'none';
+}
+
+function executeCreateConnection() {
+  const state = window.IntegrityState;
+  if (!state) return;
   
-  function backToConnectionStep1() {
-    document.getElementById('connectionStep1').style.display = 'flex';
-    document.getElementById('connectionStep2').style.display = 'none';
+  const selectEl = document.getElementById('connectionRoleSelect');
+  const roleIndex = selectEl.value;
+  if (roleIndex === '') {
+    alert('Please select a relationship type');
+    return;
   }
   
-  function executeCreateConnection() {
-    const selectEl = document.getElementById('connectionRoleSelect');
-    const roleIndex = selectEl.value;
-    if (roleIndex === '') {
-      alert('Please select a relationship type');
-      return;
-    }
-    
-    const pair = state.connectionRoleTypes[parseInt(roleIndex)];
-    const contact1Id = state.currentContactRecord.id;
-    const contact2Id = document.getElementById('targetConnectionContactId').value;
-    
-    const btn = document.getElementById('confirmConnectionBtn');
+  const rolePair = state.connectionRoleTypes[parseInt(roleIndex)];
+  const targetContactId = document.getElementById('targetConnectionContactId').value;
+  const currentContactId = state.currentContactRecord.id;
+  
+  const btn = document.getElementById('confirmConnectionBtn');
+  if (btn) {
     btn.disabled = true;
     btn.innerText = 'Creating...';
-    
-    google.script.run.withSuccessHandler(function(result) {
-      btn.disabled = false;
-      btn.innerText = 'Create Connection';
-      
-      if (result.success) {
-        closeAddConnectionModal();
-        loadConnections(state.currentContactRecord.id);
-      } else {
-        alert('Error: ' + (result.error || 'Failed to create connection'));
-      }
-    }).withFailureHandler(function(err) {
-      btn.disabled = false;
-      btn.innerText = 'Create Connection';
-      alert('Error: ' + err.message);
-    }).createConnection(contact1Id, contact2Id, pair.role1, pair.role2);
   }
   
-  function closeDeactivateConnectionModal() {
-    const modal = document.getElementById('deactivateConnectionModal');
-    modal.classList.remove('showing');
-    setTimeout(() => modal.classList.remove('visible'), 250);
-  }
-  
-  function executeDeactivateConnection() {
-    const modal = document.getElementById('deactivateConnectionModal');
-    const connectionId = modal.getAttribute('data-conn-id');
-    
-    if (!connectionId) {
-      closeDeactivateConnectionModal();
-      return;
+  google.script.run.withSuccessHandler(function(result) {
+    closeAddConnectionModal();
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Create Connection';
     }
-    
-    google.script.run.withSuccessHandler(function(result) {
-      closeDeactivateConnectionModal();
-      if (result.success) {
-        loadConnections(state.currentContactRecord.id);
-      } else {
-        alert('Error: ' + (result.error || 'Failed to remove connection'));
-      }
-    }).withFailureHandler(function(err) {
-      closeDeactivateConnectionModal();
-      alert('Error: ' + err.message);
-    }).deactivateConnection(connectionId);
-  }
+    loadConnections(currentContactId);
+  }).withFailureHandler(function(err) {
+    console.error('Create connection error:', err);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Create Connection';
+    }
+    alert('Error creating connection: ' + (err.message || err));
+  }).createConnection(currentContactId, targetContactId, rolePair.role1, rolePair.role2);
+}
 
-  window.toggleConnectionsAccordion = toggleConnectionsAccordion;
-  window.loadConnections = loadConnections;
-  window.toggleConnectionsExpand = toggleConnectionsExpand;
-  window.renderConnectionsPills = renderConnectionsPills;
-  window.renderConnectionsList = renderConnectionsList;
-  window.openConnectionDetailsModal = openConnectionDetailsModal;
-  window.toggleConnectionGroup = function(groupId) {
-    const list = document.getElementById(groupId);
-    const toggle = document.getElementById(groupId + '-toggle');
-    if (list && toggle) {
-      const isHidden = list.style.display === 'none';
-      list.style.display = isHidden ? 'block' : 'none';
-      toggle.textContent = isHidden ? '▲' : '▼';
-    }
-  };
-  window.getRoleBadgeClass = getRoleBadgeClass;
-  window.escapeHtmlForAttr = escapeHtmlForAttr;
-  window.openAddConnectionModal = openAddConnectionModal;
-  window.closeAddConnectionModal = closeAddConnectionModal;
-  window.loadRecentContactsForConnectionModal = loadRecentContactsForConnectionModal;
-  window.handleConnectionSearch = handleConnectionSearch;
-  window.renderConnectionSearchResults = renderConnectionSearchResults;
-  window.selectConnectionTarget = selectConnectionTarget;
-  window.populateConnectionRoleSelect = populateConnectionRoleSelect;
-  window.backToConnectionStep1 = backToConnectionStep1;
-  window.executeCreateConnection = executeCreateConnection;
-  window.closeDeactivateConnectionModal = closeDeactivateConnectionModal;
-  window.executeDeactivateConnection = executeDeactivateConnection;
-  
-})();
+window.loadConnections = loadConnections;
+window.renderConnectionsSection = loadConnections;
+window.expandConnections = expandConnections;
+window.collapseConnections = collapseConnections;
+window.toggleConnectionsAccordion = toggleConnectionsAccordion;
+window.openDeactivateConnectionModal = openDeactivateConnectionModal;
+window.closeDeactivateConnectionModal = closeDeactivateConnectionModal;
+window.executeDeactivateConnection = executeDeactivateConnection;
+window.openAddConnectionModal = openAddConnectionModal;
+window.closeAddConnectionModal = closeAddConnectionModal;
+window.loadRecentContactsForConnectionModal = loadRecentContactsForConnectionModal;
+window.handleConnectionSearch = handleConnectionSearch;
+window.renderConnectionSearchResults = renderConnectionSearchResults;
+window.selectConnectionTarget = selectConnectionTarget;
+window.populateConnectionRoleSelect = populateConnectionRoleSelect;
+window.backToConnectionStep1 = backToConnectionStep1;
+window.executeCreateConnection = executeCreateConnection;
+window.escapeHtmlForAttr = escapeHtmlForAttr;
+
+console.log('SUCCESS: loadConnections is now global');
+console.log('[Connections Module] All functions exposed to window synchronously');

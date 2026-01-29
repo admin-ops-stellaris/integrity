@@ -129,9 +129,7 @@ const IntegrityRouter = (function() {
     });
     
     var route = parseRoute();
-    if (route.type !== 'home') {
-      handleRoute(route);
-    }
+    handleRoute(route);
   }
   
   return {

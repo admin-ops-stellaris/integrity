@@ -1,6 +1,5 @@
 // Timeouts - now using IntegrityState but keeping local refs for backward compat
 let searchTimeout;
-let spouseSearchTimeout;
 let linkedSearchTimeout;
 let loadingTimer;
 // contactStatusFilter MOVED to IntegrityState - use window.IntegrityState.contactStatusFilter
@@ -65,11 +64,51 @@ window.onload = function() {
   initSmartDateListener();
   initSmartTimeListener();
   initSmartFieldEnterGuard();
+  initPhoneClickHandler();
+  initHeaderButtons();
   
   if (window.IntegrityRouter) {
     window.IntegrityRouter.init();
   }
 };
+
+// Initialize header button click handlers (more reliable than inline onclick)
+function initHeaderButtons() {
+  const settingsCog = document.querySelector('.settings-cog');
+  const shortcutsHelp = document.querySelector('.shortcuts-help');
+  
+  if (settingsCog) {
+    settingsCog.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[Header] Settings cog clicked');
+      if (typeof openGlobalSettings === 'function') {
+        openGlobalSettings();
+      } else {
+        console.error('openGlobalSettings not defined');
+      }
+    });
+  }
+  
+  if (shortcutsHelp) {
+    shortcutsHelp.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[Header] Shortcuts help clicked');
+      showShortcutsHelp();
+    });
+  }
+}
+
+// Phone number click-to-copy handler (event delegation)
+function initPhoneClickHandler() {
+  document.addEventListener('click', function(e) {
+    const phoneEl = e.target.closest('.phone-copyable');
+    if (phoneEl && phoneEl.dataset.phone) {
+      window.copyPhoneToClipboard(phoneEl.dataset.phone, phoneEl);
+    }
+  });
+}
 
 // --- KEYBOARD SHORTCUTS ---
 function initKeyboardShortcuts() {
@@ -160,16 +199,18 @@ function updateHeaderTitle(isEditing) {
 }
 
 function toggleProfileView(show) {
+  const dossierHeader = document.querySelector('.dossier-header');
   if(show) {
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('profileContent').style.display = 'flex';
+    // Show dossier-header when viewing a contact
+    if (dossierHeader) dossierHeader.classList.add('visible');
   } else {
     document.getElementById('emptyState').style.display = 'flex';
     document.getElementById('profileContent').style.display = 'none';
-    document.getElementById('formTitle').innerText = "Contact";
-    document.getElementById('formSubtitle').innerText = '';
     document.getElementById('refreshBtn').style.display = 'none'; 
-    document.getElementById('contactMetaBar').classList.remove('visible');
+    // Hide the entire dossier-header block on home screen
+    if (dossierHeader) dossierHeader.classList.remove('visible');
     document.getElementById('duplicateWarningBox').style.display = 'none'; 
   }
 }
@@ -211,7 +252,7 @@ function selectContact(record) {
   document.getElementById('doesNotLike').value = f["Does Not Like Being Called"] || "";
   document.getElementById('mothersMaidenName').value = f["Mother's Maiden Name"] || "";
   document.getElementById('previousNames').value = f["Previous Names"] || "";
-  document.getElementById('mobilePhone').value = f.Mobile || "";
+  document.getElementById('mobilePhone').value = window.formatPhoneForDisplay(f.Mobile) || "";
   
   // Email fields
   document.getElementById('email1').value = f.EmailAddress1 || "";
@@ -252,15 +293,32 @@ function selectContact(record) {
   document.getElementById('editBtn').style.visibility = 'visible';
   document.getElementById('refreshBtn').style.display = 'inline';
 
+  // Duplicate Warning display and actions menu
   const warnBox = document.getElementById('duplicateWarningBox');
+  const addDupBtn = document.getElementById('addDuplicateWarningBtn');
+  const deleteDupBtn = document.getElementById('deleteDuplicateWarningBtn');
   if (f['Duplicate Warning']) {
      document.getElementById('duplicateWarningText').innerText = f['Duplicate Warning'];
-     warnBox.style.display = 'flex'; 
+     warnBox.style.display = 'block'; 
+     if (addDupBtn) addDupBtn.style.display = 'none';
+     if (deleteDupBtn) deleteDupBtn.style.display = 'block';
   } else {
      warnBox.style.display = 'none';
+     if (addDupBtn) addDupBtn.style.display = 'block';
+     if (deleteDupBtn) deleteDupBtn.style.display = 'none';
   }
 
   document.getElementById('formSubtitle').innerHTML = formatSubtitle(f);
+  
+  // Quick info line (mobile & email) - uses same styling as Created/Modified
+  let quickInfoHtml = '';
+  if (f.Mobile) {
+    const formattedPhone = window.formatPhoneForDisplay(f.Mobile);
+    const rawPhone = window.stripPhoneForStorage(f.Mobile);
+    quickInfoHtml += `<span class="meta-item phone-copyable" data-phone="${escapeHtml(rawPhone)}" title="Click to copy">${escapeHtml(formattedPhone)}</span>`;
+  }
+  if (f.EmailAddress1) quickInfoHtml += `<span class="meta-item">${escapeHtml(f.EmailAddress1)}</span>`;
+  document.getElementById('contactQuickInfo').innerHTML = quickInfoHtml;
   
   // Set title with tenure info
   const fullName = formatName(f);
@@ -273,9 +331,21 @@ function selectContact(record) {
   
   renderHistory(f);
   loadOpportunities(f);
-  renderSpouseSection(f);
-  loadConnections(record.id);
-  loadAddressHistory(record.id);
+  if (window.renderSpouseSection) {
+    renderSpouseSection(f);
+  } else {
+    console.error('Critical: renderSpouseSection missing');
+  }
+  if (window.loadConnections) {
+    loadConnections(record.id);
+  } else {
+    console.error('Critical: loadConnections missing');
+  }
+  if (window.loadAddressHistory) {
+    loadAddressHistory(record.id);
+  } else {
+    console.error('Critical: loadAddressHistory missing');
+  }
   closeOppPanel();
   
   // Show Actions menu for existing contacts
@@ -290,6 +360,13 @@ function selectContact(record) {
   if (window.IntegrityRouter && !window._routerNavigating) {
     window.IntegrityRouter.navigateTo(record.id, null);
   }
+  
+  // Update breadcrumbs
+  const contactName = [f.FirstName, f.LastName].filter(Boolean).join(' ') || 'Contact';
+  window.updateBreadcrumbs([
+    { label: 'Contacts', action: 'goHome()' },
+    { label: contactName }
+  ]);
 }
 
 // Callback-based version for router (daisy chain pattern)
@@ -341,6 +418,36 @@ function updateUnsubscribeDisplay(isUnsubscribed) {
   }
 }
 
+function toggleContactStatus() {
+  if (!currentContactRecord) return;
+  const currentStatus = currentContactRecord.fields.Status || 'Active';
+  const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+  const confirmMsg = newStatus === 'Inactive' 
+    ? 'Mark this contact as Inactive? They will be hidden from the default contact list.'
+    : 'Mark this contact as Active again?';
+  
+  showCustomConfirm(confirmMsg, function() {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result && result.success) {
+          currentContactRecord.fields.Status = newStatus;
+          const badge = document.getElementById('statusBadge');
+          if (badge) {
+            badge.textContent = newStatus;
+            badge.className = 'status-badge clickable-badge ' + (newStatus === 'Active' ? 'status-active' : 'status-inactive');
+          }
+          if (typeof refreshContactList === 'function') refreshContactList();
+        } else {
+          showAlert('Error', 'Failed to update status', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        showAlert('Error', 'Error updating status: ' + err.message, 'error');
+      })
+      .updateRecord('Contacts', currentContactRecord.id, 'Status', newStatus);
+  });
+}
+
 function openUnsubscribeEdit() {
   if (!currentContactRecord) return;
   const currentValue = currentContactRecord.fields["Unsubscribed from Marketing"] || false;
@@ -366,30 +473,27 @@ function saveUnsubscribePreference() {
   // Different warnings for subscribe vs unsubscribe
   let confirmMsg;
   if (newValue) {
-    // Unsubscribing someone who is subscribed
     confirmMsg = "If you proceed, this person won't receive any marketing communications from us again. Are you sure you want that?";
   } else {
-    // Subscribing someone who is unsubscribed - SPAM Act warning
     confirmMsg = "Are you sure you want to change this client's marketing preferences? If they expressed an opinion and you're going against that, it's a breach of the SPAM Act among other things.";
   }
-  if (!confirm(confirmMsg)) {
-    return;
-  }
   
-  closeUnsubscribeModal();
-  
-  google.script.run
-    .withSuccessHandler(function(result) {
-      if (result && result.fields) {
-        currentContactRecord = result;
-        updateUnsubscribeDisplay(result.fields["Unsubscribed from Marketing"] || false);
-        showAlert('Success', 'Marketing preference updated.', 'success');
-      }
-    })
-    .withFailureHandler(function(err) {
-      showAlert('Error', err.message, 'error');
-    })
-    .updateContact(currentContactRecord.id, "Unsubscribed from Marketing", newValue);
+  showCustomConfirm(confirmMsg, function() {
+    closeUnsubscribeModal();
+    
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result && result.success) {
+          currentContactRecord.fields["Unsubscribed from Marketing"] = newValue;
+          updateUnsubscribeDisplay(newValue);
+          showAlert('Success', 'Marketing preference updated.', 'success');
+        }
+      })
+      .withFailureHandler(function(err) {
+        showAlert('Error', err.message, 'error');
+      })
+      .updateRecord('Contacts', currentContactRecord.id, "Unsubscribed from Marketing", newValue);
+  });
 }
 
 function refreshCurrentContact() {
@@ -442,24 +546,7 @@ function executeDeleteContact() {
   });
 }
 
-function openModal(modalId) {
-  const modal = document.getElementById(modalId);
-  modal.classList.add('visible');
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      modal.classList.add('showing');
-    });
-  });
-}
-
-function closeModal(modalId, callback) {
-  const modal = document.getElementById(modalId);
-  modal.classList.remove('showing');
-  setTimeout(() => {
-    modal.classList.remove('visible');
-    if (callback) callback();
-  }, 250);
-}
+// openModal and closeModal are defined in modal-utils.js
 
 function showAlert(title, message, type) {
   const modal = document.getElementById('alertModal');
@@ -786,26 +873,25 @@ function addPendingLink(key, newLink) {
       }
       // 3. Enforce Mutually Exclusive Logic WITH PROMPT
       const exclusiveKeys = ['Primary Applicant', 'Applicants', 'Guarantors'];
-      let conflictFound = false;
+      let conflictKey = null;
 
-      exclusiveKeys.forEach(otherKey => {
-         if(otherKey === key) return;
+      for (const otherKey of exclusiveKeys) {
+         if(otherKey === key) continue;
          const otherLinks = currentPanelData[otherKey] || [];
          if(otherLinks.some(l => l.id === newLink.id)) {
-            conflictFound = true;
-            if(confirm(`${newLink.name} is currently a '${otherKey}'.\n\nDo you want to move them to '${key}'?`)) {
-               if(!pendingRemovals[otherKey]) pendingRemovals[otherKey] = [];
-               pendingRemovals[otherKey].push(newLink.id);
-               pendingLinkedEdits[key].push(newLink);
-            } else {
-               return; 
-            }
+            conflictKey = otherKey;
+            break;
          }
-      });
+      }
 
-      if(conflictFound) {
-         renderLinkedEditorState(key);
-         return; 
+      if(conflictKey) {
+         showCustomConfirm(`${newLink.name} is currently a '${conflictKey}'.\n\nDo you want to move them to '${key}'?`, function() {
+            if(!pendingRemovals[conflictKey]) pendingRemovals[conflictKey] = [];
+            pendingRemovals[conflictKey].push(newLink.id);
+            pendingLinkedEdits[key].push(newLink);
+            renderLinkedEditorState(key);
+         });
+         return;
       }
 
       pendingLinkedEdits[key].push(newLink);
@@ -849,127 +935,19 @@ function executeQueue(table, id, ops, callback) {
 
 // --- END LINKED EDITOR ---
 
-// ... (Spouse Modal Logic & General Logic remains the same) ...
-function openSpouseModal() {
-   const f = currentContactRecord.fields;
-   const spouseName = (f['Spouse Name'] && f['Spouse Name'].length > 0) ? f['Spouse Name'][0] : null;
-   const spouseId = (f['Spouse'] && f['Spouse'].length > 0) ? f['Spouse'][0] : null;
-   openModal('spouseModal');
-   document.getElementById('connectForm').style.display = 'none';
-   document.getElementById('confirmConnectForm').style.display = 'none';
-   document.getElementById('disconnectForm').style.display = 'none';
-   if (spouseId) {
-      document.getElementById('disconnectForm').style.display = 'flex';
-      document.getElementById('currentSpouseName').innerText = spouseName;
-      document.getElementById('currentSpouseId').value = spouseId;
-   } else {
-      document.getElementById('connectForm').style.display = 'flex';
-      document.getElementById('spouseSearchInput').value = '';
-      document.getElementById('spouseSearchResults').innerHTML = '';
-      document.getElementById('spouseSearchResults').style.display = 'none';
-      loadRecentContactsForModal();
-   }
-}
-function closeSpouseModal() { closeModal('spouseModal'); }
-function backToSearch() {
-   document.getElementById('confirmConnectForm').style.display = 'none';
-   document.getElementById('connectForm').style.display = 'flex';
-}
-function loadRecentContactsForModal() {
-   const resultsDiv = document.getElementById('spouseSearchResults');
-   const inputVal = document.getElementById('spouseSearchInput').value;
-   if(inputVal.length > 0) return; 
-   resultsDiv.style.display = 'block';
-   resultsDiv.innerHTML = '<div style="padding:10px; color:#999; font-style:italic;">Loading recent...</div>';
-   google.script.run.withSuccessHandler(function(records) {
-       resultsDiv.innerHTML = '<div style="padding:5px 10px; font-size:10px; color:#999; text-transform:uppercase; font-weight:700;">Recently Modified</div>';
-       if (!records || records.length === 0) { resultsDiv.innerHTML += '<div style="padding:8px; font-style:italic; color:#999;">No recent contacts</div>'; } else {
-          records.forEach(r => {
-             if(r.id === currentContactRecord.id) return;
-             renderSearchResultItem(r, resultsDiv);
-          });
-       }
-   }).getRecentContacts();
-}
-function handleSpouseSearch(event) {
-   const query = event.target.value;
-   const resultsDiv = document.getElementById('spouseSearchResults');
-   clearTimeout(spouseSearchTimeout);
-   if(query.length === 0) { loadRecentContactsForModal(); return; }
-   resultsDiv.style.display = 'block';
-   resultsDiv.innerHTML = '<div style="padding:10px; color:#999; font-style:italic;">Searching...</div>';
-   spouseSearchTimeout = setTimeout(() => {
-      google.script.run.withSuccessHandler(function(records) {
-         resultsDiv.innerHTML = '';
-         if (records.length === 0) { resultsDiv.innerHTML = '<div style="padding:8px; font-style:italic; color:#999;">No results</div>'; } else {
-            records.forEach(r => {
-               if(r.id === currentContactRecord.id) return;
-               renderSearchResultItem(r, resultsDiv);
-            });
-         }
-      }).searchContacts(query);
-   }, 500);
-}
-function renderSearchResultItem(r, container) {
-   const name = formatName(r.fields);
-   const details = formatDetailsRow(r.fields); 
-   const div = document.createElement('div');
-   div.className = 'search-option';
-   div.innerHTML = `<span style="font-weight:700; display:block;">${name}</span><span style="font-size:11px; color:#666;">${details}</span>`;
-   div.onclick = function() {
-      document.getElementById('targetSpouseName').innerText = name;
-      document.getElementById('targetSpouseId').value = r.id;
-      document.getElementById('connectForm').style.display = 'none';
-      document.getElementById('confirmConnectForm').style.display = 'flex';
-   };
-   container.appendChild(div);
-}
-function executeSpouseChange(action) {
-   const myId = currentContactRecord.id;
-   let statusStr = ""; let otherId = ""; let expectHasSpouse = false; 
-   if (action === 'disconnect') {
-      statusStr = "disconnected as spouse from";
-      otherId = document.getElementById('currentSpouseId').value;
-      expectHasSpouse = false;
-   } else {
-      statusStr = "connected as spouse to";
-      otherId = document.getElementById('targetSpouseId').value;
-      expectHasSpouse = true;
-   }
-   closeSpouseModal();
-   const statusEl = document.getElementById('spouseStatusText');
-   statusEl.innerHTML = `<span style="color:var(--color-star); font-style:italic; font-weight:700; display:inline-flex; align-items:center;">Updating <span class="pulse-dot"></span><span class="pulse-dot"></span><span class="pulse-dot"></span></span>`;
-   document.getElementById('spouseEditLink').style.display = 'none'; 
-   google.script.run.withSuccessHandler(function(res) {
-      pollAttempts = 0; startPolling(myId, expectHasSpouse);
-   }).setSpouseStatus(myId, otherId, statusStr);
-}
-function startPolling(contactId, expectHasSpouse) {
-   if(pollInterval) clearInterval(pollInterval);
-   pollInterval = setInterval(() => {
-      pollAttempts++;
-      if (pollAttempts > 20) { 
-         clearInterval(pollInterval);
-         const statusEl = document.getElementById('spouseStatusText');
-         if(statusEl) { statusEl.innerHTML = `<span style="color:#A00;">Update delayed.</span> <a class="data-link" onclick="forceReload('${contactId}')">Refresh</a>`; }
-         return;
-      }
-      google.script.run.withSuccessHandler(function(r) {
-         if(r && r.fields) {
-            const currentSpouseId = (r.fields['Spouse'] && r.fields['Spouse'].length > 0) ? r.fields['Spouse'][0] : null;
-            const match = expectHasSpouse ? (currentSpouseId !== null) : (currentSpouseId === null);
-            if (match) {
-               clearInterval(pollInterval);
-               if(currentContactRecord && currentContactRecord.id === contactId) { selectContact(r); }
-            }
-         }
-      }).getContactById(contactId); 
-   }, 2000); 
-}
-function forceReload(id) {
-   clearInterval(pollInterval);
-   google.script.run.withSuccessHandler(function(r) { if(r && r.fields) selectContact(r); }).getContactById(id);
-}
+// Spouse modal functions moved to spouse.js module
+
+window.loadContactById = function(contactId, addToHistory) {
+  if (addToHistory && currentContactRecord) {
+    state.contactHistory = state.contactHistory || [];
+    state.contactHistory.push(currentContactRecord.id);
+  }
+  google.script.run.withSuccessHandler(function(record) {
+    if (record && record.fields) {
+      selectContact(record);
+    }
+  }).getContactById(contactId);
+};
 
 window.goHome = function() {
   // Clear current contact and show initial empty state
@@ -981,6 +959,9 @@ window.goHome = function() {
   // Close opp panel without URL update (we'll update URL separately)
   document.getElementById('oppDetailPanel').classList.remove('open');
   state.panelHistory = [];
+  
+  // Hide breadcrumbs on home/dashboard
+  window.updateBreadcrumbs([]);
   
   // Update URL to home
   if (window.IntegrityRouter) {
@@ -1015,11 +996,18 @@ function resetForm() {
   }
   document.getElementById('formTitle').innerText = "New Contact";
   document.getElementById('formSubtitle').innerText = '';
+  document.getElementById('contactQuickInfo').textContent = '';
   document.getElementById('submitBtn').innerText = "Create Contact";
   document.getElementById('cancelBtn').style.display = 'inline-block';
   document.getElementById('editBtn').style.visibility = 'hidden';
   document.getElementById('oppList').innerHTML = '<li style="color:#CCC; font-size:12px; font-style:italic;">No opportunities linked.</li>';
-  document.getElementById('contactMetaBar').classList.remove('visible');
+  // Reset dossier header badges
+  const statusBadge = document.getElementById('statusBadge');
+  if (statusBadge) statusBadge.style.display = 'none';
+  const marketingBadge = document.getElementById('marketingBadge');
+  if (marketingBadge) marketingBadge.style.display = 'none';
+  const dossierMeta = document.getElementById('dossierMeta');
+  if (dossierMeta) dossierMeta.innerHTML = '';
   document.getElementById('duplicateWarningBox').style.display = 'none';
   document.getElementById('spouseStatusText').innerHTML = "Single";
   document.getElementById('spouseHistoryList').innerHTML = "";
@@ -1102,39 +1090,54 @@ function renderHistory(f) {
 }
 
 function renderContactMetaBar(f) {
-  const bar = document.getElementById('contactMetaBar');
-  const isUnsubscribed = f["Unsubscribed from Marketing"] || false;
-  const marketingText = isUnsubscribed ? "Unsubscribed" : "Subscribed";
-  const marketingClass = isUnsubscribed ? "marketing-status-unsubscribed" : "marketing-status-subscribed";
-  const status = f.Status || "Active";
-  const statusClass = status === "Inactive" ? "status-inactive" : "status-active";
-  
-  // Parse Created/Modified - strip "Created:" or "Modified:" prefix if present
-  let createdDisplay = f.Created || '';
-  let modifiedDisplay = f.Modified || '';
-  if (createdDisplay.toLowerCase().startsWith('created:')) {
-    createdDisplay = createdDisplay.substring(8).trim();
-  }
-  if (modifiedDisplay.toLowerCase().startsWith('modified:')) {
-    modifiedDisplay = modifiedDisplay.substring(9).trim();
+  // Delegate to contacts.js version which handles dossier header
+  if (window.renderContactMetaBar && window.renderContactMetaBar !== renderContactMetaBar) {
+    window.renderContactMetaBar(f);
+    return;
   }
   
-  let html = '';
-  // Status badge
-  html += `<div class="meta-status ${statusClass}" onclick="toggleContactStatus()" title="Click to toggle status">${status}</div>`;
-  if (createdDisplay) {
-    html += '<div class="meta-divider"></div>';
-    html += `<div class="meta-item"><span class="meta-label">Created:</span> <span class="meta-value">${createdDisplay}</span></div>`;
+  // Fallback: Render dossier meta (right side of header)
+  const dossierMeta = document.getElementById('dossierMeta');
+  if (dossierMeta) {
+    let createdDisplay = f.Created || '';
+    let modifiedDisplay = f.Modified || '';
+    if (createdDisplay.toLowerCase().startsWith('created:')) {
+      createdDisplay = createdDisplay.substring(8).trim();
+    }
+    if (modifiedDisplay.toLowerCase().startsWith('modified:')) {
+      modifiedDisplay = modifiedDisplay.substring(9).trim();
+    }
+    
+    let html = '';
+    if (createdDisplay) {
+      html += `<span class="meta-item">Created ${createdDisplay}</span>`;
+    }
+    if (modifiedDisplay) {
+      html += `<span class="meta-item">Modified ${modifiedDisplay}</span>`;
+    }
+    dossierMeta.innerHTML = html;
   }
-  if (modifiedDisplay) {
-    html += '<div class="meta-divider"></div>';
-    html += `<div class="meta-item"><span class="meta-label">Modified:</span> <span class="meta-value">${modifiedDisplay}</span></div>`;
-  }
-  html += `<div class="meta-marketing" onclick="openUnsubscribeEdit()"><span class="meta-label">Marketing:</span><span class="${marketingClass}">${marketingText}</span></div>`;
   
-  bar.innerHTML = html;
-  bar.classList.add('visible');
+  // Render status badge
+  const statusBadge = document.getElementById('statusBadge');
+  if (statusBadge) {
+    const status = f.Status || 'Active';
+    statusBadge.textContent = status;
+    statusBadge.className = 'status-badge clickable-badge ' + (status === 'Active' ? 'status-active' : 'status-inactive');
+    statusBadge.style.display = 'inline-block';
+  }
+  
+  // Render marketing badge
+  const marketingBadge = document.getElementById('marketingBadge');
+  if (marketingBadge) {
+    const isUnsubscribed = f["Unsubscribed from Marketing"] || false;
+    const marketingText = isUnsubscribed ? "UNSUBSCRIBED" : "SUBSCRIBED";
+    marketingBadge.textContent = marketingText;
+    marketingBadge.style.display = 'inline-block';
+  }
 }
+
+let pendingFormData = null;
 
 function handleFormSubmit(formObject) {
   if (window.event) window.event.preventDefault();
@@ -1147,7 +1150,7 @@ function handleFormSubmit(formObject) {
     lastName: formObject.lastName.value,
     preferredName: formObject.preferredName.value,
     doesNotLike: formObject.doesNotLike.value,
-    mobilePhone: formObject.mobilePhone.value,
+    mobilePhone: window.stripPhoneForStorage(formObject.mobilePhone.value),
     email1: formObject.email1.value,
     email1Comment: formObject.email1Comment.value,
     email2: formObject.email2.value,
@@ -1159,19 +1162,269 @@ function handleFormSubmit(formObject) {
     genderOther: formObject.genderOther.value,
     dateOfBirth: formObject.dateOfBirth.value
   };
+  
+  if (!formData.recordId) {
+    checkForDuplicates(formData, btn, status);
+  } else {
+    submitFormData(formData, btn, status);
+  }
+}
+
+async function checkForDuplicates(formData, btn, status) {
+  console.log('[Duplicate Check] Starting check for:', formData.firstName, formData.lastName, formData.mobilePhone);
+  try {
+    const response = await fetch('/api/checkDuplicates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mobile: formData.mobilePhone,
+        email: formData.email1,
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      })
+    });
+    const result = await response.json();
+    console.log('[Duplicate Check] Result:', result);
+    
+    if (result.duplicates && result.duplicates.length > 0) {
+      console.log('[Duplicate Check] Found duplicates, showing modal');
+      pendingFormData = formData;
+      showDuplicateDetectionModal(result.duplicates, btn, status);
+    } else {
+      console.log('[Duplicate Check] No duplicates, proceeding with save');
+      submitFormData(formData, btn, status);
+    }
+  } catch (err) {
+    console.error('[Duplicate Check] Failed:', err);
+    submitFormData(formData, btn, status);
+  }
+}
+
+let pendingDuplicates = [];
+
+function showDuplicateDetectionModal(duplicates, btn, status) {
+  pendingDuplicates = duplicates;
+  const modal = document.getElementById('duplicateDetectionModal');
+  console.log('[Duplicate Modal] Modal element:', modal);
+  console.log('[Duplicate Modal] Modal classes before:', modal ? modal.className : 'NOT FOUND');
+  console.log('[Duplicate Modal] Modal display style:', modal ? getComputedStyle(modal).display : 'N/A');
+  
+  const list = document.getElementById('duplicateDetectionList');
+  list.innerHTML = duplicates.map(d => {
+    const name = d.fields['Calculated Name'] || `${d.fields.FirstName} ${d.fields.LastName}`;
+    const mobile = d.fields.Mobile ? window.formatPhoneForDisplay(d.fields.Mobile) : '';
+    const email = d.fields.EmailAddress1 || '';
+    const matchBadge = getMatchBadge(d.matchType);
+    return `
+      <div class="duplicate-item">
+        <div class="duplicate-item-info">
+          <div class="duplicate-item-name">${name}</div>
+          <div class="duplicate-item-details">
+            ${mobile ? `<span>${mobile}</span>` : ''}
+            ${mobile && email ? '<span class="separator">•</span>' : ''}
+            ${email ? `<span>${email}</span>` : ''}
+          </div>
+        </div>
+        <div class="duplicate-item-actions">
+          ${matchBadge}
+          <a href="/contact/${d.id}" target="_blank" class="btn-view-duplicate">View in new tab</a>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  document.getElementById('duplicateWarningPrompt').style.display = 'block';
+  document.getElementById('addWarningAfterCreate').checked = true;
+  
+  console.log('[Duplicate Modal] Calling openModal now...');
+  window.openModal('duplicateDetectionModal');
+  
+  const modalAfter = document.getElementById('duplicateDetectionModal');
+  console.log('[Duplicate Modal] Modal classes after openModal:', modalAfter ? modalAfter.className : 'NOT FOUND');
+  console.log('[Duplicate Modal] Modal computed display:', modalAfter ? getComputedStyle(modalAfter).display : 'N/A');
+  console.log('[Duplicate Modal] Modal computed visibility:', modalAfter ? getComputedStyle(modalAfter).visibility : 'N/A');
+  console.log('[Duplicate Modal] Modal computed opacity:', modalAfter ? getComputedStyle(modalAfter).opacity : 'N/A');
+  console.log('[Duplicate Modal] Modal offsetHeight:', modalAfter ? modalAfter.offsetHeight : 'N/A');
+  
+  btn.disabled = false;
+  btn.innerText = "Create Contact";
+}
+
+function getMatchBadge(matchType) {
+  const badges = {
+    'mobile': '<span class="match-badge match-mobile">Mobile Match</span>',
+    'email': '<span class="match-badge match-email">Email Match</span>',
+    'name': '<span class="match-badge match-name">Name Match</span>',
+    'mobile+email': '<span class="match-badge match-both">Mobile + Email</span>',
+    'mobile+name': '<span class="match-badge match-both">Mobile + Name</span>',
+    'email+name': '<span class="match-badge match-both">Email + Name</span>',
+    'mobile+email+name': '<span class="match-badge match-all">All Match</span>'
+  };
+  return badges[matchType] || '';
+}
+
+function closeDuplicateDetectionModal() {
+  window.closeModal('duplicateDetectionModal');
+  pendingFormData = null;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = false;
+  btn.innerText = "Create Contact";
+}
+
+function viewExistingContact(contactId) {
+  closeDuplicateDetectionModal();
+  cancelNewContact();
+  google.script.run.withSuccessHandler(function(contact) {
+    if (contact) selectContact(contact);
+  }).getContactById(contactId);
+}
+
+function proceedWithDuplicate() {
+  if (!pendingFormData) return;
+  const btn = document.getElementById('submitBtn');
+  const status = document.getElementById('status');
+  const addWarnings = document.getElementById('addWarningAfterCreate').checked;
+  const duplicatesToWarn = addWarnings ? [...pendingDuplicates] : [];
+  
+  window.closeModal('duplicateDetectionModal');
+  document.getElementById('duplicateWarningPrompt').style.display = 'none';
+  
+  submitFormDataWithWarnings(pendingFormData, btn, status, duplicatesToWarn);
+  pendingFormData = null;
+  pendingDuplicates = [];
+}
+
+function submitFormData(formData, btn, status) {
+  btn.disabled = true;
+  btn.innerText = "Saving...";
   google.script.run.withSuccessHandler(function(response) {
        loadContacts();
        btn.disabled = false;
        btn.innerText = "Update Contact";
        disableEditMode();
        if (response.type === 'create' && response.record) {
-         // New contact created - navigate to view it
          selectContact(response.record);
        } else if (formData.recordId) {
-         // For updates, refresh the contact to show updated Modified date
          google.script.run.withSuccessHandler(function(r) {
            if (r && r.fields) selectContact(r);
          }).getContactById(formData.recordId);
        }
     }).withFailureHandler(function(err) { status.innerText = "❌ " + err.message; status.className = "status-error"; btn.disabled = false; btn.innerText = "Try Again"; }).processForm(formData);
+}
+
+function submitFormDataWithWarnings(formData, btn, status, duplicatesToWarn) {
+  btn.disabled = true;
+  btn.innerText = "Saving...";
+  google.script.run.withSuccessHandler(function(response) {
+    loadContacts();
+    btn.disabled = false;
+    btn.innerText = "Update Contact";
+    disableEditMode();
+    
+    if (response.type === 'create' && response.record) {
+      const newContactId = response.record.id;
+      const newContactName = response.record.fields['Calculated Name'] || 
+        `${response.record.fields.FirstName || ''} ${response.record.fields.LastName || ''}`.trim();
+      
+      if (duplicatesToWarn.length > 0) {
+        const existingNames = duplicatesToWarn.map(d => 
+          d.fields['Calculated Name'] || `${d.fields.FirstName} ${d.fields.LastName}`
+        ).join(', ');
+        
+        const warningForNew = `Similar contact(s) exist: ${existingNames}. Verify you're working with the right person.`;
+        google.script.run.updateRecord('Contacts', newContactId, 'Duplicate Warning', warningForNew);
+        
+        duplicatesToWarn.forEach(dup => {
+          const warningForExisting = `Similar contact created: ${newContactName}. Verify you're working with the right person.`;
+          google.script.run.updateRecord('Contacts', dup.id, 'Duplicate Warning', warningForExisting);
+        });
+        
+        console.log('[Duplicate Warnings] Added to', duplicatesToWarn.length + 1, 'contacts');
+      }
+      
+      selectContact(response.record);
+    }
+  }).withFailureHandler(function(err) { 
+    status.innerText = "❌ " + err.message; 
+    status.className = "status-error"; 
+    btn.disabled = false; 
+    btn.innerText = "Try Again"; 
+  }).processForm(formData);
+}
+
+// ============================================================
+// Duplicate Warning Functions
+// ============================================================
+
+function hideDuplicateWarning() {
+  document.getElementById('duplicateWarningBox').style.display = 'none';
+}
+
+function openAddDuplicateWarning() {
+  document.getElementById('duplicateWarningModalTitle').innerText = 'Add Duplicate Warning';
+  document.getElementById('duplicateWarningInput').value = '';
+  closeActionsMenu();
+  openModal('duplicateWarningModal');
+}
+
+function openEditDuplicateWarning() {
+  const currentText = document.getElementById('duplicateWarningText').innerText || '';
+  document.getElementById('duplicateWarningModalTitle').innerText = 'Edit Duplicate Warning';
+  document.getElementById('duplicateWarningInput').value = currentText;
+  openModal('duplicateWarningModal');
+}
+
+function closeDuplicateWarningModal() {
+  closeModal('duplicateWarningModal');
+}
+
+function saveDuplicateWarning() {
+  const recordId = document.getElementById('recordId').value;
+  if (!recordId) {
+    showAlert('Error', 'No contact selected', 'error');
+    return;
+  }
+  
+  const warningText = document.getElementById('duplicateWarningInput').value.trim();
+  
+  google.script.run.withSuccessHandler(function() {
+    // Update UI
+    if (warningText) {
+      document.getElementById('duplicateWarningText').innerText = warningText;
+      document.getElementById('duplicateWarningBox').style.display = 'block';
+      document.getElementById('addDuplicateWarningBtn').style.display = 'none';
+      document.getElementById('deleteDuplicateWarningBtn').style.display = 'block';
+    } else {
+      document.getElementById('duplicateWarningBox').style.display = 'none';
+      document.getElementById('addDuplicateWarningBtn').style.display = 'block';
+      document.getElementById('deleteDuplicateWarningBtn').style.display = 'none';
+    }
+    closeDuplicateWarningModal();
+    showAlert('Saved', 'Duplicate warning updated', 'success');
+  }).withFailureHandler(function(err) {
+    showAlert('Error', 'Failed to save: ' + err.message, 'error');
+  }).updateRecord('Contacts', recordId, 'Duplicate Warning', warningText);
+}
+
+function confirmDeleteDuplicateWarning() {
+  closeActionsMenu();
+  showConfirmModal('Are you sure you want to delete this duplicate warning?', function() {
+    const recordId = document.getElementById('recordId').value;
+    if (!recordId) return;
+    
+    google.script.run.withSuccessHandler(function() {
+      document.getElementById('duplicateWarningBox').style.display = 'none';
+      document.getElementById('duplicateWarningText').innerText = '';
+      document.getElementById('addDuplicateWarningBtn').style.display = 'block';
+      document.getElementById('deleteDuplicateWarningBtn').style.display = 'none';
+      showAlert('Deleted', 'Duplicate warning removed', 'success');
+    }).withFailureHandler(function(err) {
+      showAlert('Error', 'Failed to delete: ' + err.message, 'error');
+    }).updateRecord('Contacts', recordId, 'Duplicate Warning', '');
+  });
+}
+
+function closeActionsMenu() {
+  const dropdown = document.getElementById('actionsDropdown');
+  if (dropdown) dropdown.classList.remove('open');
 }

@@ -619,4 +619,142 @@
     }
   };
   
+  // ============================================================
+  // Breadcrumb Navigation
+  // ============================================================
+  
+  window.renderBreadcrumbs = function(pathArray) {
+    if (!pathArray || pathArray.length === 0) return '';
+    
+    return pathArray.map((item, index) => {
+      const isLast = index === pathArray.length - 1;
+      const separator = index > 0 ? '<span class="breadcrumb-sep">›</span>' : '';
+      
+      if (isLast) {
+        return `${separator}<span class="breadcrumb-current">${window.escapeHtml(item.label)}</span>`;
+      } else {
+        const onclick = item.action ? `onclick="${item.action}"` : '';
+        return `${separator}<a class="breadcrumb-link" ${onclick}>${window.escapeHtml(item.label)}</a>`;
+      }
+    }).join('');
+  };
+  
+  window.updateBreadcrumbs = function(pathArray) {
+    const bar = document.getElementById('breadcrumb-bar');
+    if (bar) {
+      bar.innerHTML = window.renderBreadcrumbs(pathArray);
+      bar.style.display = pathArray && pathArray.length > 0 ? 'block' : 'none';
+    }
+  };
+  
+  // ============================================================
+  // Phone Number Formatting
+  // ============================================================
+  
+  /**
+   * Strip all non-digit characters from phone number for storage
+   * @param {string} phone - Phone number in any format
+   * @returns {string} Digits only (e.g., "0412345678")
+   */
+  window.stripPhoneForStorage = function(phone) {
+    if (!phone) return '';
+    return String(phone).replace(/\D/g, '');
+  };
+  
+  /**
+   * Format Australian mobile number for display (0412 345 678)
+   * @param {string} phone - Phone number (with or without spaces)
+   * @returns {string} Formatted phone or original if not standard format
+   */
+  window.formatPhoneForDisplay = function(phone) {
+    if (!phone) return '';
+    const digits = String(phone).replace(/\D/g, '');
+    
+    // Australian mobile: 10 digits starting with 04
+    if (digits.length === 10 && digits.startsWith('04')) {
+      return digits.slice(0, 4) + ' ' + digits.slice(4, 7) + ' ' + digits.slice(7);
+    }
+    
+    // Australian landline: 10 digits starting with 0
+    if (digits.length === 10 && digits.startsWith('0')) {
+      return digits.slice(0, 2) + ' ' + digits.slice(2, 6) + ' ' + digits.slice(6);
+    }
+    
+    // International +61: 11 digits starting with 61
+    if (digits.length === 11 && digits.startsWith('61')) {
+      return '+61 ' + digits.slice(2, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8);
+    }
+    
+    // Return original if format not recognized
+    return phone;
+  };
+  
+  /**
+   * Get user preference for phone copy format (from cached user profile)
+   * @returns {boolean} true = copy with spaces, false = copy without spaces
+   */
+  window.getPhoneCopyPreference = function() {
+    if (window.currentUserProfile) {
+      return window.currentUserProfile.phoneCopyWithSpaces === true;
+    }
+    return false;
+  };
+  
+  /**
+   * Set user preference for phone copy format (saves to Airtable)
+   * @param {boolean} withSpaces - true = copy with spaces
+   */
+  window.setPhoneCopyPreference = function(withSpaces) {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result && result.success && window.currentUserProfile) {
+          window.currentUserProfile.phoneCopyWithSpaces = withSpaces;
+        }
+        console.log('Phone copy preference saved:', withSpaces);
+      })
+      .withFailureHandler(function(err) {
+        console.error('Failed to save phone copy preference:', err);
+      })
+      .updateUserPreference('phoneCopyWithSpaces', withSpaces);
+  };
+  
+  /**
+   * Copy phone number to clipboard, respecting user preference
+   * @param {string} phone - Phone number
+   * @param {HTMLElement} element - Optional element for visual feedback
+   */
+  window.copyPhoneToClipboard = async function(phone, element) {
+    if (!phone) return;
+    
+    const withSpaces = window.getPhoneCopyPreference();
+    const textToCopy = withSpaces ? window.formatPhoneForDisplay(phone) : window.stripPhoneForStorage(phone);
+    
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      
+      // Visual feedback
+      if (element) {
+        const original = element.innerHTML;
+        element.innerHTML = '<span style="color: var(--color-cedar);">Copied!</span>';
+        setTimeout(() => { element.innerHTML = original; }, 1500);
+      }
+    } catch (err) {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = textToCopy;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      
+      if (element) {
+        const original = element.innerHTML;
+        element.innerHTML = '<span style="color: var(--color-cedar);">Copied!</span>';
+        setTimeout(() => { element.innerHTML = original; }, 1500);
+      }
+    }
+  };
+  
 })();

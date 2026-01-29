@@ -285,33 +285,50 @@
       updateBackButton();
       titleEl.innerText = response.title;
       
+      // Update breadcrumbs for opportunity view
+      if (table === 'Opportunities' && state.currentContactRecord) {
+        const f = state.currentContactRecord.fields;
+        const contactName = [f.FirstName, f.LastName].filter(Boolean).join(' ') || 'Contact';
+        const contactId = state.currentContactRecord.id;
+        window.updateBreadcrumbs([
+          { label: 'Contacts', action: 'goHome()' },
+          { label: contactName, action: `closeOppPanel(); window.loadContactById('${contactId}')` },
+          { label: response.title || 'Opportunity' }
+        ]);
+      }
+      
       function renderField(item, tbl, recId) {
         const tacoClass = item.tacoField ? ' taco-field' : '';
+        const isEmpty = item.value === undefined || item.value === null || item.value === '' || 
+                        (Array.isArray(item.value) && item.value.length === 0);
+        const emptyPlaceholder = '<span class="empty-value-placeholder">+ Add</span>';
+        
         if (item.key === 'Opportunity Name') {
           const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
-          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${item.value || ''}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+          const displayVal = isEmpty ? emptyPlaceholder : item.value;
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
         }
         if (item.type === 'select') {
           const currentVal = item.value || '';
+          const displayVal = isEmpty ? emptyPlaceholder : currentVal;
           const options = item.options || [];
           let optionsHtml = options.map(opt => `<option value="${opt}" ${opt === currentVal ? 'selected' : ''}>${opt}</option>`).join('');
-          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${currentVal || '<span style="color:#CCC; font-style:italic;">Not set</span>'}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><select id="input_${item.key}" class="edit-input">${optionsHtml}</select><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><select id="input_${item.key}" class="edit-input">${optionsHtml}</select><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
         }
         if (item.type === 'readonly') {
-          const displayVal = item.value || '';
-          if (!displayVal) return '';
-          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value readonly-field">${displayVal}</div></div>`;
+          if (isEmpty) return '';
+          return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value readonly-field">${item.value}</div></div>`;
         }
         if (item.type === 'long-text') {
           const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
-          const displayVal = item.value || '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          const displayVal = isEmpty ? emptyPlaceholder : item.value;
           return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:flex-start;"><span id="display_${item.key}" style="white-space:pre-wrap; flex:1;">${displayVal}</span><span class="edit-field-icon" style="margin-left:8px;">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><textarea id="input_${item.key}" class="edit-input" rows="3" style="resize:vertical;">${safeValue}</textarea><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
         }
         if (item.type === 'date') {
           const rawVal = item.value || '';
-          let displayVal = '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          let displayVal = isEmpty ? emptyPlaceholder : rawVal;
           let inputVal = '';
-          if (rawVal) {
+          if (!isEmpty) {
             const parts = rawVal.split('/');
             if (parts.length === 3) {
               inputVal = `${parts[2].length === 2 ? '20' + parts[2] : parts[2]}-${parts[1]}-${parts[0]}`;
@@ -323,7 +340,6 @@
                 displayVal = `${isoParts[2]}/${isoParts[1]}/${isoParts[0].slice(-2)}`;
               }
             } else {
-              displayVal = rawVal;
               inputVal = rawVal;
             }
           }
@@ -336,28 +352,26 @@
         }
         if (item.type === 'url') {
           const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
-          const displayVal = item.value ? `<a href="${item.value}" target="_blank" style="color:var(--color-sky);">${item.value}</a>` : '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          const displayVal = isEmpty ? emptyPlaceholder : `<a href="${item.value}" target="_blank" style="color:var(--color-sky);">${item.value}</a>`;
           return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="url" id="input_${item.key}" value="${safeValue}" class="edit-input" placeholder="https://..."><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
         }
         if (['Primary Applicant', 'Applicants', 'Guarantors'].includes(item.key)) {
-          let linkHtml = '';
-          if (item.value.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
-          else item.value.forEach(link => { linkHtml += `<span class="data-link panel-contact-link" data-contact-id="${link.id}" data-contact-table="${link.table}">${link.name}</span>`; });
+          let linkHtml = isEmpty ? emptyPlaceholder : '';
+          if (!isEmpty) item.value.forEach(link => { linkHtml += `<span class="data-link panel-contact-link" data-contact-id="${link.id}" data-contact-table="${link.table}">${link.name}</span>`; });
           return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleLinkedEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span>${linkHtml}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><div id="chip_container_${item.key}" class="link-chip-container"></div><input type="text" placeholder="Add contact..." class="link-search-input" onkeyup="handleLinkedSearch(event, '${item.key}')"><div id="error_${item.key}" class="input-error"></div><div id="results_${item.key}" class="link-results"></div><div class="edit-btn-row" style="margin-top:10px;"><button onclick="cancelLinkedEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveLinkedEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
         }
         if (item.type === 'link') {
-          const links = item.value;
+          if (isEmpty) return '';
           let linkHtml = '';
-          if (links.length === 0) linkHtml = '<span style="color:#CCC; font-style:italic;">None</span>';
-          else { links.forEach(link => { linkHtml += `<a class="data-link" onclick="loadPanelRecord('${link.table}', '${link.id}')">${link.name}</a>`; }); }
+          item.value.forEach(link => { linkHtml += `<a class="data-link" onclick="loadPanelRecord('${link.table}', '${link.id}')">${link.name}</a>`; });
           return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value" style="border:none;">${linkHtml}</div></div>`;
         }
         if (item.tacoField) {
           const safeValue = (item.value || "").toString().replace(/"/g, "&quot;");
-          const displayVal = item.value || '<span style="color:#CCC; font-style:italic;">Not set</span>';
+          const displayVal = isEmpty ? emptyPlaceholder : item.value;
           return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div id="view_${item.key}" onclick="toggleFieldEdit('${item.key}')" class="editable-field"><div class="detail-value" style="display:flex; justify-content:space-between; align-items:center;"><span id="display_${item.key}">${displayVal}</span><span class="edit-field-icon">✎</span></div></div><div id="edit_${item.key}" style="display:none;"><div class="edit-wrapper"><input type="text" id="input_${item.key}" value="${safeValue}" class="edit-input"><div class="edit-btn-row"><button onclick="cancelFieldEdit('${item.key}')" class="btn-cancel-field">Cancel</button><button id="btn_save_${item.key}" onclick="saveFieldEdit('${tbl}', '${recId}', '${item.key}')" class="btn-save-field">Save</button></div></div></div></div>`;
         }
-        if (item.value === undefined || item.value === null || item.value === "") return '';
+        if (isEmpty) return '';
         return `<div class="detail-group${tacoClass}"><div class="detail-label">${item.label}</div><div class="detail-value">${item.value}</div></div>`;
       }
       
@@ -500,6 +514,16 @@
     
     if (window.IntegrityRouter && state.currentContactRecord) {
       window.IntegrityRouter.navigateTo(state.currentContactRecord.id, null);
+    }
+    
+    // Restore contact breadcrumb when closing opportunity panel
+    if (state.currentContactRecord) {
+      const f = state.currentContactRecord.fields;
+      const contactName = [f.FirstName, f.LastName].filter(Boolean).join(' ') || 'Contact';
+      window.updateBreadcrumbs([
+        { label: 'Contacts', action: 'goHome()' },
+        { label: contactName }
+      ]);
     }
   };
 

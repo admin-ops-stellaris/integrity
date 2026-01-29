@@ -294,6 +294,18 @@ app.post("/api/updateUserSignature", async (req, res) => {
   }
 });
 
+app.post("/api/updateUserPreference", async (req, res) => {
+  try {
+    const email = req.session?.user?.email || "admin.ops@stellaris.loans";
+    const [preferenceName, value] = req.body.args || [];
+    const result = await airtable.updateUserPreference(email, preferenceName, value);
+    res.json(result);
+  } catch (err) {
+    console.error("updateUserPreference error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/getRecentContacts", async (req, res) => {
   try {
     const statusFilter = req.body.args?.[0] || null;
@@ -338,9 +350,15 @@ const LINK_FIELDS = {
 
 app.post("/api/updateRecord", async (req, res) => {
   try {
-    const [table, id, field, value] = req.body.args || [];
+    let [table, id, field, value] = req.body.args || [];
     const userEmail = req.session?.user?.email || null;
     const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    
+    // Strip phone numbers for Contacts table phone fields
+    const phoneFields = ['Mobile', 'Telephone1', 'Telephone2'];
+    if (table === 'Contacts' && phoneFields.includes(field) && typeof value === 'string') {
+      value = value.replace(/\D/g, '');
+    }
     
     const linkConfig = LINK_FIELDS[table]?.[field];
     if (linkConfig && userContext && Array.isArray(value)) {
@@ -376,6 +394,54 @@ app.post("/api/createRecord", async (req, res) => {
     }
   } catch (err) {
     console.error("createRecord error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/checkDuplicates", async (req, res) => {
+  try {
+    const { mobile, email, firstName, lastName } = req.body;
+    const duplicates = [];
+    
+    if (mobile) {
+      const cleanMobile = mobile.replace(/\D/g, '');
+      if (cleanMobile.length >= 8) {
+        const mobileMatches = await airtable.findContactsByField('Mobile', cleanMobile);
+        mobileMatches.forEach(c => {
+          if (!duplicates.find(d => d.id === c.id)) {
+            duplicates.push({ ...c, matchType: 'mobile' });
+          }
+        });
+      }
+    }
+    
+    if (email) {
+      const emailMatches = await airtable.findContactsByField('EmailAddress1', email.toLowerCase());
+      emailMatches.forEach(c => {
+        const existing = duplicates.find(d => d.id === c.id);
+        if (existing) {
+          existing.matchType = 'mobile+email';
+        } else {
+          duplicates.push({ ...c, matchType: 'email' });
+        }
+      });
+    }
+    
+    if (firstName && lastName) {
+      const nameMatches = await airtable.findContactsByName(firstName, lastName);
+      nameMatches.forEach(c => {
+        const existing = duplicates.find(d => d.id === c.id);
+        if (existing) {
+          existing.matchType = existing.matchType + '+name';
+        } else {
+          duplicates.push({ ...c, matchType: 'name' });
+        }
+      });
+    }
+    
+    res.json({ duplicates });
+  } catch (err) {
+    console.error("checkDuplicates error:", err);
     res.status(500).json({ error: err.message });
   }
 });

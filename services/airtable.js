@@ -88,14 +88,15 @@ export async function getUserProfileByEmail(email) {
         name: records[0].fields["Name"] || null,
         email: email,
         title: records[0].fields["Title"] || null,
-        signature: records[0].fields["Email Signature"] || null
+        signature: records[0].fields["Email Signature"] || null,
+        phoneCopyWithSpaces: records[0].fields["Phone Copy With Spaces"] === true
       };
       userProfileCache.set(cacheKey, profile);
       return profile;
     }
     
     console.warn(`User not found in Users table for email: ${email}`);
-    return { name: null, email: email, title: null, signature: null };
+    return { name: null, email: email, title: null, signature: null, phoneCopyWithSpaces: false };
   } catch (err) {
     console.error("getUserProfileByEmail error:", err.message);
     return { name: null, email: email, title: null, signature: null };
@@ -143,7 +144,8 @@ export async function getUserSignature(email) {
         id: records[0].id,
         name: records[0].fields["Name"] || "",
         title: records[0].fields["Title"] || "",
-        signature: records[0].fields["Email Signature"] || ""
+        signature: records[0].fields["Email Signature"] || "",
+        phoneCopyWithSpaces: records[0].fields["Phone Copy With Spaces"] === true
       };
     }
     return null;
@@ -175,6 +177,41 @@ export async function updateUserSignature(email, signature) {
   } catch (err) {
     console.error("updateUserSignature error:", err.message);
     return null;
+  }
+}
+
+export async function updateUserPreference(email, preferenceName, value) {
+  if (!base || !email) return null;
+  
+  const fieldMap = {
+    'phoneCopyWithSpaces': 'Phone Copy With Spaces'
+  };
+  
+  const airtableField = fieldMap[preferenceName];
+  if (!airtableField) {
+    console.error(`Unknown preference: ${preferenceName}`);
+    return null;
+  }
+  
+  try {
+    const records = await base("Users")
+      .select({
+        filterByFormula: `LOWER({Email}) = "${email.toLowerCase()}"`,
+        maxRecords: 1
+      })
+      .all();
+    
+    if (records.length > 0) {
+      const updated = await base("Users").update(records[0].id, {
+        [airtableField]: value
+      });
+      userProfileCache.delete(email.toLowerCase());
+      return { success: true, value: updated.fields[airtableField] };
+    }
+    return { success: false, error: "User not found" };
+  } catch (err) {
+    console.error("updateUserPreference error:", err.message);
+    return { success: false, error: err.message };
   }
 }
 
@@ -331,6 +368,66 @@ export async function searchContacts(query, statusFilter = null) {
     return scored.map(s => s.record);
   } catch (err) {
     console.error("searchContacts error:", err.message);
+    return [];
+  }
+}
+
+export async function findContactsByField(fieldName, value) {
+  if (!base || !value) return [];
+  try {
+    let formula;
+    if (fieldName === 'Mobile') {
+      const cleanValue = value.replace(/\D/g, '');
+      formula = `SUBSTITUTE(SUBSTITUTE({Mobile}, " ", ""), "-", "") = "${cleanValue}"`;
+    } else {
+      formula = `LOWER({${fieldName}}) = LOWER("${value.replace(/"/g, '\\"')}")`;
+    }
+    const records = await base("Contacts").select({
+      filterByFormula: formula,
+      maxRecords: 10,
+      fields: ['FirstName', 'MiddleName', 'LastName', 'Mobile', 'EmailAddress1', 'Calculated Name', 'Status']
+    }).all();
+    return records.map(r => ({
+      id: r.id,
+      fields: {
+        FirstName: r.fields.FirstName || '',
+        MiddleName: r.fields.MiddleName || '',
+        LastName: r.fields.LastName || '',
+        Mobile: r.fields.Mobile || '',
+        EmailAddress1: r.fields.EmailAddress1 || '',
+        'Calculated Name': r.fields['Calculated Name'] || '',
+        Status: r.fields.Status || 'Active'
+      }
+    }));
+  } catch (err) {
+    console.error("findContactsByField error:", err.message);
+    return [];
+  }
+}
+
+export async function findContactsByName(firstName, lastName) {
+  if (!base || !firstName || !lastName) return [];
+  try {
+    const formula = `AND(LOWER({FirstName}) = LOWER("${firstName.replace(/"/g, '\\"')}"), LOWER({LastName}) = LOWER("${lastName.replace(/"/g, '\\"')}"))`;
+    const records = await base("Contacts").select({
+      filterByFormula: formula,
+      maxRecords: 10,
+      fields: ['FirstName', 'MiddleName', 'LastName', 'Mobile', 'EmailAddress1', 'Calculated Name', 'Status']
+    }).all();
+    return records.map(r => ({
+      id: r.id,
+      fields: {
+        FirstName: r.fields.FirstName || '',
+        MiddleName: r.fields.MiddleName || '',
+        LastName: r.fields.LastName || '',
+        Mobile: r.fields.Mobile || '',
+        EmailAddress1: r.fields.EmailAddress1 || '',
+        'Calculated Name': r.fields['Calculated Name'] || '',
+        Status: r.fields.Status || 'Active'
+      }
+    }));
+  } catch (err) {
+    console.error("findContactsByName error:", err.message);
     return [];
   }
 }

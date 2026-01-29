@@ -70,6 +70,30 @@
   }
 
   function openEmailSettings() {
+    // Redirect to openGlobalSettings for consistency
+    openGlobalSettings();
+  }
+
+  function openGlobalSettings() {
+    console.log('[Settings] openGlobalSettings called');
+    try {
+      // Initialize phone copy preference checkbox
+      const phoneCopyCheckbox = document.getElementById('settingPhoneCopySpaces');
+      if (phoneCopyCheckbox) {
+        phoneCopyCheckbox.checked = window.getPhoneCopyPreference();
+      }
+      // Open the modal directly first, then load data async
+      openModal('emailSettingsModal');
+      console.log('[Settings] Modal opened');
+      
+      // Load settings async (don't block modal opening)
+      loadSettingsIntoModal();
+    } catch (err) {
+      console.error('[Settings] Error in openGlobalSettings:', err);
+    }
+  }
+  
+  function loadSettingsIntoModal() {
     const officeMap = document.getElementById('settingOfficeMap');
     const ourTeam = document.getElementById('settingOurTeam');
     const factFind = document.getElementById('settingFactFind');
@@ -106,12 +130,6 @@
         }
       }).getUserSignature();
     }
-
-    openModal('emailSettingsModal');
-  }
-
-  function openGlobalSettings() {
-    openEmailSettings();
   }
 
   function closeEmailSettings() {
@@ -160,7 +178,7 @@
           showAlert('Error', 'Settings saved, but signature failed: ' + err, 'error');
         }).updateUserSignature(newSignature);
       } else {
-        showAlert('Saved', 'Email template links updated for the whole team', 'success');
+        showAlert('Saved', 'Changes saved. Any email template changes have applied to the whole team.', 'success');
       }
       closeEmailSettings();
       if (typeof updateEmailPreview === 'function') updateEmailPreview();

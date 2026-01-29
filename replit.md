@@ -78,9 +78,78 @@ All dates/times in Integrity refer to Western Australia (UTC+8). This prevents t
 
 **RULE:** When loading Airtable data into any form, ALWAYS use `parseDateForEditor()` to ensure Perth timezone consistency.
 
+## Global Layout System
+
+Standardized flexbox utility classes for consistent spacing across the app (defined at top of `styles.css`).
+
+**Stack Classes:**
+| Class | Effect |
+|-------|--------|
+| `.layout-stack-y` | Vertical flex column |
+| `.layout-stack-x` | Horizontal flex row, vertically centered |
+
+**Gap Modifiers:**
+| Class | Size | Use Case |
+|-------|------|----------|
+| `.gap-xs` | 0.5rem (8px) | Tight groupings |
+| `.gap-sm` | 1rem (16px) | Related items |
+| `.gap-md` | 1.5rem (24px) | Section elements |
+| `.gap-lg` | 2.5rem (40px) | Major sections |
+| `.gap-xl` | 4rem (64px) | Page-level separation |
+
+**Usage:** Combine stack + gap classes, e.g., `class="layout-stack-y gap-md"`
+
+## Phone Number Formatting System
+
+Australian phone numbers are formatted for readability while storing raw digits in Airtable.
+
+**Philosophy:**
+- **Display with spaces** for readability: `0412 345 678`
+- **Store without spaces** in Airtable: `0412345678`
+- **Copy to clipboard** respects user preference (with or without spaces)
+- **Input flexibility**: Users can type/paste with or without spaces
+
+**Key Functions in `shared-utils.js`:**
+| Function | Purpose |
+|----------|---------|
+| `stripPhoneForStorage(phone)` | Removes all non-digits for Airtable storage |
+| `formatPhoneForDisplay(phone)` | Formats AU mobiles as `0412 345 678`, landlines as `08 9123 4567` |
+| `getPhoneCopyPreference()` | Returns user's Airtable preference for copy format |
+| `setPhoneCopyPreference(bool)` | Saves user preference to Airtable (true = with spaces) |
+| `copyPhoneToClipboard(phone, el)` | Copies to clipboard using preference, shows "Copied!" feedback |
+
+**User Preference:** Accessible via Settings cog → "Phone Number Copy Format" checkbox. Stored in Airtable Users table.
+
+## User Preferences Storage
+
+All user preferences are stored in the **Users table in Airtable** (not localStorage) to ensure they sync across devices and persist through cache clears.
+
+**Current User Preference Fields:**
+| Field Name | Type | Purpose |
+|------------|------|---------|
+| `Phone Copy With Spaces` | Checkbox | When checked, phone numbers copy with spaces |
+
+**Adding New User Preferences:**
+1. Add field to Users table in Airtable
+2. Add mapping in `updateUserPreference()` fieldMap in `services/airtable.js`
+3. Include field in `getUserSignature()` and `getUserProfileByEmail()` return objects
+4. Access via `window.currentUserProfile.[preferenceName]` on frontend
+
 ## Recent Session Changes (January 2026)
 
+- **Phone Number Formatting**: Display with spaces, store without, click-to-copy with user preference
+- **Dossier Header Architecture**: Refactored contact header to left block (breadcrumb→name→badge) + right block (status badges + created/modified metadata)
+- **3-Column CSS Grid Layout**: Profile columns use `grid-template-columns: 320px minmax(400px, 1fr) 400px` with Mobile Pulse responsive layout at 1024px (Activity > Opportunities > Relationships > Facts)
+- **Activity Stream Placeholder**: Right column (400px) reserved for future Tasks/Slack/AI integration
+- **Removed #contactMetaBar**: Functionality integrated into new dossier header
+- **Global Layout System**: Added flexbox utility classes for consistent spacing
+- **Breadcrumb Navigation**: Hierarchy-based eyebrow navigation (Contacts > Name > Opportunity), now inside dossier left block
 - **Centralized timezone handling**: Created `parseDateForEditor()` for consistent UTC→Perth conversion
-- **Fixed popover Tab navigation**: Date → Time → Save → Cancel flows naturally
-- **Refactored appointments.js**: Both modal and popover use centralized parser
-- **Module count**: 17 IIFE modules (no change)
+- **Marketing Badge Normalization**: Uses "Unsubscribed from Marketing" field consistently across app.js and contacts.js
+- **Modal Search Dropdown Fix**: Changed to `position: static` with `max-height: 150px` and bottom margin to prevent covering Cancel buttons
+- **Connections Empty State**: Added "Connections" label visible when no connections exist
+- **Home Screen Cleanup**: Hide dossier-header on home screen (no "Contact" title when no contact selected)
+- **Duplicate Warning System**: Manual warnings displayed in left column with EDIT/HIDE links, Add/Delete options in ACTIONS menu
+- **Duplicate Detection**: Auto-checks for duplicates on new contact creation (mobile, email, name matching), shows modal with potential matches and "Create Anyway" option
+- **User Preferences in Airtable**: Migrated user preferences (e.g., phone copy format) from localStorage to Airtable Users table for cross-device sync
+- **Module count**: 19 JS modules in public/js/ (addresses, appointments, connections, contacts, contacts-search, core, email, evidence, inline-editing, modal-utils, notes, opportunities, quick-view, router, settings, shared-state, shared-utils, spouse, ui-utils)

@@ -510,6 +510,10 @@
           html += renderApptFieldNoIcon(appt.id, 'Notes', 'notes', appt.notes, 'textarea');
           html += `</div>`;
           
+          html += `<div class="appt-actions" style="margin-top:15px; padding-top:12px; border-top:1px solid #eee; display:flex; justify-content:flex-end;">`;
+          html += `<button type="button" class="btn-cancel btn-small" onclick="deleteAppointment('${appt.id}', '${opportunityId}')" style="color:#900;">Delete Appointment</button>`;
+          html += `</div>`;
+          
           html += `</div>`;
           html += `</div>`;
           html += `</div>`;
@@ -715,17 +719,17 @@
   }
   
   function deleteAppointment(appointmentId, opportunityId) {
-    if (!confirm('Are you sure you want to delete this appointment?')) return;
-    
-    google.script.run
-      .withSuccessHandler(function() {
-        loadAppointmentsForOpportunity(opportunityId);
-      })
-      .withFailureHandler(function(err) {
-        console.error('Error deleting appointment:', err);
-        alert('Error deleting appointment: ' + (err.message || err));
-      })
-      .deleteAppointment(appointmentId);
+    showCustomConfirm('Are you sure you want to delete this appointment?', function() {
+      google.script.run
+        .withSuccessHandler(function() {
+          loadAppointmentsForOpportunity(opportunityId);
+        })
+        .withFailureHandler(function(err) {
+          console.error('Error deleting appointment:', err);
+          showAlert('Error', 'Error deleting appointment: ' + (err.message || err), 'error');
+        })
+        .deleteAppointment(appointmentId);
+    });
   }
   
   // Expose functions to window for onclick handlers and opportunities.js usage

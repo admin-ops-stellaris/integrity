@@ -1216,19 +1216,18 @@ function showDuplicateDetectionModal(duplicates, btn, status) {
     const email = d.fields.EmailAddress1 || '';
     const matchBadge = getMatchBadge(d.matchType);
     return `
-      <div class="duplicate-item" style="padding:12px; border:1px solid var(--color-mist); border-radius:8px; margin-bottom:8px; background:var(--color-background);">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div>
-            <div style="font-weight:600; font-size:14px; margin-bottom:4px;">${name}</div>
-            <div style="font-size:12px; color:#666;">
-              ${mobile ? `<span style="margin-right:12px;">${mobile}</span>` : ''}
-              ${email ? `<span>${email}</span>` : ''}
-            </div>
+      <div class="duplicate-item">
+        <div class="duplicate-item-info">
+          <div class="duplicate-item-name">${name}</div>
+          <div class="duplicate-item-details">
+            ${mobile ? `<span>${mobile}</span>` : ''}
+            ${mobile && email ? '<span class="separator">•</span>' : ''}
+            ${email ? `<span>${email}</span>` : ''}
           </div>
-          <div style="display:flex; gap:8px; align-items:center;">
-            ${matchBadge}
-            <button type="button" class="btn-link" style="font-size:12px;" onclick="viewExistingContact('${d.id}')">View</button>
-          </div>
+        </div>
+        <div class="duplicate-item-actions">
+          ${matchBadge}
+          <a href="/contact/${d.id}" target="_blank" class="btn-view-duplicate" title="Open in new tab">View</a>
         </div>
       </div>
     `;

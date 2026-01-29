@@ -119,8 +119,17 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
 
   /* COMPONENTS */
   #emptyState { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #999; font-style: italic; font-size: 14px; border: 2px dashed #DDD; border-radius: 10px; margin-top: 20px; }
-  #duplicateWarningBox { display: none; background-color: var(--color-salt); color: var(--color-trail); padding: 12px 15px; border-radius: 4px; margin-top: 15px; margin-bottom: 10px; font-size: 13px; font-weight: 700; border-left: 5px solid var(--color-star); border-top: 1px solid #EEE; border-right: 1px solid #EEE; border-bottom: 1px solid #EEE; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-direction: row; justify-content: space-between; align-items: center; }
-  .warning-icon { margin-right: 8px; font-size: 16px; color: var(--color-star); }
+  /* Duplicate Warning Box - left column */
+  .duplicate-warning-box { display: none; background-color: var(--color-salt); color: var(--color-trail); padding: 12px 15px; border-radius: 4px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid var(--color-star); border-top: 1px solid #EEE; border-right: 1px solid #EEE; border-bottom: 1px solid #EEE; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .duplicate-warning-box .warning-content { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .duplicate-warning-box .warning-content .warning-icon { flex-shrink: 0; font-size: 16px; color: var(--color-star); }
+  .duplicate-warning-box #duplicateWarningText { font-weight: 600; line-height: 1.4; word-wrap: break-word; }
+  .duplicate-warning-box .warning-actions { display: flex; gap: 12px; justify-content: flex-end; }
+  .warning-link { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; text-decoration: none; border-bottom: 1px solid #CCC; cursor: pointer; white-space: nowrap; }
+  .warning-link:hover { color: var(--color-trail); border-color: var(--color-trail); }
+  body.dark-mode .duplicate-warning-box { background: #2a2a2a; border-color: #444; }
+  body.dark-mode .warning-link { color: #888; border-color: #666; }
+  body.dark-mode .warning-link:hover { color: #CCC; border-color: #CCC; }
   .hide-link { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #999; text-decoration: none; border-bottom: 1px solid #CCC; margin-left: 15px; cursor: pointer; white-space: nowrap; }
   .hide-link:hover { color: var(--color-trail); border-color: var(--color-trail); }
 

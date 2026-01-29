@@ -297,7 +297,6 @@
     document.getElementById('cancelBtn').style.display = 'inline-block';
     document.getElementById('editBtn').style.visibility = 'hidden';
     document.getElementById('oppList').innerHTML = '<li style="color:#CCC; font-size:12px; font-style:italic;">No opportunities linked.</li>';
-    document.getElementById('contactMetaBar').classList.remove('visible');
     document.getElementById('duplicateWarningBox').style.display = 'none';
     document.getElementById('spouseStatusText').innerHTML = "Single";
     document.getElementById('spouseHistoryList').innerHTML = "";

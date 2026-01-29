@@ -293,12 +293,19 @@ function selectContact(record) {
   document.getElementById('editBtn').style.visibility = 'visible';
   document.getElementById('refreshBtn').style.display = 'inline';
 
+  // Duplicate Warning display and actions menu
   const warnBox = document.getElementById('duplicateWarningBox');
+  const addDupBtn = document.getElementById('addDuplicateWarningBtn');
+  const deleteDupBtn = document.getElementById('deleteDuplicateWarningBtn');
   if (f['Duplicate Warning']) {
      document.getElementById('duplicateWarningText').innerText = f['Duplicate Warning'];
-     warnBox.style.display = 'flex'; 
+     warnBox.style.display = 'block'; 
+     if (addDupBtn) addDupBtn.style.display = 'none';
+     if (deleteDupBtn) deleteDupBtn.style.display = 'block';
   } else {
      warnBox.style.display = 'none';
+     if (addDupBtn) addDupBtn.style.display = 'block';
+     if (deleteDupBtn) deleteDupBtn.style.display = 'none';
   }
 
   document.getElementById('formSubtitle').innerHTML = formatSubtitle(f);
@@ -1168,4 +1175,81 @@ function handleFormSubmit(formObject) {
          }).getContactById(formData.recordId);
        }
     }).withFailureHandler(function(err) { status.innerText = "❌ " + err.message; status.className = "status-error"; btn.disabled = false; btn.innerText = "Try Again"; }).processForm(formData);
+}
+
+// ============================================================
+// Duplicate Warning Functions
+// ============================================================
+
+function hideDuplicateWarning() {
+  document.getElementById('duplicateWarningBox').style.display = 'none';
+}
+
+function openAddDuplicateWarning() {
+  document.getElementById('duplicateWarningModalTitle').innerText = 'Add Duplicate Warning';
+  document.getElementById('duplicateWarningInput').value = '';
+  closeActionsMenu();
+  openModal('duplicateWarningModal');
+}
+
+function openEditDuplicateWarning() {
+  const currentText = document.getElementById('duplicateWarningText').innerText || '';
+  document.getElementById('duplicateWarningModalTitle').innerText = 'Edit Duplicate Warning';
+  document.getElementById('duplicateWarningInput').value = currentText;
+  openModal('duplicateWarningModal');
+}
+
+function closeDuplicateWarningModal() {
+  closeModal('duplicateWarningModal');
+}
+
+function saveDuplicateWarning() {
+  const recordId = document.getElementById('recordId').value;
+  if (!recordId) {
+    showAlert('Error', 'No contact selected', 'error');
+    return;
+  }
+  
+  const warningText = document.getElementById('duplicateWarningInput').value.trim();
+  
+  google.script.run.withSuccessHandler(function() {
+    // Update UI
+    if (warningText) {
+      document.getElementById('duplicateWarningText').innerText = warningText;
+      document.getElementById('duplicateWarningBox').style.display = 'block';
+      document.getElementById('addDuplicateWarningBtn').style.display = 'none';
+      document.getElementById('deleteDuplicateWarningBtn').style.display = 'block';
+    } else {
+      document.getElementById('duplicateWarningBox').style.display = 'none';
+      document.getElementById('addDuplicateWarningBtn').style.display = 'block';
+      document.getElementById('deleteDuplicateWarningBtn').style.display = 'none';
+    }
+    closeDuplicateWarningModal();
+    showAlert('Saved', 'Duplicate warning updated', 'success');
+  }).withFailureHandler(function(err) {
+    showAlert('Error', 'Failed to save: ' + err.message, 'error');
+  }).updateRecord('Contacts', recordId, 'Duplicate Warning', warningText);
+}
+
+function confirmDeleteDuplicateWarning() {
+  closeActionsMenu();
+  showConfirmModal('Are you sure you want to delete this duplicate warning?', function() {
+    const recordId = document.getElementById('recordId').value;
+    if (!recordId) return;
+    
+    google.script.run.withSuccessHandler(function() {
+      document.getElementById('duplicateWarningBox').style.display = 'none';
+      document.getElementById('duplicateWarningText').innerText = '';
+      document.getElementById('addDuplicateWarningBtn').style.display = 'block';
+      document.getElementById('deleteDuplicateWarningBtn').style.display = 'none';
+      showAlert('Deleted', 'Duplicate warning removed', 'success');
+    }).withFailureHandler(function(err) {
+      showAlert('Error', 'Failed to delete: ' + err.message, 'error');
+    }).updateRecord('Contacts', recordId, 'Duplicate Warning', '');
+  });
+}
+
+function closeActionsMenu() {
+  const dropdown = document.getElementById('actionsDropdown');
+  if (dropdown) dropdown.classList.remove('open');
 }

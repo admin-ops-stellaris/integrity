@@ -71,17 +71,13 @@
                   <div class="actions-dropdown" id="actionsDropdown">
                     <button type="button" onclick="markAsDeceased()">Mark as Deceased</button>
                     <button type="button" id="undoDeceasedBtn" onclick="undoDeceased()" style="display:none;">Undo Deceased Status</button>
+                    <button type="button" id="addDuplicateWarningBtn" onclick="openAddDuplicateWarning()">Add Duplicate Warning</button>
+                    <button type="button" id="deleteDuplicateWarningBtn" onclick="confirmDeleteDuplicateWarning()" style="display:none;">Delete Duplicate Warning</button>
                   </div>
                 </div>
               </div>
               <div id="dossierMeta" class="dossier-meta"></div>
             </div>
-          </div>
-          <div id="duplicateWarningBox">
-             <div class="layout-stack-x gap-xs">
-               <span class="warning-icon">⚠️</span> <span id="duplicateWarningText"></span>
-             </div>
-             <a class="hide-link" onclick="document.getElementById('duplicateWarningBox').style.display='none';">Hide</a>
           </div>
         </div>
 
@@ -99,6 +95,18 @@
                 <details id="mobile-facts-accordion" open>
                   <summary class="mobile-only-summary">Contact Details</summary>
                 <span id="editBtn" style="display:none;"></span>
+                
+                <!-- Duplicate Warning Box (left column) -->
+                <div id="duplicateWarningBox" class="duplicate-warning-box">
+                  <div class="warning-content">
+                    <span class="warning-icon">⚠️</span>
+                    <span id="duplicateWarningText"></span>
+                  </div>
+                  <div class="warning-actions">
+                    <a class="warning-link" onclick="openEditDuplicateWarning()">EDIT</a>
+                    <a class="warning-link" onclick="hideDuplicateWarning()">HIDE</a>
+                  </div>
+                </div>
                 
                 <div class="collapsible-section" id="nameSection">
                   <div class="collapsible-header" onclick="toggleCollapsible('nameSection')">
@@ -579,6 +587,27 @@
             <p id="alertModalMessage" style="font-size:13px; color:#666; margin-bottom:20px; white-space:pre-line;"></p>
             <div style="display:flex; gap:10px; justify-content:flex-end;">
               <button type="button" class="btn-cancel" onclick="closeAlertModal()">OK</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Duplicate Warning Modal -->
+      <div id="duplicateWarningModal" class="modal">
+        <div class="modal-content" style="width:500px; height:auto; max-height:80vh;">
+          <div class="modal-sidebar" style="background:var(--color-star); width:60px; min-width:60px;">
+            <span style="font-size:24px;">⚠️</span>
+          </div>
+          <div class="modal-body" style="overflow-y:auto;">
+            <h3 id="duplicateWarningModalTitle" style="margin-top:0; margin-bottom:15px; font-size:16px;">Duplicate Warning</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:15px;">Enter a warning message to help distinguish this contact from others with similar names.</p>
+            <div class="field-group">
+              <label>Warning Message</label>
+              <textarea id="duplicateWarningInput" rows="3" style="width:100%; resize:vertical; font-size:13px;" placeholder="e.g. This is Clare with middle name Louise, not the other Clare Mitchell."></textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+              <button type="button" class="btn-cancel" onclick="closeDuplicateWarningModal()">Cancel</button>
+              <button type="button" class="btn-confirm" onclick="saveDuplicateWarning()">Save</button>
             </div>
           </div>
         </div>

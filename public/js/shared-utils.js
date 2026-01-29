@@ -704,17 +704,18 @@
    * Set user preference for phone copy format (saves to Airtable)
    * @param {boolean} withSpaces - true = copy with spaces
    */
-  window.setPhoneCopyPreference = async function(withSpaces) {
-    try {
-      const result = await window.apiBridge.call('updateUserPreference', 'phoneCopyWithSpaces', withSpaces);
-      if (result && result.success && window.currentUserProfile) {
-        window.currentUserProfile.phoneCopyWithSpaces = withSpaces;
-      }
-      return result;
-    } catch (err) {
-      console.error('Failed to save phone copy preference:', err);
-      return { success: false, error: err.message };
-    }
+  window.setPhoneCopyPreference = function(withSpaces) {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result && result.success && window.currentUserProfile) {
+          window.currentUserProfile.phoneCopyWithSpaces = withSpaces;
+        }
+        console.log('Phone copy preference saved:', withSpaces);
+      })
+      .withFailureHandler(function(err) {
+        console.error('Failed to save phone copy preference:', err);
+      })
+      .updateUserPreference('phoneCopyWithSpaces', withSpaces);
   };
   
   /**

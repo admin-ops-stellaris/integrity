@@ -1171,6 +1171,7 @@ function handleFormSubmit(formObject) {
 }
 
 async function checkForDuplicates(formData, btn, status) {
+  console.log('[Duplicate Check] Starting check for:', formData.firstName, formData.lastName, formData.mobilePhone);
   try {
     const response = await fetch('/api/checkDuplicates', {
       method: 'POST',
@@ -1183,20 +1184,26 @@ async function checkForDuplicates(formData, btn, status) {
       })
     });
     const result = await response.json();
+    console.log('[Duplicate Check] Result:', result);
     
     if (result.duplicates && result.duplicates.length > 0) {
+      console.log('[Duplicate Check] Found duplicates, showing modal');
       pendingFormData = formData;
       showDuplicateDetectionModal(result.duplicates, btn, status);
     } else {
+      console.log('[Duplicate Check] No duplicates, proceeding with save');
       submitFormData(formData, btn, status);
     }
   } catch (err) {
-    console.error('Duplicate check failed:', err);
+    console.error('[Duplicate Check] Failed:', err);
     submitFormData(formData, btn, status);
   }
 }
 
+let pendingDuplicates = [];
+
 function showDuplicateDetectionModal(duplicates, btn, status) {
+  pendingDuplicates = duplicates;
   const list = document.getElementById('duplicateDetectionList');
   list.innerHTML = duplicates.map(d => {
     const name = d.fields['Calculated Name'] || `${d.fields.FirstName} ${d.fields.LastName}`;
@@ -1222,7 +1229,10 @@ function showDuplicateDetectionModal(duplicates, btn, status) {
     `;
   }).join('');
   
-  document.getElementById('duplicateDetectionModal').classList.add('visible');
+  document.getElementById('duplicateWarningPrompt').style.display = 'block';
+  document.getElementById('addWarningAfterCreate').checked = true;
+  
+  window.openModal('duplicateDetectionModal');
   btn.disabled = false;
   btn.innerText = "Create Contact";
 }
@@ -1241,7 +1251,7 @@ function getMatchBadge(matchType) {
 }
 
 function closeDuplicateDetectionModal() {
-  document.getElementById('duplicateDetectionModal').classList.remove('visible');
+  window.closeModal('duplicateDetectionModal');
   pendingFormData = null;
   const btn = document.getElementById('submitBtn');
   btn.disabled = false;
@@ -1260,9 +1270,15 @@ function proceedWithDuplicate() {
   if (!pendingFormData) return;
   const btn = document.getElementById('submitBtn');
   const status = document.getElementById('status');
-  document.getElementById('duplicateDetectionModal').classList.remove('visible');
-  submitFormData(pendingFormData, btn, status);
+  const addWarnings = document.getElementById('addWarningAfterCreate').checked;
+  const duplicatesToWarn = addWarnings ? [...pendingDuplicates] : [];
+  
+  window.closeModal('duplicateDetectionModal');
+  document.getElementById('duplicateWarningPrompt').style.display = 'none';
+  
+  submitFormDataWithWarnings(pendingFormData, btn, status, duplicatesToWarn);
   pendingFormData = null;
+  pendingDuplicates = [];
 }
 
 function submitFormData(formData, btn, status) {
@@ -1281,6 +1297,46 @@ function submitFormData(formData, btn, status) {
          }).getContactById(formData.recordId);
        }
     }).withFailureHandler(function(err) { status.innerText = "❌ " + err.message; status.className = "status-error"; btn.disabled = false; btn.innerText = "Try Again"; }).processForm(formData);
+}
+
+function submitFormDataWithWarnings(formData, btn, status, duplicatesToWarn) {
+  btn.disabled = true;
+  btn.innerText = "Saving...";
+  google.script.run.withSuccessHandler(function(response) {
+    loadContacts();
+    btn.disabled = false;
+    btn.innerText = "Update Contact";
+    disableEditMode();
+    
+    if (response.type === 'create' && response.record) {
+      const newContactId = response.record.id;
+      const newContactName = response.record.fields['Calculated Name'] || 
+        `${response.record.fields.FirstName || ''} ${response.record.fields.LastName || ''}`.trim();
+      
+      if (duplicatesToWarn.length > 0) {
+        const existingNames = duplicatesToWarn.map(d => 
+          d.fields['Calculated Name'] || `${d.fields.FirstName} ${d.fields.LastName}`
+        ).join(', ');
+        
+        const warningForNew = `Similar contact(s) exist: ${existingNames}. Verify you're working with the right person.`;
+        google.script.run.updateRecord('Contacts', newContactId, 'Duplicate Warning', warningForNew);
+        
+        duplicatesToWarn.forEach(dup => {
+          const warningForExisting = `Similar contact created: ${newContactName}. Verify you're working with the right person.`;
+          google.script.run.updateRecord('Contacts', dup.id, 'Duplicate Warning', warningForExisting);
+        });
+        
+        console.log('[Duplicate Warnings] Added to', duplicatesToWarn.length + 1, 'contacts');
+      }
+      
+      selectContact(response.record);
+    }
+  }).withFailureHandler(function(err) { 
+    status.innerText = "❌ " + err.message; 
+    status.className = "status-error"; 
+    btn.disabled = false; 
+    btn.innerText = "Try Again"; 
+  }).processForm(formData);
 }
 
 // ============================================================

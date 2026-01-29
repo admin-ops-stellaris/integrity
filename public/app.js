@@ -1204,6 +1204,11 @@ let pendingDuplicates = [];
 
 function showDuplicateDetectionModal(duplicates, btn, status) {
   pendingDuplicates = duplicates;
+  const modal = document.getElementById('duplicateDetectionModal');
+  console.log('[Duplicate Modal] Modal element:', modal);
+  console.log('[Duplicate Modal] Modal classes before:', modal ? modal.className : 'NOT FOUND');
+  console.log('[Duplicate Modal] Modal display style:', modal ? getComputedStyle(modal).display : 'N/A');
+  
   const list = document.getElementById('duplicateDetectionList');
   list.innerHTML = duplicates.map(d => {
     const name = d.fields['Calculated Name'] || `${d.fields.FirstName} ${d.fields.LastName}`;
@@ -1232,7 +1237,16 @@ function showDuplicateDetectionModal(duplicates, btn, status) {
   document.getElementById('duplicateWarningPrompt').style.display = 'block';
   document.getElementById('addWarningAfterCreate').checked = true;
   
+  console.log('[Duplicate Modal] Calling openModal now...');
   window.openModal('duplicateDetectionModal');
+  
+  const modalAfter = document.getElementById('duplicateDetectionModal');
+  console.log('[Duplicate Modal] Modal classes after openModal:', modalAfter ? modalAfter.className : 'NOT FOUND');
+  console.log('[Duplicate Modal] Modal computed display:', modalAfter ? getComputedStyle(modalAfter).display : 'N/A');
+  console.log('[Duplicate Modal] Modal computed visibility:', modalAfter ? getComputedStyle(modalAfter).visibility : 'N/A');
+  console.log('[Duplicate Modal] Modal computed opacity:', modalAfter ? getComputedStyle(modalAfter).opacity : 'N/A');
+  console.log('[Duplicate Modal] Modal offsetHeight:', modalAfter ? modalAfter.offsetHeight : 'N/A');
+  
   btn.disabled = false;
   btn.innerText = "Create Contact";
 }

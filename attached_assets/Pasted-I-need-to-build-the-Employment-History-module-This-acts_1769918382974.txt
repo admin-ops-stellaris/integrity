@@ -1,0 +1,71 @@
+I need to build the Employment History module. This acts as a 'Master-Detail' list in the Left Column (under Addresses), but with sophisticated logic for 'Primary' status conflicts and sub-lists for Income.
+
+1. The Database Schema (Already Created) I have created an 'Employment' table in Airtable with these exact fields:
+
+Employer Name (Text), Contact (Link), Status (Single Select: Primary Employment, Secondary Employment, Previous Employment).
+
+Employment Basis (Select), Employment Type (Select), PAYG Type (Select).
+
+On Probation (Check), Operating Structure (Select), On Benefits (Check), Student (Check).
+
+Employer ABN (Text), Job Title (Text), Start Date (Date), End Date (Date).
+
+Contact Person Title, Contact Person First Name, Contact Person Surname, Contact Person Phone, Contact Person Email.
+
+Incomes (Long Text) -> Stores JSON: [{type, amount, freq, comment}].
+
+Address Data (Long Text) -> Stores JSON: {street, city, state, postcode, country, status...}.
+
+2. The Architecture (New Module) Create public/js/employment.js.
+
+Crucial: Do not wrap in DOMContentLoaded. Define functions at top level and assign to window immediately (e.g., window.loadEmployment = ...) to prevent race conditions.
+
+State: Store data in window.IntegrityState.currentEmployment.
+
+3. UI Requirements (The Modal) Create a new Modal (#employmentModal) with:
+
+Status & Logic: If user selects 'Primary', check local state for an existing Primary record.
+
+Conflict: If another exists, show a custom modal: 'X is already Primary. Change X to Secondary or Previous?'
+
+Action: If 'Secondary', update old record immediately. If 'Previous', prompt for 'End Date' for old record, then update.
+
+Conditional Visibility:
+
+Show 'PAYG Type'/'Probation' only if Type = 'PAYG'.
+
+Show 'Operating Structure' only if Type = 'Self Employed'.
+
+Show 'Benefits' if Type = 'Unemployed' or 'Retired'.
+
+Show 'Employer Details' section only for Primary/Secondary.
+
+Address Section: A sub-form within the modal mimicking the Residential Address fields.
+
+Logic: On change of any address field, update a local object, stringify it, and save to the Address Data Airtable field.
+
+Income Section: A dynamic list.
+
+'+ Income' button (visible for PAYG/Self Employed).
+
+Rows have: Type (Select), Amount ($), Frequency (Select), Comment.
+
+Logic: On change/delete of any row, update local array, stringify, and save to Incomes Airtable field.
+
+4. List View (Left Column)
+
+Add <div id="employmentSection"> to index.html under Address History.
+
+Sorting: Primary first -> Secondary (newest start) -> Previous (newest end).
+
+Display: Employer Name, Job Title, Status Badge, Date Range.
+
+5. Server-Side (server.js / api-bridge.js)
+
+Add getEmploymentForContact(contactId).
+
+Add createEmployment, updateEmployment, deleteEmployment.
+
+Ensure date fields are handled correctly (ISO string conversion).
+
+Action: Implement the full Employment History module (Server, HTML, CSS, JS) with the JSON-blob logic for Incomes/Addresses and the conflict logic for Primary status.

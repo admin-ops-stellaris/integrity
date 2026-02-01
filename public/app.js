@@ -346,6 +346,11 @@ function selectContact(record) {
   } else {
     console.error('Critical: loadAddressHistory missing');
   }
+  if (window.loadEmployment) {
+    loadEmployment(record.id);
+  } else {
+    console.error('Critical: loadEmployment missing');
+  }
   closeOppPanel();
   
   // Show Actions menu for existing contacts

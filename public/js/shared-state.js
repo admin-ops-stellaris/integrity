@@ -27,6 +27,7 @@ const IntegrityState = (function() {
     contactStatusFilter: localStorage.getItem('contactStatusFilter') || 'Active',
     currentContactRecord: null,
     currentContactAddresses: [],
+    currentEmployment: [],
     contactHistory: [],
     contactInlineEditor: null,
     

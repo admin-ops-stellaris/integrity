@@ -1871,3 +1871,136 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
 .appt-popover-cancel:hover {
   background-color: #dc2626;
 }
+
+/* ============================================================
+   EMPLOYMENT HISTORY STYLES
+   ============================================================ */
+
+.employment-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.employment-item {
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.employment-item:hover {
+  background: var(--bg-secondary);
+}
+
+.employment-item.is-primary {
+  border-left: 3px solid #22c55e;
+}
+
+.employment-item.is-secondary {
+  border-left: 3px solid #3b82f6;
+}
+
+.employment-item.is-previous {
+  border-left: 3px solid #9ca3af;
+}
+
+.employment-main {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.employment-job-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.employment-dates {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+.employment-status-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 8px;
+}
+
+.employment-status-badge.primary {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.employment-status-badge.secondary {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.employment-status-badge.previous {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.income-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin-bottom: 8px;
+  padding: 10px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+}
+
+.income-row .field-group {
+  margin-bottom: 0;
+}
+
+.income-row .field-group label {
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+
+.income-row .field-group input,
+.income-row .field-group select {
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.income-delete-btn {
+  padding: 6px 10px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.income-delete-btn:hover {
+  background: #dc2626;
+}
+
+.btn-secondary {
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-secondary:hover {
+  background-color: #4b5563;
+}

@@ -227,6 +227,7 @@
     loadOpportunities(f);
     loadConnections(record.id);
     loadAddressHistory(record.id);
+    if (window.loadEmployment) loadEmployment(record.id);
     populateNoteFields(record);
     updateAllNoteIcons();
     renderContactMetaBar(f);

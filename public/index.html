@@ -234,6 +234,22 @@
                   </div>
                 </div>
 
+                <div class="collapsible-section" id="employmentHistorySection">
+                  <div class="collapsible-header" onclick="toggleCollapsible('employmentHistorySection')" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span class="collapsible-icon">&#9654;</span>
+                      <span class="collapsible-title">Employment</span>
+                    </div>
+                  </div>
+                  <div class="collapsible-content">
+                    <div class="address-section-header">
+                      <span class="address-section-label">Employment History</span>
+                      <span class="address-section-add" onclick="openEmploymentModal()">+ Add</span>
+                    </div>
+                    <div id="employmentHistoryList" class="employment-history-list"></div>
+                  </div>
+                </div>
+
                 <div id="deleteSection" style="margin-top:auto; padding-top:20px;">
                   <button type="button" class="btn-delete" onclick="confirmDeleteContact()">Delete Contact</button>
                 </div>
@@ -1246,6 +1262,205 @@
       </div>
     </div>
 
+    <!-- Employment Modal -->
+    <div id="employmentModal" class="modal-overlay" style="display:none; z-index:1200;">
+      <div class="modal-content" style="width:800px; max-width:95vw; max-height:90vh;">
+        <div class="modal-header">
+          <h3 id="employmentFormTitle" style="white-space:nowrap;">Add Employment</h3>
+          <button type="button" class="close-panel" onclick="closeEmploymentModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="employmentFormBody" style="padding:20px; overflow-y:auto; max-height:calc(90vh - 130px);">
+          <input type="hidden" id="employmentFormId">
+          
+          <div class="form-row">
+            <div class="field-group" style="flex:1;">
+              <label>Status</label>
+              <select id="employmentStatus" onchange="handleEmploymentStatusChange()">
+                <option value="">Select...</option>
+                <option value="Primary Employment">Primary Employment</option>
+                <option value="Secondary Employment">Secondary Employment</option>
+                <option value="Previous Employment">Previous Employment</option>
+              </select>
+            </div>
+            <div class="field-group" style="flex:1;">
+              <label>Employment Type</label>
+              <select id="employmentType" onchange="handleEmploymentTypeChange()">
+                <option value="">Select...</option>
+                <option value="PAYG">PAYG</option>
+                <option value="Self Employed">Self Employed</option>
+                <option value="Unemployed">Unemployed</option>
+                <option value="Retired">Retired</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="employmentEmployerSection">
+            <div class="form-row">
+              <div class="field-group" style="flex:2;"><label>Employer Name</label><input type="text" id="employmentEmployerName"></div>
+              <div class="field-group" style="flex:1;"><label>ABN</label><input type="text" id="employmentAbn"></div>
+            </div>
+            <div class="form-row">
+              <div class="field-group" style="flex:1;"><label>Job Title</label><input type="text" id="employmentJobTitle"></div>
+              <div class="field-group" style="flex:1;">
+                <label>Employment Basis</label>
+                <select id="employmentBasis">
+                  <option value="">Select...</option>
+                  <option value="Full Time">Full Time</option>
+                  <option value="Part Time">Part Time</option>
+                  <option value="Casual">Casual</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Temporary">Temporary</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="employmentPaygSection" style="display:none;">
+            <div class="form-row">
+              <div class="field-group" style="flex:1;">
+                <label>PAYG Type</label>
+                <select id="employmentPaygType">
+                  <option value="">Select...</option>
+                  <option value="Public">Public</option>
+                  <option value="Private">Private</option>
+                </select>
+              </div>
+              <div class="field-group" style="flex:1;">
+                <label style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" id="employmentOnProbation" style="width:auto;">
+                  On Probation
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div id="employmentSelfEmployedSection" style="display:none;">
+            <div class="form-row">
+              <div class="field-group" style="flex:1;">
+                <label>Operating Structure</label>
+                <select id="employmentOperatingStructure">
+                  <option value="">Select...</option>
+                  <option value="Sole Trader/Partnership">Sole Trader/Partnership</option>
+                  <option value="Trust">Trust</option>
+                  <option value="Company">Company</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="employmentBenefitsSection" style="display:none;">
+            <div class="form-row">
+              <div class="field-group" style="flex:1;">
+                <label style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" id="employmentOnBenefits" style="width:auto;">
+                  Receiving Government Benefits
+                </label>
+              </div>
+              <div class="field-group" style="flex:1;">
+                <label style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" id="employmentStudent" style="width:auto;">
+                  Student
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field-group" style="flex:1;"><label>Start Date</label><input type="text" id="employmentStartDate" class="smart-date" placeholder="DD/MM/YYYY"></div>
+            <div class="field-group" style="flex:1;"><label>End Date</label><input type="text" id="employmentEndDate" class="smart-date" placeholder="DD/MM/YYYY (leave blank if current)"></div>
+          </div>
+
+          <div id="employmentContactPersonSection">
+            <div style="margin-top:15px; margin-bottom:10px; font-weight:600; font-size:13px; color:#666;">Employer Contact Person</div>
+            <div class="form-row">
+              <div class="field-group" style="flex:0 0 80px;">
+                <label>Title</label>
+                <input type="text" id="employmentContactTitle">
+              </div>
+              <div class="field-group" style="flex:1;"><label>First Name</label><input type="text" id="employmentContactFirstName"></div>
+              <div class="field-group" style="flex:1;"><label>Surname</label><input type="text" id="employmentContactSurname"></div>
+            </div>
+            <div class="form-row">
+              <div class="field-group" style="flex:1;"><label>Phone</label><input type="text" id="employmentContactPhone"></div>
+              <div class="field-group" style="flex:1;"><label>Email</label><input type="email" id="employmentContactEmail"></div>
+            </div>
+          </div>
+
+          <div id="employmentAddressSection">
+            <div style="margin-top:15px; margin-bottom:10px; font-weight:600; font-size:13px; color:#666;">Employer Address</div>
+            <div class="form-row">
+              <div class="field-group" style="flex:0 0 100px;"><label>Street No</label><input type="text" id="employmentAddrStreetNo"></div>
+              <div class="field-group" style="flex:1;"><label>Street Name</label><input type="text" id="employmentAddrStreetName"></div>
+              <div class="field-group" style="flex:0 0 120px;">
+                <label>Street Type</label>
+                <select id="employmentAddrStreetType">
+                  <option value=""></option>
+                  <option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option>
+                  <option value="Close">Close</option><option value="Court">Court</option>
+                  <option value="Crescent">Crescent</option><option value="Drive">Drive</option>
+                  <option value="Highway">Highway</option><option value="Lane">Lane</option>
+                  <option value="Parade">Parade</option><option value="Place">Place</option>
+                  <option value="Road">Road</option><option value="Street">Street</option>
+                  <option value="Terrace">Terrace</option><option value="Way">Way</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field-group" style="flex:1;"><label>City / Suburb</label><input type="text" id="employmentAddrCity"></div>
+              <div class="field-group" style="flex:0 0 80px;">
+                <label>State</label>
+                <select id="employmentAddrState">
+                  <option value=""></option>
+                  <option value="WA">WA</option><option value="NSW">NSW</option><option value="VIC">VIC</option>
+                  <option value="QLD">QLD</option><option value="SA">SA</option><option value="TAS">TAS</option>
+                  <option value="NT">NT</option><option value="ACT">ACT</option>
+                </select>
+              </div>
+              <div class="field-group" style="flex:0 0 80px;"><label>Postcode</label><input type="text" id="employmentAddrPostcode" maxlength="4"></div>
+            </div>
+          </div>
+
+          <div id="employmentIncomeSection">
+            <div style="margin-top:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:600; font-size:13px; color:#666;">Income</span>
+              <span id="employmentAddIncomeBtn" class="address-section-add" onclick="addIncomeRow()">+ Add Income</span>
+            </div>
+            <div id="employmentIncomeList"></div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-delete" id="employmentDeleteBtn" onclick="confirmDeleteEmployment()" style="margin-right:auto; display:none;">Delete</button>
+          <button type="button" class="btn-cancel" onclick="closeEmploymentModal()">Cancel</button>
+          <button type="button" class="btn-confirm" onclick="saveEmployment()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Employment Primary Conflict Modal -->
+    <div id="employmentConflictModal" class="modal-overlay" style="display:none; z-index:1300;">
+      <div class="modal-content" style="width:450px; max-width:95vw;">
+        <div class="modal-header">
+          <h3 style="white-space:nowrap;">Primary Employment Conflict</h3>
+          <button type="button" class="close-panel" onclick="closeEmploymentConflictModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:20px;">
+          <p id="employmentConflictMessage" style="margin-bottom:15px;"></p>
+          <p style="font-size:13px; color:#666;">What would you like to do with the existing primary employment?</p>
+          <div id="conflictEndDateField" style="display:none; margin-top:15px;">
+            <label style="font-size:12px; color:#666; display:block; margin-bottom:5px;">End Date for previous Primary role:</label>
+            <input type="text" id="conflictEndDateInput" class="smart-date" placeholder="DD/MM/YYYY">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="closeEmploymentConflictModal()">Cancel</button>
+          <button type="button" id="conflictSecondaryBtn" class="btn-secondary" onclick="resolveConflictAsSecondary()">Change to Secondary</button>
+          <button type="button" id="conflictPreviousBtn" class="btn-confirm" onclick="showConflictDateInput()">Change to Previous</button>
+          <button type="button" id="confirmConflictPreviousBtn" class="btn-confirm" style="display:none;" onclick="resolveConflictAsPrevious()">Confirm Change</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Confirmation Modal -->
     <div id="confirmModal" class="confirm-modal-overlay" style="display:none;">
       <div class="confirm-modal">
@@ -1562,6 +1777,7 @@
     <script src="/js/connections.js?v=106"></script>
     <script src="/js/notes.js?v=100"></script>
     <script src="/js/addresses.js?v=100"></script>
+    <script src="/js/employment.js?v=105"></script>
     <script src="/js/appointments.js?v=100"></script>
     <script src="/js/opportunities.js?v=100"></script>
     <script src="/js/settings.js?v=100"></script>

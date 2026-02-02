@@ -2055,3 +2055,178 @@ export async function deleteAddress(addressId, userContext = null) {
     return { success: false, error: err.message };
   }
 }
+
+// ============================================================
+// EMPLOYMENT HISTORY FUNCTIONS
+// ============================================================
+
+function formatEmploymentRecord(record) {
+  const f = record.fields;
+  return {
+    id: record.id,
+    employerName: f["Employer Name"] || "",
+    status: f["Status"] || "",
+    employmentBasis: f["Employment Basis"] || "",
+    employmentType: f["Employment Type"] || "",
+    paygType: f["PAYG Type"] || "",
+    onProbation: f["On Probation"] || false,
+    operatingStructure: f["Operating Structure"] || "",
+    onBenefits: f["On Benefits"] || false,
+    student: f["Student"] || false,
+    employerAbn: f["Employer ABN"] || "",
+    jobTitle: f["Job Title"] || "",
+    startDate: f["Start Date"] || "",
+    endDate: f["End Date"] || "",
+    contactPersonTitle: f["Contact Person Title"] || "",
+    contactPersonFirstName: f["Contact Person First Name"] || "",
+    contactPersonSurname: f["Contact Person Surname"] || "",
+    contactPersonPhone: f["Contact Person Phone"] || "",
+    contactPersonEmail: f["Contact Person Email"] || "",
+    incomes: f["Incomes"] || "[]",
+    addressData: f["Address Data"] || "{}"
+  };
+}
+
+export async function getEmploymentForContact(contactId) {
+  if (!base || !contactId) return [];
+  
+  try {
+    const allRecords = await base("Employment")
+      .select({})
+      .all();
+    
+    // Filter to only employment linked to this contact
+    const records = allRecords.filter(r => {
+      const contactIds = r.fields["Contact"] || [];
+      return contactIds.includes(contactId);
+    });
+    
+    // Sort: Primary first, then Secondary by start date desc, then Previous by end date desc
+    const formatted = records.map(formatEmploymentRecord);
+    formatted.sort((a, b) => {
+      const statusOrder = { "Primary Employment": 0, "Secondary Employment": 1, "Previous Employment": 2 };
+      const aOrder = statusOrder[a.status] ?? 3;
+      const bOrder = statusOrder[b.status] ?? 3;
+      
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      
+      // For Secondary, sort by start date descending
+      if (a.status === "Secondary Employment") {
+        return (b.startDate || "").localeCompare(a.startDate || "");
+      }
+      // For Previous, sort by end date descending
+      if (a.status === "Previous Employment") {
+        return (b.endDate || "").localeCompare(a.endDate || "");
+      }
+      return 0;
+    });
+    
+    return formatted;
+  } catch (err) {
+    console.error("getEmploymentForContact error:", err.message);
+    return [];
+  }
+}
+
+export async function createEmployment(contactId, fields, userContext = null) {
+  if (!base || !contactId) return { success: false, error: "Missing contact ID" };
+  
+  try {
+    const createFields = {
+      "Contact": [contactId]
+    };
+    
+    if (fields.employerName) createFields["Employer Name"] = fields.employerName;
+    if (fields.status) createFields["Status"] = fields.status;
+    if (fields.employmentBasis) createFields["Employment Basis"] = fields.employmentBasis;
+    if (fields.employmentType) createFields["Employment Type"] = fields.employmentType;
+    if (fields.paygType) createFields["PAYG Type"] = fields.paygType;
+    if (fields.onProbation !== undefined) createFields["On Probation"] = fields.onProbation;
+    if (fields.operatingStructure) createFields["Operating Structure"] = fields.operatingStructure;
+    if (fields.onBenefits !== undefined) createFields["On Benefits"] = fields.onBenefits;
+    if (fields.student !== undefined) createFields["Student"] = fields.student;
+    if (fields.employerAbn) createFields["Employer ABN"] = fields.employerAbn;
+    if (fields.jobTitle) createFields["Job Title"] = fields.jobTitle;
+    if (fields.startDate) createFields["Start Date"] = fields.startDate;
+    if (fields.endDate) createFields["End Date"] = fields.endDate;
+    if (fields.contactPersonTitle) createFields["Contact Person Title"] = fields.contactPersonTitle;
+    if (fields.contactPersonFirstName) createFields["Contact Person First Name"] = fields.contactPersonFirstName;
+    if (fields.contactPersonSurname) createFields["Contact Person Surname"] = fields.contactPersonSurname;
+    if (fields.contactPersonPhone) createFields["Contact Person Phone"] = fields.contactPersonPhone;
+    if (fields.contactPersonEmail) createFields["Contact Person Email"] = fields.contactPersonEmail;
+    if (fields.incomes) createFields["Incomes"] = fields.incomes;
+    if (fields.addressData) createFields["Address Data"] = fields.addressData;
+    
+    const record = await base("Employment").create(createFields);
+    
+    if (userContext) {
+      await markContactModified(contactId, userContext);
+    }
+    
+    return { success: true, id: record.id, employment: formatEmploymentRecord(record) };
+  } catch (err) {
+    console.error("createEmployment error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateEmployment(employmentId, fields, userContext = null) {
+  if (!base || !employmentId) return { success: false, error: "Missing employment ID" };
+  
+  try {
+    const updateFields = {};
+    
+    if (fields.employerName !== undefined) updateFields["Employer Name"] = fields.employerName || null;
+    if (fields.status !== undefined) updateFields["Status"] = fields.status || null;
+    if (fields.employmentBasis !== undefined) updateFields["Employment Basis"] = fields.employmentBasis || null;
+    if (fields.employmentType !== undefined) updateFields["Employment Type"] = fields.employmentType || null;
+    if (fields.paygType !== undefined) updateFields["PAYG Type"] = fields.paygType || null;
+    if (fields.onProbation !== undefined) updateFields["On Probation"] = fields.onProbation;
+    if (fields.operatingStructure !== undefined) updateFields["Operating Structure"] = fields.operatingStructure || null;
+    if (fields.onBenefits !== undefined) updateFields["On Benefits"] = fields.onBenefits;
+    if (fields.student !== undefined) updateFields["Student"] = fields.student;
+    if (fields.employerAbn !== undefined) updateFields["Employer ABN"] = fields.employerAbn || null;
+    if (fields.jobTitle !== undefined) updateFields["Job Title"] = fields.jobTitle || null;
+    if (fields.startDate !== undefined) updateFields["Start Date"] = fields.startDate || null;
+    if (fields.endDate !== undefined) updateFields["End Date"] = fields.endDate || null;
+    if (fields.contactPersonTitle !== undefined) updateFields["Contact Person Title"] = fields.contactPersonTitle || null;
+    if (fields.contactPersonFirstName !== undefined) updateFields["Contact Person First Name"] = fields.contactPersonFirstName || null;
+    if (fields.contactPersonSurname !== undefined) updateFields["Contact Person Surname"] = fields.contactPersonSurname || null;
+    if (fields.contactPersonPhone !== undefined) updateFields["Contact Person Phone"] = fields.contactPersonPhone || null;
+    if (fields.contactPersonEmail !== undefined) updateFields["Contact Person Email"] = fields.contactPersonEmail || null;
+    if (fields.incomes !== undefined) updateFields["Incomes"] = fields.incomes || null;
+    if (fields.addressData !== undefined) updateFields["Address Data"] = fields.addressData || null;
+    
+    const record = await base("Employment").update(employmentId, updateFields);
+    
+    const contactId = Array.isArray(record.fields["Contact"]) ? record.fields["Contact"][0] : null;
+    if (userContext && contactId) {
+      await markContactModified(contactId, userContext);
+    }
+    
+    return { success: true, employment: formatEmploymentRecord(record) };
+  } catch (err) {
+    console.error("updateEmployment error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteEmployment(employmentId, userContext = null) {
+  if (!base || !employmentId) return { success: false, error: "Missing employment ID" };
+  
+  try {
+    const record = await base("Employment").find(employmentId);
+    const contactId = Array.isArray(record.fields["Contact"]) ? record.fields["Contact"][0] : null;
+    
+    await base("Employment").destroy(employmentId);
+    
+    if (userContext && contactId) {
+      await markContactModified(contactId, userContext);
+    }
+    
+    return { success: true };
+  } catch (err) {
+    console.error("deleteEmployment error:", err.message);
+    return { success: false, error: err.message };
+  }
+}

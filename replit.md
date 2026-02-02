@@ -38,6 +38,7 @@ Integrity employs a Node.js/Express backend serving a static frontend.
 - **Appointment Management**: Dedicated table for appointments linked to opportunities, with full CRUD.
 - **Evidence & Data Collection**: Full-screen modal for managing loan application evidence, with status tracking and email generation.
 - **Address History**: Tracks residential and postal addresses with date range tracking.
+- **Employment History**: Full CRUD for employment records with Primary/Secondary/Previous status, conflict resolution for Primary changes, conditional field visibility based on employment type, and JSON blob storage for Income entries and Employer Address.
 - **Email Integration**: Sends emails via Gmail API with HTML formatting and dynamic templates.
 - **Settings Management**: Team-wide configurations accessible via a global settings modal.
 
@@ -49,7 +50,7 @@ Integrity employs a Node.js/Express backend serving a static frontend.
 - **URL Routing**: Path-based nested routing with History API for deep linking.
 
 ## External Dependencies
-- **Airtable**: Primary database for Contacts, Opportunities, Spouse History, Connections, Addresses, Users, Settings.
+- **Airtable**: Primary database for Contacts, Opportunities, Spouse History, Connections, Addresses, Employment, Users, Settings.
 - **Google OAuth 2.0**: For user authentication and authorization.
 - **Gmail API**: For sending emails.
 - **Quill.js**: WYSIWYG editor.
@@ -74,9 +75,13 @@ All dates/times in Integrity refer to Western Australia (UTC+8). This prevents t
 | `constructDateForSave(dateStr, timeStr)` | Creates floating ISO: `YYYY-MM-DDTHH:mm:00` |
 | `parseFloatingDate(isoString)` | Parses floating ISO to Date for comparisons |
 | `formatDateTimeForDisplay(isoString, options)` | Display formatting; Z→Perth, floating→direct |
-| `parseDateForEditor(isoString)` | **USE FOR FORMS** - Returns `{ dateDisplay, timeDisplay, isoDate, time24 }` |
+| `parseDateForEditor(isoString)` | **DATETIME FORMS** - Returns `{ dateDisplay, timeDisplay, isoDate, time24 }` |
+| `formatDateDisplay(isoDate)` | **DATE-ONLY FORMS** - Converts `YYYY-MM-DD` → `DD/MM/YYYY` |
+| `parseFlexibleDate(value)` | Smart date parsing - Returns `{ iso, display }` for saving |
 
-**RULE:** When loading Airtable data into any form, ALWAYS use `parseDateForEditor()` to ensure Perth timezone consistency.
+**RULES:**
+- **Datetime fields** (e.g., Appointment): Use `parseDateForEditor()` to load, `constructDateForSave()` to save
+- **Date-only fields** (e.g., DOB, Employment dates): Use `formatDateDisplay()` to load, `parseFlexibleDate().iso` to save
 
 ## Global Layout System
 
@@ -152,4 +157,5 @@ All user preferences are stored in the **Users table in Airtable** (not localSto
 - **Duplicate Warning System**: Manual warnings displayed in left column with EDIT/HIDE links, Add/Delete options in ACTIONS menu
 - **Duplicate Detection**: Auto-checks for duplicates on new contact creation (mobile, email, name matching), shows modal with potential matches and "Create Anyway" option
 - **User Preferences in Airtable**: Migrated user preferences (e.g., phone copy format) from localStorage to Airtable Users table for cross-device sync
-- **Module count**: 19 JS modules in public/js/ (addresses, appointments, connections, contacts, contacts-search, core, email, evidence, inline-editing, modal-utils, notes, opportunities, quick-view, router, settings, shared-state, shared-utils, spouse, ui-utils)
+- **Module count**: 20 JS modules in public/js/ (addresses, appointments, connections, contacts, contacts-search, core, email, employment, evidence, inline-editing, modal-utils, notes, opportunities, quick-view, router, settings, shared-state, shared-utils, spouse, ui-utils)
+- **Employment History Module**: Added full Employment module with Primary conflict resolution modal, conditional section visibility (PAYG/Self Employed/Unemployed/Retired), JSON blob storage for Income list and Employer Address, sorted list display (Primary first, then Secondary by start date, then Previous by end date)

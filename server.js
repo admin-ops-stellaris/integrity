@@ -1215,6 +1215,57 @@ app.post("/api/deleteAddress", async (req, res) => {
   }
 });
 
+// --- EMPLOYMENT HISTORY ---
+app.post("/api/getEmploymentForContact", async (req, res) => {
+  try {
+    const [contactId] = req.body.args || [];
+    const employment = await airtable.getEmploymentForContact(contactId);
+    res.json(employment);
+  } catch (err) {
+    console.error("getEmploymentForContact error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/createEmployment", async (req, res) => {
+  try {
+    const [contactId, fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.createEmployment(contactId, fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("createEmployment error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/updateEmployment", async (req, res) => {
+  try {
+    const [employmentId, fields] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.updateEmployment(employmentId, fields, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("updateEmployment error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/deleteEmployment", async (req, res) => {
+  try {
+    const [employmentId] = req.body.args || [];
+    const userEmail = req.session?.user?.email || null;
+    const userContext = userEmail ? await airtable.getUserProfileByEmail(userEmail) : null;
+    const result = await airtable.deleteEmployment(employmentId, userContext);
+    res.json(result);
+  } catch (err) {
+    console.error("deleteEmployment error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- EMAIL SENDING via Gmail API ---
 app.post("/api/sendEmail", async (req, res) => {
   try {

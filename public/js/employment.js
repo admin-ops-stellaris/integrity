@@ -123,19 +123,8 @@
     document.getElementById('employmentOnBenefits').checked = emp.onBenefits || false;
     document.getElementById('employmentStudent').checked = emp.student || false;
     
-    if (emp.startDate) {
-      const parsed = window.parseDateForEditor(emp.startDate);
-      document.getElementById('employmentStartDate').value = parsed.dateDisplay || '';
-    } else {
-      document.getElementById('employmentStartDate').value = '';
-    }
-    
-    if (emp.endDate) {
-      const parsed = window.parseDateForEditor(emp.endDate);
-      document.getElementById('employmentEndDate').value = parsed.dateDisplay || '';
-    } else {
-      document.getElementById('employmentEndDate').value = '';
-    }
+    document.getElementById('employmentStartDate').value = emp.startDate ? window.formatDateDisplay(emp.startDate) : '';
+    document.getElementById('employmentEndDate').value = emp.endDate ? window.formatDateDisplay(emp.endDate) : '';
     
     document.getElementById('employmentContactTitle').value = emp.contactPersonTitle || '';
     document.getElementById('employmentContactFirstName').value = emp.contactPersonFirstName || '';

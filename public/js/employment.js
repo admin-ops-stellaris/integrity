@@ -382,7 +382,7 @@
   };
 
   window.saveEmployment = function() {
-    const contactId = state.currentContactId;
+    const contactId = state.currentContactRecord?.id;
     if (!contactId) {
       showAlert('Error', 'No contact selected', 'error');
       return;
@@ -473,7 +473,7 @@
         .withSuccessHandler(function(result) {
           if (result.success) {
             closeEmploymentModal();
-            loadEmployment(state.currentContactId);
+            loadEmployment(state.currentContactRecord?.id);
           } else {
             showAlert('Error', result.error || 'Failed to delete employment', 'error');
           }

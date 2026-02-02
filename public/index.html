@@ -1290,8 +1290,6 @@
                 <option value="Self Employed">Self Employed</option>
                 <option value="Unemployed">Unemployed</option>
                 <option value="Retired">Retired</option>
-                <option value="Maternity Leave">Maternity Leave</option>
-                <option value="Home Duties">Home Duties</option>
               </select>
             </div>
           </div>
@@ -1311,6 +1309,7 @@
                   <option value="Part Time">Part Time</option>
                   <option value="Casual">Casual</option>
                   <option value="Contract">Contract</option>
+                  <option value="Temporary">Temporary</option>
                 </select>
               </div>
             </div>
@@ -1322,9 +1321,8 @@
                 <label>PAYG Type</label>
                 <select id="employmentPaygType">
                   <option value="">Select...</option>
-                  <option value="Permanent">Permanent</option>
-                  <option value="Probation">Probation</option>
-                  <option value="Temp / Agency">Temp / Agency</option>
+                  <option value="Public">Public</option>
+                  <option value="Private">Private</option>
                 </select>
               </div>
               <div class="field-group" style="flex:1;">
@@ -1457,11 +1455,16 @@
         <div class="modal-body" style="padding:20px;">
           <p id="employmentConflictMessage" style="margin-bottom:15px;"></p>
           <p style="font-size:13px; color:#666;">What would you like to do with the existing primary employment?</p>
+          <div id="conflictEndDateField" style="display:none; margin-top:15px;">
+            <label style="font-size:12px; color:#666; display:block; margin-bottom:5px;">End Date for previous Primary role:</label>
+            <input type="text" id="conflictEndDateInput" class="smart-date" placeholder="DD/MM/YYYY">
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-cancel" onclick="closeEmploymentConflictModal()">Cancel</button>
-          <button type="button" class="btn-secondary" onclick="resolveConflictAsSecondary()">Change to Secondary</button>
-          <button type="button" class="btn-confirm" onclick="resolveConflictAsPrevious()">Change to Previous</button>
+          <button type="button" id="conflictSecondaryBtn" class="btn-secondary" onclick="resolveConflictAsSecondary()">Change to Secondary</button>
+          <button type="button" id="conflictPreviousBtn" class="btn-confirm" onclick="showConflictDateInput()">Change to Previous</button>
+          <button type="button" id="confirmConflictPreviousBtn" class="btn-confirm" style="display:none;" onclick="resolveConflictAsPrevious()">Confirm Change</button>
         </div>
       </div>
     </div>

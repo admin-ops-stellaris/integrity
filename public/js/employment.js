@@ -211,6 +211,7 @@
       modal.style.display = 'none';
       document.getElementById('employmentStatus').value = '';
       conflictingPrimaryId = null;
+      resetConflictModalUI();
     }, 200);
   };
 
@@ -235,12 +236,19 @@
       .updateEmployment(conflictingPrimaryId, { status: 'Secondary Employment' });
   };
 
+  window.showConflictDateInput = function() {
+    document.getElementById('conflictSecondaryBtn').style.display = 'none';
+    document.getElementById('conflictPreviousBtn').style.display = 'none';
+    document.getElementById('conflictEndDateField').style.display = 'block';
+    document.getElementById('confirmConflictPreviousBtn').style.display = 'inline-block';
+    document.getElementById('conflictEndDateInput').value = '';
+    document.getElementById('conflictEndDateInput').focus();
+  };
+
   window.resolveConflictAsPrevious = function() {
     if (!conflictingPrimaryId) return;
     
-    const endDateStr = prompt('Enter end date for the previous primary employment (DD/MM/YYYY):');
-    if (endDateStr === null) return;
-    
+    const endDateStr = document.getElementById('conflictEndDateInput').value;
     const endDate = endDateStr ? parseSmartDate(endDateStr) : null;
     const updates = { status: 'Previous Employment' };
     if (endDate) {
@@ -260,6 +268,7 @@
         }
         
         conflictingPrimaryId = null;
+        resetConflictModalUI();
       })
       .withFailureHandler(function(err) {
         console.error('Failed to update employment status:', err);
@@ -267,6 +276,13 @@
       })
       .updateEmployment(conflictingPrimaryId, updates);
   };
+
+  function resetConflictModalUI() {
+    document.getElementById('conflictSecondaryBtn').style.display = 'inline-block';
+    document.getElementById('conflictPreviousBtn').style.display = 'inline-block';
+    document.getElementById('conflictEndDateField').style.display = 'none';
+    document.getElementById('confirmConflictPreviousBtn').style.display = 'none';
+  }
 
   window.handleEmploymentTypeChange = function() {
     updateConditionalSections();

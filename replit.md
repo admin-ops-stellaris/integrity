@@ -75,9 +75,13 @@ All dates/times in Integrity refer to Western Australia (UTC+8). This prevents t
 | `constructDateForSave(dateStr, timeStr)` | Creates floating ISO: `YYYY-MM-DDTHH:mm:00` |
 | `parseFloatingDate(isoString)` | Parses floating ISO to Date for comparisons |
 | `formatDateTimeForDisplay(isoString, options)` | Display formatting; Z→Perth, floating→direct |
-| `parseDateForEditor(isoString)` | **USE FOR FORMS** - Returns `{ dateDisplay, timeDisplay, isoDate, time24 }` |
+| `parseDateForEditor(isoString)` | **DATETIME FORMS** - Returns `{ dateDisplay, timeDisplay, isoDate, time24 }` |
+| `formatDateDisplay(isoDate)` | **DATE-ONLY FORMS** - Converts `YYYY-MM-DD` → `DD/MM/YYYY` |
+| `parseFlexibleDate(value)` | Smart date parsing - Returns `{ iso, display }` for saving |
 
-**RULE:** When loading Airtable data into any form, ALWAYS use `parseDateForEditor()` to ensure Perth timezone consistency.
+**RULES:**
+- **Datetime fields** (e.g., Appointment): Use `parseDateForEditor()` to load, `constructDateForSave()` to save
+- **Date-only fields** (e.g., DOB, Employment dates): Use `formatDateDisplay()` to load, `parseFlexibleDate().iso` to save
 
 ## Global Layout System
 

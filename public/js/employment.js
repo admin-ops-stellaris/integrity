@@ -291,10 +291,12 @@
     const incomeSection = document.getElementById('employmentIncomeSection');
     const addIncomeBtn = document.getElementById('employmentAddIncomeBtn');
     
-    const showEmployer = status === 'Primary Employment' || status === 'Secondary Employment';
-    employerSection.style.display = showEmployer ? 'block' : 'none';
-    contactSection.style.display = showEmployer ? 'block' : 'none';
-    addressSection.style.display = showEmployer ? 'block' : 'none';
+    const isPreviousEmployment = status === 'Previous Employment';
+    const hasEmployer = type === 'PAYG' || type === 'Self Employed';
+    
+    employerSection.style.display = hasEmployer ? 'block' : 'none';
+    contactSection.style.display = (hasEmployer && !isPreviousEmployment) ? 'block' : 'none';
+    addressSection.style.display = (hasEmployer && !isPreviousEmployment) ? 'block' : 'none';
     
     paygSection.style.display = type === 'PAYG' ? 'block' : 'none';
     selfEmployedSection.style.display = type === 'Self Employed' ? 'block' : 'none';

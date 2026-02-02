@@ -344,14 +344,14 @@
     
     container.innerHTML = currentIncomes.map((income, idx) => `
       <div class="income-row" data-idx="${idx}">
-        <div class="field-group" style="flex:1;">
+        <div class="field-group" style="flex:0 0 140px;">
           <label>Type</label>
           <select onchange="updateIncomeField(${idx}, 'type', this.value)">
             <option value="" ${income.type === '' ? 'selected' : ''}>Select...</option>
             ${typeOptions.map(opt => `<option value="${opt}" ${income.type === opt ? 'selected' : ''}>${opt}</option>`).join('')}
           </select>
         </div>
-        <div class="field-group" style="flex:0 0 100px;">
+        <div class="field-group" style="flex:0 0 90px;">
           <label>Amount ($)</label>
           <input type="text" value="${income.amount || ''}" onchange="updateIncomeField(${idx}, 'amount', this.value)">
         </div>
@@ -365,11 +365,11 @@
             <option value="Annually" ${income.frequency === 'Annually' ? 'selected' : ''}>Annually</option>
           </select>
         </div>
-        <div class="field-group" style="flex:1;">
+        <div class="field-group" style="flex:2; min-width:150px;">
           <label>Comment</label>
           <input type="text" value="${escapeHtml(income.comment || '')}" onchange="updateIncomeField(${idx}, 'comment', this.value)">
         </div>
-        <button type="button" class="income-delete-btn" onclick="deleteIncomeRow(${idx})">×</button>
+        <button type="button" class="income-delete-btn" onclick="deleteIncomeRow(${idx})" title="Delete">×</button>
       </div>
     `).join('');
   }

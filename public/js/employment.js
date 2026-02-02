@@ -286,6 +286,7 @@
 
   window.handleEmploymentTypeChange = function() {
     updateConditionalSections();
+    renderIncomeRows();
   };
 
   function updateConditionalSections() {
@@ -320,6 +321,15 @@
     renderIncomeRows();
   };
 
+  function getIncomeTypeOptions(employmentType) {
+    if (employmentType === 'PAYG') {
+      return ['Salary', 'Bonus', 'Overtime'];
+    } else if (employmentType === 'Self Employed') {
+      return ['Salary', 'Business Income'];
+    }
+    return ['Salary', 'Bonus', 'Overtime', 'Business Income'];
+  }
+
   function renderIncomeRows() {
     const container = document.getElementById('employmentIncomeList');
     if (!container) return;
@@ -329,22 +339,16 @@
       return;
     }
     
+    const employmentType = document.getElementById('employmentType').value;
+    const typeOptions = getIncomeTypeOptions(employmentType);
+    
     container.innerHTML = currentIncomes.map((income, idx) => `
       <div class="income-row" data-idx="${idx}">
         <div class="field-group" style="flex:1;">
           <label>Type</label>
           <select onchange="updateIncomeField(${idx}, 'type', this.value)">
             <option value="" ${income.type === '' ? 'selected' : ''}>Select...</option>
-            <option value="Base Salary" ${income.type === 'Base Salary' ? 'selected' : ''}>Base Salary</option>
-            <option value="Overtime" ${income.type === 'Overtime' ? 'selected' : ''}>Overtime</option>
-            <option value="Commission" ${income.type === 'Commission' ? 'selected' : ''}>Commission</option>
-            <option value="Bonus" ${income.type === 'Bonus' ? 'selected' : ''}>Bonus</option>
-            <option value="Allowance" ${income.type === 'Allowance' ? 'selected' : ''}>Allowance</option>
-            <option value="Rental Income" ${income.type === 'Rental Income' ? 'selected' : ''}>Rental Income</option>
-            <option value="Dividends" ${income.type === 'Dividends' ? 'selected' : ''}>Dividends</option>
-            <option value="Centrelink" ${income.type === 'Centrelink' ? 'selected' : ''}>Centrelink</option>
-            <option value="Child Support" ${income.type === 'Child Support' ? 'selected' : ''}>Child Support</option>
-            <option value="Other" ${income.type === 'Other' ? 'selected' : ''}>Other</option>
+            ${typeOptions.map(opt => `<option value="${opt}" ${income.type === opt ? 'selected' : ''}>${opt}</option>`).join('')}
           </select>
         </div>
         <div class="field-group" style="flex:0 0 100px;">
@@ -358,7 +362,7 @@
             <option value="Weekly" ${income.frequency === 'Weekly' ? 'selected' : ''}>Weekly</option>
             <option value="Fortnightly" ${income.frequency === 'Fortnightly' ? 'selected' : ''}>Fortnightly</option>
             <option value="Monthly" ${income.frequency === 'Monthly' ? 'selected' : ''}>Monthly</option>
-            <option value="Yearly" ${income.frequency === 'Yearly' ? 'selected' : ''}>Yearly</option>
+            <option value="Annually" ${income.frequency === 'Annually' ? 'selected' : ''}>Annually</option>
           </select>
         </div>
         <div class="field-group" style="flex:1;">

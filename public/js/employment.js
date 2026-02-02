@@ -249,7 +249,7 @@
     if (!conflictingPrimaryId) return;
     
     const endDateStr = document.getElementById('conflictEndDateInput').value;
-    const endDate = endDateStr ? window.parseFlexibleDate(endDateStr) : null;
+    const endDate = endDateStr ? (window.parseFlexibleDate(endDateStr)?.iso || null) : null;
     const updates = { status: 'Previous Employment' };
     if (endDate) {
       updates.endDate = endDate;
@@ -428,8 +428,8 @@
       operatingStructure: operatingStructureVal || null,
       onBenefits: document.getElementById('employmentOnBenefits').checked,
       student: document.getElementById('employmentStudent').checked,
-      startDate: startDateRaw ? window.parseFlexibleDate(startDateRaw) : null,
-      endDate: endDateRaw ? window.parseFlexibleDate(endDateRaw) : null,
+      startDate: startDateRaw ? (window.parseFlexibleDate(startDateRaw)?.iso || null) : null,
+      endDate: endDateRaw ? (window.parseFlexibleDate(endDateRaw)?.iso || null) : null,
       contactPersonTitle: document.getElementById('employmentContactTitle').value,
       contactPersonFirstName: document.getElementById('employmentContactFirstName').value,
       contactPersonSurname: document.getElementById('employmentContactSurname').value,

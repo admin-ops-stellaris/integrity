@@ -124,14 +124,14 @@
     document.getElementById('employmentStudent').checked = emp.student || false;
     
     if (emp.startDate) {
-      const parsed = parseDateForEditor(emp.startDate);
+      const parsed = window.parseDateForEditor(emp.startDate);
       document.getElementById('employmentStartDate').value = parsed.dateDisplay || '';
     } else {
       document.getElementById('employmentStartDate').value = '';
     }
     
     if (emp.endDate) {
-      const parsed = parseDateForEditor(emp.endDate);
+      const parsed = window.parseDateForEditor(emp.endDate);
       document.getElementById('employmentEndDate').value = parsed.dateDisplay || '';
     } else {
       document.getElementById('employmentEndDate').value = '';

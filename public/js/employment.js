@@ -249,7 +249,7 @@
     if (!conflictingPrimaryId) return;
     
     const endDateStr = document.getElementById('conflictEndDateInput').value;
-    const endDate = endDateStr ? parseSmartDate(endDateStr) : null;
+    const endDate = endDateStr ? window.parseFlexibleDate(endDateStr) : null;
     const updates = { status: 'Previous Employment' };
     if (endDate) {
       updates.endDate = endDate;
@@ -412,20 +412,24 @@
       postcode: document.getElementById('employmentAddrPostcode').value
     };
     
+    const basisVal = document.getElementById('employmentBasis').value;
+    const paygTypeVal = document.getElementById('employmentPaygType').value;
+    const operatingStructureVal = document.getElementById('employmentOperatingStructure').value;
+    
     const fields = {
       status: status,
-      employmentType: type,
+      employmentType: type || null,
       employerName: document.getElementById('employmentEmployerName').value,
       employerAbn: document.getElementById('employmentAbn').value,
       jobTitle: document.getElementById('employmentJobTitle').value,
-      employmentBasis: document.getElementById('employmentBasis').value,
-      paygType: document.getElementById('employmentPaygType').value,
+      employmentBasis: basisVal || null,
+      paygType: paygTypeVal || null,
       onProbation: document.getElementById('employmentOnProbation').checked,
-      operatingStructure: document.getElementById('employmentOperatingStructure').value,
+      operatingStructure: operatingStructureVal || null,
       onBenefits: document.getElementById('employmentOnBenefits').checked,
       student: document.getElementById('employmentStudent').checked,
-      startDate: startDateRaw ? parseSmartDate(startDateRaw) : '',
-      endDate: endDateRaw ? parseSmartDate(endDateRaw) : '',
+      startDate: startDateRaw ? window.parseFlexibleDate(startDateRaw) : null,
+      endDate: endDateRaw ? window.parseFlexibleDate(endDateRaw) : null,
       contactPersonTitle: document.getElementById('employmentContactTitle').value,
       contactPersonFirstName: document.getElementById('employmentContactFirstName').value,
       contactPersonSurname: document.getElementById('employmentContactSurname').value,

@@ -2176,26 +2176,26 @@ export async function updateEmployment(employmentId, fields, userContext = null)
   try {
     const updateFields = {};
     
-    if (fields.employerName !== undefined) updateFields["Employer Name"] = fields.employerName;
-    if (fields.status !== undefined) updateFields["Status"] = fields.status;
-    if (fields.employmentBasis !== undefined) updateFields["Employment Basis"] = fields.employmentBasis;
-    if (fields.employmentType !== undefined) updateFields["Employment Type"] = fields.employmentType;
-    if (fields.paygType !== undefined) updateFields["PAYG Type"] = fields.paygType;
+    if (fields.employerName !== undefined) updateFields["Employer Name"] = fields.employerName || null;
+    if (fields.status !== undefined) updateFields["Status"] = fields.status || null;
+    if (fields.employmentBasis !== undefined) updateFields["Employment Basis"] = fields.employmentBasis || null;
+    if (fields.employmentType !== undefined) updateFields["Employment Type"] = fields.employmentType || null;
+    if (fields.paygType !== undefined) updateFields["PAYG Type"] = fields.paygType || null;
     if (fields.onProbation !== undefined) updateFields["On Probation"] = fields.onProbation;
-    if (fields.operatingStructure !== undefined) updateFields["Operating Structure"] = fields.operatingStructure;
+    if (fields.operatingStructure !== undefined) updateFields["Operating Structure"] = fields.operatingStructure || null;
     if (fields.onBenefits !== undefined) updateFields["On Benefits"] = fields.onBenefits;
     if (fields.student !== undefined) updateFields["Student"] = fields.student;
-    if (fields.employerAbn !== undefined) updateFields["Employer ABN"] = fields.employerAbn;
-    if (fields.jobTitle !== undefined) updateFields["Job Title"] = fields.jobTitle;
+    if (fields.employerAbn !== undefined) updateFields["Employer ABN"] = fields.employerAbn || null;
+    if (fields.jobTitle !== undefined) updateFields["Job Title"] = fields.jobTitle || null;
     if (fields.startDate !== undefined) updateFields["Start Date"] = fields.startDate || null;
     if (fields.endDate !== undefined) updateFields["End Date"] = fields.endDate || null;
-    if (fields.contactPersonTitle !== undefined) updateFields["Contact Person Title"] = fields.contactPersonTitle;
-    if (fields.contactPersonFirstName !== undefined) updateFields["Contact Person First Name"] = fields.contactPersonFirstName;
-    if (fields.contactPersonSurname !== undefined) updateFields["Contact Person Surname"] = fields.contactPersonSurname;
-    if (fields.contactPersonPhone !== undefined) updateFields["Contact Person Phone"] = fields.contactPersonPhone;
-    if (fields.contactPersonEmail !== undefined) updateFields["Contact Person Email"] = fields.contactPersonEmail;
-    if (fields.incomes !== undefined) updateFields["Incomes"] = fields.incomes;
-    if (fields.addressData !== undefined) updateFields["Address Data"] = fields.addressData;
+    if (fields.contactPersonTitle !== undefined) updateFields["Contact Person Title"] = fields.contactPersonTitle || null;
+    if (fields.contactPersonFirstName !== undefined) updateFields["Contact Person First Name"] = fields.contactPersonFirstName || null;
+    if (fields.contactPersonSurname !== undefined) updateFields["Contact Person Surname"] = fields.contactPersonSurname || null;
+    if (fields.contactPersonPhone !== undefined) updateFields["Contact Person Phone"] = fields.contactPersonPhone || null;
+    if (fields.contactPersonEmail !== undefined) updateFields["Contact Person Email"] = fields.contactPersonEmail || null;
+    if (fields.incomes !== undefined) updateFields["Incomes"] = fields.incomes || null;
+    if (fields.addressData !== undefined) updateFields["Address Data"] = fields.addressData || null;
     
     const record = await base("Employment").update(employmentId, updateFields);
     

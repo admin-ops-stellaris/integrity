@@ -1450,6 +1450,55 @@ app.post("/api/deleteEvidenceTemplate", async (req, res) => {
   }
 });
 
+app.post("/api/getAllContactsForExport", async (req, res) => {
+  try {
+    const contacts = await airtable.getAllContactsForExport();
+    res.json(contacts);
+  } catch (err) {
+    console.error("getAllContactsForExport error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getCampaigns", async (req, res) => {
+  try {
+    const campaigns = await airtable.getCampaigns();
+    res.json(campaigns);
+  } catch (err) {
+    console.error("getCampaigns error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getMarketingLogsForContact", async (req, res) => {
+  try {
+    const contactId = req.body.args ? req.body.args[0] : req.body.contactId;
+    if (!contactId) {
+      return res.status(400).json({ error: "contactId is required." });
+    }
+    const logs = await airtable.getMarketingLogsForContact(contactId);
+    res.json(logs);
+  } catch (err) {
+    console.error("getMarketingLogsForContact error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/importCampaignResults", async (req, res) => {
+  try {
+    const payload = req.body.args ? req.body.args[0] : req.body;
+    const { campaignId, rows } = payload || {};
+    if (!campaignId || !rows || !Array.isArray(rows)) {
+      return res.status(400).json({ error: "campaignId and rows are required." });
+    }
+    const result = await airtable.importCampaignResults({ campaignId, rows });
+    res.json(result);
+  } catch (err) {
+    console.error("importCampaignResults error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {

@@ -351,6 +351,9 @@ function selectContact(record) {
   } else {
     console.error('Critical: loadEmployment missing');
   }
+  if (window.loadMarketingTimeline) {
+    loadMarketingTimeline(record.id);
+  }
   closeOppPanel();
   
   // Show Actions menu for existing contacts
@@ -1018,6 +1021,7 @@ function resetForm() {
   document.getElementById('spouseHistoryList').innerHTML = "";
   document.getElementById('spouseEditLink').style.display = 'inline';
   document.getElementById('refreshBtn').style.display = 'none';
+  if (window.clearMarketingTimeline) clearMarketingTimeline();
   // Hide actions menu and reset deceased styling for new contacts
   const actionsMenu = document.getElementById('actionsMenuWrapper');
   if (actionsMenu) actionsMenu.style.display = 'none';

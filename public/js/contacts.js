@@ -228,6 +228,7 @@
     loadConnections(record.id);
     loadAddressHistory(record.id);
     if (window.loadEmployment) loadEmployment(record.id);
+    if (window.loadMarketingTimeline) loadMarketingTimeline(record.id);
     populateNoteFields(record);
     updateAllNoteIcons();
     renderContactMetaBar(f);
@@ -303,6 +304,7 @@
     document.getElementById('spouseHistoryList').innerHTML = "";
     document.getElementById('spouseEditLink').style.display = 'inline';
     document.getElementById('refreshBtn').style.display = 'none';
+    if (window.clearMarketingTimeline) clearMarketingTimeline();
     
     const actionsMenu = document.getElementById('actionsMenuWrapper');
     if (actionsMenu) actionsMenu.style.display = 'none';

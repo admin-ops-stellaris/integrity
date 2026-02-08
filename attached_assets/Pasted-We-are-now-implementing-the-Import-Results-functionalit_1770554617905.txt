@@ -1,0 +1,59 @@
+We are now implementing the 'Import Results' functionality for the Marketing module. This requires connecting to a second Airtable base, which I've called Integrity Marketing Logs.
+
+1. Multi-Base Configuration (server.js & airtable.js)
+
+As above, I have added a new configuration: MARKETING_BASE_ID (The ID for the Integrity Marketing Logs base).
+
+Refactor airtable.js: Update the module to support connecting to this second base. Create a specific export or helper function (e.g., getMarketingBase()) that initializes an Airtable connection using MARKETING_BASE_ID, while keeping the existing default connection for the Main CRM base intact.
+
+2. The UI (public/js/marketing.js)
+
+Campaign Selector: In the 'Import Results' section of the marketingModal, add a <select> element.
+
+Populate this dropdown on load by fetching records from the Marketing Base -> Campaigns table.
+
+Display the Name field; store the Record ID as the value.
+
+File Picker: Add a standard <input type='file' accept='.csv'>.
+
+Process Button: Add an 'Import Results' button.
+
+3. Server-Side Logic (importCampaignResults)
+
+Create a function that accepts: selectedCampaignId and csvData (parsed JSON).
+
+Step A: Parse & Split IDs
+
+Iterate through the CSV rows.
+
+Locate the Integrity_ID column. Split the value by semicolon (;) to handle multiple IDs per row.
+
+The following actions apply to EACH ID resulting from that split.
+
+Step B: Update Main CRM Base
+
+Condition: If the CSV column status (lowercase) is 'bounced':
+
+Update the record in the Main Base Contacts table: Set Marketing Status to 'Bounced'.
+
+Condition: If the CSV column status (lowercase) is 'unsubscribed':
+
+Update the record in the Main Base Contacts table: Set Marketing Status to 'Unsubscribed' AND set the checkbox Unsubscribed from Marketing to true.
+
+Step C: Create Logs in Marketing Base
+
+For every row (regardless of status), create a new record in the Marketing Base -> Logs table.
+
+Map Fields:
+
+Contact ID: The split ID from Step A.
+
+Email Address: The email from the CSV.
+
+Campaign: Link to the selectedCampaignId.
+
+Event: Map the CSV status value to the Airtable field Event (ensure capitalization, e.g., 'opened' -> 'Opened').
+
+Timestamp: Use the current timestamp.
+
+Action: Implement the multi-base connection, the frontend selection logic, and the import processing.

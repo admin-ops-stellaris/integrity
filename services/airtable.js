@@ -2,13 +2,22 @@ import Airtable from "airtable";
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const MARKETING_BASE_ID = process.env.MARKETING_BASE_ID;
 
 if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
   console.warn("Warning: Airtable credentials not configured. Using mock mode.");
 }
 
+if (!MARKETING_BASE_ID) {
+  console.warn("Warning: MARKETING_BASE_ID not configured. Marketing import features disabled.");
+}
+
 const base = AIRTABLE_API_KEY && AIRTABLE_BASE_ID 
   ? new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_ID)
+  : null;
+
+const marketingBase = AIRTABLE_API_KEY && MARKETING_BASE_ID
+  ? new Airtable({ apiKey: AIRTABLE_API_KEY }).base(MARKETING_BASE_ID)
   : null;
 
 // Helper to generate Perth time ISO string
@@ -2229,4 +2238,175 @@ export async function deleteEmployment(employmentId, userContext = null) {
     console.error("deleteEmployment error:", err.message);
     return { success: false, error: err.message };
   }
+}
+
+export async function getAllContactsForExport() {
+  if (!base) return [];
+  try {
+    const fields = [
+      'FirstName', 'LastName', 'EmailAddress1', 'Unsubscribed from Marketing'
+    ];
+    const records = await base("Contacts").select({ fields }).all();
+    return records.map(r => ({
+      id: r.id,
+      firstName: r.fields['FirstName'] || '',
+      lastName: r.fields['LastName'] || '',
+      email: r.fields['EmailAddress1'] || '',
+      unsubscribed: r.fields['Unsubscribed from Marketing'] || false
+    }));
+  } catch (err) {
+    console.error("getAllContactsForExport error:", err.message);
+    return [];
+  }
+}
+
+export async function getCampaigns() {
+  if (!marketingBase) return [];
+  try {
+    const records = await marketingBase("Campaigns").select({
+      fields: ['Name'],
+      sort: [{ field: 'Name', direction: 'asc' }]
+    }).all();
+    return records.map(r => ({
+      id: r.id,
+      name: r.fields['Name'] || '(Untitled)'
+    }));
+  } catch (err) {
+    console.error("getCampaigns error:", err.message);
+    return [];
+  }
+}
+
+export async function getMarketingLogsForContact(contactId) {
+  if (!marketingBase) return [];
+  try {
+    const safeId = String(contactId).replace(/'/g, "\\'");
+    const records = await marketingBase("Logs").select({
+      filterByFormula: `{Contact ID} = '${safeId}'`,
+      sort: [{ field: 'Timestamp', direction: 'desc' }],
+      fields: ['Timestamp', 'Event', 'Campaign Name', 'Email Address']
+    }).all();
+    return records.map(r => ({
+      timestamp: r.fields['Timestamp'] || '',
+      event: r.fields['Event'] || '',
+      campaignName: Array.isArray(r.fields['Campaign Name']) ? r.fields['Campaign Name'][0] : (r.fields['Campaign Name'] || 'Unknown Campaign'),
+      email: r.fields['Email Address'] || ''
+    }));
+  } catch (err) {
+    console.error("getMarketingLogsForContact error:", err.message);
+    return [];
+  }
+}
+
+function parseInternationalDate(dateString) {
+  if (!dateString) return null;
+  const s = dateString.trim();
+
+  let day, month, year;
+  let timePart = '';
+
+  const isoMatch = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](.*))?$/);
+  const intlMatch = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})(?:\s+(.*))?$/);
+
+  if (isoMatch) {
+    year = parseInt(isoMatch[1], 10);
+    month = parseInt(isoMatch[2], 10);
+    day = parseInt(isoMatch[3], 10);
+    timePart = (isoMatch[4] || '').trim();
+  } else if (intlMatch) {
+    day = parseInt(intlMatch[1], 10);
+    month = parseInt(intlMatch[2], 10);
+    year = parseInt(intlMatch[3], 10);
+    if (year < 100) year += 2000;
+    timePart = (intlMatch[4] || '').trim();
+  } else {
+    return null;
+  }
+
+  let hours = 0, minutes = 0;
+  if (timePart) {
+    const timeMatch = timePart.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+    if (timeMatch) {
+      hours = parseInt(timeMatch[1], 10);
+      minutes = parseInt(timeMatch[2], 10);
+      const ampm = (timeMatch[4] || '').toUpperCase();
+      if (ampm === 'PM' && hours < 12) hours += 12;
+      if (ampm === 'AM' && hours === 12) hours = 0;
+    }
+  }
+
+  const pad = n => String(n).padStart(2, '0');
+  const perthIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00+08:00`;
+  return new Date(perthIso);
+}
+
+const VALID_IMPORT_STATUSES = ['opened', 'clicked', 'bounced', 'unsubscribed', 'sent', 'delivered', 'complained'];
+
+export async function importCampaignResults({ campaignId, rows }) {
+  if (!base || !marketingBase) {
+    return { success: false, error: 'Database connection not configured.' };
+  }
+
+  const results = { processed: 0, bounced: 0, unsubscribed: 0, logged: 0, skipped: 0, errors: [] };
+  const fallbackTimestamp = getPerthTimeISO();
+
+  for (const row of rows) {
+    const rawIds = (row.integrityId || '').split(';').map(s => s.trim()).filter(Boolean);
+    const status = (row.status || '').trim().toLowerCase();
+    const email = (row.email || '').trim();
+    const rawTimestamp = (row.timestamp || '').trim();
+
+    let eventTimestamp = fallbackTimestamp;
+    if (rawTimestamp) {
+      const parsed = parseInternationalDate(rawTimestamp);
+      if (parsed && !isNaN(parsed.getTime())) {
+        eventTimestamp = parsed.toISOString();
+      }
+    }
+
+    if (!VALID_IMPORT_STATUSES.includes(status)) {
+      results.skipped++;
+      if (status) {
+        results.errors.push(`Skipped unknown status "${status}" for ${email}`);
+      }
+      continue;
+    }
+
+    for (const contactId of rawIds) {
+      results.processed++;
+
+      try {
+        if (status === 'bounced') {
+          await base("Contacts").update(contactId, {
+            'Marketing Status': 'Bounced'
+          });
+          results.bounced++;
+        } else if (status === 'unsubscribed') {
+          await base("Contacts").update(contactId, {
+            'Marketing Status': 'Unsubscribed',
+            'Unsubscribed from Marketing': true
+          });
+          results.unsubscribed++;
+        }
+      } catch (err) {
+        results.errors.push(`Update ${contactId}: ${err.message}`);
+      }
+
+      try {
+        const eventValue = status.charAt(0).toUpperCase() + status.slice(1);
+        await marketingBase("Logs").create({
+          'Contact ID': contactId,
+          'Email Address': email,
+          'Campaign': [campaignId],
+          'Event': eventValue,
+          'Timestamp': eventTimestamp
+        });
+        results.logged++;
+      } catch (err) {
+        results.errors.push(`Log ${contactId}: ${err.message}`);
+      }
+    }
+  }
+
+  return { success: true, results };
 }

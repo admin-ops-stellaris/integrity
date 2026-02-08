@@ -2230,3 +2230,23 @@ export async function deleteEmployment(employmentId, userContext = null) {
     return { success: false, error: err.message };
   }
 }
+
+export async function getAllContactsForExport() {
+  if (!base) return [];
+  try {
+    const fields = [
+      'FirstName', 'LastName', 'EmailAddress1', 'Unsubscribed from Marketing'
+    ];
+    const records = await base("Contacts").select({ fields }).all();
+    return records.map(r => ({
+      id: r.id,
+      firstName: r.fields['FirstName'] || '',
+      lastName: r.fields['LastName'] || '',
+      email: r.fields['EmailAddress1'] || '',
+      unsubscribed: r.fields['Unsubscribed from Marketing'] || false
+    }));
+  } catch (err) {
+    console.error("getAllContactsForExport error:", err.message);
+    return [];
+  }
+}

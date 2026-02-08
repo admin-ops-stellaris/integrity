@@ -33,6 +33,7 @@
         </div>
       </div>
       <div class="user-indicator">
+        <button class="header-icon-btn" onclick="openMarketingModal()" title="Marketing">📣</button>
         <button class="shortcuts-help" onclick="showShortcutsHelp()" title="Keyboard shortcuts">?</button>
         <button class="settings-cog" onclick="openGlobalSettings()" title="Settings">⚙</button>
         <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">◐</button>
@@ -1758,6 +1759,34 @@
       </div>
     </div>
 
+    <!-- Marketing Modal -->
+    <div id="marketingModal" class="modal">
+      <div class="marketing-modal-content">
+        <div class="marketing-modal-header">
+          <h2>Marketing</h2>
+          <button class="marketing-close-btn" onclick="closeMarketingModal()">&times;</button>
+        </div>
+        <div class="marketing-modal-body">
+          <div class="marketing-section">
+            <h3>Export for Sending</h3>
+            <div id="marketingStats" class="marketing-stats">
+              <span style="color:#999;">Click to load contact data.</span>
+            </div>
+            <button id="marketingDownloadBtn" class="marketing-download-btn" onclick="downloadMarketingCsv()">Download Clean List (.csv)</button>
+            <p class="marketing-helper-text">Generates a deduplicated CSV for Mailmeteor. Handles shared emails (John &amp; Jane) automatically.</p>
+          </div>
+          <div class="marketing-section marketing-section-import">
+            <h3>Import Results</h3>
+            <div class="marketing-placeholder">
+              <span class="marketing-placeholder-icon">📥</span>
+              <p>Upload Mailmeteor Report</p>
+              <p class="marketing-placeholder-note">Coming in next sprint</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Quill WYSIWYG Editor -->
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
@@ -1784,6 +1813,7 @@
     <script src="/js/quick-view.js?v=100"></script>
     <script src="/js/email.js?v=100"></script>
     <script src="/js/evidence.js?v=100"></script>
+    <script src="/js/marketing.js?v=100"></script>
     <script src="/js/router.js?v=100"></script>
     
     <!-- Main app (contains all working code) -->

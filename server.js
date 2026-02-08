@@ -1450,6 +1450,16 @@ app.post("/api/deleteEvidenceTemplate", async (req, res) => {
   }
 });
 
+app.post("/api/getAllContactsForExport", async (req, res) => {
+  try {
+    const contacts = await airtable.getAllContactsForExport();
+    res.json(contacts);
+  } catch (err) {
+    console.error("getAllContactsForExport error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {

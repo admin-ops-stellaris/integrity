@@ -2011,3 +2011,43 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
 .btn-secondary:hover {
   background-color: #4b5563;
 }
+
+.header-icon-btn { background: transparent; border: 1px solid var(--color-border); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; padding: 0; margin: 0; margin-right: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; transition: all 0.2s; }
+.header-icon-btn:hover { background: var(--color-sky); color: var(--color-midnight); transform: none; }
+body.dark-mode .header-icon-btn { border-color: #555; color: #888; }
+body.dark-mode .header-icon-btn:hover { background: #444; color: #CCC; }
+
+.marketing-modal-content { background: var(--color-salt); width: 520px; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.3); overflow: hidden; transform: scale(0.95); transition: transform 0.25s ease-in-out; }
+.modal.showing .marketing-modal-content { transform: scale(1); }
+.marketing-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; background: var(--color-trail); color: #FFF; }
+.marketing-modal-header h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.marketing-close-btn { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 22px; cursor: pointer; padding: 0; line-height: 1; }
+.marketing-close-btn:hover { color: #FFF; }
+.marketing-modal-body { padding: 24px; }
+.marketing-section { margin-bottom: 24px; }
+.marketing-section:last-child { margin-bottom: 0; }
+.marketing-section h3 { margin: 0 0 12px 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-midnight); }
+.marketing-stats { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.marketing-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--color-sky); border-radius: 6px; font-size: 13px; }
+.marketing-stat-highlight { background: #e6f4ea; }
+body.dark-mode .marketing-stat-highlight { background: #1a3a2a; }
+.marketing-stat-label { color: var(--color-midnight); font-weight: 500; }
+.marketing-stat-value { font-weight: 700; color: var(--color-midnight); font-size: 15px; }
+.marketing-stat-unsub { color: #c00; }
+.marketing-stat-green { color: #16a34a; }
+.marketing-download-btn { width: 100%; padding: 10px 16px; background: var(--color-cedar); color: #FFF; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s; }
+.marketing-download-btn:hover { opacity: 0.9; }
+.marketing-download-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.marketing-helper-text { margin: 10px 0 0 0; font-size: 11px; color: #888; line-height: 1.5; }
+.marketing-section-import { border-top: 1px solid var(--color-border); padding-top: 20px; }
+.marketing-placeholder { text-align: center; padding: 20px; background: var(--color-sky); border-radius: 8px; border: 2px dashed var(--color-border); }
+.marketing-placeholder-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+.marketing-placeholder p { margin: 4px 0; font-size: 13px; color: var(--color-midnight); }
+.marketing-placeholder-note { font-size: 11px !important; color: #999 !important; font-style: italic; }
+body.dark-mode .marketing-modal-content { background: var(--color-salt); }
+body.dark-mode .marketing-section h3 { color: #CCC; }
+body.dark-mode .marketing-stat-row { background: #333; }
+body.dark-mode .marketing-stat-label { color: #CCC; }
+body.dark-mode .marketing-stat-value { color: #EEE; }
+body.dark-mode .marketing-placeholder { background: #333; border-color: #555; }
+body.dark-mode .marketing-placeholder p { color: #CCC; }

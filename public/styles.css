@@ -2043,6 +2043,24 @@ body.dark-mode .marketing-stat-export { background: #064e3b; }
 .marketing-download-btn:hover { opacity: 0.9; }
 .marketing-download-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .marketing-helper-text { margin: 10px 0 0 0; font-size: 11px; color: #888; line-height: 1.5; }
+.marketing-import-form { display: flex; flex-direction: column; gap: 10px; }
+.marketing-form-label { font-size: 12px; font-weight: 600; color: var(--color-midnight); margin-bottom: -4px; }
+.marketing-form-select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; font-family: inherit; background: #FFF; color: var(--color-midnight); }
+body.dark-mode .marketing-form-select { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+.marketing-form-select:disabled { opacity: 0.5; }
+.marketing-form-file { font-size: 13px; font-family: inherit; }
+.marketing-form-file:disabled { opacity: 0.5; }
+.marketing-file-info { font-size: 12px; font-weight: 500; padding: 6px 0; }
+.marketing-import-btn { width: 100%; padding: 10px 16px; background: #2563eb; color: #FFF; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s; }
+.marketing-import-btn:hover { background: #1d4ed8; }
+.marketing-import-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.marketing-import-status { font-size: 12px; padding: 8px 12px; border-radius: 6px; line-height: 1.5; }
+.marketing-import-status-info { background: #dbeafe; color: #1e40af; }
+.marketing-import-status-success { background: #dcfce7; color: #166534; }
+.marketing-import-status-error { background: #fee2e2; color: #991b1b; }
+body.dark-mode .marketing-import-status-info { background: #1e3a5f; color: #93c5fd; }
+body.dark-mode .marketing-import-status-success { background: #14532d; color: #86efac; }
+body.dark-mode .marketing-import-status-error { background: #450a0a; color: #fca5a5; }
 .marketing-section-import { border-top: 1px solid var(--color-border); padding-top: 20px; }
 .marketing-placeholder { text-align: center; padding: 20px; background: var(--color-sky); border-radius: 8px; border: 2px dashed var(--color-border); }
 .marketing-placeholder-icon { font-size: 28px; display: block; margin-bottom: 8px; }

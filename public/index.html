@@ -1777,10 +1777,16 @@
           </div>
           <div class="marketing-section marketing-section-import">
             <h3>Import Results</h3>
-            <div class="marketing-placeholder">
-              <span class="marketing-placeholder-icon">📥</span>
-              <p>Upload Mailmeteor Report</p>
-              <p class="marketing-placeholder-note">Coming in next sprint</p>
+            <div class="marketing-import-form">
+              <label class="marketing-form-label" for="campaignSelect">Campaign</label>
+              <select id="campaignSelect" class="marketing-form-select" disabled>
+                <option value="">Loading campaigns...</option>
+              </select>
+              <label class="marketing-form-label" for="importFileInput">Mailmeteor Report (.csv)</label>
+              <input type="file" id="importFileInput" accept=".csv" class="marketing-form-file" disabled />
+              <div id="importFileInfo" class="marketing-file-info" style="display:none;"></div>
+              <button id="marketingImportBtn" class="marketing-import-btn" onclick="importCampaignResults()" disabled>Import Results</button>
+              <div id="importResultsStatus" class="marketing-import-status" style="display:none;"></div>
             </div>
           </div>
         </div>
@@ -1813,7 +1819,7 @@
     <script src="/js/quick-view.js?v=100"></script>
     <script src="/js/email.js?v=100"></script>
     <script src="/js/evidence.js?v=100"></script>
-    <script src="/js/marketing.js?v=101"></script>
+    <script src="/js/marketing.js?v=102"></script>
     <script src="/js/router.js?v=100"></script>
     
     <!-- Main app (contains all working code) -->

@@ -2,13 +2,22 @@ import Airtable from "airtable";
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const MARKETING_BASE_ID = process.env.MARKETING_BASE_ID;
 
 if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
   console.warn("Warning: Airtable credentials not configured. Using mock mode.");
 }
 
+if (!MARKETING_BASE_ID) {
+  console.warn("Warning: MARKETING_BASE_ID not configured. Marketing import features disabled.");
+}
+
 const base = AIRTABLE_API_KEY && AIRTABLE_BASE_ID 
   ? new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_ID)
+  : null;
+
+const marketingBase = AIRTABLE_API_KEY && MARKETING_BASE_ID
+  ? new Airtable({ apiKey: AIRTABLE_API_KEY }).base(MARKETING_BASE_ID)
   : null;
 
 // Helper to generate Perth time ISO string
@@ -2249,4 +2258,83 @@ export async function getAllContactsForExport() {
     console.error("getAllContactsForExport error:", err.message);
     return [];
   }
+}
+
+export async function getCampaigns() {
+  if (!marketingBase) return [];
+  try {
+    const records = await marketingBase("Campaigns").select({
+      fields: ['Name'],
+      sort: [{ field: 'Name', direction: 'asc' }]
+    }).all();
+    return records.map(r => ({
+      id: r.id,
+      name: r.fields['Name'] || '(Untitled)'
+    }));
+  } catch (err) {
+    console.error("getCampaigns error:", err.message);
+    return [];
+  }
+}
+
+const VALID_IMPORT_STATUSES = ['opened', 'clicked', 'bounced', 'unsubscribed', 'sent', 'delivered', 'complained'];
+
+export async function importCampaignResults({ campaignId, rows }) {
+  if (!base || !marketingBase) {
+    return { success: false, error: 'Database connection not configured.' };
+  }
+
+  const results = { processed: 0, bounced: 0, unsubscribed: 0, logged: 0, skipped: 0, errors: [] };
+  const perthTimestamp = getPerthTimeISO();
+
+  for (const row of rows) {
+    const rawIds = (row.integrityId || '').split(';').map(s => s.trim()).filter(Boolean);
+    const status = (row.status || '').trim().toLowerCase();
+    const email = (row.email || '').trim();
+
+    if (!VALID_IMPORT_STATUSES.includes(status)) {
+      results.skipped++;
+      if (status) {
+        results.errors.push(`Skipped unknown status "${status}" for ${email}`);
+      }
+      continue;
+    }
+
+    for (const contactId of rawIds) {
+      results.processed++;
+
+      try {
+        if (status === 'bounced') {
+          await base("Contacts").update(contactId, {
+            'Marketing Status': 'Bounced'
+          });
+          results.bounced++;
+        } else if (status === 'unsubscribed') {
+          await base("Contacts").update(contactId, {
+            'Marketing Status': 'Unsubscribed',
+            'Unsubscribed from Marketing': true
+          });
+          results.unsubscribed++;
+        }
+      } catch (err) {
+        results.errors.push(`Update ${contactId}: ${err.message}`);
+      }
+
+      try {
+        const eventValue = status.charAt(0).toUpperCase() + status.slice(1);
+        await marketingBase("Logs").create({
+          'Contact ID': contactId,
+          'Email Address': email,
+          'Campaign': [campaignId],
+          'Event': eventValue,
+          'Timestamp': perthTimestamp
+        });
+        results.logged++;
+      } catch (err) {
+        results.errors.push(`Log ${contactId}: ${err.message}`);
+      }
+    }
+  }
+
+  return { success: true, results };
 }

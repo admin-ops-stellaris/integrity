@@ -43,5 +43,6 @@ run = ["node", "server.js"]
 
 [userenv.shared]
 AIRTABLE_BASE_ID = "app4J9eLjTyfk09eM"
+MARKETING_BASE_ID = "appya8hYuuE63VVmK"
 
 [userenv.development]

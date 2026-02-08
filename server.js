@@ -1460,6 +1460,30 @@ app.post("/api/getAllContactsForExport", async (req, res) => {
   }
 });
 
+app.post("/api/getCampaigns", async (req, res) => {
+  try {
+    const campaigns = await airtable.getCampaigns();
+    res.json(campaigns);
+  } catch (err) {
+    console.error("getCampaigns error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/importCampaignResults", async (req, res) => {
+  try {
+    const { campaignId, rows } = req.body;
+    if (!campaignId || !rows || !Array.isArray(rows)) {
+      return res.status(400).json({ error: "campaignId and rows are required." });
+    }
+    const result = await airtable.importCampaignResults({ campaignId, rows });
+    res.json(result);
+  } catch (err) {
+    console.error("importCampaignResults error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {

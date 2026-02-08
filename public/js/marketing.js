@@ -3,23 +3,28 @@
 
   let allContacts = [];
   let cachedExportData = [];
+  let campaigns = [];
+  let parsedImportRows = [];
   let isLoading = false;
+  let isImporting = false;
 
   window.openMarketingModal = function() {
     openModal('marketingModal');
     loadMarketingData();
+    loadCampaigns();
   };
 
   window.closeMarketingModal = function() {
     closeModal('marketingModal');
+    resetImportForm();
   };
 
   function loadMarketingData() {
     if (isLoading) return;
     isLoading = true;
 
-    const statsEl = document.getElementById('marketingStats');
-    const downloadBtn = document.getElementById('marketingDownloadBtn');
+    var statsEl = document.getElementById('marketingStats');
+    var downloadBtn = document.getElementById('marketingDownloadBtn');
     statsEl.innerHTML = '<span style="color:#999;">Loading contacts...</span>';
     downloadBtn.disabled = true;
 
@@ -37,6 +42,31 @@
         statsEl.innerHTML = '<span style="color:#c00;">Failed to load contacts.</span>';
       })
       .getAllContactsForExport();
+  }
+
+  function loadCampaigns() {
+    var selectEl = document.getElementById('campaignSelect');
+    selectEl.disabled = true;
+    selectEl.innerHTML = '<option value="">Loading campaigns...</option>';
+
+    google.script.run
+      .withSuccessHandler(function(data) {
+        campaigns = data || [];
+        selectEl.innerHTML = '<option value="">-- Select a campaign --</option>';
+        campaigns.forEach(function(c) {
+          var opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.name;
+          selectEl.appendChild(opt);
+        });
+        selectEl.disabled = false;
+        document.getElementById('importFileInput').disabled = false;
+      })
+      .withFailureHandler(function(err) {
+        console.error('Failed to load campaigns:', err);
+        selectEl.innerHTML = '<option value="">Failed to load campaigns</option>';
+      })
+      .getCampaigns();
   }
 
   function calculateExportData(contacts) {
@@ -149,6 +179,211 @@
       btn.disabled = false;
     }, 2000);
   };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var fileInput = document.getElementById('importFileInput');
+    if (fileInput) {
+      fileInput.addEventListener('change', handleFileSelect);
+    }
+  });
+
+  function handleFileSelect(e) {
+    var file = e.target.files[0];
+    var infoEl = document.getElementById('importFileInfo');
+    var importBtn = document.getElementById('marketingImportBtn');
+
+    if (!file) {
+      infoEl.style.display = 'none';
+      parsedImportRows = [];
+      importBtn.disabled = true;
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function(evt) {
+      var text = evt.target.result;
+      parsedImportRows = parseCsv(text);
+
+      if (parsedImportRows.length === 0) {
+        infoEl.style.display = 'block';
+        infoEl.innerHTML = '<span style="color:#c00;">No valid rows found. Check your CSV format.</span>';
+        importBtn.disabled = true;
+        return;
+      }
+
+      infoEl.style.display = 'block';
+      infoEl.innerHTML = '<span style="color:var(--color-cedar);">' + formatNumber(parsedImportRows.length) + ' rows ready to import</span>';
+      updateImportButton();
+    };
+    reader.readAsText(file);
+  }
+
+  function parseCsv(text) {
+    var records = parseFullCsv(text);
+    if (records.length < 2) return [];
+
+    var headers = records[0].map(function(h) { return h.trim().toLowerCase(); });
+
+    var emailIdx = headers.indexOf('email');
+    var statusIdx = headers.indexOf('status');
+    var idIdx = headers.indexOf('integrity_id');
+
+    if (emailIdx === -1 || statusIdx === -1 || idIdx === -1) {
+      console.error('CSV missing required columns. Found:', headers);
+      return [];
+    }
+
+    var rows = [];
+    for (var i = 1; i < records.length; i++) {
+      var cols = records[i];
+      if (cols.length <= Math.max(emailIdx, statusIdx, idIdx)) continue;
+      var email = (cols[emailIdx] || '').trim();
+      var status = (cols[statusIdx] || '').trim();
+      var integrityId = (cols[idIdx] || '').trim();
+      if (!integrityId) continue;
+      rows.push({ email: email, status: status, integrityId: integrityId });
+    }
+    return rows;
+  }
+
+  function parseFullCsv(text) {
+    var records = [];
+    var current = '';
+    var fields = [];
+    var inQuotes = false;
+
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+
+      if (inQuotes) {
+        if (ch === '"') {
+          if (i + 1 < text.length && text[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          current += ch;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          fields.push(current);
+          current = '';
+        } else if (ch === '\n' || ch === '\r') {
+          if (ch === '\r' && i + 1 < text.length && text[i + 1] === '\n') {
+            i++;
+          }
+          fields.push(current);
+          current = '';
+          if (fields.some(function(f) { return f.trim() !== ''; })) {
+            records.push(fields);
+          }
+          fields = [];
+        } else {
+          current += ch;
+        }
+      }
+    }
+
+    fields.push(current);
+    if (fields.some(function(f) { return f.trim() !== ''; })) {
+      records.push(fields);
+    }
+
+    return records;
+  }
+
+  function updateImportButton() {
+    var btn = document.getElementById('marketingImportBtn');
+    var selectEl = document.getElementById('campaignSelect');
+    btn.disabled = !(selectEl.value && parsedImportRows.length > 0);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var selectEl = document.getElementById('campaignSelect');
+    if (selectEl) {
+      selectEl.addEventListener('change', updateImportButton);
+    }
+  });
+
+  window.importCampaignResults = function() {
+    if (isImporting) return;
+
+    var selectEl = document.getElementById('campaignSelect');
+    var campaignId = selectEl.value;
+    if (!campaignId) {
+      showImportStatus('Please select a campaign.', 'error');
+      return;
+    }
+    if (parsedImportRows.length === 0) {
+      showImportStatus('No rows to import. Please select a CSV file.', 'error');
+      return;
+    }
+
+    var campaignName = selectEl.options[selectEl.selectedIndex].text;
+    if (!confirm('Import ' + formatNumber(parsedImportRows.length) + ' rows into campaign "' + campaignName + '"?\n\nThis will update contact statuses for bounced/unsubscribed entries and create log records.')) {
+      return;
+    }
+
+    isImporting = true;
+    var btn = document.getElementById('marketingImportBtn');
+    btn.disabled = true;
+    btn.textContent = 'Importing...';
+    showImportStatus('Processing ' + formatNumber(parsedImportRows.length) + ' rows... This may take a moment.', 'info');
+
+    google.script.run
+      .withSuccessHandler(function(response) {
+        isImporting = false;
+        btn.textContent = 'Import Results';
+
+        if (response && response.success) {
+          var r = response.results;
+          var msg = 'Import complete: ' + formatNumber(r.processed) + ' records processed, ' +
+            formatNumber(r.logged) + ' logs created';
+          if (r.bounced > 0) msg += ', ' + r.bounced + ' bounced';
+          if (r.unsubscribed > 0) msg += ', ' + r.unsubscribed + ' unsubscribed';
+          if (r.skipped > 0) msg += ', ' + r.skipped + ' skipped (unknown status)';
+          if (r.errors && r.errors.length > 0) {
+            msg += '. ' + r.errors.length + ' error(s) occurred.';
+            console.warn('Import errors:', r.errors);
+          }
+          showImportStatus(msg, 'success');
+        } else {
+          showImportStatus('Import failed: ' + (response.error || 'Unknown error'), 'error');
+        }
+        resetImportForm();
+      })
+      .withFailureHandler(function(err) {
+        isImporting = false;
+        btn.textContent = 'Import Results';
+        btn.disabled = false;
+        showImportStatus('Import failed: ' + (err.message || err), 'error');
+      })
+      .importCampaignResults({ campaignId: campaignId, rows: parsedImportRows });
+  };
+
+  function showImportStatus(message, type) {
+    var el = document.getElementById('importResultsStatus');
+    el.style.display = 'block';
+    el.className = 'marketing-import-status marketing-import-status-' + type;
+    el.textContent = message;
+  }
+
+  function resetImportForm() {
+    parsedImportRows = [];
+    var fileInput = document.getElementById('importFileInput');
+    if (fileInput) fileInput.value = '';
+    var infoEl = document.getElementById('importFileInfo');
+    if (infoEl) infoEl.style.display = 'none';
+    var btn = document.getElementById('marketingImportBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Import Results';
+    }
+  }
 
   function escapeCsvField(value) {
     if (!value) return '';

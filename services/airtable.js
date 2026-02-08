@@ -2284,12 +2284,12 @@ export async function getMarketingLogsForContact(contactId) {
     const records = await marketingBase("Logs").select({
       filterByFormula: `{Contact ID} = '${safeId}'`,
       sort: [{ field: 'Timestamp', direction: 'desc' }],
-      fields: ['Timestamp', 'Event', 'Campaign', 'Email Address']
+      fields: ['Timestamp', 'Event', 'Campaign Name', 'Email Address']
     }).all();
     return records.map(r => ({
       timestamp: r.fields['Timestamp'] || '',
       event: r.fields['Event'] || '',
-      campaignName: Array.isArray(r.fields['Campaign']) ? r.fields['Campaign'][0] : (r.fields['Campaign'] || ''),
+      campaignName: Array.isArray(r.fields['Campaign Name']) ? r.fields['Campaign Name'][0] : (r.fields['Campaign Name'] || 'Unknown Campaign'),
       email: r.fields['Email Address'] || ''
     }));
   } catch (err) {

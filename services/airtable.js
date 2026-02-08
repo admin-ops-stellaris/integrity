@@ -2281,35 +2281,42 @@ function parseInternationalDate(dateString) {
   if (!dateString) return null;
   const s = dateString.trim();
 
-  if (/^\d{4}[-/]/.test(s)) {
-    return new Date(s);
+  let day, month, year;
+  let timePart = '';
+
+  const isoMatch = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](.*))?$/);
+  const intlMatch = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})(?:\s+(.*))?$/);
+
+  if (isoMatch) {
+    year = parseInt(isoMatch[1], 10);
+    month = parseInt(isoMatch[2], 10);
+    day = parseInt(isoMatch[3], 10);
+    timePart = (isoMatch[4] || '').trim();
+  } else if (intlMatch) {
+    day = parseInt(intlMatch[1], 10);
+    month = parseInt(intlMatch[2], 10);
+    year = parseInt(intlMatch[3], 10);
+    if (year < 100) year += 2000;
+    timePart = (intlMatch[4] || '').trim();
+  } else {
+    return null;
   }
 
-  const match = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})\s*(.*)?$/);
-  if (!match) {
-    return new Date(s);
-  }
-
-  const day = parseInt(match[1], 10);
-  const month = parseInt(match[2], 10) - 1;
-  let year = parseInt(match[3], 10);
-  if (year < 100) year += 2000;
-  const timePart = (match[4] || '').trim();
-
-  let hours = 0, minutes = 0, seconds = 0;
+  let hours = 0, minutes = 0;
   if (timePart) {
-    const timeMatch = timePart.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+    const timeMatch = timePart.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
     if (timeMatch) {
       hours = parseInt(timeMatch[1], 10);
       minutes = parseInt(timeMatch[2], 10);
-      seconds = timeMatch[3] ? parseInt(timeMatch[3], 10) : 0;
       const ampm = (timeMatch[4] || '').toUpperCase();
       if (ampm === 'PM' && hours < 12) hours += 12;
       if (ampm === 'AM' && hours === 12) hours = 0;
     }
   }
 
-  return new Date(year, month, day, hours, minutes, seconds);
+  const pad = n => String(n).padStart(2, '0');
+  const perthIso = `${year}-${pad(month)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:00+08:00`;
+  return new Date(perthIso);
 }
 
 const VALID_IMPORT_STATUSES = ['opened', 'clicked', 'bounced', 'unsubscribed', 'sent', 'delivered', 'complained'];

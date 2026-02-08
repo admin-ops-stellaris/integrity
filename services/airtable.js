@@ -2277,6 +2277,27 @@ export async function getCampaigns() {
   }
 }
 
+export async function getMarketingLogsForContact(contactId) {
+  if (!marketingBase) return [];
+  try {
+    const safeId = String(contactId).replace(/'/g, "\\'");
+    const records = await marketingBase("Logs").select({
+      filterByFormula: `{Contact ID} = '${safeId}'`,
+      sort: [{ field: 'Timestamp', direction: 'desc' }],
+      fields: ['Timestamp', 'Event', 'Campaign', 'Email Address']
+    }).all();
+    return records.map(r => ({
+      timestamp: r.fields['Timestamp'] || '',
+      event: r.fields['Event'] || '',
+      campaignName: Array.isArray(r.fields['Campaign']) ? r.fields['Campaign'][0] : (r.fields['Campaign'] || ''),
+      email: r.fields['Email Address'] || ''
+    }));
+  } catch (err) {
+    console.error("getMarketingLogsForContact error:", err.message);
+    return [];
+  }
+}
+
 function parseInternationalDate(dateString) {
   if (!dateString) return null;
   const s = dateString.trim();

@@ -1470,6 +1470,20 @@ app.post("/api/getCampaigns", async (req, res) => {
   }
 });
 
+app.post("/api/getMarketingLogsForContact", async (req, res) => {
+  try {
+    const contactId = req.body.args ? req.body.args[0] : req.body.contactId;
+    if (!contactId) {
+      return res.status(400).json({ error: "contactId is required." });
+    }
+    const logs = await airtable.getMarketingLogsForContact(contactId);
+    res.json(logs);
+  } catch (err) {
+    console.error("getMarketingLogsForContact error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/importCampaignResults", async (req, res) => {
   try {
     const payload = req.body.args ? req.body.args[0] : req.body;

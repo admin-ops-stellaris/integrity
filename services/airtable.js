@@ -2285,12 +2285,21 @@ export async function importCampaignResults({ campaignId, rows }) {
   }
 
   const results = { processed: 0, bounced: 0, unsubscribed: 0, logged: 0, skipped: 0, errors: [] };
-  const perthTimestamp = getPerthTimeISO();
+  const fallbackTimestamp = getPerthTimeISO();
 
   for (const row of rows) {
     const rawIds = (row.integrityId || '').split(';').map(s => s.trim()).filter(Boolean);
     const status = (row.status || '').trim().toLowerCase();
     const email = (row.email || '').trim();
+    const rawTimestamp = (row.timestamp || '').trim();
+
+    let eventTimestamp = fallbackTimestamp;
+    if (rawTimestamp) {
+      const parsed = new Date(rawTimestamp);
+      if (!isNaN(parsed.getTime())) {
+        eventTimestamp = parsed.toISOString();
+      }
+    }
 
     if (!VALID_IMPORT_STATUSES.includes(status)) {
       results.skipped++;
@@ -2327,7 +2336,7 @@ export async function importCampaignResults({ campaignId, rows }) {
           'Email Address': email,
           'Campaign': [campaignId],
           'Event': eventValue,
-          'Timestamp': perthTimestamp
+          'Timestamp': eventTimestamp
         });
         results.logged++;
       } catch (err) {

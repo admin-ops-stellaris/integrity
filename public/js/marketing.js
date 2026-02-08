@@ -228,6 +228,14 @@
     var statusIdx = headers.indexOf('status');
     var idIdx = headers.indexOf('integrity_id');
 
+    var timestampIdx = -1;
+    for (var t = 0; t < headers.length; t++) {
+      if (headers[t] === 'date' || headers[t] === 'timestamp') {
+        timestampIdx = t;
+        break;
+      }
+    }
+
     if (emailIdx === -1 || statusIdx === -1 || idIdx === -1) {
       console.error('CSV missing required columns. Found:', headers);
       return [];
@@ -240,8 +248,9 @@
       var email = (cols[emailIdx] || '').trim();
       var status = (cols[statusIdx] || '').trim();
       var integrityId = (cols[idIdx] || '').trim();
+      var timestamp = (timestampIdx !== -1 && cols[timestampIdx]) ? cols[timestampIdx].trim() : '';
       if (!integrityId) continue;
-      rows.push({ email: email, status: status, integrityId: integrityId });
+      rows.push({ email: email, status: status, integrityId: integrityId, timestamp: timestamp });
     }
     return rows;
   }

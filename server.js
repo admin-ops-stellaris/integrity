@@ -1472,7 +1472,8 @@ app.post("/api/getCampaigns", async (req, res) => {
 
 app.post("/api/importCampaignResults", async (req, res) => {
   try {
-    const { campaignId, rows } = req.body;
+    const payload = req.body.args ? req.body.args[0] : req.body;
+    const { campaignId, rows } = payload || {};
     if (!campaignId || !rows || !Array.isArray(rows)) {
       return res.status(400).json({ error: "campaignId and rows are required." });
     }

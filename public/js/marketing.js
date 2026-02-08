@@ -323,11 +323,6 @@
       return;
     }
 
-    var campaignName = selectEl.options[selectEl.selectedIndex].text;
-    if (!confirm('Import ' + formatNumber(parsedImportRows.length) + ' rows into campaign "' + campaignName + '"?\n\nThis will update contact statuses for bounced/unsubscribed entries and create log records.')) {
-      return;
-    }
-
     isImporting = true;
     var btn = document.getElementById('marketingImportBtn');
     btn.disabled = true;

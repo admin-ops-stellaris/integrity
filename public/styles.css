@@ -2035,6 +2035,10 @@ body.dark-mode .marketing-stat-highlight { background: #1a3a2a; }
 .marketing-stat-value { font-weight: 700; color: var(--color-midnight); font-size: 15px; }
 .marketing-stat-unsub { color: #c00; }
 .marketing-stat-green { color: #16a34a; }
+.marketing-stat-export { background: #065f46; }
+body.dark-mode .marketing-stat-export { background: #064e3b; }
+.marketing-stat-export .marketing-stat-label { color: #FFF; font-weight: 600; }
+.marketing-stat-export-value { color: #FFF !important; font-size: 17px !important; font-weight: 800 !important; }
 .marketing-download-btn { width: 100%; padding: 10px 16px; background: var(--color-cedar); color: #FFF; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s; }
 .marketing-download-btn:hover { opacity: 0.9; }
 .marketing-download-btn:disabled { opacity: 0.5; cursor: not-allowed; }

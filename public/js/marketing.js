@@ -2,6 +2,7 @@
   'use strict';
 
   let allContacts = [];
+  let cachedExportData = [];
   let isLoading = false;
 
   window.openMarketingModal = function() {
@@ -25,6 +26,7 @@
     google.script.run
       .withSuccessHandler(function(contacts) {
         allContacts = contacts || [];
+        cachedExportData = calculateExportData(allContacts);
         isLoading = false;
         renderStats();
         downloadBtn.disabled = false;
@@ -37,52 +39,33 @@
       .getAllContactsForExport();
   }
 
-  function renderStats() {
-    const total = allContacts.length;
-    const unsubscribed = allContacts.filter(c => c.unsubscribed).length;
-    const marketable = total - unsubscribed;
+  function calculateExportData(contacts) {
+    var marketable = contacts.filter(function(c) {
+      return !c.unsubscribed && c.email && c.email.trim() !== '';
+    });
 
-    const statsEl = document.getElementById('marketingStats');
-    statsEl.innerHTML =
-      '<div class="marketing-stat-row">' +
-        '<span class="marketing-stat-label">Total Contacts</span>' +
-        '<span class="marketing-stat-value">' + total + '</span>' +
-      '</div>' +
-      '<div class="marketing-stat-row">' +
-        '<span class="marketing-stat-label">Unsubscribed</span>' +
-        '<span class="marketing-stat-value marketing-stat-unsub">' + unsubscribed + '</span>' +
-      '</div>' +
-      '<div class="marketing-stat-row marketing-stat-highlight">' +
-        '<span class="marketing-stat-label">Marketable Contacts</span>' +
-        '<span class="marketing-stat-value marketing-stat-green">' + marketable + '</span>' +
-      '</div>';
-  }
-
-  window.downloadMarketingCsv = function() {
-    const marketable = allContacts.filter(c => !c.unsubscribed && c.email && c.email.trim() !== '');
-
-    const grouped = {};
+    var grouped = {};
     marketable.forEach(function(contact) {
-      const emailKey = contact.email.trim().toLowerCase();
+      var emailKey = contact.email.trim().toLowerCase();
       if (!grouped[emailKey]) {
         grouped[emailKey] = { names: [], ids: [], email: contact.email.trim() };
       }
-      const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
+      var fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
       if (fullName) grouped[emailKey].names.push(fullName);
       grouped[emailKey].ids.push(contact.id);
     });
 
-    const rows = [];
+    var rows = [];
     Object.keys(grouped).forEach(function(emailKey) {
-      const group = grouped[emailKey];
-      let combinedName;
+      var group = grouped[emailKey];
+      var combinedName;
       if (group.names.length === 0) {
         combinedName = '';
       } else if (group.names.length === 1) {
         combinedName = group.names[0];
       } else {
-        const firstNames = group.names.map(function(n) { return n.split(' ')[0]; });
-        const lastName = group.names[0].split(' ').slice(1).join(' ');
+        var firstNames = group.names.map(function(n) { return n.split(' ')[0]; });
+        var lastName = group.names[0].split(' ').slice(1).join(' ');
         combinedName = firstNames.join(' & ') + (lastName ? ' ' + lastName : '');
       }
       rows.push({
@@ -93,8 +76,43 @@
     });
 
     rows.sort(function(a, b) { return a.name.localeCompare(b.name); });
+    return rows;
+  }
 
-    const csvLines = ['Name,Email,Integrity_ID'];
+  function formatNumber(n) {
+    return n.toLocaleString();
+  }
+
+  function renderStats() {
+    var total = allContacts.length;
+    var unsubscribed = allContacts.filter(function(c) { return c.unsubscribed; }).length;
+    var marketable = total - unsubscribed;
+    var exportCount = cachedExportData.length;
+
+    var statsEl = document.getElementById('marketingStats');
+    statsEl.innerHTML =
+      '<div class="marketing-stat-row">' +
+        '<span class="marketing-stat-label">Total Contacts</span>' +
+        '<span class="marketing-stat-value">' + formatNumber(total) + '</span>' +
+      '</div>' +
+      '<div class="marketing-stat-row">' +
+        '<span class="marketing-stat-label">Unsubscribed</span>' +
+        '<span class="marketing-stat-value marketing-stat-unsub">' + formatNumber(unsubscribed) + '</span>' +
+      '</div>' +
+      '<div class="marketing-stat-row marketing-stat-highlight">' +
+        '<span class="marketing-stat-label">Marketable Contacts</span>' +
+        '<span class="marketing-stat-value marketing-stat-green">' + formatNumber(marketable) + '</span>' +
+      '</div>' +
+      '<div class="marketing-stat-row marketing-stat-export">' +
+        '<span class="marketing-stat-label">Ready to Send (Clean & Deduplicated)</span>' +
+        '<span id="marketing-export-count" class="marketing-stat-value marketing-stat-export-value">' + formatNumber(exportCount) + '</span>' +
+      '</div>';
+  }
+
+  window.downloadMarketingCsv = function() {
+    var rows = cachedExportData;
+
+    var csvLines = ['Name,Email,Integrity_ID'];
     rows.forEach(function(row) {
       csvLines.push(
         escapeCsvField(row.name) + ',' +
@@ -103,18 +121,18 @@
       );
     });
 
-    const csvContent = csvLines.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    var csvContent = csvLines.join('\n');
+    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
 
-    const today = new Date();
-    const dateStr = [
+    var today = new Date();
+    var dateStr = [
       today.getFullYear(),
       String(today.getMonth() + 1).padStart(2, '0'),
       String(today.getDate()).padStart(2, '0')
     ].join('');
 
-    const link = document.createElement('a');
+    var link = document.createElement('a');
     link.href = url;
     link.download = 'integrity_export_' + dateStr + '.csv';
     document.body.appendChild(link);
@@ -122,8 +140,8 @@
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    const btn = document.getElementById('marketingDownloadBtn');
-    const origText = btn.textContent;
+    var btn = document.getElementById('marketingDownloadBtn');
+    var origText = btn.textContent;
     btn.textContent = 'Downloaded!';
     btn.disabled = true;
     setTimeout(function() {

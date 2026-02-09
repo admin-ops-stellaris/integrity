@@ -2372,14 +2372,14 @@ export async function getCampaignLogs(campaignId, campaignName) {
   if (!marketingBase) return [];
   try {
     let filterFormula;
-    if (campaignId) {
-      const safeId = String(campaignId).replace(/'/g, "\\'");
-      filterFormula = `SEARCH('${safeId}', ARRAYJOIN({Campaign}))`;
-      console.log('getCampaignLogs using ID:', safeId);
-    } else if (campaignName) {
+    if (campaignName) {
       const safeName = String(campaignName).replace(/'/g, "\\'");
       filterFormula = `SEARCH('${safeName}', ARRAYJOIN({Campaign Name}))`;
       console.log('getCampaignLogs using Name:', safeName);
+    } else if (campaignId) {
+      const safeId = String(campaignId).replace(/'/g, "\\'");
+      filterFormula = `SEARCH('${safeId}', ARRAYJOIN({Campaign}))`;
+      console.log('getCampaignLogs using ID fallback:', safeId);
     } else {
       return [];
     }

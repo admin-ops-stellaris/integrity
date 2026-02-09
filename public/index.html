@@ -1766,8 +1766,8 @@
       <div class="marketing-mega-modal">
         <div class="marketing-modal-header">
           <h2>Marketing</h2>
-          <button class="marketing-close-btn" onclick="closeMarketingModal()">&times;</button>
         </div>
+        <button class="marketing-close-btn" onclick="closeMarketingModal()">&times;</button>
         <div class="marketing-tabs">
           <button class="marketing-tab active" data-tab="campaigns" onclick="switchMarketingTab('campaigns')">Campaign Dashboard</button>
           <button class="marketing-tab" data-tab="datatools" onclick="switchMarketingTab('datatools')">Data Tools</button>
@@ -1776,9 +1776,12 @@
           <div id="marketingTabCampaigns" class="marketing-tab-panel active">
             <div id="campaignDashboard">
               <div class="campaign-dashboard-header">
-                <div id="campaignStatsLoading" class="marketing-loading">Loading campaigns...</div>
-                <button class="campaign-new-btn" onclick="createNewCampaign()">+ New Campaign</button>
+                <div class="campaign-new-inline" id="campaignNewInline">
+                  <input type="text" id="newCampaignNameInput" class="campaign-new-input" placeholder="New campaign name..." />
+                  <button class="campaign-new-btn" onclick="createNewCampaign()">+ Create</button>
+                </div>
               </div>
+              <div id="campaignStatsLoading" class="marketing-loading">Loading campaigns...</div>
               <table id="campaignTable" class="campaign-table" style="display:none;">
                 <thead>
                   <tr>

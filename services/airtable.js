@@ -2296,13 +2296,24 @@ export async function getCampaignStats() {
   if (!marketingBase) return [];
   try {
     const campaigns = await marketingBase("Campaigns").select({
-      fields: ['Name', 'Subject', 'Date Sent'],
-      sort: [{ field: 'Date Sent', direction: 'desc' }]
+      sort: [{ field: 'Name', direction: 'asc' }]
     }).all();
 
-    const logs = await marketingBase("Logs").select({
-      fields: ['Campaign', 'Event', 'Email Address']
-    }).all();
+    console.log(`getCampaignStats: Found ${campaigns.length} campaigns`);
+    campaigns.forEach(c => {
+      console.log(`  Campaign: id=${c.id}, Name="${c.fields['Name']}", fields=${Object.keys(c.fields).join(',')}`);
+    });
+
+    if (campaigns.length === 0) return [];
+
+    let logs = [];
+    try {
+      logs = await marketingBase("Logs").select({
+        fields: ['Campaign', 'Event', 'Email Address']
+      }).all();
+    } catch (logErr) {
+      console.warn("getCampaignStats: Could not fetch logs:", logErr.message);
+    }
 
     const logsByCampaign = {};
     for (const log of logs) {

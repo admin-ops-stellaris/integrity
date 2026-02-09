@@ -41,20 +41,32 @@
   };
 
   window.createNewCampaign = function() {
-    var name = prompt('Enter a name for the new campaign:');
-    if (!name || !name.trim()) return;
+    var input = document.getElementById('newCampaignNameInput');
+    var name = (input.value || '').trim();
+    if (!name) {
+      input.focus();
+      return;
+    }
+
+    var btn = document.querySelector('.campaign-new-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
 
     google.script.run
       .withSuccessHandler(function(campaign) {
-        alert('Campaign "' + campaign.name + '" created successfully.');
+        input.value = '';
+        btn.disabled = false;
+        btn.textContent = '+ Create';
         campaignStatsCache = null;
         campaigns = [];
         loadCampaignStats();
       })
       .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.textContent = '+ Create';
         alert('Failed to create campaign: ' + (err.message || err));
       })
-      .createCampaign(name.trim());
+      .createCampaign(name);
   };
 
   function loadCampaignStats() {
@@ -333,36 +345,47 @@
 
   function renderStats() {
     var total = allContacts.length;
-    var inactive = allContacts.filter(function(c) { return c.inactive; }).length;
-    var deceased = allContacts.filter(function(c) { return c.deceased; }).length;
-    var unsubscribed = allContacts.filter(function(c) { return c.unsubscribed && !c.inactive && !c.deceased; }).length;
-    var marketable = total - inactive - deceased - unsubscribed;
+    var inactiveCount = 0;
+    var deceasedCount = 0;
+    var unsubCount = 0;
+    var totalExcludedCount = 0;
+
+    allContacts.forEach(function(c) {
+      var isInactive = c.inactive;
+      var isDeceased = c.deceased;
+      var isUnsub = c.unsubscribed;
+      if (isInactive) inactiveCount++;
+      if (isDeceased) deceasedCount++;
+      if (isUnsub) unsubCount++;
+      if (isInactive || isDeceased || isUnsub) totalExcludedCount++;
+    });
+
+    var marketable = total - totalExcludedCount;
     var exportCount = cachedExportData.length;
+    var deduped = marketable - exportCount;
+
+    var excludedDetail = inactiveCount + ' Inactive, ' + deceasedCount + ' Deceased, ' + unsubCount + ' Unsubscribed';
 
     var statsEl = document.getElementById('marketingStats');
     statsEl.innerHTML =
       '<div class="marketing-stat-row">' +
-        '<span class="marketing-stat-label">Total Database Contacts</span>' +
+        '<span class="marketing-stat-label">Total Contacts</span>' +
         '<span class="marketing-stat-value">' + formatNumber(total) + '</span>' +
       '</div>' +
       '<div class="marketing-stat-row marketing-stat-deduction">' +
-        '<span class="marketing-stat-label">Less: Inactive</span>' +
-        '<span class="marketing-stat-value">\u2212 ' + formatNumber(inactive) + '</span>' +
-      '</div>' +
-      '<div class="marketing-stat-row marketing-stat-deduction">' +
-        '<span class="marketing-stat-label">Less: Deceased</span>' +
-        '<span class="marketing-stat-value">\u2212 ' + formatNumber(deceased) + '</span>' +
-      '</div>' +
-      '<div class="marketing-stat-row marketing-stat-deduction">' +
-        '<span class="marketing-stat-label">Less: Unsubscribed</span>' +
-        '<span class="marketing-stat-value">\u2212 ' + formatNumber(unsubscribed) + '</span>' +
+        '<span class="marketing-stat-label">Less: Excluded (' + excludedDetail + ')</span>' +
+        '<span class="marketing-stat-value">\u2212 ' + formatNumber(totalExcludedCount) + '</span>' +
       '</div>' +
       '<div class="marketing-stat-row marketing-stat-highlight marketing-stat-divider">' +
         '<span class="marketing-stat-label">= Marketable Contacts</span>' +
         '<span class="marketing-stat-value marketing-stat-green">' + formatNumber(marketable) + '</span>' +
       '</div>' +
+      '<div class="marketing-stat-row marketing-stat-deduction">' +
+        '<span class="marketing-stat-label">Less: Deduplication (only one row per email address)</span>' +
+        '<span class="marketing-stat-value">\u2212 ' + formatNumber(deduped > 0 ? deduped : 0) + '</span>' +
+      '</div>' +
       '<div class="marketing-stat-row marketing-stat-export">' +
-        '<span class="marketing-stat-label">= Ready to Send (Unique Emails)</span>' +
+        '<span class="marketing-stat-label">= Ready to Send</span>' +
         '<span id="marketing-export-count" class="marketing-stat-value marketing-stat-export-value">' + formatNumber(exportCount) + '</span>' +
       '</div>';
   }

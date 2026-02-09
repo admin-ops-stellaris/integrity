@@ -42,19 +42,18 @@
     }
   };
 
-  window.createNewCampaign = function() {
-    var nameInput = document.getElementById('newCampaignNameInput');
-    var subjectInput = document.getElementById('newCampaignSubjectInput');
-    var name = (nameInput.value || '').trim();
-    var subject = (subjectInput.value || '').trim();
-    if (!name) {
+  function checkDuplicateAndCreate(name, subject, btn, nameInput, subjectInput, existingCampaigns) {
+    var duplicate = (existingCampaigns || []).find(function(c) {
+      return c && c.name && c.name.toLowerCase() === name.toLowerCase();
+    });
+    if (duplicate) {
+      btn.disabled = false;
+      btn.textContent = '+ Create';
+      alert('A campaign with this name already exists.');
       nameInput.focus();
+      nameInput.select();
       return;
     }
-
-    var btn = document.querySelector('.campaign-new-btn');
-    btn.disabled = true;
-    btn.textContent = 'Creating...';
 
     google.script.run
       .withSuccessHandler(function(campaign) {
@@ -72,6 +71,38 @@
         alert('Failed to create campaign: ' + (err.message || err));
       })
       .createCampaign(name, subject);
+  }
+
+  window.createNewCampaign = function() {
+    var nameInput = document.getElementById('newCampaignNameInput');
+    var subjectInput = document.getElementById('newCampaignSubjectInput');
+    var name = (nameInput.value || '').trim();
+    var subject = (subjectInput.value || '').trim();
+    if (!name) {
+      nameInput.focus();
+      return;
+    }
+
+    var btn = document.querySelector('.campaign-new-btn');
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+
+    if (campaignStatsCache && campaignStatsCache.length > 0) {
+      checkDuplicateAndCreate(name, subject, btn, nameInput, subjectInput, campaignStatsCache);
+    } else {
+      google.script.run
+        .withSuccessHandler(function(stats) {
+          campaignStatsCache = stats || [];
+          btn.textContent = 'Creating...';
+          checkDuplicateAndCreate(name, subject, btn, nameInput, subjectInput, campaignStatsCache);
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = '+ Create';
+          alert('Could not verify campaign name. Please try again.');
+        })
+        .getCampaignStats();
+    }
   };
 
   function loadCampaignStats() {

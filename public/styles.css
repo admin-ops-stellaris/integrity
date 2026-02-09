@@ -2033,7 +2033,7 @@ body.dark-mode .header-icon-btn:hover { background: #444; color: #CCC; }
 .marketing-mega-modal .marketing-close-btn { position: absolute !important; top: 15px !important; right: 15px !important; z-index: 10000 !important; background: none !important; border: none !important; color: rgba(255,255,255,0.7); font-size: 22px; cursor: pointer; padding: 4px 8px; line-height: 1; }
 .marketing-close-btn:hover { color: #FFF; }
 .marketing-tabs { display: flex !important; gap: 0; border-bottom: 1px solid #ddd !important; flex-shrink: 0; background: none !important; justify-content: flex-start !important; }
-.marketing-tab { width: auto !important; padding: 10px 24px; border: none; background: none !important; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; border-radius: 5px 5px 0 0 !important; margin-right: 5px; transition: all 0.2s; font-family: inherit; box-shadow: none !important; }
+.marketing-tab { width: auto !important; padding: 10px 24px; border: none; background: none !important; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; border-radius: 0 !important; margin-right: 5px; transition: all 0.2s; font-family: inherit; box-shadow: none !important; }
 .marketing-tab:hover { color: var(--color-midnight); background: none !important; }
 .marketing-tab.active { color: var(--color-cedar); border-bottom-color: var(--color-cedar); box-shadow: none !important; background: none !important; }
 .campaign-new-inline { display: flex; gap: 8px; align-items: center; }

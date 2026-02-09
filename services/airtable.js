@@ -2265,6 +2265,15 @@ export async function getAllContactsForExport() {
 export async function createCampaign(name, subject) {
   if (!marketingBase) throw new Error("Marketing base not configured");
   try {
+    const safeName = String(name).replace(/'/g, "\\'");
+    const existing = await marketingBase("Campaigns").select({
+      filterByFormula: `LOWER({Name}) = LOWER('${safeName}')`,
+      maxRecords: 1,
+      fields: ['Name']
+    }).all();
+    if (existing.length > 0) {
+      throw new Error("A campaign with this name already exists.");
+    }
     const today = new Date().toISOString().split('T')[0];
     const fields = { 'Name': name, 'Date': today };
     if (subject) fields['Subject Line'] = subject;
@@ -2365,17 +2374,17 @@ export async function getCampaignLogs(campaignId, campaignName) {
     let filterFormula;
     if (campaignName) {
       const safeName = String(campaignName).replace(/'/g, "\\'");
-      filterFormula = `SEARCH('${safeName}', ARRAYJOIN({Campaign}))`;
-      console.log('Searching logs by campaign name:', campaignName);
+      filterFormula = `SEARCH('${safeName}', {Campaign Name})`;
+      console.log('getCampaignLogs formula:', filterFormula);
     } else {
       const safeId = String(campaignId).replace(/'/g, "\\'");
       filterFormula = `SEARCH('${safeId}', ARRAYJOIN({Campaign}))`;
-      console.log('Searching logs by campaign id:', campaignId);
+      console.log('getCampaignLogs formula:', filterFormula);
     }
     const records = await marketingBase("Logs").select({
       filterByFormula: filterFormula,
       sort: [{ field: 'Timestamp', direction: 'desc' }],
-      fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID', 'Contact Name']
+      fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID', 'Contact Name', 'Campaign Name']
     }).all();
     console.log(`getCampaignLogs: Found ${records.length} log records`);
 

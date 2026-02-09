@@ -2067,10 +2067,11 @@ body.dark-mode .header-icon-btn:hover { background: #444; color: #CCC; }
 .campaign-back-btn { background: none; border: 1px solid var(--color-border); border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--color-midnight); font-family: inherit; transition: all 0.15s; }
 .campaign-back-btn:hover { background: var(--color-sky); }
 .campaign-detail-header h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--color-midnight); }
-.campaign-detail-filters { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-.campaign-filter-btn { padding: 5px 14px; border: 1px solid var(--color-border); border-radius: 20px; background: none; font-size: 12px; font-weight: 500; cursor: pointer; color: #888; font-family: inherit; transition: all 0.15s; }
+.marketing-mega-modal button { width: auto !important; margin-top: 0 !important; display: inline-block !important; text-transform: none !important; letter-spacing: 0 !important; border-radius: 6px !important; }
+.campaign-detail-filters { display: flex !important; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.campaign-filter-btn { padding: 5px 14px !important; border: 1px solid var(--color-border) !important; border-radius: 20px !important; background: none !important; font-size: 12px !important; font-weight: 500; cursor: pointer; color: #888; font-family: inherit; transition: all 0.15s; }
 .campaign-filter-btn:hover { border-color: var(--color-midnight); color: var(--color-midnight); }
-.campaign-filter-btn.active { background: var(--color-cedar); color: #FFF; border-color: var(--color-cedar); }
+.campaign-filter-btn.active { background: var(--color-cedar) !important; color: #FFF !important; border-color: var(--color-cedar) !important; }
 .campaign-detail-table { table-layout: auto; }
 .campaign-detail-table thead th:last-child { width: 50px; text-align: center; }
 .campaign-detail-table tbody td:last-child { text-align: center; }

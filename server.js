@@ -1498,10 +1498,11 @@ app.post("/api/getCampaignStats", async (req, res) => {
 app.post("/api/getCampaignLogs", async (req, res) => {
   try {
     const campaignId = req.body.args ? req.body.args[0] : req.body.campaignId;
-    if (!campaignId) {
+    const campaignName = req.body.args ? req.body.args[1] : req.body.campaignName;
+    if (!campaignId && !campaignName) {
       return res.json([]);
     }
-    const logs = await airtable.getCampaignLogs(campaignId);
+    const logs = await airtable.getCampaignLogs(campaignId, campaignName);
     res.json(logs);
   } catch (err) {
     console.error("getCampaignLogs error:", err);

@@ -2359,15 +2359,25 @@ export async function getCampaignStats() {
   }
 }
 
-export async function getCampaignLogs(campaignId) {
+export async function getCampaignLogs(campaignId, campaignName) {
   if (!marketingBase) return [];
   try {
-    const safeId = String(campaignId).replace(/'/g, "\\'");
+    let filterFormula;
+    if (campaignName) {
+      const safeName = String(campaignName).replace(/'/g, "\\'");
+      filterFormula = `SEARCH('${safeName}', ARRAYJOIN({Campaign}))`;
+      console.log('Searching logs by campaign name:', campaignName);
+    } else {
+      const safeId = String(campaignId).replace(/'/g, "\\'");
+      filterFormula = `SEARCH('${safeId}', ARRAYJOIN({Campaign}))`;
+      console.log('Searching logs by campaign id:', campaignId);
+    }
     const records = await marketingBase("Logs").select({
-      filterByFormula: `SEARCH('${safeId}', ARRAYJOIN({Campaign}))`,
+      filterByFormula: filterFormula,
       sort: [{ field: 'Timestamp', direction: 'desc' }],
       fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID', 'Contact Name']
     }).all();
+    console.log(`getCampaignLogs: Found ${records.length} log records`);
 
     return records.map(r => {
       const contactName = Array.isArray(r.fields['Contact Name']) ? r.fields['Contact Name'][0] : (r.fields['Contact Name'] || '');

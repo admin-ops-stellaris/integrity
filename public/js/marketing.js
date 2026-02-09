@@ -234,7 +234,7 @@
         console.error('Failed to load campaign logs:', err);
         document.getElementById('campaignDetailLoading').textContent = 'Failed to load recipients.';
       })
-      .getCampaignLogs(campaignId);
+      .getCampaignLogs(campaignId, campaignName);
   };
 
   window.showCampaignDashboard = function() {

@@ -43,10 +43,12 @@
   };
 
   window.createNewCampaign = function() {
-    var input = document.getElementById('newCampaignNameInput');
-    var name = (input.value || '').trim();
+    var nameInput = document.getElementById('newCampaignNameInput');
+    var subjectInput = document.getElementById('newCampaignSubjectInput');
+    var name = (nameInput.value || '').trim();
+    var subject = (subjectInput.value || '').trim();
     if (!name) {
-      input.focus();
+      nameInput.focus();
       return;
     }
 
@@ -56,7 +58,8 @@
 
     google.script.run
       .withSuccessHandler(function(campaign) {
-        input.value = '';
+        nameInput.value = '';
+        subjectInput.value = '';
         btn.disabled = false;
         btn.textContent = '+ Create';
         campaignStatsCache = null;
@@ -68,7 +71,7 @@
         btn.textContent = '+ Create';
         alert('Failed to create campaign: ' + (err.message || err));
       })
-      .createCampaign(name);
+      .createCampaign(name, subject);
   };
 
   function loadCampaignStats() {
@@ -270,9 +273,14 @@
     var html = '';
     for (var i = 0; i < filtered.length; i++) {
       var log = filtered[i];
-      var nameCell = log.contactName
-        ? '<a class="contact-link" onclick="navigateToContactFromCampaign(\'' + escapeAttr(log.contactId) + '\')">' + escapeHtml(log.contactName) + '</a>'
-        : '<span style="color:#999;">Unknown</span>';
+      var nameCell;
+      if (log.contactName) {
+        nameCell = '<a class="contact-link" onclick="navigateToContactFromCampaign(\'' + escapeAttr(log.contactId) + '\')">' + escapeHtml(log.contactName) + '</a>';
+      } else if (log.email) {
+        nameCell = '<span class="campaign-detail-email-name">' + escapeHtml(log.email) + '</span>';
+      } else {
+        nameCell = '<span class="campaign-detail-unknown">Unknown</span>';
+      }
       var statusLower = (log.event || '').toLowerCase();
       var badgeCls = 'campaign-status-badge campaign-status-' + statusLower;
       var timeDisplay = formatLogTime(log.timestamp);
@@ -396,9 +404,7 @@
       } else if (group.names.length === 1) {
         combinedName = group.names[0];
       } else {
-        var firstNames = group.names.map(function(n) { return n.split(' ')[0]; });
-        var lastName = group.names[0].split(' ').slice(1).join(' ');
-        combinedName = firstNames.join(' & ') + (lastName ? ' ' + lastName : '');
+        combinedName = group.names.join(' & ');
       }
       rows.push({
         name: combinedName,

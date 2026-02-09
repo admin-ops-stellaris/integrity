@@ -2262,15 +2262,14 @@ export async function getAllContactsForExport() {
   }
 }
 
-export async function createCampaign(name) {
+export async function createCampaign(name, subject) {
   if (!marketingBase) throw new Error("Marketing base not configured");
   try {
     const today = new Date().toISOString().split('T')[0];
-    const record = await marketingBase("Campaigns").create({
-      'Name': name,
-      'Date Sent': today
-    });
-    return { id: record.id, name: record.fields['Name'] || name, dateSent: record.fields['Date Sent'] || today };
+    const fields = { 'Name': name, 'Date': today };
+    if (subject) fields['Subject Line'] = subject;
+    const record = await marketingBase("Campaigns").create(fields);
+    return { id: record.id, name: record.fields['Name'] || name, dateSent: record.fields['Date'] || today };
   } catch (err) {
     console.error("createCampaign error:", err.message);
     throw err;
@@ -2344,8 +2343,8 @@ export async function getCampaignStats() {
       return {
         id: c.id,
         name: c.fields['Name'] || '(Untitled)',
-        subject: c.fields['Subject'] || '',
-        dateSent: c.fields['Date Sent'] || '',
+        subject: c.fields['Subject Line'] || '',
+        dateSent: c.fields['Date'] || '',
         totalSent: totalSent,
         delivered: deliveredCount,
         uniqueOpens: uniqueOpens.size,

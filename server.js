@@ -1463,10 +1463,11 @@ app.post("/api/getAllContactsForExport", async (req, res) => {
 app.post("/api/createCampaign", async (req, res) => {
   try {
     const name = req.body.args ? req.body.args[0] : req.body.name;
+    const subject = req.body.args ? (req.body.args[1] || '') : (req.body.subject || '');
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Campaign name is required." });
     }
-    const campaign = await airtable.createCampaign(name.trim());
+    const campaign = await airtable.createCampaign(name.trim(), subject.trim());
     res.json(campaign);
   } catch (err) {
     console.error("createCampaign error:", err);

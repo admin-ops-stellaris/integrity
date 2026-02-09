@@ -2374,7 +2374,7 @@ export async function getCampaignLogs(campaignId, campaignName) {
     let filterFormula;
     if (campaignName) {
       const safeName = String(campaignName).replace(/'/g, "\\'");
-      filterFormula = `SEARCH('${safeName}', {Campaign Name})`;
+      filterFormula = `SEARCH('${safeName}', ARRAYJOIN({Campaign Name}))`;
       console.log('getCampaignLogs formula:', filterFormula);
     } else {
       const safeId = String(campaignId).replace(/'/g, "\\'");

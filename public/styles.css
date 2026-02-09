@@ -2173,3 +2173,15 @@ body.dark-mode .marketing-stat-row.marketing-stat-deduction .marketing-stat-labe
 body.dark-mode .marketing-stat-row.marketing-stat-deduction .marketing-stat-value { color: #777; }
 body.dark-mode .marketing-stat-row.marketing-stat-divider { border-top-color: #555; }
 body.dark-mode .data-tools-grid { border-color: #444; }
+
+.marketing-mega-modal .marketing-tabs .marketing-tab {
+    border-radius: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+}
+.marketing-mega-modal .marketing-tabs .marketing-tab.active {
+    border-bottom: 2px solid var(--color-cedar) !important;
+    color: var(--color-cedar) !important;
+}

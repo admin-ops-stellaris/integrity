@@ -1470,6 +1470,30 @@ app.post("/api/getCampaigns", async (req, res) => {
   }
 });
 
+app.post("/api/getCampaignStats", async (req, res) => {
+  try {
+    const stats = await airtable.getCampaignStats();
+    res.json(stats);
+  } catch (err) {
+    console.error("getCampaignStats error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/getCampaignLogs", async (req, res) => {
+  try {
+    const campaignId = req.body.args ? req.body.args[0] : req.body.campaignId;
+    if (!campaignId) {
+      return res.status(400).json({ error: "campaignId is required." });
+    }
+    const logs = await airtable.getCampaignLogs(campaignId);
+    res.json(logs);
+  } catch (err) {
+    console.error("getCampaignLogs error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/getMarketingLogsForContact", async (req, res) => {
   try {
     const contactId = req.body.args ? req.body.args[0] : req.body.contactId;

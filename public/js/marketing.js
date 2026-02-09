@@ -1,26 +1,216 @@
 (function() {
   'use strict';
 
-  let allContacts = [];
-  let cachedExportData = [];
-  let campaigns = [];
-  let parsedImportRows = [];
-  let isLoading = false;
-  let isImporting = false;
+  var allContacts = [];
+  var cachedExportData = [];
+  var campaigns = [];
+  var parsedImportRows = [];
+  var isLoading = false;
+  var isImporting = false;
+
+  var campaignStatsCache = null;
+  var currentDetailLogs = [];
+  var currentDetailFilter = 'all';
+  var currentDetailCampaignName = '';
 
   window.openMarketingModal = function() {
     openModal('marketingModal');
-    loadMarketingData();
-    loadCampaigns();
+    switchMarketingTab('campaigns');
   };
 
   window.closeMarketingModal = function() {
     closeModal('marketingModal');
     resetImportForm();
+    showCampaignDashboard();
+  };
+
+  window.switchMarketingTab = function(tabName) {
+    var tabs = document.querySelectorAll('.marketing-tab');
+    var panels = document.querySelectorAll('.marketing-tab-panel');
+    tabs.forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tabName); });
+    panels.forEach(function(p) { p.classList.remove('active'); });
+
+    if (tabName === 'campaigns') {
+      document.getElementById('marketingTabCampaigns').classList.add('active');
+      loadCampaignStats();
+    } else if (tabName === 'import') {
+      document.getElementById('marketingTabImport').classList.add('active');
+      loadCampaigns();
+    } else if (tabName === 'export') {
+      document.getElementById('marketingTabExport').classList.add('active');
+      loadMarketingData();
+    }
+  };
+
+  function loadCampaignStats() {
+    if (campaignStatsCache) {
+      renderCampaignTable(campaignStatsCache);
+      return;
+    }
+    document.getElementById('campaignStatsLoading').style.display = 'block';
+    document.getElementById('campaignTable').style.display = 'none';
+
+    google.script.run
+      .withSuccessHandler(function(stats) {
+        campaignStatsCache = stats || [];
+        renderCampaignTable(campaignStatsCache);
+      })
+      .withFailureHandler(function(err) {
+        console.error('Failed to load campaign stats:', err);
+        document.getElementById('campaignStatsLoading').textContent = 'Failed to load campaigns.';
+      })
+      .getCampaignStats();
+  }
+
+  function renderCampaignTable(stats) {
+    document.getElementById('campaignStatsLoading').style.display = 'none';
+    var table = document.getElementById('campaignTable');
+    var tbody = document.getElementById('campaignTableBody');
+
+    if (!stats || stats.length === 0) {
+      table.style.display = 'none';
+      document.getElementById('campaignStatsLoading').style.display = 'block';
+      document.getElementById('campaignStatsLoading').textContent = 'No campaigns found.';
+      return;
+    }
+
+    var html = '';
+    for (var i = 0; i < stats.length; i++) {
+      var c = stats[i];
+      var dateDisplay = formatCampaignDate(c.dateSent);
+      var deliveryRate = c.totalSent > 0 ? (c.delivered / c.totalSent * 100) : 0;
+      var openRate = c.delivered > 0 ? (c.uniqueOpens / c.delivered * 100) : 0;
+      var engagementRate = c.uniqueOpens > 0 ? (c.uniqueClicks / c.uniqueOpens * 100) : 0;
+      var unsubRate = c.delivered > 0 ? (c.unsubscribed / c.delivered * 100) : 0;
+
+      html +=
+        '<tr class="campaign-row" onclick="openCampaignDetail(\'' + escapeAttr(c.id) + '\', \'' + escapeAttr(c.name) + '\')">' +
+          '<td>' + escapeHtml(dateDisplay) + '</td>' +
+          '<td class="campaign-name">' + escapeHtml(c.name) + '</td>' +
+          '<td class="campaign-subject">' + escapeHtml(c.subject) + '</td>' +
+          '<td>' + rateSpan(deliveryRate, 95, 85) + '</td>' +
+          '<td>' + rateSpan(openRate, 30, 15) + '</td>' +
+          '<td>' + rateSpan(engagementRate, 20, 5) + '</td>' +
+          '<td>' + rateSpan(unsubRate, -1, 1, true) + '</td>' +
+        '</tr>';
+    }
+    tbody.innerHTML = html;
+    table.style.display = 'table';
+  }
+
+  function rateSpan(value, goodThresh, okThresh, invert) {
+    var pct = value.toFixed(1) + '%';
+    var cls = 'campaign-rate ';
+    if (invert) {
+      cls += value <= 0.5 ? 'campaign-rate-good' : (value <= okThresh ? 'campaign-rate-ok' : 'campaign-rate-bad');
+    } else {
+      cls += value >= goodThresh ? 'campaign-rate-good' : (value >= okThresh ? 'campaign-rate-ok' : 'campaign-rate-bad');
+    }
+    return '<span class="' + cls + '">' + pct + '</span>';
+  }
+
+  window.openCampaignDetail = function(campaignId, campaignName) {
+    currentDetailCampaignName = campaignName;
+    document.getElementById('campaignDashboard').style.display = 'none';
+    document.getElementById('campaignDetail').style.display = 'block';
+    document.getElementById('campaignDetailTitle').textContent = campaignName;
+    document.getElementById('campaignDetailLoading').style.display = 'block';
+    document.getElementById('campaignDetailTable').style.display = 'none';
+    document.getElementById('campaignDetailEmpty').style.display = 'none';
+
+    currentDetailFilter = 'all';
+    var btns = document.querySelectorAll('.campaign-filter-btn');
+    btns.forEach(function(b) { b.classList.toggle('active', b.dataset.filter === 'all'); });
+
+    google.script.run
+      .withSuccessHandler(function(logs) {
+        currentDetailLogs = logs || [];
+        renderDetailTable();
+      })
+      .withFailureHandler(function(err) {
+        console.error('Failed to load campaign logs:', err);
+        document.getElementById('campaignDetailLoading').textContent = 'Failed to load recipients.';
+      })
+      .getCampaignLogs(campaignId);
+  };
+
+  window.showCampaignDashboard = function() {
+    document.getElementById('campaignDetail').style.display = 'none';
+    document.getElementById('campaignDashboard').style.display = 'block';
+    currentDetailLogs = [];
+  };
+
+  window.filterCampaignLogs = function(filter) {
+    currentDetailFilter = filter;
+    var btns = document.querySelectorAll('.campaign-filter-btn');
+    btns.forEach(function(b) { b.classList.toggle('active', b.dataset.filter === filter); });
+    renderDetailTable();
+  };
+
+  function renderDetailTable() {
+    document.getElementById('campaignDetailLoading').style.display = 'none';
+    var table = document.getElementById('campaignDetailTable');
+    var tbody = document.getElementById('campaignDetailBody');
+    var emptyEl = document.getElementById('campaignDetailEmpty');
+
+    var filtered = currentDetailLogs;
+    if (currentDetailFilter !== 'all') {
+      filtered = currentDetailLogs.filter(function(l) {
+        return l.event.toLowerCase() === currentDetailFilter;
+      });
+    }
+
+    if (filtered.length === 0) {
+      table.style.display = 'none';
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+      var log = filtered[i];
+      var nameCell = log.contactName
+        ? '<a class="contact-link" onclick="navigateToContactFromCampaign(\'' + escapeAttr(log.contactId) + '\')">' + escapeHtml(log.contactName) + '</a>'
+        : '<span style="color:#999;">Unknown</span>';
+      var statusLower = (log.event || '').toLowerCase();
+      var badgeCls = 'campaign-status-badge campaign-status-' + statusLower;
+      var timeDisplay = formatLogTime(log.timestamp);
+
+      var actionCell = '';
+      if (statusLower === 'unsubscribed' && log.email) {
+        var subject = encodeURIComponent('Quick check re: your unsubscribe');
+        var body = encodeURIComponent('Hi,\r\n\r\nJust taking as much care as we can with regard to your unsubscribe just now - which is totally fine by the way!\r\n\r\nIf you would prefer to keep hearing from us but via another email address, please reply and let me know.\r\n\r\nOtherwise, if you do nothing, you\'ll remain unsubscribed.\r\n\r\nAll the very best either way!\r\n\r\nCheers,');
+        actionCell = '<a class="campaign-followup-btn" href="mailto:' + escapeAttr(log.email) + '?subject=' + subject + '&body=' + body + '" title="Send follow-up email">&#9993;</a>';
+      }
+
+      html +=
+        '<tr>' +
+          '<td>' + nameCell + '</td>' +
+          '<td>' + escapeHtml(log.email) + '</td>' +
+          '<td><span class="' + badgeCls + '">' + escapeHtml(log.event) + '</span></td>' +
+          '<td>' + escapeHtml(timeDisplay) + '</td>' +
+          '<td>' + actionCell + '</td>' +
+        '</tr>';
+    }
+    tbody.innerHTML = html;
+    table.style.display = 'table';
+  }
+
+  window.navigateToContactFromCampaign = function(contactId) {
+    if (!contactId) return;
+    closeMarketingModal();
+    if (window.loadContactById) {
+      loadContactById(contactId, true);
+    }
   };
 
   function loadMarketingData() {
     if (isLoading) return;
+    if (cachedExportData.length > 0) {
+      renderStats();
+      return;
+    }
     isLoading = true;
 
     var statsEl = document.getElementById('marketingStats');
@@ -46,6 +236,9 @@
 
   function loadCampaigns() {
     var selectEl = document.getElementById('campaignSelect');
+    if (campaigns.length > 0) {
+      return;
+    }
     selectEl.disabled = true;
     selectEl.innerHTML = '<option value="">Loading campaigns...</option>';
 
@@ -355,6 +548,7 @@
             console.warn('Import errors:', r.errors);
           }
           showImportStatus(msg, 'success');
+          campaignStatsCache = null;
         } else {
           showImportStatus('Import failed: ' + (response.error || 'Unknown error'), 'error');
         }
@@ -387,6 +581,47 @@
       btn.disabled = true;
       btn.textContent = 'Import Results';
     }
+  }
+
+  function formatCampaignDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      var d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      var day = String(d.getDate()).padStart(2, '0');
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var year = d.getFullYear();
+      return day + '/' + month + '/' + year;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  function formatLogTime(ts) {
+    if (!ts) return '';
+    try {
+      var d = new Date(ts);
+      if (isNaN(d.getTime())) return ts;
+      var day = String(d.getDate()).padStart(2, '0');
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var hours = d.getHours();
+      var minutes = String(d.getMinutes()).padStart(2, '0');
+      var ampm = hours >= 12 ? 'PM' : 'AM';
+      var h12 = hours % 12 || 12;
+      return day + '/' + month + ' ' + h12 + ':' + minutes + ' ' + ampm;
+    } catch (e) {
+      return ts;
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function escapeAttr(str) {
+    if (!str) return '';
+    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
   }
 
   function escapeCsvField(value) {

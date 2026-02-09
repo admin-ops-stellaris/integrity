@@ -2277,6 +2277,87 @@ export async function getCampaigns() {
   }
 }
 
+export async function getCampaignStats() {
+  if (!marketingBase) return [];
+  try {
+    const campaigns = await marketingBase("Campaigns").select({
+      fields: ['Name', 'Subject', 'Date Sent'],
+      sort: [{ field: 'Date Sent', direction: 'desc' }]
+    }).all();
+
+    const logs = await marketingBase("Logs").select({
+      fields: ['Campaign', 'Event', 'Email Address']
+    }).all();
+
+    const logsByCampaign = {};
+    for (const log of logs) {
+      const campLinks = log.fields['Campaign'];
+      if (!Array.isArray(campLinks) || campLinks.length === 0) continue;
+      const campId = campLinks[0];
+      if (!logsByCampaign[campId]) logsByCampaign[campId] = [];
+      logsByCampaign[campId].push({
+        event: log.fields['Event'] || '',
+        email: (log.fields['Email Address'] || '').toLowerCase()
+      });
+    }
+
+    return campaigns.map(c => {
+      const cLogs = logsByCampaign[c.id] || [];
+      const sent = cLogs.filter(l => ['sent', 'delivered'].includes(l.event.toLowerCase()));
+      const delivered = cLogs.filter(l => l.event.toLowerCase() === 'delivered');
+      const deliveredCount = delivered.length || sent.length;
+
+      const uniqueOpens = new Set(cLogs.filter(l => l.event.toLowerCase() === 'opened').map(l => l.email));
+      const uniqueClicks = new Set(cLogs.filter(l => l.event.toLowerCase() === 'clicked').map(l => l.email));
+      const bounced = cLogs.filter(l => l.event.toLowerCase() === 'bounced');
+      const unsubs = cLogs.filter(l => l.event.toLowerCase() === 'unsubscribed');
+      const totalSent = sent.length || cLogs.length;
+
+      return {
+        id: c.id,
+        name: c.fields['Name'] || '(Untitled)',
+        subject: c.fields['Subject'] || '',
+        dateSent: c.fields['Date Sent'] || '',
+        totalSent: totalSent,
+        delivered: deliveredCount,
+        uniqueOpens: uniqueOpens.size,
+        uniqueClicks: uniqueClicks.size,
+        bounced: bounced.length,
+        unsubscribed: unsubs.length
+      };
+    });
+  } catch (err) {
+    console.error("getCampaignStats error:", err.message);
+    return [];
+  }
+}
+
+export async function getCampaignLogs(campaignId) {
+  if (!marketingBase) return [];
+  try {
+    const safeId = String(campaignId).replace(/'/g, "\\'");
+    const records = await marketingBase("Logs").select({
+      filterByFormula: `SEARCH('${safeId}', ARRAYJOIN({Campaign}))`,
+      sort: [{ field: 'Timestamp', direction: 'desc' }],
+      fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID', 'Contact Name']
+    }).all();
+
+    return records.map(r => {
+      const contactName = Array.isArray(r.fields['Contact Name']) ? r.fields['Contact Name'][0] : (r.fields['Contact Name'] || '');
+      return {
+        timestamp: r.fields['Timestamp'] || '',
+        event: r.fields['Event'] || '',
+        email: r.fields['Email Address'] || '',
+        contactId: r.fields['Contact ID'] || '',
+        contactName: contactName
+      };
+    });
+  } catch (err) {
+    console.error("getCampaignLogs error:", err.message);
+    return [];
+  }
+}
+
 export async function getMarketingLogsForContact(contactId) {
   if (!marketingBase) return [];
   try {

@@ -333,9 +333,7 @@
 
       var actionCell = '';
       if (statusLower === 'unsubscribed' && log.email) {
-        var subject = encodeURIComponent('Quick check re: your unsubscribe');
-        var body = encodeURIComponent('Hi,\r\n\r\nJust taking as much care as we can with regard to your unsubscribe just now - which is totally fine by the way!\r\n\r\nIf you would prefer to keep hearing from us but via another email address, please reply and let me know.\r\n\r\nOtherwise, if you do nothing, you\'ll remain unsubscribed.\r\n\r\nAll the very best either way!\r\n\r\nCheers,');
-        actionCell = '<a class="campaign-followup-btn" href="mailto:' + escapeAttr(log.email) + '?subject=' + subject + '&body=' + body + '" title="Send follow-up email">&#9993;</a>';
+        actionCell = '<button class="campaign-followup-btn" onclick="openFollowUpComposer(\'' + escapeAttr(log.email) + '\', \'' + escapeAttr(log.contactName || '') + '\')" title="Send follow-up email">&#9993;</button>';
       }
 
       html +=
@@ -813,5 +811,89 @@
     }
     return value;
   }
+
+  window.openFollowUpComposer = function(email, contactName) {
+    var greeting = contactName ? contactName.split(' ')[0] : '';
+    var defaultSubject = 'Quick check re: your unsubscribe';
+    var defaultBody = 'Hi' + (greeting ? ' ' + greeting : '') + ',\n\nJust taking as much care as we can with regard to your unsubscribe just now - which is totally fine by the way!\n\nIf you would prefer to keep hearing from us but via another email address, please reply and let me know.\n\nOtherwise, if you do nothing, you\'ll remain unsubscribed.\n\nAll the very best either way!\n\nCheers,';
+
+    var existing = document.getElementById('followUpComposerModal');
+    if (existing) existing.remove();
+
+    var modal = document.createElement('div');
+    modal.id = 'followUpComposerModal';
+    modal.className = 'modal visible showing';
+    modal.style.zIndex = '100001';
+    modal.innerHTML =
+      '<div class="followup-composer-panel">' +
+        '<div class="followup-composer-header">' +
+          '<h3>Follow-Up Email</h3>' +
+          '<button class="followup-close-btn" onclick="closeFollowUpComposer()">&times;</button>' +
+        '</div>' +
+        '<div class="followup-composer-body">' +
+          '<label>To</label>' +
+          '<input type="text" id="followUpTo" value="' + escapeAttr(email) + '" readonly />' +
+          '<label>Subject</label>' +
+          '<input type="text" id="followUpSubject" value="' + escapeAttr(defaultSubject) + '" />' +
+          '<label>Message</label>' +
+          '<textarea id="followUpBody" rows="10">' + escapeHtml(defaultBody) + '</textarea>' +
+          '<div id="followUpStatus" style="margin-top:8px;font-size:12px;"></div>' +
+          '<div class="followup-composer-actions">' +
+            '<button class="btn-cancel" onclick="closeFollowUpComposer()">Cancel</button>' +
+            '<button class="btn-confirm" id="followUpSendBtn" onclick="sendFollowUpEmail()">Send</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(modal);
+  };
+
+  window.closeFollowUpComposer = function() {
+    var modal = document.getElementById('followUpComposerModal');
+    if (modal) modal.remove();
+  };
+
+  window.sendFollowUpEmail = function() {
+    var to = document.getElementById('followUpTo').value.trim();
+    var subject = document.getElementById('followUpSubject').value.trim();
+    var body = document.getElementById('followUpBody').value.trim();
+    var statusEl = document.getElementById('followUpStatus');
+    var btn = document.getElementById('followUpSendBtn');
+
+    if (!to || !subject || !body) {
+      statusEl.style.color = '#dc3545';
+      statusEl.textContent = 'Please fill in all fields.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    statusEl.style.color = '#666';
+    statusEl.textContent = '';
+
+    var htmlBody = '<div style="font-family:sans-serif;font-size:14px;line-height:1.6;">' +
+      body.replace(/\n/g, '<br>') + '</div>';
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result && result.success) {
+          statusEl.style.color = '#28a745';
+          statusEl.textContent = 'Email sent successfully!';
+          btn.textContent = 'Sent';
+          setTimeout(function() { closeFollowUpComposer(); }, 1500);
+        } else {
+          statusEl.style.color = '#dc3545';
+          statusEl.textContent = 'Failed: ' + ((result && result.error) || 'Unknown error');
+          btn.disabled = false;
+          btn.textContent = 'Send';
+        }
+      })
+      .withFailureHandler(function(err) {
+        statusEl.style.color = '#dc3545';
+        statusEl.textContent = 'Error: ' + (err.message || err);
+        btn.disabled = false;
+        btn.textContent = 'Send';
+      })
+      .sendEmail(to, subject, htmlBody);
+  };
 
 })();

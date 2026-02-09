@@ -42,6 +42,21 @@
     }
   };
 
+  function showCreateError(btn, message) {
+    var container = btn.parentElement;
+    var errorEl = document.getElementById('camp-create-error');
+    if (!errorEl) {
+      errorEl = document.createElement('div');
+      errorEl.id = 'camp-create-error';
+      errorEl.style.color = '#dc3545';
+      errorEl.style.fontSize = '12px';
+      errorEl.style.marginTop = '4px';
+      container.appendChild(errorEl);
+    }
+    errorEl.textContent = message;
+    setTimeout(function() { errorEl.textContent = ''; }, 4000);
+  }
+
   function checkDuplicateAndCreate(name, subject, btn, nameInput, subjectInput, existingCampaigns) {
     var duplicate = (existingCampaigns || []).find(function(c) {
       return c && c.name && c.name.toLowerCase() === name.toLowerCase();
@@ -49,7 +64,7 @@
     if (duplicate) {
       btn.disabled = false;
       btn.textContent = '+ Create';
-      alert('A campaign with this name already exists.');
+      showCreateError(btn, 'A campaign with this name already exists.');
       nameInput.focus();
       nameInput.select();
       return;
@@ -68,7 +83,7 @@
       .withFailureHandler(function(err) {
         btn.disabled = false;
         btn.textContent = '+ Create';
-        alert('Failed to create campaign: ' + (err.message || err));
+        showCreateError(btn, 'Error: ' + (err.message || err));
       })
       .createCampaign(name, subject);
   }
@@ -99,7 +114,7 @@
         .withFailureHandler(function(err) {
           btn.disabled = false;
           btn.textContent = '+ Create';
-          alert('Could not verify campaign name. Please try again.');
+          showCreateError(btn, 'Could not verify campaign name. Please try again.');
         })
         .getCampaignStats();
     }

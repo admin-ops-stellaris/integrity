@@ -2020,7 +2020,7 @@ body.dark-mode .header-icon-btn:hover { background: #444; color: #CCC; }
 .marketing-mega-modal { background: var(--color-salt); width: 90vw !important; max-width: none !important; height: 90vh; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.3); overflow: hidden; transform: scale(0.95); transition: transform 0.25s ease-in-out; display: flex; flex-direction: column; position: relative; }
 .campaign-dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .campaign-dashboard-header .marketing-loading { flex: 1; text-align: left; padding: 10px 0; }
-.campaign-new-btn { padding: 8px 18px; background: var(--color-cedar); color: #FFF; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
+.campaign-new-btn { padding: 8px 25px; background: var(--color-cedar); color: #FFF; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; width: auto !important; }
 .campaign-new-btn:hover { opacity: 0.85; }
 .data-tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
 .data-tools-col { min-width: 0; }
@@ -2071,10 +2071,13 @@ body.dark-mode .header-icon-btn:hover { background: #444; color: #CCC; }
 .campaign-filter-btn { padding: 5px 14px; border: 1px solid var(--color-border); border-radius: 20px; background: none; font-size: 12px; font-weight: 500; cursor: pointer; color: #888; font-family: inherit; transition: all 0.15s; }
 .campaign-filter-btn:hover { border-color: var(--color-midnight); color: var(--color-midnight); }
 .campaign-filter-btn.active { background: var(--color-cedar); color: #FFF; border-color: var(--color-cedar); }
-.campaign-detail-table .contact-link { color: var(--color-cedar); cursor: pointer; font-weight: 500; text-decoration: none; }
+.campaign-detail-table { table-layout: auto; }
+.campaign-detail-table thead th:last-child { width: 50px; text-align: center; }
+.campaign-detail-table tbody td:last-child { text-align: center; }
+.campaign-detail-table .contact-link { color: var(--color-cedar); cursor: pointer; font-weight: 600; text-decoration: none; }
 .campaign-detail-table .contact-link:hover { text-decoration: underline; }
-.campaign-detail-email-name { font-style: italic; color: #999; }
-.campaign-detail-unknown { color: #ccc; font-style: italic; }
+.campaign-detail-email-name { font-style: italic; color: #999; font-size: 12px; }
+.campaign-detail-unknown { color: #ccc; font-style: italic; font-size: 12px; }
 .campaign-status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: capitalize; }
 .campaign-status-opened { background: #dcfce7; color: #166534; }
 .campaign-status-clicked { background: #dbeafe; color: #1e40af; }

@@ -1491,7 +1491,7 @@ app.post("/api/getCampaignStats", async (req, res) => {
     res.json(stats);
   } catch (err) {
     console.error("getCampaignStats error:", err);
-    res.status(500).json({ error: err.message });
+    res.json([]);
   }
 });
 
@@ -1499,13 +1499,13 @@ app.post("/api/getCampaignLogs", async (req, res) => {
   try {
     const campaignId = req.body.args ? req.body.args[0] : req.body.campaignId;
     if (!campaignId) {
-      return res.status(400).json({ error: "campaignId is required." });
+      return res.json([]);
     }
     const logs = await airtable.getCampaignLogs(campaignId);
     res.json(logs);
   } catch (err) {
     console.error("getCampaignLogs error:", err);
-    res.status(500).json({ error: err.message });
+    res.json([]);
   }
 });
 
@@ -1513,13 +1513,13 @@ app.post("/api/getMarketingLogsForContact", async (req, res) => {
   try {
     const contactId = req.body.args ? req.body.args[0] : req.body.contactId;
     if (!contactId) {
-      return res.status(400).json({ error: "contactId is required." });
+      return res.json([]);
     }
     const logs = await airtable.getMarketingLogsForContact(contactId);
     res.json(logs);
   } catch (err) {
     console.error("getMarketingLogsForContact error:", err);
-    res.status(500).json({ error: err.message });
+    res.json([]);
   }
 });
 

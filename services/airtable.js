@@ -2387,18 +2387,17 @@ export async function getCampaignLogs(campaignId, campaignName) {
     const records = await marketingBase("Logs").select({
       filterByFormula: filterFormula,
       sort: [{ field: 'Timestamp', direction: 'desc' }],
-      fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID', 'Contact Name', 'Campaign Name']
+      fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID', 'Campaign Name']
     }).all();
     console.log(`getCampaignLogs: Found ${records.length} log records`);
 
     return records.map(r => {
-      const contactName = Array.isArray(r.fields['Contact Name']) ? r.fields['Contact Name'][0] : (r.fields['Contact Name'] || '');
       return {
         timestamp: r.fields['Timestamp'] || '',
         event: r.fields['Event'] || '',
         email: r.fields['Email Address'] || '',
         contactId: r.fields['Contact ID'] || '',
-        contactName: contactName
+        contactName: ''
       };
     });
   } catch (err) {

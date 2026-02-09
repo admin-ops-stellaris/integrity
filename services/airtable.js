@@ -2375,29 +2375,54 @@ export async function getCampaignLogs(campaignId, campaignName) {
     if (campaignName) {
       const safeName = String(campaignName).replace(/'/g, "\\'");
       filterFormula = `SEARCH('${safeName}', ARRAYJOIN({Campaign Name}))`;
-      console.log('getCampaignLogs using Name:', safeName);
     } else if (campaignId) {
       const safeId = String(campaignId).replace(/'/g, "\\'");
       filterFormula = `SEARCH('${safeId}', ARRAYJOIN({Campaign}))`;
-      console.log('getCampaignLogs using ID fallback:', safeId);
     } else {
       return [];
     }
-    console.log('Final Formula:', filterFormula);
-    const records = await marketingBase("Logs").select({
+
+    const logs = await marketingBase("Logs").select({
       filterByFormula: filterFormula,
       sort: [{ field: 'Timestamp', direction: 'desc' }],
-      fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID', 'Campaign Name']
+      fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID']
     }).all();
-    console.log(`getCampaignLogs: Found ${records.length} log records`);
 
-    return records.map(r => {
+    const contactIds = [...new Set(logs.map(r => r.fields['Contact ID']).filter(Boolean))];
+    const nameMap = new Map();
+
+    if (base && contactIds.length > 0) {
+      const chunkSize = 50;
+      const chunks = [];
+      for (let i = 0; i < contactIds.length; i += chunkSize) {
+        chunks.push(contactIds.slice(i, i + chunkSize));
+      }
+      await Promise.all(chunks.map(async (chunk) => {
+        try {
+          const formula = `OR(${chunk.map(id => `RECORD_ID()='${id}'`).join(',')})`;
+          const contacts = await base("Contacts").select({
+            filterByFormula: formula,
+            fields: ['Calculated Name', 'FirstName', 'LastName']
+          }).all();
+          contacts.forEach(c => {
+            const name = c.fields['Calculated Name'] ||
+              `${c.fields['FirstName'] || ''} ${c.fields['LastName'] || ''}`.trim();
+            nameMap.set(c.id, name);
+          });
+        } catch (e) {
+          console.warn("Failed to fetch contact names chunk:", e.message);
+        }
+      }));
+    }
+
+    return logs.map(r => {
+      const cId = r.fields['Contact ID'];
       return {
         timestamp: r.fields['Timestamp'] || '',
         event: r.fields['Event'] || '',
         email: r.fields['Email Address'] || '',
-        contactId: r.fields['Contact ID'] || '',
-        contactName: ''
+        contactId: cId || '',
+        contactName: nameMap.get(cId) || null
       };
     });
   } catch (err) {

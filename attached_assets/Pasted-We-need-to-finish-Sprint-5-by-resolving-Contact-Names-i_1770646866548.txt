@@ -1,0 +1,86 @@
+We need to finish Sprint 5 by resolving Contact Names in the Campaign Logs.
+
+1. Update getCampaignLogs in services/airtable.js
+
+The Goal: Replace the 'Unknown' or Email-fallback names with real names from the Main Contacts database.
+
+The Logic:
+
+Fetch Logs as normal.
+
+Extract unique Contact IDs from the logs.
+
+Perform a 'Cross-Base Lookup': Batch fetch those IDs from the base('Contacts') table to get { 'Calculated Name': ... }.
+
+Map the names back to the logs.
+
+The Code: Replace the existing getCampaignLogs function with this enhanced version:
+
+JavaScript
+export async function getCampaignLogs(campaignId, campaignName) {
+  if (!marketingBase) return [];
+  try {
+    let filterFormula;
+    
+    // 1. Fetch Logs (Prioritize ID, fallback to Name)
+    if (campaignId) {
+      const safeId = String(campaignId).replace(/'/g, "\\'");
+      filterFormula = \`SEARCH('\${safeId}', ARRAYJOIN({Campaign}))\`;
+    } else if (campaignName) {
+      const safeName = String(campaignName).replace(/'/g, "\\'");
+      filterFormula = \`SEARCH('\${safeName}', ARRAYJOIN({Campaign Name}))\`;
+    } else {
+      return [];
+    }
+const logs = await marketingBase("Logs").select({
+  filterByFormula: filterFormula,
+  sort: [{ field: 'Timestamp', direction: 'desc' }],
+  fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID']
+}).all();
+// 2. Extract Unique Contact IDs
+const contactIds = [...new Set(logs.map(r => r.fields['Contact ID']).filter(Boolean))];
+const nameMap = new Map();
+// 3. Batch Fetch Names from Main Base (if we have IDs and Main Base access)
+if (base && contactIds.length > 0) {
+  // Process in chunks of 50 to respect URL length limits
+  const chunkSize = 50;
+  const chunks = [];
+  for (let i = 0; i < contactIds.length; i += chunkSize) {
+    chunks.push(contactIds.slice(i, i + chunkSize));
+  }
+  await Promise.all(chunks.map(async (chunk) => {
+    try {
+      const formula = \`OR(\${chunk.map(id => \`RECORD_ID()='\${id}'\`).join(',')})\`;
+      const contacts = await base("Contacts").select({
+        filterByFormula: formula,
+        fields: ['Calculated Name', 'FirstName', 'LastName']
+      }).all();
+      
+      contacts.forEach(c => {
+        const name = c.fields['Calculated Name'] || 
+                     \`\${c.fields['FirstName'] || ''} \${c.fields['LastName'] || ''}\`.trim();
+        nameMap.set(c.id, name);
+      });
+    } catch (e) {
+      console.warn("Failed to fetch contact names chunk:", e.message);
+    }
+  }));
+}
+// 4. Return Logs with Real Names
+return logs.map(r => {
+  const cId = r.fields['Contact ID'];
+  // Use fetched name, or fallback to email (italicized in UI)
+  const finalName = nameMap.get(cId) || null;
+  
+  return {
+    timestamp: r.fields['Timestamp'] || '',
+    event: r.fields['Event'] || '',
+    email: r.fields['Email Address'] || '',
+    contactId: cId || '',
+    contactName: finalName // UI will handle null by showing email
+  };
+});
+} catch (err) { console.error("getCampaignLogs error:", err.message); return []; } }
+
+
+**Action:** Update `services/airtable.js` with this cross-base lookup logic."

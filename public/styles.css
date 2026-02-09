@@ -2017,7 +2017,16 @@ body.dark-mode .breadcrumb-link:hover { color: #CCC; }
 body.dark-mode .header-icon-btn { border-color: #555; color: #888; }
 body.dark-mode .header-icon-btn:hover { background: #444; color: #CCC; }
 
-.marketing-mega-modal { background: var(--color-salt); width: 90vw; max-width: 1200px; height: 90vh; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.3); overflow: hidden; transform: scale(0.95); transition: transform 0.25s ease-in-out; display: flex; flex-direction: column; }
+.marketing-mega-modal { background: var(--color-salt); width: 90vw !important; max-width: none !important; height: 90vh; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.3); overflow: hidden; transform: scale(0.95); transition: transform 0.25s ease-in-out; display: flex; flex-direction: column; }
+.campaign-dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.campaign-dashboard-header .marketing-loading { flex: 1; text-align: left; padding: 10px 0; }
+.campaign-new-btn { padding: 8px 18px; background: var(--color-cedar); color: #FFF; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; flex-shrink: 0; }
+.campaign-new-btn:hover { opacity: 0.85; }
+.data-tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.data-tools-col { min-width: 0; }
+.marketing-stat-row.marketing-stat-deduction .marketing-stat-label { color: #999; font-style: italic; }
+.marketing-stat-row.marketing-stat-deduction .marketing-stat-value { color: #999; }
+.marketing-stat-row.marketing-stat-divider { border-top: 1px solid var(--color-border); padding-top: 8px; margin-top: 4px; }
 .modal.showing .marketing-mega-modal { transform: scale(1); }
 .marketing-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: var(--color-trail); color: #FFF; flex-shrink: 0; }
 .marketing-modal-header h2 { margin: 0; font-size: 16px; font-weight: 600; }
@@ -2144,3 +2153,8 @@ body.dark-mode .campaign-status-clicked { background: #1e3a5f; color: #93c5fd; }
 body.dark-mode .campaign-status-delivered, body.dark-mode .campaign-status-sent { background: #333; color: #999; }
 body.dark-mode .campaign-status-bounced, body.dark-mode .campaign-status-unsubscribed { background: #450a0a; color: #fca5a5; }
 body.dark-mode .campaign-status-complained { background: #451a03; color: #fcd34d; }
+body.dark-mode .campaign-new-btn { background: var(--color-cedar); color: #FFF; }
+body.dark-mode .marketing-stat-row.marketing-stat-deduction .marketing-stat-label { color: #777; }
+body.dark-mode .marketing-stat-row.marketing-stat-deduction .marketing-stat-value { color: #777; }
+body.dark-mode .marketing-stat-row.marketing-stat-divider { border-top-color: #555; }
+body.dark-mode .data-tools-grid { border-color: #444; }

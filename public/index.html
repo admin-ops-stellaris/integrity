@@ -1769,14 +1769,16 @@
           <button class="marketing-close-btn" onclick="closeMarketingModal()">&times;</button>
         </div>
         <div class="marketing-tabs">
-          <button class="marketing-tab active" data-tab="campaigns" onclick="switchMarketingTab('campaigns')">Campaigns</button>
-          <button class="marketing-tab" data-tab="import" onclick="switchMarketingTab('import')">Import Tool</button>
-          <button class="marketing-tab" data-tab="export" onclick="switchMarketingTab('export')">Export</button>
+          <button class="marketing-tab active" data-tab="campaigns" onclick="switchMarketingTab('campaigns')">Campaign Dashboard</button>
+          <button class="marketing-tab" data-tab="datatools" onclick="switchMarketingTab('datatools')">Data Tools</button>
         </div>
         <div class="marketing-modal-body">
           <div id="marketingTabCampaigns" class="marketing-tab-panel active">
             <div id="campaignDashboard">
-              <div id="campaignStatsLoading" class="marketing-loading">Loading campaigns...</div>
+              <div class="campaign-dashboard-header">
+                <div id="campaignStatsLoading" class="marketing-loading">Loading campaigns...</div>
+                <button class="campaign-new-btn" onclick="createNewCampaign()">+ New Campaign</button>
+              </div>
               <table id="campaignTable" class="campaign-table" style="display:none;">
                 <thead>
                   <tr>
@@ -1820,30 +1822,34 @@
               <p id="campaignDetailEmpty" class="marketing-empty" style="display:none;">No recipients match this filter.</p>
             </div>
           </div>
-          <div id="marketingTabImport" class="marketing-tab-panel">
-            <div class="marketing-section">
-              <h3>Import Campaign Results</h3>
-              <div class="marketing-import-form">
-                <label class="marketing-form-label" for="campaignSelect">Campaign</label>
-                <select id="campaignSelect" class="marketing-form-select" disabled>
-                  <option value="">Loading campaigns...</option>
-                </select>
-                <label class="marketing-form-label" for="importFileInput">Mailmeteor Report (.csv)</label>
-                <input type="file" id="importFileInput" accept=".csv" class="marketing-form-file" disabled />
-                <div id="importFileInfo" class="marketing-file-info" style="display:none;"></div>
-                <button id="marketingImportBtn" class="marketing-import-btn" onclick="importCampaignResults()" disabled>Import Results</button>
-                <div id="importResultsStatus" class="marketing-import-status" style="display:none;"></div>
+          <div id="marketingTabDatatools" class="marketing-tab-panel">
+            <div class="data-tools-grid">
+              <div class="data-tools-col">
+                <div class="marketing-section">
+                  <h3>Export for Sending</h3>
+                  <div id="marketingStats" class="marketing-stats">
+                    <span style="color:#999;">Click to load contact data.</span>
+                  </div>
+                  <button id="marketingDownloadBtn" class="marketing-download-btn" onclick="downloadMarketingCsv()">Download Clean List (.csv)</button>
+                  <p class="marketing-helper-text">Generates a deduplicated CSV for Mailmeteor. Handles shared emails (John &amp; Jane) automatically.</p>
+                </div>
               </div>
-            </div>
-          </div>
-          <div id="marketingTabExport" class="marketing-tab-panel">
-            <div class="marketing-section">
-              <h3>Export for Sending</h3>
-              <div id="marketingStats" class="marketing-stats">
-                <span style="color:#999;">Click to load contact data.</span>
+              <div class="data-tools-col">
+                <div class="marketing-section">
+                  <h3>Import Campaign Results</h3>
+                  <div class="marketing-import-form">
+                    <label class="marketing-form-label" for="campaignSelect">Campaign</label>
+                    <select id="campaignSelect" class="marketing-form-select" disabled>
+                      <option value="">Loading campaigns...</option>
+                    </select>
+                    <label class="marketing-form-label" for="importFileInput">Mailmeteor Report (.csv)</label>
+                    <input type="file" id="importFileInput" accept=".csv" class="marketing-form-file" disabled />
+                    <div id="importFileInfo" class="marketing-file-info" style="display:none;"></div>
+                    <button id="marketingImportBtn" class="marketing-import-btn" onclick="importCampaignResults()" disabled>Import Results</button>
+                    <div id="importResultsStatus" class="marketing-import-status" style="display:none;"></div>
+                  </div>
+                </div>
               </div>
-              <button id="marketingDownloadBtn" class="marketing-download-btn" onclick="downloadMarketingCsv()">Download Clean List (.csv)</button>
-              <p class="marketing-helper-text">Generates a deduplicated CSV for Mailmeteor. Handles shared emails (John &amp; Jane) automatically.</p>
             </div>
           </div>
         </div>

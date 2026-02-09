@@ -2244,19 +2244,34 @@ export async function getAllContactsForExport() {
   if (!base) return [];
   try {
     const fields = [
-      'FirstName', 'LastName', 'EmailAddress1', 'Unsubscribed from Marketing'
+      'Calculated Name', 'EmailAddress1', 'Unsubscribed from Marketing',
+      'Status', 'Deceased'
     ];
     const records = await base("Contacts").select({ fields }).all();
     return records.map(r => ({
       id: r.id,
-      firstName: r.fields['FirstName'] || '',
-      lastName: r.fields['LastName'] || '',
+      calculatedName: r.fields['Calculated Name'] || '',
       email: r.fields['EmailAddress1'] || '',
-      unsubscribed: r.fields['Unsubscribed from Marketing'] || false
+      unsubscribed: r.fields['Unsubscribed from Marketing'] || false,
+      status: r.fields['Status'] || 'Active',
+      deceased: r.fields['Deceased'] || false
     }));
   } catch (err) {
     console.error("getAllContactsForExport error:", err.message);
     return [];
+  }
+}
+
+export async function createCampaign(name) {
+  if (!marketingBase) throw new Error("Marketing base not configured");
+  try {
+    const record = await marketingBase("Campaigns").create({
+      'Name': name
+    });
+    return { id: record.id, name: record.fields['Name'] || name };
+  } catch (err) {
+    console.error("createCampaign error:", err.message);
+    throw err;
   }
 }
 

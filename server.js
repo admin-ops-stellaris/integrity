@@ -1460,6 +1460,20 @@ app.post("/api/getAllContactsForExport", async (req, res) => {
   }
 });
 
+app.post("/api/createCampaign", async (req, res) => {
+  try {
+    const name = req.body.args ? req.body.args[0] : req.body.name;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "Campaign name is required." });
+    }
+    const campaign = await airtable.createCampaign(name.trim());
+    res.json(campaign);
+  } catch (err) {
+    console.error("createCampaign error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/getCampaigns", async (req, res) => {
   try {
     const campaigns = await airtable.getCampaigns();

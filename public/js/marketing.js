@@ -33,13 +33,28 @@
     if (tabName === 'campaigns') {
       document.getElementById('marketingTabCampaigns').classList.add('active');
       loadCampaignStats();
-    } else if (tabName === 'import') {
-      document.getElementById('marketingTabImport').classList.add('active');
-      loadCampaigns();
-    } else if (tabName === 'export') {
-      document.getElementById('marketingTabExport').classList.add('active');
+    } else if (tabName === 'datatools') {
+      document.getElementById('marketingTabDatatools').classList.add('active');
       loadMarketingData();
+      loadCampaigns();
     }
+  };
+
+  window.createNewCampaign = function() {
+    var name = prompt('Enter a name for the new campaign:');
+    if (!name || !name.trim()) return;
+
+    google.script.run
+      .withSuccessHandler(function(campaign) {
+        alert('Campaign "' + campaign.name + '" created successfully.');
+        campaignStatsCache = null;
+        campaigns = [];
+        loadCampaignStats();
+      })
+      .withFailureHandler(function(err) {
+        alert('Failed to create campaign: ' + (err.message || err));
+      })
+      .createCampaign(name.trim());
   };
 
   function loadCampaignStats() {
@@ -69,8 +84,9 @@
 
     if (!stats || stats.length === 0) {
       table.style.display = 'none';
-      document.getElementById('campaignStatsLoading').style.display = 'block';
-      document.getElementById('campaignStatsLoading').textContent = 'No campaigns found.';
+      var loadingEl = document.getElementById('campaignStatsLoading');
+      loadingEl.style.display = 'block';
+      loadingEl.textContent = 'No campaigns found.';
       return;
     }
 
@@ -220,7 +236,16 @@
 
     google.script.run
       .withSuccessHandler(function(contacts) {
-        allContacts = contacts || [];
+        allContacts = (contacts || []).map(function(c) {
+          return {
+            id: c.id,
+            calculatedName: c.calculatedName || '',
+            email: c.email || '',
+            unsubscribed: c.unsubscribed || false,
+            inactive: (c.status || 'Active') === 'Inactive',
+            deceased: c.deceased || false
+          };
+        });
         cachedExportData = calculateExportData(allContacts);
         isLoading = false;
         renderStats();
@@ -264,7 +289,7 @@
 
   function calculateExportData(contacts) {
     var marketable = contacts.filter(function(c) {
-      return !c.unsubscribed && c.email && c.email.trim() !== '';
+      return !c.unsubscribed && !c.inactive && !c.deceased && c.email && c.email.trim() !== '';
     });
 
     var grouped = {};
@@ -273,8 +298,8 @@
       if (!grouped[emailKey]) {
         grouped[emailKey] = { names: [], ids: [], email: contact.email.trim() };
       }
-      var fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
-      if (fullName) grouped[emailKey].names.push(fullName);
+      var name = contact.calculatedName || '';
+      if (name) grouped[emailKey].names.push(name);
       grouped[emailKey].ids.push(contact.id);
     });
 
@@ -308,26 +333,36 @@
 
   function renderStats() {
     var total = allContacts.length;
-    var unsubscribed = allContacts.filter(function(c) { return c.unsubscribed; }).length;
-    var marketable = total - unsubscribed;
+    var inactive = allContacts.filter(function(c) { return c.inactive; }).length;
+    var deceased = allContacts.filter(function(c) { return c.deceased; }).length;
+    var unsubscribed = allContacts.filter(function(c) { return c.unsubscribed && !c.inactive && !c.deceased; }).length;
+    var marketable = total - inactive - deceased - unsubscribed;
     var exportCount = cachedExportData.length;
 
     var statsEl = document.getElementById('marketingStats');
     statsEl.innerHTML =
       '<div class="marketing-stat-row">' +
-        '<span class="marketing-stat-label">Total Contacts</span>' +
+        '<span class="marketing-stat-label">Total Database Contacts</span>' +
         '<span class="marketing-stat-value">' + formatNumber(total) + '</span>' +
       '</div>' +
-      '<div class="marketing-stat-row">' +
-        '<span class="marketing-stat-label">Unsubscribed</span>' +
-        '<span class="marketing-stat-value marketing-stat-unsub">' + formatNumber(unsubscribed) + '</span>' +
+      '<div class="marketing-stat-row marketing-stat-deduction">' +
+        '<span class="marketing-stat-label">Less: Inactive</span>' +
+        '<span class="marketing-stat-value">\u2212 ' + formatNumber(inactive) + '</span>' +
       '</div>' +
-      '<div class="marketing-stat-row marketing-stat-highlight">' +
-        '<span class="marketing-stat-label">Marketable Contacts</span>' +
+      '<div class="marketing-stat-row marketing-stat-deduction">' +
+        '<span class="marketing-stat-label">Less: Deceased</span>' +
+        '<span class="marketing-stat-value">\u2212 ' + formatNumber(deceased) + '</span>' +
+      '</div>' +
+      '<div class="marketing-stat-row marketing-stat-deduction">' +
+        '<span class="marketing-stat-label">Less: Unsubscribed</span>' +
+        '<span class="marketing-stat-value">\u2212 ' + formatNumber(unsubscribed) + '</span>' +
+      '</div>' +
+      '<div class="marketing-stat-row marketing-stat-highlight marketing-stat-divider">' +
+        '<span class="marketing-stat-label">= Marketable Contacts</span>' +
         '<span class="marketing-stat-value marketing-stat-green">' + formatNumber(marketable) + '</span>' +
       '</div>' +
       '<div class="marketing-stat-row marketing-stat-export">' +
-        '<span class="marketing-stat-label">Ready to Send (Clean & Deduplicated)</span>' +
+        '<span class="marketing-stat-label">= Ready to Send (Unique Emails)</span>' +
         '<span id="marketing-export-count" class="marketing-stat-value marketing-stat-export-value">' + formatNumber(exportCount) + '</span>' +
       '</div>';
   }
@@ -344,7 +379,7 @@
       );
     });
 
-    var csvContent = csvLines.join('\n');
+    var csvContent = '\uFEFF' + csvLines.join('\n');
     var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     var url = URL.createObjectURL(blob);
 

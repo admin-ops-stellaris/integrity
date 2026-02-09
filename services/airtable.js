@@ -2372,15 +2372,18 @@ export async function getCampaignLogs(campaignId, campaignName) {
   if (!marketingBase) return [];
   try {
     let filterFormula;
-    if (campaignName) {
-      const safeName = String(campaignName).replace(/'/g, "\\'");
-      filterFormula = `SEARCH('${safeName}', ARRAYJOIN({Campaign Name}))`;
-      console.log('getCampaignLogs formula:', filterFormula);
-    } else {
+    if (campaignId) {
       const safeId = String(campaignId).replace(/'/g, "\\'");
       filterFormula = `SEARCH('${safeId}', ARRAYJOIN({Campaign}))`;
-      console.log('getCampaignLogs formula:', filterFormula);
+      console.log('getCampaignLogs using ID:', safeId);
+    } else if (campaignName) {
+      const safeName = String(campaignName).replace(/'/g, "\\'");
+      filterFormula = `SEARCH('${safeName}', ARRAYJOIN({Campaign Name}))`;
+      console.log('getCampaignLogs using Name:', safeName);
+    } else {
+      return [];
     }
+    console.log('Final Formula:', filterFormula);
     const records = await marketingBase("Logs").select({
       filterByFormula: filterFormula,
       sort: [{ field: 'Timestamp', direction: 'desc' }],

@@ -2265,10 +2265,12 @@ export async function getAllContactsForExport() {
 export async function createCampaign(name) {
   if (!marketingBase) throw new Error("Marketing base not configured");
   try {
+    const today = new Date().toISOString().split('T')[0];
     const record = await marketingBase("Campaigns").create({
-      'Name': name
+      'Name': name,
+      'Date Sent': today
     });
-    return { id: record.id, name: record.fields['Name'] || name };
+    return { id: record.id, name: record.fields['Name'] || name, dateSent: record.fields['Date Sent'] || today };
   } catch (err) {
     console.error("createCampaign error:", err.message);
     throw err;

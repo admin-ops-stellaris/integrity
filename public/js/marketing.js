@@ -12,6 +12,8 @@
   var currentDetailLogs = [];
   var currentDetailFilter = 'all';
   var currentDetailCampaignName = '';
+  var currentSortKey = 'dateSent';
+  var currentSortDir = 'desc';
 
   window.openMarketingModal = function() {
     openModal('marketingModal');
@@ -80,6 +82,9 @@
     google.script.run
       .withSuccessHandler(function(stats) {
         campaignStatsCache = stats || [];
+        currentSortKey = 'dateSent';
+        currentSortDir = 'desc';
+        sortCampaigns(campaignStatsCache);
         renderCampaignTable(campaignStatsCache);
       })
       .withFailureHandler(function(err) {
@@ -87,6 +92,63 @@
         document.getElementById('campaignStatsLoading').textContent = 'Failed to load campaigns.';
       })
       .getCampaignStats();
+  }
+
+  function sortCampaigns(arr) {
+    arr.sort(function(a, b) {
+      var valA, valB;
+      if (currentSortKey === 'dateSent') {
+        valA = a.dateSent || '';
+        valB = b.dateSent || '';
+      } else if (currentSortKey === 'name') {
+        valA = (a.name || '').toLowerCase();
+        valB = (b.name || '').toLowerCase();
+      } else if (currentSortKey === 'subject') {
+        valA = (a.subject || '').toLowerCase();
+        valB = (b.subject || '').toLowerCase();
+      } else if (currentSortKey === 'totalSent') {
+        valA = a.totalSent || 0;
+        valB = b.totalSent || 0;
+      } else if (currentSortKey === 'uniqueOpens') {
+        valA = a.uniqueOpens || 0;
+        valB = b.uniqueOpens || 0;
+      } else if (currentSortKey === 'uniqueClicks') {
+        valA = a.uniqueClicks || 0;
+        valB = b.uniqueClicks || 0;
+      } else if (currentSortKey === 'unsubscribed') {
+        valA = a.unsubscribed || 0;
+        valB = b.unsubscribed || 0;
+      } else {
+        valA = a[currentSortKey] || '';
+        valB = b[currentSortKey] || '';
+      }
+
+      var cmp;
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        cmp = valA - valB;
+      } else {
+        cmp = String(valA).localeCompare(String(valB));
+      }
+      return currentSortDir === 'desc' ? -cmp : cmp;
+    });
+  }
+
+  window.sortCampaignsByHeader = function(key) {
+    if (currentSortKey === key) {
+      currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      currentSortKey = key;
+      currentSortDir = (key === 'dateSent') ? 'desc' : 'asc';
+    }
+    if (campaignStatsCache) {
+      sortCampaigns(campaignStatsCache);
+      renderCampaignTable(campaignStatsCache);
+    }
+  };
+
+  function sortArrow(key) {
+    if (currentSortKey !== key) return '';
+    return currentSortDir === 'asc' ? ' \u25B2' : ' \u25BC';
   }
 
   function renderCampaignTable(stats) {
@@ -101,6 +163,16 @@
       loadingEl.textContent = 'No campaigns found.';
       return;
     }
+
+    var thead = table.querySelector('thead tr');
+    thead.innerHTML =
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'dateSent\')">Date' + sortArrow('dateSent') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'name\')">Name' + sortArrow('name') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'subject\')">Subject' + sortArrow('subject') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'totalSent\')" title="Delivered / Total Sent">Sent' + sortArrow('totalSent') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'uniqueOpens\')" title="Unique Opens / Delivered">Opens' + sortArrow('uniqueOpens') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'uniqueClicks\')" title="Unique Clicks / Unique Opens">Clicks' + sortArrow('uniqueClicks') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'unsubscribed\')" title="Unsubscribes / Delivered">Unsubs' + sortArrow('unsubscribed') + '</th>';
 
     var html = '';
     for (var i = 0; i < stats.length; i++) {

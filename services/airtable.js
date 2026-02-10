@@ -2606,5 +2606,5 @@ export async function logCampaignEvent({ contactId, email, campaignId, campaignN
     }
   }
 
-  return await marketingBase("Logs").create(logFields);
+  return await marketingBase("Logs").create(logFields, { typecast: true });
 }

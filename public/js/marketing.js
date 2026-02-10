@@ -822,7 +822,7 @@
     currentReviewEmail = email;
     currentReviewName = name || '';
 
-    document.getElementById('reviewSubject').value = DEFAULT_FOLLOWUP_SUBJECT;
+    document.getElementById('reviewSubject').value = 'Loading...';
     document.getElementById('reviewBody').value = 'Loading template...';
     var btn = document.getElementById('executeGmailBtn');
     btn.disabled = true;
@@ -835,14 +835,31 @@
       });
     });
 
+    var loaded = 0;
+    function checkReady() {
+      loaded++;
+      if (loaded >= 2) btn.disabled = false;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(value) {
+        document.getElementById('reviewSubject').value = value || DEFAULT_FOLLOWUP_SUBJECT;
+        checkReady();
+      })
+      .withFailureHandler(function() {
+        document.getElementById('reviewSubject').value = DEFAULT_FOLLOWUP_SUBJECT;
+        checkReady();
+      })
+      .getSetting('Marketing_FollowUp_Subject');
+
     google.script.run
       .withSuccessHandler(function(value) {
         document.getElementById('reviewBody').value = value || DEFAULT_FOLLOWUP_BODY;
-        btn.disabled = false;
+        checkReady();
       })
       .withFailureHandler(function() {
         document.getElementById('reviewBody').value = DEFAULT_FOLLOWUP_BODY;
-        btn.disabled = false;
+        checkReady();
       })
       .getSetting('Marketing_FollowUp_Template');
   };
@@ -857,6 +874,7 @@
     var templateText = document.getElementById('reviewBody').value;
     var subject = document.getElementById('reviewSubject').value;
 
+    google.script.run.updateSetting('Marketing_FollowUp_Subject', subject);
     google.script.run.updateSetting('Marketing_FollowUp_Template', templateText);
 
     var firstName = currentReviewName ? currentReviewName.split(' ')[0] : '';
@@ -880,7 +898,9 @@
   };
 
   window.resetFollowUpTemplate = function() {
+    google.script.run.updateSetting('Marketing_FollowUp_Subject', '');
     google.script.run.updateSetting('Marketing_FollowUp_Template', '');
+    document.getElementById('reviewSubject').value = DEFAULT_FOLLOWUP_SUBJECT;
     document.getElementById('reviewBody').value = DEFAULT_FOLLOWUP_BODY;
   };
 

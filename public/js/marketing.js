@@ -822,11 +822,10 @@
     currentReviewEmail = email;
     currentReviewName = name || '';
 
-    var savedTemplate = localStorage.getItem('integrity_email_template');
-    var template = savedTemplate || DEFAULT_FOLLOWUP_BODY;
-
     document.getElementById('reviewSubject').value = DEFAULT_FOLLOWUP_SUBJECT;
-    document.getElementById('reviewBody').value = template;
+    document.getElementById('reviewBody').value = 'Loading template...';
+    var btn = document.getElementById('executeGmailBtn');
+    btn.disabled = true;
 
     var modal = document.getElementById('emailReviewModal');
     modal.classList.add('visible');
@@ -835,6 +834,17 @@
         modal.classList.add('showing');
       });
     });
+
+    google.script.run
+      .withSuccessHandler(function(value) {
+        document.getElementById('reviewBody').value = value || DEFAULT_FOLLOWUP_BODY;
+        btn.disabled = false;
+      })
+      .withFailureHandler(function() {
+        document.getElementById('reviewBody').value = DEFAULT_FOLLOWUP_BODY;
+        btn.disabled = false;
+      })
+      .getSetting('Marketing_FollowUp_Template');
   };
 
   window.closeEmailReviewModal = function() {
@@ -847,7 +857,7 @@
     var templateText = document.getElementById('reviewBody').value;
     var subject = document.getElementById('reviewSubject').value;
 
-    localStorage.setItem('integrity_email_template', templateText);
+    google.script.run.updateSetting('Marketing_FollowUp_Template', templateText);
 
     var firstName = currentReviewName ? currentReviewName.split(' ')[0] : '';
     var personalizedText = templateText.replace(/\{\{NAME\}\}/g, firstName || 'there');
@@ -857,7 +867,7 @@
       window.open(gmailUrl, '_blank');
 
       var btn = document.getElementById('executeGmailBtn');
-      btn.textContent = 'Copied & Opened!';
+      btn.textContent = 'Saved & Copied!';
       setTimeout(function() {
         btn.textContent = 'Copy Text & Open Gmail';
         closeEmailReviewModal();
@@ -870,7 +880,7 @@
   };
 
   window.resetFollowUpTemplate = function() {
-    localStorage.removeItem('integrity_email_template');
+    google.script.run.updateSetting('Marketing_FollowUp_Template', '');
     document.getElementById('reviewBody').value = DEFAULT_FOLLOWUP_BODY;
   };
 

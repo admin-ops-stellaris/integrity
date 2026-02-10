@@ -2207,7 +2207,11 @@ body.dark-mode .followup-composer-body input[readonly] { background: #1a1a1a; co
 body.dark-mode .followup-composer-body label { color: #aaa; }
 
 #emailReviewModal { z-index: 100002; }
-#emailReviewModal > .modal-content { width: 600px !important; max-width: 95vw !important; min-width: 500px !important; margin: 8vh auto !important; }
-#emailReviewModal .modal-body { padding: 20px; }
+#emailReviewModal > .modal-content { width: 600px !important; max-width: 95vw !important; min-width: 400px !important; height: auto !important; margin: 6vh auto !important; flex-direction: column !important; }
+#emailReviewModal .modal-header { flex-shrink: 0; }
+#emailReviewModal .modal-body { padding: 20px; flex: 1; overflow-y: auto; }
+#emailReviewModal .modal-footer { flex-shrink: 0; }
 #emailReviewModal .modal-footer button { width: auto !important; }
 #emailReviewModal input, #emailReviewModal textarea { width: 100% !important; box-sizing: border-box; }
+body.dark-mode #emailReviewModal .modal-footer { background: #333; }
+body.dark-mode #emailReviewModal #reviewSubject { background: #2a2a2a; color: #999; border-color: #444; }

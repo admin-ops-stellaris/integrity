@@ -333,7 +333,7 @@
 
       var actionCell = '';
       if (statusLower === 'unsubscribed' && log.email) {
-        actionCell = '<button class="campaign-followup-btn" onclick="openEmailReview(\'' + escapeAttr(log.email) + '\', \'' + escapeAttr(log.contactName || '') + '\')" title="Send follow-up email">&#9993;</button>';
+        actionCell = '<button class="campaign-followup-btn" onclick="openEmailReview(\'' + escapeAttr(log.email) + '\', \'' + escapeAttr(log.personalName || log.contactName || '') + '\')" title="Send follow-up email">&#9993;</button>';
       }
 
       html +=

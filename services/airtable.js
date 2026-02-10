@@ -2407,8 +2407,11 @@ export async function getCampaignLogs(campaignId, campaignName) {
           contacts.forEach(c => {
             const preferred = c.fields['PreferredName'];
             const first = c.fields['FirstName'];
-            const finalName = preferred || first || c.fields['Calculated Name'] || 'Client';
-            nameMap.set(c.id, finalName.trim());
+            const calcName = c.fields['Calculated Name'] ||
+              `${c.fields['FirstName'] || ''} ${c.fields['LastName'] || ''}`.trim();
+            const displayName = calcName || 'Client';
+            const personalName = preferred || first || calcName || 'Client';
+            nameMap.set(c.id, { displayName: displayName.trim(), personalName: personalName.trim(), preferredName: preferred ? preferred.trim() : null });
           });
         } catch (e) {
           console.warn("Failed to fetch contact names chunk:", e.message);
@@ -2418,12 +2421,22 @@ export async function getCampaignLogs(campaignId, campaignName) {
 
     return logs.map(r => {
       const cId = r.fields['Contact ID'];
+      const nameData = nameMap.get(cId);
+      let contactName = null;
+      let personalName = null;
+      if (nameData) {
+        contactName = nameData.preferredName
+          ? `${nameData.displayName} (${nameData.preferredName})`
+          : nameData.displayName;
+        personalName = nameData.personalName;
+      }
       return {
         timestamp: r.fields['Timestamp'] || '',
         event: r.fields['Event'] || '',
         email: r.fields['Email Address'] || '',
         contactId: cId || '',
-        contactName: nameMap.get(cId) || null
+        contactName: contactName,
+        personalName: personalName
       };
     });
   } catch (err) {

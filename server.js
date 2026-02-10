@@ -929,6 +929,11 @@ const SCHEMA = {
   }
 };
 
+// 1. Browser/Verification Test Route (Vital for Mailmeteor Setup)
+app.get("/api/webhooks/mailmeteor", (req, res) => {
+  res.status(200).send("Webhook Endpoint is Online and Ready! 🚀");
+});
+
 app.post("/api/getRecordDetail", async (req, res) => {
   try {
     const [tableName, id] = req.body.args || [];

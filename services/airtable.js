@@ -2402,12 +2402,13 @@ export async function getCampaignLogs(campaignId, campaignName) {
           const formula = `OR(${chunk.map(id => `RECORD_ID()='${id}'`).join(',')})`;
           const contacts = await base("Contacts").select({
             filterByFormula: formula,
-            fields: ['Calculated Name', 'FirstName', 'LastName']
+            fields: ['Calculated Name', 'FirstName', 'LastName', 'PreferredName']
           }).all();
           contacts.forEach(c => {
-            const name = c.fields['Calculated Name'] ||
-              `${c.fields['FirstName'] || ''} ${c.fields['LastName'] || ''}`.trim();
-            nameMap.set(c.id, name);
+            const preferred = c.fields['PreferredName'];
+            const first = c.fields['FirstName'];
+            const finalName = preferred || first || c.fields['Calculated Name'] || 'Client';
+            nameMap.set(c.id, finalName.trim());
           });
         } catch (e) {
           console.warn("Failed to fetch contact names chunk:", e.message);

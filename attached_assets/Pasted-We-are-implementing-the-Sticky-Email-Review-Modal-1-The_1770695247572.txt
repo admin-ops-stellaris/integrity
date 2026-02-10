@@ -1,0 +1,83 @@
+We are implementing the 'Sticky' Email Review Modal.
+
+1. The UI (public/index.html)
+
+Add this modal to the bottom of the body. It gives the user a large text area to edit the message before sending.
+
+HTML
+>     <div id="emailReviewModal" class="modal">
+  <div class="modal-content" style="width: 600px; height: auto;">
+    <div class="modal-header" style="background: var(--color-midnight);">
+      <h3>Review Follow-up</h3>
+      <button class="close-panel" onclick="closeEmailReviewModal()">&times;</button>
+    </div>
+    <div class="modal-body" style="padding: 20px;">
+      <div style="background: var(--color-sky); padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 13px; color: var(--color-midnight); line-height: 1.4;">
+        <strong>How this works:</strong>
+        <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+          <li>Edit the text below to match your tone.</li>
+          <li>Use <code>{{NAME}}</code> where the client's name should go.</li>
+          <li><strong>Your changes are saved automatically</strong> for the next person you click.</li>
+        </ul>
+        <div style="text-align: right; margin-top: 8px;">
+          <button onclick="resetFollowUpTemplate()" style="background: none; border: none; text-decoration: underline; cursor: pointer; color: var(--color-cedar); font-weight: 600; font-size: 11px;">Reset to Original Default</button>
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-bottom: 15px;">
+        <label>Subject</label>
+        <input type="text" id="reviewSubject" readonly style="background: #f5f5f5; color: #555;">
+      </div>
+
+      <div class="field-group">
+        <label>Message Body</label>
+        <textarea id="reviewBody" rows="12" style="width: 100%; font-family: inherit; font-size: 13px; padding: 12px; line-height: 1.5; resize: vertical; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding: 15px 20px; background: #f9f9f9; display: flex; justify-content: flex-end; gap: 10px;">
+      <button class="btn-cancel" onclick="closeEmailReviewModal()">Cancel</button>
+      <button class="btn-confirm" onclick="executeGmailHandoff()">Copy Text & Open Gmail</button>
+    </div>
+  </div>
+</div>
+2. The Logic (public/js/marketing.js)
+
+State: Create a global currentReviewEmail and currentReviewName.
+
+Constants: Define DEFAULT_FOLLOWUP_BODY with {{NAME}} placeholders.
+
+Functions:
+
+openEmailReview(email, name):
+
+Store email and name.
+
+Retrieve the saved template from localStorage.getItem('integrity_email_template').
+
+If none exists, use DEFAULT_FOLLOWUP_BODY.
+
+Populate #reviewBody with that template (showing {{NAME}}).
+
+Populate #reviewSubject.
+
+Show the modal.
+
+executeGmailHandoff():
+
+Step 1 (Save): Get the text from #reviewBody and save it to localStorage.setItem('integrity_email_template', text). This ensures their edits stick for next time.
+
+Step 2 (Personalize): Replace {{NAME}} with currentReviewName.
+
+Step 3 (Clipboard): navigator.clipboard.writeText(personalizedText).
+
+Step 4 (Open): Open Gmail URL (view=cm, to, su ONLY).
+
+Step 5 (Feedback): Show a toast: "Copied! Press Ctrl+V in Gmail."
+
+resetFollowUpTemplate():
+
+Clear localStorage.
+
+Reset #reviewBody to DEFAULT_FOLLOWUP_BODY.
+
+Action: Implement the Sticky Modal. Ensure that clicking 'Copy & Open' updates the stored template so the user doesn't have to re-edit it for the next contact.

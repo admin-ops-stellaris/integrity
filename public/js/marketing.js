@@ -333,11 +333,7 @@
 
       var actionCell = '';
       if (statusLower === 'unsubscribed' && log.email) {
-        var greeting = log.contactName ? log.contactName.split(' ')[0] : '';
-        var gmailSubject = encodeURIComponent('Quick check re: your unsubscribe');
-        var gmailBody = encodeURIComponent('Hi' + (greeting ? ' ' + greeting : '') + ',\n\nJust taking as much care as we can with regard to your unsubscribe just now - which is totally fine by the way!\n\nIf you would prefer to keep hearing from us but via another email address, please reply and let me know.\n\nOtherwise, if you do nothing, you\'ll remain unsubscribed.\n\nAll the very best either way!\n\nCheers,');
-        var gmailUrl = 'https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(log.email) + '&su=' + gmailSubject + '&body=' + gmailBody;
-        actionCell = '<a class="campaign-followup-btn" href="' + gmailUrl + '" target="_blank" title="Send follow-up email">&#9993;</a>';
+        actionCell = '<button class="campaign-followup-btn" onclick="openEmailReview(\'' + escapeAttr(log.email) + '\', \'' + escapeAttr(log.contactName || '') + '\')" title="Send follow-up email">&#9993;</button>';
       }
 
       html +=
@@ -816,88 +812,66 @@
     return value;
   }
 
-  window.openFollowUpComposer = function(email, contactName) {
-    var greeting = contactName ? contactName.split(' ')[0] : '';
-    var defaultSubject = 'Quick check re: your unsubscribe';
-    var defaultBody = 'Hi' + (greeting ? ' ' + greeting : '') + ',\n\nJust taking as much care as we can with regard to your unsubscribe just now - which is totally fine by the way!\n\nIf you would prefer to keep hearing from us but via another email address, please reply and let me know.\n\nOtherwise, if you do nothing, you\'ll remain unsubscribed.\n\nAll the very best either way!\n\nCheers,';
+  var DEFAULT_FOLLOWUP_SUBJECT = 'Quick check re: your unsubscribe';
+  var DEFAULT_FOLLOWUP_BODY = 'Hi {{NAME}},\n\nJust taking as much care as we can with regard to your unsubscribe just now - which is totally fine by the way!\n\nIf you would prefer to keep hearing from us but via another email address, please reply and let me know.\n\nOtherwise, if you do nothing, you\'ll remain unsubscribed.\n\nAll the very best either way!\n\nCheers,';
 
-    var existing = document.getElementById('followUpComposerModal');
-    if (existing) existing.remove();
+  var currentReviewEmail = '';
+  var currentReviewName = '';
 
-    var modal = document.createElement('div');
-    modal.id = 'followUpComposerModal';
-    modal.className = 'modal visible showing';
-    modal.style.zIndex = '100001';
-    modal.innerHTML =
-      '<div class="followup-composer-panel">' +
-        '<div class="followup-composer-header">' +
-          '<h3>Follow-Up Email</h3>' +
-          '<button class="followup-close-btn" onclick="closeFollowUpComposer()">&times;</button>' +
-        '</div>' +
-        '<div class="followup-composer-body">' +
-          '<label>To</label>' +
-          '<input type="text" id="followUpTo" value="' + escapeAttr(email) + '" readonly />' +
-          '<label>Subject</label>' +
-          '<input type="text" id="followUpSubject" value="' + escapeAttr(defaultSubject) + '" />' +
-          '<label>Message</label>' +
-          '<textarea id="followUpBody" rows="10">' + escapeHtml(defaultBody) + '</textarea>' +
-          '<div id="followUpStatus" style="margin-top:8px;font-size:12px;"></div>' +
-          '<div class="followup-composer-actions">' +
-            '<button class="btn-cancel" onclick="closeFollowUpComposer()">Cancel</button>' +
-            '<button class="btn-confirm" id="followUpSendBtn" onclick="sendFollowUpEmail()">Send</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(modal);
+  window.openEmailReview = function(email, name) {
+    currentReviewEmail = email;
+    currentReviewName = name || '';
+
+    var savedTemplate = localStorage.getItem('integrity_email_template');
+    var template = savedTemplate || DEFAULT_FOLLOWUP_BODY;
+
+    document.getElementById('reviewSubject').value = DEFAULT_FOLLOWUP_SUBJECT;
+    document.getElementById('reviewBody').value = template;
+
+    var modal = document.getElementById('emailReviewModal');
+    modal.classList.add('visible');
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        modal.classList.add('showing');
+      });
+    });
   };
 
-  window.closeFollowUpComposer = function() {
-    var modal = document.getElementById('followUpComposerModal');
-    if (modal) modal.remove();
+  window.closeEmailReviewModal = function() {
+    var modal = document.getElementById('emailReviewModal');
+    modal.classList.remove('showing');
+    setTimeout(function() { modal.classList.remove('visible'); }, 300);
   };
 
-  window.sendFollowUpEmail = function() {
-    var to = document.getElementById('followUpTo').value.trim();
-    var subject = document.getElementById('followUpSubject').value.trim();
-    var body = document.getElementById('followUpBody').value.trim();
-    var statusEl = document.getElementById('followUpStatus');
-    var btn = document.getElementById('followUpSendBtn');
+  window.executeGmailHandoff = function() {
+    var templateText = document.getElementById('reviewBody').value;
+    var subject = document.getElementById('reviewSubject').value;
 
-    if (!to || !subject || !body) {
-      statusEl.style.color = '#dc3545';
-      statusEl.textContent = 'Please fill in all fields.';
-      return;
-    }
+    localStorage.setItem('integrity_email_template', templateText);
 
-    btn.disabled = true;
-    btn.textContent = 'Sending...';
-    statusEl.style.color = '#666';
-    statusEl.textContent = '';
+    var firstName = currentReviewName ? currentReviewName.split(' ')[0] : '';
+    var personalizedText = templateText.replace(/\{\{NAME\}\}/g, firstName || 'there');
 
-    var htmlBody = '<div style="font-family:sans-serif;font-size:14px;line-height:1.6;">' +
-      body.replace(/\n/g, '<br>') + '</div>';
+    navigator.clipboard.writeText(personalizedText).then(function() {
+      var gmailUrl = 'https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(currentReviewEmail) + '&su=' + encodeURIComponent(subject);
+      window.open(gmailUrl, '_blank');
 
-    google.script.run
-      .withSuccessHandler(function(result) {
-        if (result && result.success) {
-          statusEl.style.color = '#28a745';
-          statusEl.textContent = 'Email sent successfully!';
-          btn.textContent = 'Sent';
-          setTimeout(function() { closeFollowUpComposer(); }, 1500);
-        } else {
-          statusEl.style.color = '#dc3545';
-          statusEl.textContent = 'Failed: ' + ((result && result.error) || 'Unknown error');
-          btn.disabled = false;
-          btn.textContent = 'Send';
-        }
-      })
-      .withFailureHandler(function(err) {
-        statusEl.style.color = '#dc3545';
-        statusEl.textContent = 'Error: ' + (err.message || err);
-        btn.disabled = false;
-        btn.textContent = 'Send';
-      })
-      .sendEmail(to, subject, htmlBody);
+      var btn = document.getElementById('executeGmailBtn');
+      btn.textContent = 'Copied & Opened!';
+      setTimeout(function() {
+        btn.textContent = 'Copy Text & Open Gmail';
+        closeEmailReviewModal();
+      }, 2000);
+    }).catch(function() {
+      var gmailUrl = 'https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(currentReviewEmail) + '&su=' + encodeURIComponent(subject);
+      window.open(gmailUrl, '_blank');
+      closeEmailReviewModal();
+    });
+  };
+
+  window.resetFollowUpTemplate = function() {
+    localStorage.removeItem('integrity_email_template');
+    document.getElementById('reviewBody').value = DEFAULT_FOLLOWUP_BODY;
   };
 
 })();

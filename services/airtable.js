@@ -2244,19 +2244,44 @@ export async function getAllContactsForExport() {
   if (!base) return [];
   try {
     const fields = [
-      'FirstName', 'LastName', 'EmailAddress1', 'Unsubscribed from Marketing'
+      'Calculated Name', 'EmailAddress1', 'Unsubscribed from Marketing',
+      'Status', 'Deceased'
     ];
     const records = await base("Contacts").select({ fields }).all();
     return records.map(r => ({
       id: r.id,
-      firstName: r.fields['FirstName'] || '',
-      lastName: r.fields['LastName'] || '',
+      calculatedName: r.fields['Calculated Name'] || '',
       email: r.fields['EmailAddress1'] || '',
-      unsubscribed: r.fields['Unsubscribed from Marketing'] || false
+      unsubscribed: r.fields['Unsubscribed from Marketing'] || false,
+      status: r.fields['Status'] || 'Active',
+      deceased: r.fields['Deceased'] || false
     }));
   } catch (err) {
     console.error("getAllContactsForExport error:", err.message);
     return [];
+  }
+}
+
+export async function createCampaign(name, subject) {
+  if (!marketingBase) throw new Error("Marketing base not configured");
+  try {
+    const safeName = String(name).replace(/'/g, "\\'");
+    const existing = await marketingBase("Campaigns").select({
+      filterByFormula: `LOWER({Name}) = LOWER('${safeName}')`,
+      maxRecords: 1,
+      fields: ['Name']
+    }).all();
+    if (existing.length > 0) {
+      throw new Error("A campaign with this name already exists.");
+    }
+    const today = new Date().toISOString().split('T')[0];
+    const fields = { 'Name': name, 'Date': today };
+    if (subject) fields['Subject Line'] = subject;
+    const record = await marketingBase("Campaigns").create(fields);
+    return { id: record.id, name: record.fields['Name'] || name, dateSent: record.fields['Date'] || today };
+  } catch (err) {
+    console.error("createCampaign error:", err.message);
+    throw err;
   }
 }
 
@@ -2273,6 +2298,149 @@ export async function getCampaigns() {
     }));
   } catch (err) {
     console.error("getCampaigns error:", err.message);
+    return [];
+  }
+}
+
+export async function getCampaignStats() {
+  if (!marketingBase) return [];
+  try {
+    const campaigns = await marketingBase("Campaigns").select({
+      sort: [{ field: 'Name', direction: 'asc' }]
+    }).all();
+
+    console.log(`getCampaignStats: Found ${campaigns.length} campaigns`);
+    campaigns.forEach(c => {
+      console.log(`  Campaign: id=${c.id}, Name="${c.fields['Name']}", fields=${Object.keys(c.fields).join(',')}`);
+    });
+
+    if (campaigns.length === 0) return [];
+
+    let logs = [];
+    try {
+      logs = await marketingBase("Logs").select({
+        fields: ['Campaign', 'Event', 'Email Address']
+      }).all();
+    } catch (logErr) {
+      console.warn("getCampaignStats: Could not fetch logs:", logErr.message);
+    }
+
+    const logsByCampaign = {};
+    for (const log of logs) {
+      const campLinks = log.fields['Campaign'];
+      if (!Array.isArray(campLinks) || campLinks.length === 0) continue;
+      const campId = campLinks[0];
+      if (!logsByCampaign[campId]) logsByCampaign[campId] = [];
+      logsByCampaign[campId].push({
+        event: log.fields['Event'] || '',
+        email: (log.fields['Email Address'] || '').toLowerCase()
+      });
+    }
+
+    return campaigns.map(c => {
+      const cLogs = logsByCampaign[c.id] || [];
+      const sent = cLogs.filter(l => ['sent', 'delivered'].includes(l.event.toLowerCase()));
+      const delivered = cLogs.filter(l => l.event.toLowerCase() === 'delivered');
+      const deliveredCount = delivered.length || sent.length;
+
+      const uniqueOpens = new Set(cLogs.filter(l => l.event.toLowerCase() === 'opened').map(l => l.email));
+      const uniqueClicks = new Set(cLogs.filter(l => l.event.toLowerCase() === 'clicked').map(l => l.email));
+      const bounced = cLogs.filter(l => l.event.toLowerCase() === 'bounced');
+      const unsubs = cLogs.filter(l => l.event.toLowerCase() === 'unsubscribed');
+      const totalSent = sent.length || cLogs.length;
+
+      return {
+        id: c.id,
+        name: c.fields['Name'] || '(Untitled)',
+        subject: c.fields['Subject Line'] || '',
+        dateSent: c.fields['Date'] || '',
+        totalSent: totalSent,
+        delivered: deliveredCount,
+        uniqueOpens: uniqueOpens.size,
+        uniqueClicks: uniqueClicks.size,
+        bounced: bounced.length,
+        unsubscribed: unsubs.length
+      };
+    });
+  } catch (err) {
+    console.error("getCampaignStats error:", err.message);
+    return [];
+  }
+}
+
+export async function getCampaignLogs(campaignId, campaignName) {
+  if (!marketingBase) return [];
+  try {
+    let filterFormula;
+    if (campaignName) {
+      const safeName = String(campaignName).replace(/'/g, "\\'");
+      filterFormula = `SEARCH('${safeName}', ARRAYJOIN({Campaign Name}))`;
+    } else if (campaignId) {
+      const safeId = String(campaignId).replace(/'/g, "\\'");
+      filterFormula = `SEARCH('${safeId}', ARRAYJOIN({Campaign}))`;
+    } else {
+      return [];
+    }
+
+    const logs = await marketingBase("Logs").select({
+      filterByFormula: filterFormula,
+      sort: [{ field: 'Timestamp', direction: 'desc' }],
+      fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID']
+    }).all();
+
+    const contactIds = [...new Set(logs.map(r => r.fields['Contact ID']).filter(Boolean))];
+    const nameMap = new Map();
+
+    if (base && contactIds.length > 0) {
+      const chunkSize = 50;
+      const chunks = [];
+      for (let i = 0; i < contactIds.length; i += chunkSize) {
+        chunks.push(contactIds.slice(i, i + chunkSize));
+      }
+      await Promise.all(chunks.map(async (chunk) => {
+        try {
+          const formula = `OR(${chunk.map(id => `RECORD_ID()='${id}'`).join(',')})`;
+          const contacts = await base("Contacts").select({
+            filterByFormula: formula,
+            fields: ['Calculated Name', 'FirstName', 'LastName', 'PreferredName']
+          }).all();
+          contacts.forEach(c => {
+            const preferred = c.fields['PreferredName'];
+            const first = c.fields['FirstName'];
+            const calcName = c.fields['Calculated Name'] ||
+              `${c.fields['FirstName'] || ''} ${c.fields['LastName'] || ''}`.trim();
+            const displayName = calcName || 'Client';
+            const personalName = preferred || first || calcName || 'Client';
+            nameMap.set(c.id, { displayName: displayName.trim(), personalName: personalName.trim(), preferredName: preferred ? preferred.trim() : null });
+          });
+        } catch (e) {
+          console.warn("Failed to fetch contact names chunk:", e.message);
+        }
+      }));
+    }
+
+    return logs.map(r => {
+      const cId = r.fields['Contact ID'];
+      const nameData = nameMap.get(cId);
+      let contactName = null;
+      let personalName = null;
+      if (nameData) {
+        contactName = nameData.preferredName
+          ? `${nameData.displayName} (${nameData.preferredName})`
+          : nameData.displayName;
+        personalName = nameData.personalName;
+      }
+      return {
+        timestamp: r.fields['Timestamp'] || '',
+        event: r.fields['Event'] || '',
+        email: r.fields['Email Address'] || '',
+        contactId: cId || '',
+        contactName: contactName,
+        personalName: personalName
+      };
+    });
+  } catch (err) {
+    console.error("getCampaignLogs error:", err.message);
     return [];
   }
 }
@@ -2409,4 +2577,34 @@ export async function importCampaignResults({ campaignId, rows }) {
   }
 
   return { success: true, results };
+}
+
+export async function logCampaignEvent({ contactId, email, campaignId, campaignName, eventType, timestamp }) {
+  if (!marketingBase) throw new Error("Marketing base not configured");
+
+  const logFields = {
+    'Contact ID': contactId,
+    'Email Address': email || '',
+    'Event': eventType,
+    'Timestamp': timestamp || getPerthTimeISO()
+  };
+
+  if (campaignId) {
+    logFields['Campaign'] = [campaignId];
+  } else if (campaignName) {
+    try {
+      const safeName = String(campaignName).replace(/'/g, "\\'");
+      const campaigns = await marketingBase("Campaigns").select({
+        filterByFormula: `{Name} = '${safeName}'`,
+        maxRecords: 1
+      }).all();
+      if (campaigns.length > 0) {
+        logFields['Campaign'] = [campaigns[0].id];
+      }
+    } catch (e) {
+      console.warn("Campaign lookup failed:", e.message);
+    }
+  }
+
+  return await marketingBase("Logs").create(logFields);
 }

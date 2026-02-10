@@ -1763,32 +1763,98 @@
 
     <!-- Marketing Modal -->
     <div id="marketingModal" class="modal">
-      <div class="marketing-modal-content">
+      <div class="marketing-mega-modal">
         <div class="marketing-modal-header">
           <h2>Marketing</h2>
-          <button class="marketing-close-btn" onclick="closeMarketingModal()">&times;</button>
+          <button class="marketing-close-btn" onclick="closeMarketingModal()" style="position:absolute !important; top:15px !important; right:15px !important; z-index:9999; cursor:pointer; background:none !important; border:none !important; color:rgba(255,255,255,0.7); font-size:22px; padding:4px 8px !important; line-height:1; display:inline-block !important; width:auto !important; margin-top:0 !important;">&times;</button>
+        </div>
+        <div class="marketing-tabs">
+          <button class="marketing-tab active" data-tab="campaigns" onclick="switchMarketingTab('campaigns')">Campaign Dashboard</button>
+          <button class="marketing-tab" data-tab="datatools" onclick="switchMarketingTab('datatools')">Data Tools</button>
         </div>
         <div class="marketing-modal-body">
-          <div class="marketing-section">
-            <h3>Export for Sending</h3>
-            <div id="marketingStats" class="marketing-stats">
-              <span style="color:#999;">Click to load contact data.</span>
+          <div id="marketingTabCampaigns" class="marketing-tab-panel active">
+            <div id="campaignDashboard">
+              <div class="campaign-dashboard-header">
+                <div class="campaign-new-inline" id="campaignNewInline">
+                  <input type="text" id="newCampaignNameInput" class="campaign-new-input" placeholder="Campaign name..." />
+                  <input type="text" id="newCampaignSubjectInput" class="campaign-new-input" placeholder="Subject line..." />
+                  <button class="campaign-new-btn" onclick="createNewCampaign()">+ Create</button>
+                </div>
+              </div>
+              <div id="campaignStatsLoading" class="marketing-loading">Loading campaigns...</div>
+              <table id="campaignTable" class="campaign-table" style="display:none;">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Subject</th>
+                    <th title="Delivered / Total Sent">Delivery Rate</th>
+                    <th title="Unique Opens / Delivered">Open Rate</th>
+                    <th title="Unique Clicks / Unique Opens">Engagement</th>
+                    <th title="Unsubscribes / Delivered">Unsub Rate</th>
+                  </tr>
+                </thead>
+                <tbody id="campaignTableBody"></tbody>
+              </table>
             </div>
-            <button id="marketingDownloadBtn" class="marketing-download-btn" onclick="downloadMarketingCsv()">Download Clean List (.csv)</button>
-            <p class="marketing-helper-text">Generates a deduplicated CSV for Mailmeteor. Handles shared emails (John &amp; Jane) automatically.</p>
+            <div id="campaignDetail" style="display:none;">
+              <div class="campaign-detail-header">
+                <button class="campaign-back-btn" onclick="showCampaignDashboard()">&larr; Back to Campaigns</button>
+                <h3 id="campaignDetailTitle"></h3>
+              </div>
+              <div class="campaign-detail-filters" id="campaignDetailFilters">
+                <button class="campaign-filter-btn active" data-filter="all" onclick="filterCampaignLogs('all')">All</button>
+                <button class="campaign-filter-btn" data-filter="opened" onclick="filterCampaignLogs('opened')">Opened</button>
+                <button class="campaign-filter-btn" data-filter="clicked" onclick="filterCampaignLogs('clicked')">Clicked</button>
+                <button class="campaign-filter-btn" data-filter="bounced" onclick="filterCampaignLogs('bounced')">Bounced</button>
+                <button class="campaign-filter-btn" data-filter="replied" onclick="filterCampaignLogs('replied')">Replied</button>
+                <button class="campaign-filter-btn" data-filter="unsubscribed" onclick="filterCampaignLogs('unsubscribed')">Unsubscribed</button>
+              </div>
+              <div id="campaignDetailLoading" class="marketing-loading" style="display:none;">Loading recipients...</div>
+              <table id="campaignDetailTable" class="campaign-table campaign-detail-table" style="display:none;">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="campaignDetailBody"></tbody>
+              </table>
+              <p id="campaignDetailEmpty" class="marketing-empty" style="display:none;">No recipients match this filter.</p>
+            </div>
           </div>
-          <div class="marketing-section marketing-section-import">
-            <h3>Import Results</h3>
-            <div class="marketing-import-form">
-              <label class="marketing-form-label" for="campaignSelect">Campaign</label>
-              <select id="campaignSelect" class="marketing-form-select" disabled>
-                <option value="">Loading campaigns...</option>
-              </select>
-              <label class="marketing-form-label" for="importFileInput">Mailmeteor Report (.csv)</label>
-              <input type="file" id="importFileInput" accept=".csv" class="marketing-form-file" disabled />
-              <div id="importFileInfo" class="marketing-file-info" style="display:none;"></div>
-              <button id="marketingImportBtn" class="marketing-import-btn" onclick="importCampaignResults()" disabled>Import Results</button>
-              <div id="importResultsStatus" class="marketing-import-status" style="display:none;"></div>
+          <div id="marketingTabDatatools" class="marketing-tab-panel">
+            <div class="data-tools-grid">
+              <div class="data-tools-col">
+                <div class="marketing-section">
+                  <h3>Export for Sending</h3>
+                  <div id="marketingStats" class="marketing-stats">
+                    <span style="color:#999;">Click to load contact data.</span>
+                  </div>
+                  <button id="marketingDownloadBtn" class="marketing-download-btn" onclick="downloadMarketingCsv()">Download Clean List (.csv)</button>
+                  <p class="marketing-helper-text">Generates a deduplicated CSV for Mailmeteor. Handles shared emails (John &amp; Jane) automatically.</p>
+                </div>
+              </div>
+              <div class="data-tools-col">
+                <div class="marketing-section">
+                  <h3>Import Campaign Results</h3>
+                  <div class="marketing-import-form">
+                    <label class="marketing-form-label" for="campaignSelect">Campaign</label>
+                    <select id="campaignSelect" class="marketing-form-select" disabled>
+                      <option value="">Loading campaigns...</option>
+                    </select>
+                    <label class="marketing-form-label" for="importFileInput">Mailmeteor Report (.csv)</label>
+                    <input type="file" id="importFileInput" accept=".csv" class="marketing-form-file" disabled />
+                    <div id="importFileInfo" class="marketing-file-info" style="display:none;"></div>
+                    <button id="marketingImportBtn" class="marketing-import-btn" onclick="importCampaignResults()" disabled>Import Results</button>
+                    <div id="importResultsStatus" class="marketing-import-status" style="display:none;"></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1827,6 +1893,41 @@
     
     <!-- Main app (contains all working code) -->
     <script src="/app.js?v=101"></script>
+
+    <!-- Email Review Modal -->
+    <div id="emailReviewModal" class="modal">
+      <div class="modal-content" style="width: 600px; height: auto;">
+        <div class="modal-header" style="background: var(--color-midnight);">
+          <h3>Review Follow-up</h3>
+          <button class="close-panel" onclick="closeEmailReviewModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <div style="background: var(--color-sky); padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 13px; color: var(--color-midnight); line-height: 1.4;">
+            <strong>How this works:</strong>
+            <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+              <li>Edit the text below to match your tone.</li>
+              <li>Use <code>{{NAME}}</code> where the client's name should go.</li>
+              <li><strong>Your changes are saved automatically</strong> for the next person you click.</li>
+            </ul>
+            <div style="text-align: right; margin-top: 8px;">
+              <button onclick="resetFollowUpTemplate()" style="background: none; border: none; text-decoration: underline; cursor: pointer; color: var(--color-cedar); font-weight: 600; font-size: 11px; width: auto;">Reset to Original Default</button>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom: 15px;">
+            <label>Subject</label>
+            <input type="text" id="reviewSubject">
+          </div>
+          <div class="field-group">
+            <label>Message Body</label>
+            <textarea id="reviewBody" rows="12" style="width: 100%; font-family: inherit; font-size: 13px; padding: 12px; line-height: 1.5; resize: vertical; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 15px 20px; background: #f9f9f9; display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="btn-cancel" onclick="closeEmailReviewModal()">Cancel</button>
+          <button class="btn-confirm" id="executeGmailBtn" onclick="executeGmailHandoff()">Copy Text &amp; Open Gmail</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Breakpoint Indicator (Development Helper) -->
     <div class="breakpoint-indicator"></div>

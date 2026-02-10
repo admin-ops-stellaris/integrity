@@ -1,26 +1,368 @@
 (function() {
   'use strict';
 
-  let allContacts = [];
-  let cachedExportData = [];
-  let campaigns = [];
-  let parsedImportRows = [];
-  let isLoading = false;
-  let isImporting = false;
+  var allContacts = [];
+  var cachedExportData = [];
+  var campaigns = [];
+  var parsedImportRows = [];
+  var isLoading = false;
+  var isImporting = false;
+
+  var campaignStatsCache = null;
+  var currentDetailLogs = [];
+  var currentDetailFilter = 'all';
+  var currentDetailCampaignName = '';
+  var currentSortKey = 'dateSent';
+  var currentSortDir = 'desc';
 
   window.openMarketingModal = function() {
     openModal('marketingModal');
-    loadMarketingData();
-    loadCampaigns();
+    switchMarketingTab('campaigns');
   };
 
   window.closeMarketingModal = function() {
     closeModal('marketingModal');
     resetImportForm();
+    showCampaignDashboard();
+  };
+
+  window.switchMarketingTab = function(tabName) {
+    var tabs = document.querySelectorAll('.marketing-tab');
+    var panels = document.querySelectorAll('.marketing-tab-panel');
+    tabs.forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tabName); });
+    panels.forEach(function(p) { p.classList.remove('active'); });
+
+    if (tabName === 'campaigns') {
+      document.getElementById('marketingTabCampaigns').classList.add('active');
+      loadCampaignStats();
+    } else if (tabName === 'datatools') {
+      document.getElementById('marketingTabDatatools').classList.add('active');
+      loadMarketingData();
+      loadCampaigns();
+    }
+  };
+
+  function showCreateError(btn, message) {
+    var container = btn.parentElement;
+    var errorEl = document.getElementById('camp-create-error');
+    if (!errorEl) {
+      errorEl = document.createElement('div');
+      errorEl.id = 'camp-create-error';
+      errorEl.style.color = '#dc3545';
+      errorEl.style.fontSize = '12px';
+      errorEl.style.marginTop = '4px';
+      container.appendChild(errorEl);
+    }
+    errorEl.textContent = message;
+    setTimeout(function() { errorEl.textContent = ''; }, 4000);
+  }
+
+  function checkDuplicateAndCreate(name, subject, btn, nameInput, subjectInput, existingCampaigns) {
+    var duplicate = (existingCampaigns || []).find(function(c) {
+      return c && c.name && c.name.toLowerCase() === name.toLowerCase();
+    });
+    if (duplicate) {
+      btn.disabled = false;
+      btn.textContent = '+ Create';
+      showCreateError(btn, 'A campaign with this name already exists.');
+      nameInput.focus();
+      nameInput.select();
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(campaign) {
+        nameInput.value = '';
+        subjectInput.value = '';
+        btn.disabled = false;
+        btn.textContent = '+ Create';
+        campaignStatsCache = null;
+        campaigns = [];
+        loadCampaignStats();
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.textContent = '+ Create';
+        showCreateError(btn, 'Error: ' + (err.message || err));
+      })
+      .createCampaign(name, subject);
+  }
+
+  window.createNewCampaign = function() {
+    var nameInput = document.getElementById('newCampaignNameInput');
+    var subjectInput = document.getElementById('newCampaignSubjectInput');
+    var name = (nameInput.value || '').trim();
+    var subject = (subjectInput.value || '').trim();
+    if (!name) {
+      nameInput.focus();
+      return;
+    }
+
+    var btn = document.querySelector('.campaign-new-btn');
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+
+    if (campaignStatsCache && campaignStatsCache.length > 0) {
+      checkDuplicateAndCreate(name, subject, btn, nameInput, subjectInput, campaignStatsCache);
+    } else {
+      google.script.run
+        .withSuccessHandler(function(stats) {
+          campaignStatsCache = stats || [];
+          btn.textContent = 'Creating...';
+          checkDuplicateAndCreate(name, subject, btn, nameInput, subjectInput, campaignStatsCache);
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = '+ Create';
+          showCreateError(btn, 'Could not verify campaign name. Please try again.');
+        })
+        .getCampaignStats();
+    }
+  };
+
+  function loadCampaignStats() {
+    if (campaignStatsCache) {
+      renderCampaignTable(campaignStatsCache);
+      return;
+    }
+    document.getElementById('campaignStatsLoading').style.display = 'block';
+    document.getElementById('campaignTable').style.display = 'none';
+
+    google.script.run
+      .withSuccessHandler(function(stats) {
+        campaignStatsCache = stats || [];
+        currentSortKey = 'dateSent';
+        currentSortDir = 'desc';
+        sortCampaigns(campaignStatsCache);
+        renderCampaignTable(campaignStatsCache);
+      })
+      .withFailureHandler(function(err) {
+        console.error('Failed to load campaign stats:', err);
+        document.getElementById('campaignStatsLoading').textContent = 'Failed to load campaigns.';
+      })
+      .getCampaignStats();
+  }
+
+  function sortCampaigns(arr) {
+    arr.sort(function(a, b) {
+      var valA, valB;
+      if (currentSortKey === 'dateSent') {
+        valA = a.dateSent || '';
+        valB = b.dateSent || '';
+      } else if (currentSortKey === 'name') {
+        valA = (a.name || '').toLowerCase();
+        valB = (b.name || '').toLowerCase();
+      } else if (currentSortKey === 'subject') {
+        valA = (a.subject || '').toLowerCase();
+        valB = (b.subject || '').toLowerCase();
+      } else if (currentSortKey === 'totalSent') {
+        valA = a.totalSent || 0;
+        valB = b.totalSent || 0;
+      } else if (currentSortKey === 'uniqueOpens') {
+        valA = a.uniqueOpens || 0;
+        valB = b.uniqueOpens || 0;
+      } else if (currentSortKey === 'uniqueClicks') {
+        valA = a.uniqueClicks || 0;
+        valB = b.uniqueClicks || 0;
+      } else if (currentSortKey === 'unsubscribed') {
+        valA = a.unsubscribed || 0;
+        valB = b.unsubscribed || 0;
+      } else {
+        valA = a[currentSortKey] || '';
+        valB = b[currentSortKey] || '';
+      }
+
+      var cmp;
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        cmp = valA - valB;
+      } else {
+        cmp = String(valA).localeCompare(String(valB));
+      }
+      return currentSortDir === 'desc' ? -cmp : cmp;
+    });
+  }
+
+  window.sortCampaignsByHeader = function(key) {
+    if (currentSortKey === key) {
+      currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      currentSortKey = key;
+      currentSortDir = (key === 'dateSent') ? 'desc' : 'asc';
+    }
+    if (campaignStatsCache) {
+      sortCampaigns(campaignStatsCache);
+      renderCampaignTable(campaignStatsCache);
+    }
+  };
+
+  function sortArrow(key) {
+    if (currentSortKey !== key) return '';
+    return currentSortDir === 'asc' ? ' \u25B2' : ' \u25BC';
+  }
+
+  function renderCampaignTable(stats) {
+    document.getElementById('campaignStatsLoading').style.display = 'none';
+    var table = document.getElementById('campaignTable');
+    var tbody = document.getElementById('campaignTableBody');
+
+    if (!stats || stats.length === 0) {
+      table.style.display = 'none';
+      var loadingEl = document.getElementById('campaignStatsLoading');
+      loadingEl.style.display = 'block';
+      loadingEl.textContent = 'No campaigns found.';
+      return;
+    }
+
+    var thead = table.querySelector('thead tr');
+    thead.innerHTML =
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'dateSent\')">Date' + sortArrow('dateSent') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'name\')">Name' + sortArrow('name') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'subject\')">Subject' + sortArrow('subject') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'totalSent\')" title="Delivered / Total Sent">Sent' + sortArrow('totalSent') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'uniqueOpens\')" title="Unique Opens / Delivered">Opens' + sortArrow('uniqueOpens') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'uniqueClicks\')" title="Unique Clicks / Unique Opens">Clicks' + sortArrow('uniqueClicks') + '</th>' +
+      '<th class="sortable-header" onclick="sortCampaignsByHeader(\'unsubscribed\')" title="Unsubscribes / Delivered">Unsubs' + sortArrow('unsubscribed') + '</th>';
+
+    var html = '';
+    for (var i = 0; i < stats.length; i++) {
+      var c = stats[i];
+      var dateDisplay = formatCampaignDate(c.dateSent);
+      var deliveryRate = c.totalSent > 0 ? (c.delivered / c.totalSent * 100) : 0;
+      var openRate = c.delivered > 0 ? (c.uniqueOpens / c.delivered * 100) : 0;
+      var engagementRate = c.uniqueOpens > 0 ? (c.uniqueClicks / c.uniqueOpens * 100) : 0;
+      var unsubRate = c.delivered > 0 ? (c.unsubscribed / c.delivered * 100) : 0;
+
+      html +=
+        '<tr class="campaign-row" onclick="openCampaignDetail(\'' + escapeAttr(c.id) + '\', \'' + escapeAttr(c.name) + '\')">' +
+          '<td>' + escapeHtml(dateDisplay) + '</td>' +
+          '<td class="campaign-name">' + escapeHtml(c.name) + '</td>' +
+          '<td class="campaign-subject">' + escapeHtml(c.subject) + '</td>' +
+          '<td>' + rateSpan(deliveryRate, 95, 85) + '</td>' +
+          '<td>' + rateSpan(openRate, 30, 15) + '</td>' +
+          '<td>' + rateSpan(engagementRate, 20, 5) + '</td>' +
+          '<td>' + rateSpan(unsubRate, -1, 1, true) + '</td>' +
+        '</tr>';
+    }
+    tbody.innerHTML = html;
+    table.style.display = 'table';
+  }
+
+  function rateSpan(value, goodThresh, okThresh, invert) {
+    var pct = value.toFixed(1) + '%';
+    var cls = 'campaign-rate ';
+    if (invert) {
+      cls += value <= 0.5 ? 'campaign-rate-good' : (value <= okThresh ? 'campaign-rate-ok' : 'campaign-rate-bad');
+    } else {
+      cls += value >= goodThresh ? 'campaign-rate-good' : (value >= okThresh ? 'campaign-rate-ok' : 'campaign-rate-bad');
+    }
+    return '<span class="' + cls + '">' + pct + '</span>';
+  }
+
+  window.openCampaignDetail = function(campaignId, campaignName) {
+    currentDetailCampaignName = campaignName;
+    document.getElementById('campaignDashboard').style.display = 'none';
+    document.getElementById('campaignDetail').style.display = 'block';
+    document.getElementById('campaignDetailTitle').textContent = campaignName;
+    document.getElementById('campaignDetailLoading').style.display = 'block';
+    document.getElementById('campaignDetailTable').style.display = 'none';
+    document.getElementById('campaignDetailEmpty').style.display = 'none';
+
+    currentDetailFilter = 'all';
+    var btns = document.querySelectorAll('.campaign-filter-btn');
+    btns.forEach(function(b) { b.classList.toggle('active', b.dataset.filter === 'all'); });
+
+    google.script.run
+      .withSuccessHandler(function(logs) {
+        currentDetailLogs = logs || [];
+        renderDetailTable();
+      })
+      .withFailureHandler(function(err) {
+        console.error('Failed to load campaign logs:', err);
+        document.getElementById('campaignDetailLoading').textContent = 'Failed to load recipients.';
+      })
+      .getCampaignLogs(campaignId, campaignName);
+  };
+
+  window.showCampaignDashboard = function() {
+    document.getElementById('campaignDetail').style.display = 'none';
+    document.getElementById('campaignDashboard').style.display = 'block';
+    currentDetailLogs = [];
+  };
+
+  window.filterCampaignLogs = function(filter) {
+    currentDetailFilter = filter;
+    var btns = document.querySelectorAll('.campaign-filter-btn');
+    btns.forEach(function(b) { b.classList.toggle('active', b.dataset.filter === filter); });
+    renderDetailTable();
+  };
+
+  function renderDetailTable() {
+    document.getElementById('campaignDetailLoading').style.display = 'none';
+    var table = document.getElementById('campaignDetailTable');
+    var tbody = document.getElementById('campaignDetailBody');
+    var emptyEl = document.getElementById('campaignDetailEmpty');
+
+    var filtered = currentDetailLogs;
+    if (currentDetailFilter !== 'all') {
+      filtered = currentDetailLogs.filter(function(l) {
+        return l.event.toLowerCase() === currentDetailFilter;
+      });
+    }
+
+    if (filtered.length === 0) {
+      table.style.display = 'none';
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+      var log = filtered[i];
+      var nameCell;
+      if (log.contactName) {
+        nameCell = '<a class="contact-link" onclick="navigateToContactFromCampaign(\'' + escapeAttr(log.contactId) + '\')">' + escapeHtml(log.contactName) + '</a>';
+      } else if (log.email) {
+        nameCell = '<span class="campaign-detail-email-name">' + escapeHtml(log.email) + '</span>';
+      } else {
+        nameCell = '<span class="campaign-detail-unknown">Unknown</span>';
+      }
+      var statusLower = (log.event || '').toLowerCase();
+      var badgeCls = 'campaign-status-badge campaign-status-' + statusLower;
+      var timeDisplay = formatLogTime(log.timestamp);
+
+      var actionCell = '';
+      if (statusLower === 'unsubscribed' && log.email) {
+        actionCell = '<button class="campaign-followup-btn" onclick="openEmailReview(\'' + escapeAttr(log.email) + '\', \'' + escapeAttr(log.personalName || log.contactName || '') + '\')" title="Send follow-up email">&#9993;</button>';
+      }
+
+      html +=
+        '<tr>' +
+          '<td>' + nameCell + '</td>' +
+          '<td>' + escapeHtml(log.email) + '</td>' +
+          '<td><span class="' + badgeCls + '">' + escapeHtml(log.event) + '</span></td>' +
+          '<td>' + escapeHtml(timeDisplay) + '</td>' +
+          '<td>' + actionCell + '</td>' +
+        '</tr>';
+    }
+    tbody.innerHTML = html;
+    table.style.display = 'table';
+  }
+
+  window.navigateToContactFromCampaign = function(contactId) {
+    if (!contactId) return;
+    closeMarketingModal();
+    if (window.loadContactById) {
+      loadContactById(contactId, true);
+    }
   };
 
   function loadMarketingData() {
     if (isLoading) return;
+    if (cachedExportData.length > 0) {
+      renderStats();
+      return;
+    }
     isLoading = true;
 
     var statsEl = document.getElementById('marketingStats');
@@ -30,7 +372,16 @@
 
     google.script.run
       .withSuccessHandler(function(contacts) {
-        allContacts = contacts || [];
+        allContacts = (contacts || []).map(function(c) {
+          return {
+            id: c.id,
+            calculatedName: c.calculatedName || '',
+            email: c.email || '',
+            unsubscribed: c.unsubscribed || false,
+            inactive: (c.status || 'Active') === 'Inactive',
+            deceased: c.deceased || false
+          };
+        });
         cachedExportData = calculateExportData(allContacts);
         isLoading = false;
         renderStats();
@@ -46,6 +397,9 @@
 
   function loadCampaigns() {
     var selectEl = document.getElementById('campaignSelect');
+    if (campaigns.length > 0) {
+      return;
+    }
     selectEl.disabled = true;
     selectEl.innerHTML = '<option value="">Loading campaigns...</option>';
 
@@ -71,7 +425,7 @@
 
   function calculateExportData(contacts) {
     var marketable = contacts.filter(function(c) {
-      return !c.unsubscribed && c.email && c.email.trim() !== '';
+      return !c.unsubscribed && !c.inactive && !c.deceased && c.email && c.email.trim() !== '';
     });
 
     var grouped = {};
@@ -80,8 +434,8 @@
       if (!grouped[emailKey]) {
         grouped[emailKey] = { names: [], ids: [], email: contact.email.trim() };
       }
-      var fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
-      if (fullName) grouped[emailKey].names.push(fullName);
+      var name = contact.calculatedName || '';
+      if (name) grouped[emailKey].names.push(name);
       grouped[emailKey].ids.push(contact.id);
     });
 
@@ -94,9 +448,7 @@
       } else if (group.names.length === 1) {
         combinedName = group.names[0];
       } else {
-        var firstNames = group.names.map(function(n) { return n.split(' ')[0]; });
-        var lastName = group.names[0].split(' ').slice(1).join(' ');
-        combinedName = firstNames.join(' & ') + (lastName ? ' ' + lastName : '');
+        combinedName = group.names.join(' & ');
       }
       rows.push({
         name: combinedName,
@@ -115,9 +467,26 @@
 
   function renderStats() {
     var total = allContacts.length;
-    var unsubscribed = allContacts.filter(function(c) { return c.unsubscribed; }).length;
-    var marketable = total - unsubscribed;
+    var inactiveCount = 0;
+    var deceasedCount = 0;
+    var unsubCount = 0;
+    var totalExcludedCount = 0;
+
+    allContacts.forEach(function(c) {
+      var isInactive = c.inactive;
+      var isDeceased = c.deceased;
+      var isUnsub = c.unsubscribed;
+      if (isInactive) inactiveCount++;
+      if (isDeceased) deceasedCount++;
+      if (isUnsub) unsubCount++;
+      if (isInactive || isDeceased || isUnsub) totalExcludedCount++;
+    });
+
+    var marketable = total - totalExcludedCount;
     var exportCount = cachedExportData.length;
+    var deduped = marketable - exportCount;
+
+    var excludedDetail = inactiveCount + ' Inactive, ' + deceasedCount + ' Deceased, ' + unsubCount + ' Unsubscribed';
 
     var statsEl = document.getElementById('marketingStats');
     statsEl.innerHTML =
@@ -125,16 +494,20 @@
         '<span class="marketing-stat-label">Total Contacts</span>' +
         '<span class="marketing-stat-value">' + formatNumber(total) + '</span>' +
       '</div>' +
-      '<div class="marketing-stat-row">' +
-        '<span class="marketing-stat-label">Unsubscribed</span>' +
-        '<span class="marketing-stat-value marketing-stat-unsub">' + formatNumber(unsubscribed) + '</span>' +
+      '<div class="marketing-stat-row marketing-stat-deduction">' +
+        '<span class="marketing-stat-label">Less: Excluded (' + excludedDetail + ')</span>' +
+        '<span class="marketing-stat-value">\u2212 ' + formatNumber(totalExcludedCount) + '</span>' +
       '</div>' +
-      '<div class="marketing-stat-row marketing-stat-highlight">' +
-        '<span class="marketing-stat-label">Marketable Contacts</span>' +
+      '<div class="marketing-stat-row marketing-stat-highlight marketing-stat-divider">' +
+        '<span class="marketing-stat-label">= Marketable Contacts</span>' +
         '<span class="marketing-stat-value marketing-stat-green">' + formatNumber(marketable) + '</span>' +
       '</div>' +
+      '<div class="marketing-stat-row marketing-stat-deduction">' +
+        '<span class="marketing-stat-label">Less: Deduplication (only one row per email address)</span>' +
+        '<span class="marketing-stat-value">\u2212 ' + formatNumber(deduped > 0 ? deduped : 0) + '</span>' +
+      '</div>' +
       '<div class="marketing-stat-row marketing-stat-export">' +
-        '<span class="marketing-stat-label">Ready to Send (Clean & Deduplicated)</span>' +
+        '<span class="marketing-stat-label">= Ready to Send</span>' +
         '<span id="marketing-export-count" class="marketing-stat-value marketing-stat-export-value">' + formatNumber(exportCount) + '</span>' +
       '</div>';
   }
@@ -151,7 +524,7 @@
       );
     });
 
-    var csvContent = csvLines.join('\n');
+    var csvContent = '\uFEFF' + csvLines.join('\n');
     var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     var url = URL.createObjectURL(blob);
 
@@ -355,6 +728,7 @@
             console.warn('Import errors:', r.errors);
           }
           showImportStatus(msg, 'success');
+          campaignStatsCache = null;
         } else {
           showImportStatus('Import failed: ' + (response.error || 'Unknown error'), 'error');
         }
@@ -389,6 +763,47 @@
     }
   }
 
+  function formatCampaignDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      var d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      var day = String(d.getDate()).padStart(2, '0');
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var year = d.getFullYear();
+      return day + '/' + month + '/' + year;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  function formatLogTime(ts) {
+    if (!ts) return '';
+    try {
+      var d = new Date(ts);
+      if (isNaN(d.getTime())) return ts;
+      var day = String(d.getDate()).padStart(2, '0');
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var hours = d.getHours();
+      var minutes = String(d.getMinutes()).padStart(2, '0');
+      var ampm = hours >= 12 ? 'PM' : 'AM';
+      var h12 = hours % 12 || 12;
+      return day + '/' + month + ' ' + h12 + ':' + minutes + ' ' + ampm;
+    } catch (e) {
+      return ts;
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function escapeAttr(str) {
+    if (!str) return '';
+    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  }
+
   function escapeCsvField(value) {
     if (!value) return '';
     if (value.indexOf(',') !== -1 || value.indexOf('"') !== -1 || value.indexOf('\n') !== -1) {
@@ -396,5 +811,97 @@
     }
     return value;
   }
+
+  var DEFAULT_FOLLOWUP_SUBJECT = 'Quick check re: your unsubscribe';
+  var DEFAULT_FOLLOWUP_BODY = 'Hi {{NAME}},\n\nJust taking as much care as we can with regard to your unsubscribe just now - which is totally fine by the way!\n\nIf you would prefer to keep hearing from us but via another email address, please reply and let me know.\n\nOtherwise, if you do nothing, you\'ll remain unsubscribed.\n\nAll the very best either way!\n\nCheers,';
+
+  var currentReviewEmail = '';
+  var currentReviewName = '';
+
+  window.openEmailReview = function(email, name) {
+    currentReviewEmail = email;
+    currentReviewName = name || '';
+
+    document.getElementById('reviewSubject').value = 'Loading...';
+    document.getElementById('reviewBody').value = 'Loading template...';
+    var btn = document.getElementById('executeGmailBtn');
+    btn.disabled = true;
+
+    var modal = document.getElementById('emailReviewModal');
+    modal.classList.add('visible');
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        modal.classList.add('showing');
+      });
+    });
+
+    var loaded = 0;
+    function checkReady() {
+      loaded++;
+      if (loaded >= 2) btn.disabled = false;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(value) {
+        document.getElementById('reviewSubject').value = value || DEFAULT_FOLLOWUP_SUBJECT;
+        checkReady();
+      })
+      .withFailureHandler(function() {
+        document.getElementById('reviewSubject').value = DEFAULT_FOLLOWUP_SUBJECT;
+        checkReady();
+      })
+      .getSetting('Marketing_FollowUp_Subject');
+
+    google.script.run
+      .withSuccessHandler(function(value) {
+        document.getElementById('reviewBody').value = value || DEFAULT_FOLLOWUP_BODY;
+        checkReady();
+      })
+      .withFailureHandler(function() {
+        document.getElementById('reviewBody').value = DEFAULT_FOLLOWUP_BODY;
+        checkReady();
+      })
+      .getSetting('Marketing_FollowUp_Template');
+  };
+
+  window.closeEmailReviewModal = function() {
+    var modal = document.getElementById('emailReviewModal');
+    modal.classList.remove('showing');
+    setTimeout(function() { modal.classList.remove('visible'); }, 300);
+  };
+
+  window.executeGmailHandoff = function() {
+    var templateText = document.getElementById('reviewBody').value;
+    var subject = document.getElementById('reviewSubject').value;
+
+    google.script.run.updateSetting('Marketing_FollowUp_Subject', subject);
+    google.script.run.updateSetting('Marketing_FollowUp_Template', templateText);
+
+    var firstName = currentReviewName ? currentReviewName.split(' ')[0] : '';
+    var personalizedText = templateText.replace(/\{\{NAME\}\}/g, firstName || 'there');
+
+    navigator.clipboard.writeText(personalizedText).then(function() {
+      var gmailUrl = 'https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(currentReviewEmail) + '&su=' + encodeURIComponent(subject);
+      window.open(gmailUrl, '_blank');
+
+      var btn = document.getElementById('executeGmailBtn');
+      btn.textContent = 'Saved & Copied!';
+      setTimeout(function() {
+        btn.textContent = 'Copy Text & Open Gmail';
+        closeEmailReviewModal();
+      }, 2000);
+    }).catch(function() {
+      var gmailUrl = 'https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(currentReviewEmail) + '&su=' + encodeURIComponent(subject);
+      window.open(gmailUrl, '_blank');
+      closeEmailReviewModal();
+    });
+  };
+
+  window.resetFollowUpTemplate = function() {
+    google.script.run.updateSetting('Marketing_FollowUp_Subject', '');
+    google.script.run.updateSetting('Marketing_FollowUp_Template', '');
+    document.getElementById('reviewSubject').value = DEFAULT_FOLLOWUP_SUBJECT;
+    document.getElementById('reviewBody').value = DEFAULT_FOLLOWUP_BODY;
+  };
 
 })();

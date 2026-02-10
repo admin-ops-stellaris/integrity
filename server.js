@@ -1460,6 +1460,21 @@ app.post("/api/getAllContactsForExport", async (req, res) => {
   }
 });
 
+app.post("/api/createCampaign", async (req, res) => {
+  try {
+    const name = req.body.args ? req.body.args[0] : req.body.name;
+    const subject = req.body.args ? (req.body.args[1] || '') : (req.body.subject || '');
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "Campaign name is required." });
+    }
+    const campaign = await airtable.createCampaign(name.trim(), subject.trim());
+    res.json(campaign);
+  } catch (err) {
+    console.error("createCampaign error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/getCampaigns", async (req, res) => {
   try {
     const campaigns = await airtable.getCampaigns();
@@ -1470,17 +1485,42 @@ app.post("/api/getCampaigns", async (req, res) => {
   }
 });
 
+app.post("/api/getCampaignStats", async (req, res) => {
+  try {
+    const stats = await airtable.getCampaignStats();
+    res.json(stats);
+  } catch (err) {
+    console.error("getCampaignStats error:", err);
+    res.json([]);
+  }
+});
+
+app.post("/api/getCampaignLogs", async (req, res) => {
+  try {
+    const campaignId = req.body.args ? req.body.args[0] : req.body.campaignId;
+    const campaignName = req.body.args ? req.body.args[1] : req.body.campaignName;
+    if (!campaignId && !campaignName) {
+      return res.json([]);
+    }
+    const logs = await airtable.getCampaignLogs(campaignId, campaignName);
+    res.json(logs);
+  } catch (err) {
+    console.error("getCampaignLogs error:", err);
+    res.json([]);
+  }
+});
+
 app.post("/api/getMarketingLogsForContact", async (req, res) => {
   try {
     const contactId = req.body.args ? req.body.args[0] : req.body.contactId;
     if (!contactId) {
-      return res.status(400).json({ error: "contactId is required." });
+      return res.json([]);
     }
     const logs = await airtable.getMarketingLogsForContact(contactId);
     res.json(logs);
   } catch (err) {
     console.error("getMarketingLogsForContact error:", err);
-    res.status(500).json({ error: err.message });
+    res.json([]);
   }
 });
 
@@ -1496,6 +1536,68 @@ app.post("/api/importCampaignResults", async (req, res) => {
   } catch (err) {
     console.error("importCampaignResults error:", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+const WEBHOOK_EVENT_MAP = {
+  'open': 'Opened',
+  'click': 'Clicked',
+  'reply': 'Replied',
+  'unsubscribe': 'Unsubscribed',
+  'bounce': 'Bounced',
+  'sent': 'Sent'
+};
+
+app.post("/api/webhooks/mailmeteor", async (req, res) => {
+  const secret = req.query.secret;
+  if (!process.env.WEBHOOK_SECRET || secret !== process.env.WEBHOOK_SECRET) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const event = req.body;
+    const eventType = WEBHOOK_EVENT_MAP[(event.type || '').toLowerCase()];
+    if (!eventType) {
+      return res.status(200).json({ status: "ignored", reason: "unknown event type" });
+    }
+
+    const email = event.recipient || event.email || '';
+    const campaignName = (event.meta && event.meta.campaign) || '';
+    const campaignId = (event.meta && event.meta.campaign_id) || '';
+    const timestamp = event.timestamp || '';
+    const integrityIds = ((event.meta && event.meta.integrity_id) || '').split(';').map(s => s.trim()).filter(Boolean);
+
+    if (integrityIds.length === 0) {
+      return res.status(200).json({ status: "ignored", reason: "no integrity_id" });
+    }
+
+    const results = [];
+    for (const contactId of integrityIds) {
+      try {
+        await airtable.logCampaignEvent({
+          contactId,
+          email,
+          campaignId: campaignId || null,
+          campaignName: campaignName || null,
+          eventType,
+          timestamp: timestamp || null
+        });
+
+        if (eventType === 'Unsubscribed') {
+          await airtable.updateContact(contactId, 'Unsubscribed from Marketing', true);
+        }
+
+        results.push({ contactId, status: "logged" });
+      } catch (err) {
+        console.error(`Webhook log error for ${contactId}:`, err.message);
+        results.push({ contactId, status: "error", message: err.message });
+      }
+    }
+
+    res.status(200).json({ status: "processed", count: integrityIds.length, results });
+  } catch (err) {
+    console.error("Webhook processing error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

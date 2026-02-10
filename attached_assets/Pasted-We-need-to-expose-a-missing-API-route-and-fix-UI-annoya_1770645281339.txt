@@ -1,0 +1,66 @@
+We need to expose a missing API route and fix UI annoyances.
+
+1. Expose Missing Route (server.js)
+
+The Issue: The function getCampaignLogs exists in airtable.js but is not exposed in server.js, causing the Campaign Detail view to be empty.
+
+The Fix: Open server.js and add this route handler (place it near line 660, after getCampaignStats):
+
+JavaScript
+app.post("/api/getCampaignLogs", async (req, res) => {
+  try {
+    // Support both args array (from google.script.run) and direct body params
+    const campaignId = req.body.args ? req.body.args[0] : req.body.campaignId;
+    const campaignName = req.body.args ? req.body.args[1] : req.body.campaignName;
+    if (!campaignId && !campaignName) {
+      return res.json([]);
+    }
+    const logs = await airtable.getCampaignLogs(campaignId, campaignName);
+    res.json(logs);
+  } catch (err) {
+    console.error("getCampaignLogs error:", err);
+    res.json([]);
+  }
+});
+```
+2. Remove Native Alert (public/js/marketing.js)
+
+The Issue: createNewCampaign uses alert() on failure.
+
+The Fix: In public/js/marketing.js, find the .withFailureHandler block inside createNewCampaign. Replace the alert(...) line with:
+
+JavaScript
+// Inline error display
+var container = btn.parentElement;
+var errorEl = document.getElementById('camp-create-error');
+if (!errorEl) {
+  errorEl = document.createElement('div');
+  errorEl.id = 'camp-create-error';
+  errorEl.style.color = '#dc3545';
+  errorEl.style.fontSize = '12px';
+  errorEl.style.marginTop = '4px';
+  container.appendChild(errorEl);
+}
+errorEl.textContent = 'Error: ' + (err.message || err);
+// Clear after 4 seconds
+setTimeout(function() { errorEl.textContent = ''; }, 4000);
+3. Flatten Tabs (public/styles.css)
+
+The Issue: Tabs are curved. User wants them flat.
+
+The Fix: Append this CSS to public/styles.css:
+
+CSS
+/* Force flat tabs for Marketing Modal */
+.marketing-mega-modal .nav-tabs .nav-link {
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+}
+.marketing-mega-modal .nav-tabs .nav-link.active {
+    background-color: transparent !important;
+    border-bottom: 3px solid #28a745 !important;
+    color: #333 !important;
+    font-weight: bold !important;
+}
+Action: Add the missing API route to server.js and apply the frontend UI fixes.

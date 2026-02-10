@@ -1,0 +1,53 @@
+We need to fix the 'Empty Logs' bug by switching our query strategy from Name-based to ID-based.
+
+1. Update Data Query (services/airtable.js)
+
+Locate: The getCampaignLogs function.
+
+The Logic Change: Currently, it prioritizes campaignName. We must change it to prioritize campaignId because searching Linked Record IDs is far more reliable than searching Lookup Strings.
+
+The Fix: Replace the entire getCampaignLogs function with this exact code:
+
+JavaScript
+export async function getCampaignLogs(campaignId, campaignName) {
+  if (!marketingBase) return [];
+  try {
+    let filterFormula;
+    
+    // PRIORITY 1: Search by ID (Robust)
+    // We search the Linked Record field '{Campaign}' using ARRAYJOIN to handle the array format
+    if (campaignId) {
+      const safeId = String(campaignId).replace(/'/g, "\\'");
+      filterFormula = \`SEARCH('\${safeId}', ARRAYJOIN({Campaign}))\`;
+      console.log('getCampaignLogs using ID:', safeId);
+    } 
+    // PRIORITY 2: Fallback to Name (only if ID is missing)
+    else if (campaignName) {
+      const safeName = String(campaignName).replace(/'/g, "\\'");
+      filterFormula = \`SEARCH('\${safeName}', ARRAYJOIN({Campaign Name}))\`;
+      console.log('getCampaignLogs using Name:', safeName);
+    } else {
+      return [];
+    }
+console.log('Final Formula:', filterFormula);
+const records = await marketingBase("Logs").select({
+  filterByFormula: filterFormula,
+  sort: [{ field: 'Timestamp', direction: 'desc' }],
+  fields: ['Timestamp', 'Event', 'Email Address', 'Contact ID', 'Contact Name', 'Campaign Name']
+}).all();
+console.log(\`getCampaignLogs: Found \${records.length} records\`);
+return records.map(r => {
+  const contactName = Array.isArray(r.fields['Contact Name']) ? r.fields['Contact Name'][0] : (r.fields['Contact Name'] || '');
+  return {
+    timestamp: r.fields['Timestamp'] || '',
+    event: r.fields['Event'] || '',
+    email: r.fields['Email Address'] || '',
+    contactId: r.fields['Contact ID'] || '',
+    contactName: contactName
+  };
+});
+} catch (err) { console.error("getCampaignLogs error:", err.message); return []; } }
+
+
+**Action:** Replace the function in `services/airtable.js` to enforce ID-based searching."
+Why this works

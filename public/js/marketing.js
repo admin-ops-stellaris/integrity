@@ -333,7 +333,11 @@
 
       var actionCell = '';
       if (statusLower === 'unsubscribed' && log.email) {
-        actionCell = '<button class="campaign-followup-btn" onclick="openFollowUpComposer(\'' + escapeAttr(log.email) + '\', \'' + escapeAttr(log.contactName || '') + '\')" title="Send follow-up email">&#9993;</button>';
+        var greeting = log.contactName ? log.contactName.split(' ')[0] : '';
+        var gmailSubject = encodeURIComponent('Quick check re: your unsubscribe');
+        var gmailBody = encodeURIComponent('Hi' + (greeting ? ' ' + greeting : '') + ',\n\nJust taking as much care as we can with regard to your unsubscribe just now - which is totally fine by the way!\n\nIf you would prefer to keep hearing from us but via another email address, please reply and let me know.\n\nOtherwise, if you do nothing, you\'ll remain unsubscribed.\n\nAll the very best either way!\n\nCheers,');
+        var gmailUrl = 'https://mail.google.com/mail/?view=cm&to=' + encodeURIComponent(log.email) + '&su=' + gmailSubject + '&body=' + gmailBody;
+        actionCell = '<a class="campaign-followup-btn" href="' + gmailUrl + '" target="_blank" title="Send follow-up email">&#9993;</a>';
       }
 
       html +=

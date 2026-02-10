@@ -1539,6 +1539,68 @@ app.post("/api/importCampaignResults", async (req, res) => {
   }
 });
 
+const WEBHOOK_EVENT_MAP = {
+  'open': 'Opened',
+  'click': 'Clicked',
+  'reply': 'Replied',
+  'unsubscribe': 'Unsubscribed',
+  'bounce': 'Bounced',
+  'sent': 'Sent'
+};
+
+app.post("/api/webhooks/mailmeteor", async (req, res) => {
+  const secret = req.query.secret;
+  if (!process.env.WEBHOOK_SECRET || secret !== process.env.WEBHOOK_SECRET) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  try {
+    const event = req.body;
+    const eventType = WEBHOOK_EVENT_MAP[(event.type || '').toLowerCase()];
+    if (!eventType) {
+      return res.status(200).json({ status: "ignored", reason: "unknown event type" });
+    }
+
+    const email = event.recipient || event.email || '';
+    const campaignName = (event.meta && event.meta.campaign) || '';
+    const campaignId = (event.meta && event.meta.campaign_id) || '';
+    const timestamp = event.timestamp || '';
+    const integrityIds = ((event.meta && event.meta.integrity_id) || '').split(';').map(s => s.trim()).filter(Boolean);
+
+    if (integrityIds.length === 0) {
+      return res.status(200).json({ status: "ignored", reason: "no integrity_id" });
+    }
+
+    const results = [];
+    for (const contactId of integrityIds) {
+      try {
+        await airtable.logCampaignEvent({
+          contactId,
+          email,
+          campaignId: campaignId || null,
+          campaignName: campaignName || null,
+          eventType,
+          timestamp: timestamp || null
+        });
+
+        if (eventType === 'Unsubscribed') {
+          await airtable.updateContact(contactId, 'Unsubscribed from Marketing', true);
+        }
+
+        results.push({ contactId, status: "logged" });
+      } catch (err) {
+        console.error(`Webhook log error for ${contactId}:`, err.message);
+        results.push({ contactId, status: "error", message: err.message });
+      }
+    }
+
+    res.status(200).json({ status: "processed", count: integrityIds.length, results });
+  } catch (err) {
+    console.error("Webhook processing error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {

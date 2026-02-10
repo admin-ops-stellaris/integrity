@@ -2578,3 +2578,33 @@ export async function importCampaignResults({ campaignId, rows }) {
 
   return { success: true, results };
 }
+
+export async function logCampaignEvent({ contactId, email, campaignId, campaignName, eventType, timestamp }) {
+  if (!marketingBase) throw new Error("Marketing base not configured");
+
+  const logFields = {
+    'Contact ID': contactId,
+    'Email Address': email || '',
+    'Event': eventType,
+    'Timestamp': timestamp || getPerthTimeISO()
+  };
+
+  if (campaignId) {
+    logFields['Campaign'] = [campaignId];
+  } else if (campaignName) {
+    try {
+      const safeName = String(campaignName).replace(/'/g, "\\'");
+      const campaigns = await marketingBase("Campaigns").select({
+        filterByFormula: `{Name} = '${safeName}'`,
+        maxRecords: 1
+      }).all();
+      if (campaigns.length > 0) {
+        logFields['Campaign'] = [campaigns[0].id];
+      }
+    } catch (e) {
+      console.warn("Campaign lookup failed:", e.message);
+    }
+  }
+
+  return await marketingBase("Logs").create(logFields);
+}

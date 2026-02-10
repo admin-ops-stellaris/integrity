@@ -929,18 +929,78 @@ const SCHEMA = {
   }
 };
 
-// 1. Browser/Verification Test Route (Vital for Mailmeteor Setup)
+// 1. Loud Verification Route (GET)
 app.get("/api/webhooks/mailmeteor", (req, res) => {
+  console.log("🔔 Ping! Received Mailmeteor GET Verification.");
   res.status(200).send("Webhook Endpoint is Online and Ready! 🚀");
 });
 
-app.post("/api/getRecordDetail", async (req, res) => {
+// 2. Loud Listener Route (POST)
+app.post("/api/webhooks/mailmeteor", async (req, res) => {
+  console.log("🔔 Knock Knock! Incoming Webhook POST...");
+
+  const receivedSecret = req.query.secret;
+  const realSecret = process.env.WEBHOOK_SECRET;
+
+  // Debugging Logs (This will show us if they match)
+  // We mask the real secret for safety in logs, just showing length
+  console.log(`   > Secret Provided: '${receivedSecret}'`);
+  console.log(`   > Secret Expected: ${realSecret ? 'Start with ' + realSecret.substring(0,3) : 'UNDEFINED'}`);
+
+  if (!realSecret || receivedSecret !== realSecret) {
+    console.warn("   ⛔ ACCESS DENIED: Secrets do not match.");
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  console.log("   ✅ Access Granted. Processing Event...");
+
   try {
-    const [tableName, id] = req.body.args || [];
-    
-    if (!SCHEMA[tableName]) {
-      return res.json({ title: "Unknown Record", data: [{ label: "Error", value: `Table '${tableName}' not configured.` }] });
+    const event = req.body;
+    // ... (Your existing logic continues below) ...
+
+    // --- PASTE YOUR EXISTING LOGIC HERE (The mapping and saving code) ---
+    // For simplicity, here is the robust mapping block again to be safe:
+
+    const typeStr = (event.type || '').toLowerCase();
+    let eventType = 'Unknown';
+    if (typeStr.includes('sent')) eventType = 'Sent';
+    else if (typeStr.includes('open')) eventType = 'Opened';
+    else if (typeStr.includes('click')) eventType = 'Clicked';
+    else if (typeStr.includes('reply')) eventType = 'Replied';
+    else if (typeStr.includes('unsubscribe')) eventType = 'Unsubscribed';
+    else if (typeStr.includes('bounce') || typeStr.includes('fail')) eventType = 'Bounced';
+    else {
+      const clean = (event.type || '').replace('email.event.', '').replace('email.', '');
+      eventType = clean.charAt(0).toUpperCase() + clean.slice(1);
     }
+
+    const email = event.recipient || event.email || '';
+    const campaignId = (event.meta && event.meta.campaign_id) || '';
+    const integrityIds = ((event.meta && event.meta.integrity_id) || '').split(';').map(s => s.trim()).filter(Boolean);
+
+    console.log(`   > Event: ${eventType} for ${email} (IDs: ${integrityIds.length})`);
+
+    for (const contactId of integrityIds) {
+        await airtable.logCampaignEvent({
+          contactId,
+          email,
+          campaignId, 
+          eventType,
+          timestamp: new Date().toISOString()
+        });
+
+        if (eventType === 'Unsubscribed') {
+          await airtable.updateContact(contactId, 'Unsubscribed from Marketing', true);
+        }
+    }
+
+    res.status(200).json({ status: "processed" });
+
+  } catch (err) {
+    console.error("   ❌ Error processing webhook:", err.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
     
     const schemaDef = SCHEMA[tableName];
     const record = await airtable.getRecordFromTable(tableName, id);

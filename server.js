@@ -1556,9 +1556,17 @@ app.post("/api/webhooks/mailmeteor", async (req, res) => {
 
   try {
     const event = req.body;
-    const eventType = WEBHOOK_EVENT_MAP[(event.type || '').toLowerCase()];
-    if (!eventType) {
-      return res.status(200).json({ status: "ignored", reason: "unknown event type" });
+    const typeStr = (event.type || '').toLowerCase();
+    let eventType = 'Unknown';
+    if (typeStr.includes('sent')) eventType = 'Sent';
+    else if (typeStr.includes('open')) eventType = 'Opened';
+    else if (typeStr.includes('click')) eventType = 'Clicked';
+    else if (typeStr.includes('reply')) eventType = 'Replied';
+    else if (typeStr.includes('unsubscribe')) eventType = 'Unsubscribed';
+    else if (typeStr.includes('bounce') || typeStr.includes('fail')) eventType = 'Bounced';
+    else {
+      const clean = (event.type || '').replace('email.event.', '').replace('email.', '');
+      eventType = clean.charAt(0).toUpperCase() + clean.slice(1);
     }
 
     const email = event.recipient || event.email || '';
